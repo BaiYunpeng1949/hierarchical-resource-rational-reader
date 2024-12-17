@@ -1,0 +1,281 @@
+[
+  {
+    "image_id": "0.png",
+    "question_id": "qid_000",
+    "question_text": "Please summarise what does the text say?",
+    "X": [
+      150,
+      150,
+      150
+    ],
+    "Y": [
+      150,
+      150,
+      150
+    ],
+    "T_start": [
+      0,
+      500,
+      1000
+    ],
+    "T_end": [
+      500,
+      1000,
+      1500
+    ],
+    "subject_answer": "placeholder_answer",
+    "accuracy": -1,
+    "height": 1080,
+    "width": 1920,
+    "length": 3,
+    "answer": "correct_answer_000"
+  },
+  {
+    "image_id": "1.png",
+    "question_id": "qid_001",
+    "question_text": "Please summarise what does the text say?",
+    "X": [
+      150,
+      150,
+      150
+    ],
+    "Y": [
+      150,
+      150,
+      150
+    ],
+    "T_start": [
+      0,
+      500,
+      1000
+    ],
+    "T_end": [
+      500,
+      1000,
+      1500
+    ],
+    "subject_answer": "placeholder_answer",
+    "accuracy": -1,
+    "height": 1080,
+    "width": 1920,
+    "length": 3,
+    "answer": "correct_answer_001"
+  },
+  {
+    "image_id": "2.png",
+    "question_id": "qid_002",
+    "question_text": "Please summarise what does the text say?",
+    "X": [
+      150,
+      150,
+      150
+    ],
+    "Y": [
+      150,
+      150,
+      150
+    ],
+    "T_start": [
+      0,
+      500,
+      1000
+    ],
+    "T_end": [
+      500,
+      1000,
+      1500
+    ],
+    "subject_answer": "placeholder_answer",
+    "accuracy": -1,
+    "height": 1080,
+    "width": 1920,
+    "length": 3,
+    "answer": "correct_answer_002"
+  },
+  {
+    "image_id": "3.png",
+    "question_id": "qid_003",
+    "question_text": "Please summarise what does the text say?",
+    "X": [
+      150,
+      150,
+      150
+    ],
+    "Y": [
+      150,
+      150,
+      150
+    ],
+    "T_start": [
+      0,
+      500,
+      1000
+    ],
+    "T_end": [
+      500,
+      1000,
+      1500
+    ],
+    "subject_answer": "placeholder_answer",
+    "accuracy": -1,
+    "height": 1080,
+    "width": 1920,
+    "length": 3,
+    "answer": "correct_answer_003"
+  },
+  {
+    "image_id": "4.png",
+    "question_id": "qid_004",
+    "question_text": "Please summarise what does the text say?",
+    "X": [
+      150,
+      150,
+      150
+    ],
+    "Y": [
+      150,
+      150,
+      150
+    ],
+    "T_start": [
+      0,
+      500,
+      1000
+    ],
+    "T_end": [
+      500,
+      1000,
+      1500
+    ],
+    "subject_answer": "placeholder_answer",
+    "accuracy": -1,
+    "height": 1080,
+    "width": 1920,
+    "length": 3,
+    "answer": "correct_answer_004"
+  },
+  {
+    "image_id": "5.png",
+    "question_id": "qid_005",
+    "question_text": "Please summarise what does the text say?",
+    "X": [
+      150,
+      150,
+      150
+    ],
+    "Y": [
+      150,
+      150,
+      150
+    ],
+    "T_start": [
+      0,
+      500,
+      1000
+    ],
+    "T_end": [
+      500,
+      1000,
+      1500
+    ],
+    "subject_answer": "placeholder_answer",
+    "accuracy": -1,
+    "height": 1080,
+    "width": 1920,
+    "length": 3,
+    "answer": "correct_answer_005"
+  },
+  {
+    "image_id": "6.png",
+    "question_id": "qid_006",
+    "question_text": "Please summarise what does the text say?",
+    "X": [
+      150,
+      150,
+      150
+    ],
+    "Y": [
+      150,
+      150,
+      150
+    ],
+    "T_start": [
+      0,
+      500,
+      1000
+    ],
+    "T_end": [
+      500,
+      1000,
+      1500
+    ],
+    "subject_answer": "placeholder_answer",
+    "accuracy": -1,
+    "height": 1080,
+    "width": 1920,
+    "length": 3,
+    "answer": "correct_answer_006"
+  },
+  {
+    "image_id": "7.png",
+    "question_id": "qid_007",
+    "question_text": "Please summarise what does the text say?",
+    "X": [
+      150,
+      150,
+      150
+    ],
+    "Y": [
+      150,
+      150,
+      150
+    ],
+    "T_start": [
+      0,
+      500,
+      1000
+    ],
+    "T_end": [
+      500,
+      1000,
+      1500
+    ],
+    "subject_answer": "placeholder_answer",
+    "accuracy": -1,
+    "height": 1080,
+    "width": 1920,
+    "length": 3,
+    "answer": "correct_answer_007"
+  },
+  {
+    "image_id": "8.png",
+    "question_id": "qid_008",
+    "question_text": "Please summarise what does the text say?",
+    "X": [
+      150,
+      150,
+      150
+    ],
+    "Y": [
+      150,
+      150,
+      150
+    ],
+    "T_start": [
+      0,
+      500,
+      1000
+    ],
+    "T_end": [
+      500,
+      1000,
+      1500
+    ],
+    "subject_answer": "placeholder_answer",
+    "accuracy": -1,
+    "height": 1080,
+    "width": 1920,
+    "length": 3,
+    "answer": "correct_answer_008"
+  }
+]

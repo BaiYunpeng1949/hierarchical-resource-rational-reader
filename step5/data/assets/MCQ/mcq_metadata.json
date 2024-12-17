@@ -1,0 +1,515 @@
+{
+    "0": {
+        "0": {
+            "question": "What is the primary purpose of the city’s expansion of its public bicycle program?",
+            "options": {
+                "A": "To increase tourism in the city",
+                "B": "To reduce traffic congestion and pollution",
+                "C": "To compete with ride-sharing services",
+                "D": "To decrease the cost of transportation for residents",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "B"
+        },
+        "1": {
+            "question": "How many new bikes will be added to the public bicycle fleet next month?",
+            "options": {
+                "A": "100",
+                "B": "250",
+                "C": "500",
+                "D": "750",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "C"
+        },
+        "2": {
+            "question": "What additional feature will the new bikes include?",
+            "options": {
+                "A": "Built-in navigation systems",
+                "B": "GPS tracking and improved safety features",
+                "C": "Larger baskets for carrying items",
+                "D": "Automated self-repair systems",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "B"
+        },
+        "3": {
+            "question": "What will the city do to promote safe biking practices?",
+            "options": {
+                "A": "Increase fines for unsafe biking",
+                "B": "Build more bike lanes",
+                "C": "Launch a public awareness campaign",
+                "D": "Offer free bicycle maintenance",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "C"
+        },
+        "4": {
+            "question": "What has been the trend in daily ridership of the public bicycle program over the past year?",
+            "options": {
+                "A": "It has decreased by 10%",
+                "B": "It has remained the same",
+                "C": "It has increased by 20%",
+                "D": "It has doubled",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "C"
+        }
+    },
+    "1": {
+        "0": {
+            "question": "What is the primary goal of the new robotics program?",
+            "options": {
+                "A": "To compete with other schools",
+                "B": "To inspire students to explore STEM careers",
+                "C": "To reduce screen time for students",
+                "D": "To promote physical fitness",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "B"
+        },
+        "1": {
+            "question": "What kind of experience does the robotics program offer to students?",
+            "options": {
+                "A": "Hands-on experience in designing and building robots",
+                "B": "Theory-based learning",
+                "C": "Online courses",
+                "D": "Physical education",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "A"
+        },
+        "2": {
+            "question": "Who partnered with the school to provide resources for the program?",
+            "options": {
+                "A": "Local universities",
+                "B": "Government agencies",
+                "C": "Tech companies",
+                "D": "Non-profit organizations",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "C"
+        },
+        "3": {
+            "question": "What opportunities will students have as part of the program?",
+            "options": {
+                "A": "Internships at tech companies",
+                "B": "Scholarships for college",
+                "C": "Competing in regional and national robotics competitions",
+                "D": "Access to private tutoring",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "C"
+        },
+        "4": {
+            "question": "What are the future plans for the robotics program?",
+            "options": {
+                "A": "To introduce advanced courses and summer camps",
+                "B": "To limit participation to seniors",
+                "C": "To replace the computer science curriculum",
+                "D": "To focus on sports training",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "A"
+        }
+    },
+    "2": {
+        "0": {
+            "question": "How many garden sites currently exist in the city as part of the community garden project?",
+            "options": {
+                "A": "5",
+                "B": "15",
+                "C": "20",
+                "D": "Over 20",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "D"
+        },
+        "1": {
+            "question": "What is a key feature of the new gardens being added?",
+            "options": {
+                "A": "Automated watering systems",
+                "B": "Raised beds for planting",
+                "C": "Vertical gardens",
+                "D": "Hydroponic systems",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "B"
+        },
+        "2": {
+            "question": "Who will help teach gardening classes at the new community gardens?",
+            "options": {
+                "A": "Professional gardeners",
+                "B": "Local volunteers",
+                "C": "School teachers",
+                "D": "City officials",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "B"
+        },
+        "3": {
+            "question": "What environmental benefit do the community gardens provide?",
+            "options": {
+                "A": "Increase in wildlife population",
+                "B": "Reduction of the city’s carbon footprint",
+                "C": "Creation of new parking spaces",
+                "D": "Improvement of air quality",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "B"
+        },
+        "4": {
+            "question": "How is the expansion of the community garden project being funded?",
+            "options": {
+                "A": "Federal grants",
+                "B": "Private investments",
+                "C": "City grants and donations from local businesses",
+                "D": "Membership fees",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "C"
+        }
+    },
+    "3": {
+        "0": {
+            "question": "What was one of the first sustainable changes the speaker made?",
+            "options": {
+                "A": "Using public transportation",
+                "B": "Reducing reliance on single-use plastics",
+                "C": "Growing their own vegetables",
+                "D": "Installing solar panels",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "B"
+        },
+        "1": {
+            "question": "How has meal planning benefited the speaker?",
+            "options": {
+                "A": "It has helped save time",
+                "B": "It has reduced the need for shopping",
+                "C": "It has minimized food waste and saved money",
+                "D": "It has increased the amount of food they buy",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "C"
+        },
+        "2": {
+            "question": "What did the speaker set up in their backyard?",
+            "options": {
+                "A": "A vegetable garden",
+                "B": "A compost bin",
+                "C": "A rainwater collection system",
+                "D": "A bird feeder",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "B"
+        },
+        "3": {
+            "question": "Why does the speaker find composting gratifying?",
+            "options": {
+                "A": "It reduces the amount of food they need to buy",
+                "B": "It creates fertilizer for their garden",
+                "C": "It prevents food scraps from going to a landfill",
+                "D": "It attracts wildlife to their yard",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "C"
+        },
+        "4": {
+            "question": "What is the speaker encouraging others to do?",
+            "options": {
+                "A": "Purchase organic products",
+                "B": "Move to a more sustainable community",
+                "C": "Exchange ideas for a greener lifestyle",
+                "D": "Adopt a zero-waste lifestyle",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "C"
+        }
+    },
+    "4": {
+        "0": {
+            "question": "What has been essential for the speaker in maintaining consistency with their workout regimen?",
+            "options": {
+                "A": "Working out daily",
+                "B": "Setting realistic, attainable goals",
+                "C": "Lifting heavier weights",
+                "D": "Running long distances",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "B"
+        },
+        "1": {
+            "question": "How has having a workout partner benefited the speaker?",
+            "options": {
+                "A": "Provided competition",
+                "B": "Added accountability and enjoyment",
+                "C": "Increased the intensity of workouts",
+                "D": "Reduced the time needed to work out",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "B"
+        },
+        "2": {
+            "question": "What routine did the speaker and their workout partner establish?",
+            "options": {
+                "A": "Regularly checking in with each other",
+                "B": "Running together every morning",
+                "C": "Tracking their diets",
+                "D": "Competing in races",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "A"
+        },
+        "3": {
+            "question": "What aspect of fitness has the speaker come to appreciate?",
+            "options": {
+                "A": "Working out as much as possible",
+                "B": "The importance of rest and recovery",
+                "C": "Lifting heavy weights",
+                "D": "High-intensity interval training (HIIT)",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "B"
+        },
+        "4": {
+            "question": "What advice does the speaker offer to those starting a new workout routine?",
+            "options": {
+                "A": "Work out every day without fail",
+                "B": "Focus only on intense workouts",
+                "C": "Prioritize consistency and balance",
+                "D": "Start with heavy weights",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "C"
+        }
+    },
+    "5": {
+        "0": {
+            "question": "What is the title of the book the speaker recently finished?",
+            "options": {
+                "A": "The Journey Within;",
+                "B": "The Road Ahead;",
+                "C": "The Path to Peace;",
+                "D": "The Inner Quest",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "A"
+        },
+        "1": {
+            "question": "What themes does the novel primarily explore?",
+            "options": {
+                "A": "Adventure and travel",
+                "B": "Self-discovery and personal growth",
+                "C": "Romance and relationships",
+                "D": "Mystery and suspense",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "B"
+        },
+        "2": {
+            "question": "How did the book impact the speaker personally?",
+            "options": {
+                "A": "It was a fun read but had little impact",
+                "B": "It challenged their perspectives and prompted introspection",
+                "C": "It made them want to travel more",
+                "D": "It inspired them to write a novel",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "B"
+        },
+        "3": {
+            "question": "What aspect of the book did the speaker find particularly authentic?",
+            "options": {
+                "A": "The dialogue",
+                "B": "The setting",
+                "C": "The portrayal of the characters’ internal struggles",
+                "D": "The action scenes",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "C"
+        },
+        "4": {
+            "question": "What does the speaker encourage others to do at the end of the passage?",
+            "options": {
+                "A": "Write their own book",
+                "B": "Share and discuss their favorite books",
+                "C": "Read only classic literature",
+                "D": "Avoid reading introspective novels",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "B"
+        }
+    },
+    "6": {
+        "0": {
+            "question": "What is the primary purpose of a digital detox according to the passage?",
+            "options": {
+                "A": "To abandon technology entirely",
+                "B": "To find a healthy balance with technology",
+                "C": "To avoid all social media",
+                "D": "To eliminate screen time completely",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "B"
+        },
+        "1": {
+            "question": "What was one of the first changes the speaker made for their digital detox?",
+            "options": {
+                "A": "Deleting all social media accounts",
+                "B": "Establishing tech-free zones in the home",
+                "C": "Limiting phone use to weekends",
+                "D": "Using only a flip phone",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "B"
+        },
+        "2": {
+            "question": "Which areas of the home did the speaker designate as tech-free zones?",
+            "options": {
+                "A": "Living room and kitchen",
+                "B": "Bedroom and dining area",
+                "C": "Office and garage",
+                "D": "Bathroom and hallway",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "B"
+        },
+        "3": {
+            "question": "What activities did the speaker choose for their mornings during the digital detox?",
+            "options": {
+                "A": "Checking emails",
+                "B": "Reading a physical book or taking a walk",
+                "C": "Watching TV",
+                "D": "Listening to podcasts",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "B"
+        },
+        "4": {
+            "question": "What advice does the speaker give to those considering a digital detox?",
+            "options": {
+                "A": "Start by eliminating all screens",
+                "B": "Set small, manageable goals",
+                "C": "Avoid using technology for a week",
+                "D": "Purchase a digital detox guidebook",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "B"
+        }
+    },
+    "7": {
+        "0": {
+            "question": "How did the speaker originally view cooking?",
+            "options": {
+                "A": "As a relaxing activity",
+                "B": "As a daily necessity",
+                "C": "As a social event",
+                "D": "As a hobby",
+                "E": "Do not know  Cannot remember"
+            },
+            "correct_answer": "B"
+        },
+        "1": {
+            "question": "What does mindful cooking involve according to the speaker?",
+            "options": {
+                "A": "Cooking quickly to save time",
+                "B": "Paying full attention and enjoying each step",
+                "C": "Following recipes exactly",
+                "D": "Using only organic ingredients",
+                "E": "Do not know  Cannot remember"
+            },
+            "correct_answer": "B"
+        },
+        "2": {
+            "question": "What does the speaker do to start the mindful cooking process?",
+            "options": {
+                "A": "Sets a timer",
+                "B": "Chooses fresh ingredients and notices their qualities",
+                "C": "Prepares all the ingredients in advance",
+                "D": "Cleans the kitchen thoroughly",
+                "E": "Do not know  Cannot remember"
+            },
+            "correct_answer": "B"
+        },
+        "3": {
+            "question": "How has mindful cooking changed the speaker's perspective on making food?",
+            "options": {
+                "A": "It has become a creative and self-care activity",
+                "B": "It is now seen as a competition",
+                "C": "It is more stressful",
+                "D": "It takes longer than before",
+                "E": "Do not know  Cannot remember"
+            },
+            "correct_answer": "A"
+        },
+        "4": {
+            "question": "Why does the speaker believe the food tastes better now?",
+            "options": {
+                "A": "They use more spices",
+                "B": "The food is cooked faster",
+                "C": "Each dish is made with care and attention",
+                "D": "They follow recipes exactly",
+                "E": "Do not know  Cannot remember"
+            },
+            "correct_answer": "C"
+        }
+    },
+    "8": {
+        "0": {
+            "question": "What has the speaker learned about packing over the years?",
+            "options": {
+                "A": "More is better",
+                "B": "Less is more",
+                "C": "Always bring extra clothes",
+                "D": "Pack for every possible scenario",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "B"
+        },
+        "1": {
+            "question": "What is the key to minimalist travel according to the speaker?",
+            "options": {
+                "A": "Bringing as many items as possible",
+                "B": "Careful planning",
+                "C": "Always checking luggage",
+                "D": "Traveling with friends",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "B"
+        },
+        "2": {
+            "question": "What does the speaker focus on when creating a packing list?",
+            "options": {
+                "A": "Fashionable clothing",
+                "B": "Souvenirs",
+                "C": "Versatile clothing and multipurpose items",
+                "D": "Electronics",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "C"
+        },
+        "3": {
+            "question": "How does traveling light affect the speaker's travel experience?",
+            "options": {
+                "A": "It adds stress",
+                "B": "It encourages a more mindful experience",
+                "C": "It makes travel less enjoyable",
+                "D": "It requires more planning",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "B"
+        },
+        "4": {
+            "question": "What does the speaker value most from their travels?",
+            "options": {
+                "A": "Souvenirs",
+                "B": "Material items",
+                "C": "Experiences and memories",
+                "D": "Luxury accommodations",
+                "E": "Do not know / Cannot remember"
+            },
+            "correct_answer": "C"
+        }
+    }
+}
