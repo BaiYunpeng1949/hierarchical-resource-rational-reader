@@ -213,28 +213,6 @@ sysinfo.txt
 *.aab
 *.unitypackage
 
-/step1/training/
-/step1/envs/recognize_word/assets/GoogleNews-vectors-negative300.bin.gz
-/step1/envs/recognize_word/results/cached data/
-/data analysis/identify_word/cached_files/
-/step2/image_envs/
-/step2/results/.ipynb_checkpoints/
-/step2/results/figures/
-/step2/simulated raw data/figures/
-/step2/training/
-/step2/simulated raw data/.ipynb_checkpoints/
-/step2/simulated raw data/data/
-/step2/generators/image_envs/
-/step2/simulated raw data/debug/
-/step3/trainings/
-/step3/data/gen_envs/
-/step3/data/sim_results/
-/step3/data/debug/
-/step3/training/
-/step4/training/
-/step4/data/gen_external_envs/
-/step4/data/sim_results/
-/step3/data/deploy/
 /step5/training/
 /step5/data/sim_results/
 /step5/data/gen_envs/
@@ -251,3 +229,4 @@ sysinfo.txt
 /step5/data/sim_data_in_batches/
 /data_analysis/user_study_results_after_parameter_inference
 /baseline_models/DQ_scanpath/
+/_draft_files/
