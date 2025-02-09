@@ -48,7 +48,9 @@ from step5.modules.rl_envs.SentenceLevelControllerEnv_v1014 import SentenceLevel
 # from step5.modules.rl_envs.GeneralOculomotorControllerEnv_v1010 import GeneralOculomotorControllerEnv
 # from step5.modules.rl_envs.GeneralOculomotorControllerEnv_v1013 import GeneralOculomotorControllerEnv
 # from step5.modules.rl_envs.GeneralOculomotorControllerEnv_v1122 import GeneralOculomotorControllerEnv
-from step5.modules.rl_envs.GeneralOculomotorControllerEnv_v1126 import GeneralOculomotorControllerEnv
+# from step5.modules.rl_envs.GeneralOculomotorControllerEnv_v1126 import GeneralOculomotorControllerEnv
+from modules.rl_envs.GeneralOculomotorControllerEnv_v1126 import GeneralOculomotorControllerEnv
+from modules.rl_envs.OMCRLEnvV0128 import OculomotorControllerRLEnv
 
 _MODES = {
     'train': 'train',
@@ -323,14 +325,14 @@ class RL:
             )
 
         # Get the environment class
-        env_class = GeneralOculomotorControllerEnv           # GeneralOculomotorControllerEnv, SentenceLevelControllerEnv, SupervisoryControllerEnv
+        env_class = OculomotorControllerRLEnv # GeneralOculomotorControllerEnv           # GeneralOculomotorControllerEnv, SentenceLevelControllerEnv, SupervisoryControllerEnv
 
         # Load the dataset (if needed)
         shared_dataset_metadata_of_stimuli = None
         shared_dataset_encoded_lexicon = None
 
         # Read the total dataset if training the general oculomotor controller model.
-        if env_class == GeneralOculomotorControllerEnv:
+        if env_class == OculomotorControllerRLEnv:   # GeneralOculomotorControllerEnv:
             # Load the dataset
             print('Loading the dataset...')
             shared_dataset_metadata_of_stimuli, shared_dataset_encoded_lexicon, self._dataset_mode = aux.load_oculomotor_controller_dataset(config=self._config)
@@ -347,7 +349,7 @@ class RL:
             # self._lexicon_shm.buf[:len(encoded_lexicon_bytes)] = encoded_lexicon_bytes
 
             # Create an instance of the environment for use in other methods
-            self._env = GeneralOculomotorControllerEnv(
+            self._env = OculomotorControllerRLEnv(   # GeneralOculomotorControllerEnv(
                 shared_dataset_metadata_of_image_stimuli=shared_dataset_metadata_of_stimuli,
                 shared_dataset_encoded_lexicon=shared_dataset_encoded_lexicon
             )
@@ -360,7 +362,7 @@ class RL:
 
             # Define the environment creation function
             def make_env():
-                return GeneralOculomotorControllerEnv(
+                return OculomotorControllerRLEnv( # GeneralOculomotorControllerEnv(
                     shared_dataset_metadata_of_image_stimuli=shared_dataset_metadata_of_stimuli,
                     shared_dataset_encoded_lexicon=shared_dataset_encoded_lexicon
                 )
@@ -416,7 +418,7 @@ class RL:
 
             # Configure the model - HRL - Ocular motor control
             # if isinstance(self._env, SampleFixationVersion1) or isinstance(self._env, SampleFixationVersion2):
-            if isinstance(self._env, GeneralOculomotorControllerEnv):
+            if isinstance(self._env, GeneralOculomotorControllerEnv) or isinstance(self._env, OculomotorControllerRLEnv):
                 policy_kwargs = dict(
                     features_extractor_class=CustomCombinedExtractor,       # Previous -- NumericFeatureExtractor, features_dim=128
                     features_extractor_kwargs=dict(
@@ -1489,7 +1491,7 @@ class RL:
         elif self._mode == _MODES['continual_train']:
             self._continual_train()
         elif self._mode == _MODES['test'] or self._mode == _MODES['debug']:
-            if isinstance(self._env, GeneralOculomotorControllerEnv):
+            if isinstance(self._env, GeneralOculomotorControllerEnv) or isinstance(self._env, OculomotorControllerRLEnv):
                 self._oculomotor_controller_test()
             elif isinstance(self._env, SupervisoryControllerEnv):
                 self._supervisory_controller_test()
