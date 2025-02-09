@@ -57,24 +57,31 @@ class WordActivationRLEnv(Env):
 
         print(f"Oculomotor Controller Environment V0205 -- Deploying the environment in the {self._config['rl']['mode']} mode.")
 
-        # Internal belief of the agent: belief over the top-k words, empirically set to a constant
-        self._top_k = 5
-        self._belief_distribution = self._reset_belief_distribution()      # The belief distribution has to be normalized, sumed up to 1
-
-        # Define the environment configuration
-        # Word lengths
+        # Define constants -- configurations
+        # Define word lengths
         self.MAX_WORD_LEN = 10
         self.MIN_WORD_LEN = 1
-
-        # Define the cognitive constraints
+        # Define the top-k candidates when competing for recognition
+        self._top_k = 3
+        # Define the foveal vision size
         self._foveal_size = 3       # one letter on the left, one in the middle, one on the right side  
-        
+
+        # Initialize necessary classes
         # Initialize the transition function
-        self.transition_function = TransitionFunction(max_word_len=self.MAX_WORD_LEN, num_top_k_candidates=self._top_k)
-        
+        self.transition_function = TransitionFunction(max_word_len=self.MAX_WORD_LEN, num_top_k_candidates=self._top_k, foveal_size=self._foveal_size)
+
+        # Internal belief of the agent: belief over the top-k words, empirically set to a constant
+        self._normalized_belief_distribution = self.transition_function.reset_state_belief_distribution()      # The belief distribution has to be normalized, sumed up to 1
+
+        self._word = None           # The word to be recognized
+        self._word_len = None       # The length of the word to be recognized
+        self._sampled_letters_so_far = None    # The letters that have been sampled
+
         # Representations
-        self._word_representation = self.transition_function.reset_word_representation()    # The word representation, it stores the sampled letters. Here is a vector of letters sampled from the ASCII space
-        self._ground_truth_word_representation = None
+        self._word_representation = self.transition_function.reset_state_word_representation()    # The word representation, it stores the sampled letters. Here is a vector of letters sampled from the ASCII space
+        self._normalized_ground_truth_word_representation = None
+
+        self._sampled_letters_so_far_representation = None   # The letters that have been sampled
 
         # Define the word that is recognized
         self._word_to_activate = None
@@ -83,7 +90,7 @@ class WordActivationRLEnv(Env):
         self.action_space = Discrete(self.MAX_WORD_LEN + 1)    # 0-9: fixate on the letter at the position, 10: stop the sampling and recognize the word
 
         # Define the observation space:
-        self._num_stateful_obs = len(self._belief_distribution) + len(self._word_representation) # Belief distribution, word representation with sampled letters
+        self._num_stateful_obs = len(self._normalized_belief_distribution) + len(self._word_representation) # Belief distribution, word representation with sampled letters
         self.observation_space = Dict({
             "stateful_obs": Box(low=-1, high=1, shape=(self._num_stateful_obs,)),
             "action_obs": Discrete(self.MAX_WORD_LEN+1)     # The action of continue fixating or stop    
@@ -100,18 +107,10 @@ class WordActivationRLEnv(Env):
         # Define the logger:
         self._logger = None
 
-        # Define the Bayesian Updater
-        self.bayesian_inference = BayesianInference()
-
         # Define the training and testing data (temporary, in the formal training deploy separately)
-        # TODO think how to structure the data, should we get a look-up table?
-        # Q1, how do we get the possible words from the first place? Where should we grab the words from?
-        # So the pipeline could be: the agent first samples some letters from any word position, then it would sample some certain words with such combination of letters; 
-        #   these words are the init words; then as the agent samples other parts, both letters' position and new information will update this candidate list, 
-        #   with an updating belief distribution.
         self.lex_manager = LexiconManager()
-        self.lexicon_w_freq = self.lex_manager.lexicon_w_freq
-        first2pairs = {k: self.lexicon_w_freq[k] for k in sorted(self.lexicon_w_freq.keys())[:2]}
+        self.lexicon_w_freq_prob = self.lex_manager.lexicon_w_prob
+        first2pairs = {k: self.lexicon_w_freq_prob[k] for k in sorted(self.lexicon_w_freq_prob.keys())[:2]}
         print(f"Lexicon with frequency samples: {first2pairs}")
         self.train_test_words_data = self.lex_manager.sample_train_test_words(num_words=20, mode="random")
         print(f"Train/Test words data: {self.train_test_words_data}")
@@ -126,20 +125,26 @@ class WordActivationRLEnv(Env):
         self._truncated = False
 
         # Reset the belief distribution
-        self._belief_distribution = self.transition_function.reset_belief_distribution()
+        self._normalized_belief_distribution = self.transition_function.reset_state_belief_distribution()
 
         # Reset the word representation
-        self._word_representation = self.transition_function.reset_word_representation()
+        self._word_representation = self.transition_function.reset_state_word_representation()
 
         # Sample the word to be recognized
         self._word = self.lex_manager.get_word()
+        self._word_len = len(self._word)
         self._word_to_activate = None
 
         # Initialize the ground truth representation -- the word to be recognize is encoded as:
-        self._ground_truth_word_representation = self.transition_function.get_normalized_ground_truth_word_representation(target_word=self._word)
+        self._normalized_ground_truth_word_representation = self.transition_function.get_normalized_ground_truth_word_representation(target_word=self._word)
+        # This is only used for identifying words and numerical computations
 
-        # TODO debug later
-        print(f"Reset the environment with the word: {self._word}")
+        # Reset the seen letters
+        self._sampled_letters_so_far_representation = [-1] * self.MAX_WORD_LEN
+        self._sampled_letters_so_far = ""
+
+        # # TODO debug later
+        # print(f"Reset the environment with the word: {self._word}")
 
         return self._get_obs(), {}
 
@@ -159,20 +164,34 @@ class WordActivationRLEnv(Env):
 
         # Update states
         if action <= self.MAX_WORD_LEN - 1:     # Still fixating on the letters
-            self._word_representation[action] = self._word[action]
-            reward = self.reward_function.get_step_wise_effort_cost()
 
-            self.transition_function.update_sampled_letters(s, a)
+            if action <= self._word_len - 1:    # The action is valid, sampling letters
+                
+                self._sampled_letters_so_far_representation, self._sampled_letters_so_far = self.transition_function.update_state_seen_letters(
+                    action=action, norm_gt_word_rep=self._normalized_ground_truth_word_representation, 
+                    seen_letters_representation=self._sampled_letters_so_far_representation, 
+                    seen_letters=self._sampled_letters_so_far, word=self._word,
+                    word_len=self._word_len
+                )
 
-            self.transition_function.update_belief_distribution()
+                self._normalized_belief_distribution = self.transition_function.update_state_belief_distribution(
+                    seen_letters=self._sampled_letters_so_far, lexicon_manager=self.lex_manager
+                )
+
+                reward = self.reward_function.get_step_wise_effort_cost(is_action_valid=True)
+            
+            else:   # The action is invalid, do nothing
+                
+                reward = self.reward_function.get_step_wise_effort_cost(is_action_valid=False)
 
         else:   # Stop the sampling and recognize the word
+            
             reward = self.reward_function.get_terminate_reward(
                 word_to_recognize=self._word,
                 word_to_activate=self._word_to_activate
             )
 
-            self.transition_function.activate_a_word()
+            self.transition_function.activate_a_word()      # TODO do this next
         
         return self._get_obs(), reward, done, self._truncated, info
 
@@ -183,10 +202,10 @@ class WordActivationRLEnv(Env):
         """
         Get the current observation
         """
-        return self._belief_distribution
+        return self._normalized_belief_distribution     # TODO do this later
     
     def get_logs(self):
-        pass        # TODO later
+        pass        
 
 
 class RewardFunction():
@@ -198,12 +217,15 @@ class RewardFunction():
         self._weight_effort_cost = weight_effort_cost
         self._weight_recognition_bonus = weight_recognition_bonus
 
-    def get_step_wise_effort_cost(self):
-        return -1 * self._weight_effort_cost
+    def get_step_wise_effort_cost(self, is_action_valid):
+        if is_action_valid:
+            return -1 * self._weight_effort_cost
+        else:
+            return -1 * self._weight_effort_cost * 2
 
     def get_terminate_reward(self, word_to_recognize, word_to_activate):
         
-        Bonus = self._weight_recognition_bonus * 10
+        Bonus = self._weight_recognition_bonus * 100
         
         if word_to_recognize == word_to_activate:
             return Bonus
@@ -216,53 +238,84 @@ class TransitionFunction():
     Transition Function
     """
 
-    def __init__(self, max_word_len, num_top_k_candidates):
+    def __init__(self, max_word_len, num_top_k_candidates, foveal_size):
         
         # Inherited configurations
         self.MAX_WORD_LEN = max_word_len
         self._top_k = num_top_k_candidates
+        self._foveal_size = foveal_size
 
         # The python ORD baselines, up and bottom
         self.MIN_ORD = 32
         self.MAX_ORD = 126
 
-    def reset_belief_distribution(self):
+    def reset_state_belief_distribution(self):
         return np.ones(self._top_k) / self._top_k
 
-    def reset_word_representation(self):
+    def reset_state_word_representation(self):
         return -1 * np.ones(self.MAX_WORD_LEN)
     
     def get_normalized_ground_truth_word_representation(self, target_word):
         gt_word_rep = [ord(c) for c in target_word]
         norm_gt_word_rep = [aux.normalise(w, self.MIN_ORD, self.MAX_ORD, -1, 1) for w in gt_word_rep] 
+
+        # Pad the representation to the max length, non letter positions encode as -1
+        if len(norm_gt_word_rep) < self.MAX_WORD_LEN:
+            norm_gt_word_rep += [-1] * (self.MAX_WORD_LEN - len(norm_gt_word_rep))
+        
+        # # TODO debug delete later
+        # print(f"Ground truth word representation: {gt_word_rep}, the normalized version: {norm_gt_word_rep}")
+
         return norm_gt_word_rep
 
-    def update_sampled_letters(self):
-        pass
+    def update_state_seen_letters(self, action, norm_gt_word_rep, seen_letters_representation, seen_letters, word, word_len):
+        """
+        Update the word representation by sampling letters
+        """
 
-    def update_state(self):
-        pass
+        # Determine the letters to be sampled using the foveal vision
+        half_fovea = self._foveal_size // 2     # An symmetric foveal vision
 
-    def get_state(self):
-        pass
+        # Calculate leftmost and rightmost positions
+        left_index = max(0, action - half_fovea)
+        right_index = min(word_len - 1, action + half_fovea)
 
+        # Update the seen letters representation in the foveal vision
+        for i in range(left_index, right_index+1):
+            seen_letters_representation[i] = norm_gt_word_rep[i]
+        
+        # Update the seen letters -- get all letters that are not -1 in representation from word
+        seen_letters = "".join([word[i] for i in range(len(word)) if seen_letters_representation[i] != -1])
 
-class BayesianInference():
-    """
-    Bayesian Updater
-    """
+        return seen_letters_representation, seen_letters
+    
+    def update_state_belief_distribution(self, seen_letters, lexicon_manager: LexiconManager):
+        """
+        Update the belief distribution
+        p(w_i|sampled letters so far) = p(w_i) * p(sampled letters so far|w_i) / Sigma_w' p(w') * p(sampled letters|w')
+        In the Bayesian Reader, the p(w) is constant through out the updating process. Only the likelihood prob is changing due to the new sampled letters.
 
-    def __init__(self):
-        pass
+        Though everytime the posterior was not used in the next step, it is still a Bayesian updating process. Just not a full inference.
+            As the exact full inferene is often impractical.
+        The all-in-one manner: All-in-One: Always take the original prior p(w) (based on frequency) and re-compute the likelihood based on all sampled letters so far.
+        We don't necessarily have to feed the old posterior directly back in as the next prior if our likelihood function always accounts for all the sampled letters so far.
+        """
+        # TODO complex this later, start from a very simple version
+        # With the seen letters, update the belief distribution of the top k words
+        # Sample for k words, if there are fewer words (<k) activated, then we relax the constraints, 
+        # NOTE: or for simplicity, we just show what we have, demonstrating that one's word recognition is also an adaptation to one's lexical memory. 
+        #   With an assumption that all words are known beforehand.
 
-    def reset(self):
-        pass
+        # Find the top five words, in terms of the closest letters, and the length (criteria); also get the corresponding frequency probability, and the likelihood probability
+        words_freqs_likelihoods = lexicon_manager.get_top_k_words(sampled_letters_so_far=seen_letters, top_k=self._top_k)
 
-    def update_belief(self):
-        pass
+        # Update the beliefs
+        belief_distribution = {wfl[0]: wfl[1] * wfl[2] for wfl in words_freqs_likelihoods}
 
-    def get_belief(self):
-        pass
+        # Normalize the beliefs
+        normalized_belief_distribution = {k: v / sum(belief_distribution.values()) for k, v in belief_distribution.items()}
+
+        return normalized_belief_distribution
 
 
 class LexiconManager():
@@ -270,7 +323,7 @@ class LexiconManager():
     Lexicon Manager
     """
 
-    def __init__(self):
+    def __init__(self, top_k=5):
         
         self.lexicon_300 = [
             # 1-letter words (2 total)
@@ -336,6 +389,10 @@ class LexiconManager():
         # Create a dictionary mapping each word to a random frequency in [1..100]
         self.lexicon_w_freq = {w: random.randint(1, 100) for w in self.lexicon_300}
 
+        # Create a probability distribution of frequency over the lexicon
+        total_freq = sum(self.lexicon_w_freq.values())
+        self.lexicon_w_prob = {w: f / total_freq for w, f in self.lexicon_w_freq.items()}
+
         # Other initialization
         self.train_test_words_data = None
     
@@ -346,19 +403,101 @@ class LexiconManager():
         return self.train_test_words_data
 
 
-    def get_top_k_words(self):
-        pass
+    def get_top_k_words(self, sampled_letters_so_far, top_k):
+        """
+        Return exactly self._top_k words from the lexicon that contain 'partial_string'.
+        If fewer than _top_k words match, pad the list with None.
+        
+        Example: 
+            If partial_string = "ell", 
+            it will match words like "hello", "jelly", "teller", etc.
 
-    def update_lexicon(self):
-        pass
+        :param sampled_letters_so_far: a substring of letters that the agent has discovered (e.g. "ell")
+        :return: list of length self._top_k, sorted by freq (descending),
+                padded with None if not enough matches.
+        """
+        matched_words = []
+        
+        # 1. Find all words that contain 'partial_string'
+        for w in self.lexicon_300:
+            if sampled_letters_so_far in w:
+                matched_words.append(w)
+        
+        # # 2. Sort matches by frequency (descending)
+        # matched_words.sort(key=lambda w: self.lexicon_w_freq[w], reverse=True)
+        
+        # 3. Build (word, freq) tuples
+        # results = [(w, self.lexicon_w_freq[w]) for w in matched_words]
+        results = []
+        for w in matched_words:
+            freq = self.lexicon_w_prob[w]
+            likelihood = self.get_likelihood_by_sampled_letters_so_far(sampled_letters_so_far, w, mode="fractional")
+            results.append((w, freq, likelihood))
+
+        # 4. If not enough matches, pad with (None, 0)
+        # if len(results) < self._top_k:
+        #     results += [(None, 0)] * (self._top_k - len(results))
+        if len(results) < top_k:
+            results += [(None, 0, 0.0)] * (top_k - len(results))
+        
+        # 5. Return exactly top_k items
+        return results[:top_k]
+
+    def get_likelihood_by_sampled_letters_so_far(self, sampled_letters_so_far, word, mode="fractional"):
+        """
+        Fractional approach (Fractional “Coverage” Likelihood):
+        likelihood(w) = (# of sampled letters that appear in w) / (length of sampled_letters_so_far)
+        
+        If none appear, we give a small non-zero probability like 0.01 to avoid strict zero-likelihood.
+
+        NOTE on Likelihood Computation:     # TODO leave this as an issue, run the model first -- 09 Feb 2025
+
+        1. This "fractional coverage" likelihood is noisy because it only checks
+           whether each sampled letter appears *anywhere* in the candidate word.
+           - It does NOT account for the specific positions of letters.
+           - It does NOT distinguish multiple occurrences (e.g., "l" appearing twice).
+           - It ignores letter order, which can cause overestimation if letters match
+             but in different positions.
+        
+        2. We also do not handle more nuanced constraints that often matter in reading:
+           - Word length constraints beyond basic substring checks.
+           - Syntactic or semantic context (e.g., predictability from neighboring words).
+           - Morphological rules or syllabic structure.
+        
+        3. Despite these oversights, the intuition remains:
+           - If a shorter word already fits the sampled letters, it is more likely
+             (because there are fewer letters left to "explain").
+           - More frequent words also tend to dominate the posterior.
+        
+        This simple approach can be sufficient for a proof of concept, but 
+        for a more realistic reading model, you would likely incorporate 
+        letter-position alignment, repetition handling, and context-based constraints.
+        """
+
+        count = 0
+        for ch in sampled_letters_so_far:
+            if ch in word:
+                count += 1
+        
+        if len(sampled_letters_so_far) > 0:
+            frac = count / len(sampled_letters_so_far)
+            # Optionally avoid exact zero:
+            return max(frac, 0.01)
+        else:
+            # If no letters are sampled, everything is equally likely
+            return 1.0
 
     def get_word(self):
         return random.choice(self.train_test_words_data)
 
 
 if __name__ == "__main__":
-    env = WordActivationRLEnv()
-    for i in range(20):
-        env.reset()
+    # env = WordActivationRLEnv()
+    # for i in range(5):
+    #     env.reset()
     # env.step(1)
     # env.render()
+
+    env = LexiconManager()
+    print(env.get_top_k_words("ell"))
+    print(env.get_top_k_words("tell"))
