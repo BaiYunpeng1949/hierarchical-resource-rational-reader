@@ -11,14 +11,12 @@ import matplotlib.pyplot as plt
 
 from gymnasium import Env
 from gymnasium.spaces import Box, Dict, Discrete, Tuple
-from annoy import AnnoyIndex
 
 # from memory_profiler import profile
 
 import pandas as pd
 
 from step5.utils import auxiliaries as aux
-from step5.utils import pseudo_offline_ocr_model as ocr
 from step5.utils import constants as cons
 
 
@@ -27,7 +25,7 @@ class LexiconManager():
     Lexicon Manager
     """
 
-    def __init__(self, top_k=5):
+    def __init__(self):
         
         self.lexicon_300 = [
             # 1-letter words (2 total)
@@ -101,6 +99,9 @@ class LexiconManager():
         self.train_test_words_data = None
     
     def sample_train_test_words(self, num_words=20, mode="random"):
+        """
+        TODO: maybe remove this later when training is good.
+        """
 
         # Pick 20 words for a train/test subset
         self.train_test_words_data = random.sample(self.lexicon_300, num_words)
@@ -141,8 +142,9 @@ class LexiconManager():
         # 4. If not enough matches, pad with (None, 0)
         # if len(results) < self._top_k:
         #     results += [(None, 0)] * (self._top_k - len(results))
+        prob_epsilons = 0.001
         num_missing = max(0, top_k - len(results))
-        padding = [(f"non-word-{i+1}", 0, 0.0) for i in range(num_missing)]
+        padding = [(f"non-word-{i+1}", prob_epsilons, prob_epsilons) for i in range(num_missing)]
         results.extend(padding)
         
         # 5. Return exactly top_k items
@@ -216,7 +218,7 @@ class WordActivationRLEnv(Env):
         outside of this function for training efficiency.
 
     NOTE: Response time (RT) vs. the number of fixations
-        Emergent ‘Time’ Effects. In most implementations, recognition time is modeled by how many “samples” (or cycles of evidence) 
+        Emergent 'Time' Effects. In most implementations, recognition time is modeled by how many “samples” (or cycles of evidence) 
         the system needs before a decision threshold is reached. High-frequency words typically cross threshold in fewer samples, 
         which is loosely analogous to “less time.”
     
@@ -232,11 +234,11 @@ class WordActivationRLEnv(Env):
         with open(os.path.join(root_dir, "config.yaml")) as f:
             self._config = yaml.load(f, Loader=yaml.FullLoader)
 
-        print(f"Oculomotor Controller Environment V0205 -- Deploying the environment in the {self._config['rl']['mode']} mode.")
+        print(f"Word Activation (No Vision) Environment V0205 -- Deploying the environment in the {self._config['rl']['mode']} mode.")
 
         # Define constants -- configurations
         # Define word lengths
-        self.MAX_WORD_LEN = 10
+        self.MAX_WORD_LEN = 11
         self.MIN_WORD_LEN = 1
         # Define the top-k candidates when competing for recognition
         self._top_k = 3
@@ -293,7 +295,7 @@ class WordActivationRLEnv(Env):
         # first2pairs = {k: self.lexicon_w_freq_prob[k] for k in sorted(self.lexicon_w_freq_prob.keys())[:2]}
         # print(f"Lexicon with frequency samples: {first2pairs}")
         self.train_test_words_data = self.lex_manager.sample_train_test_words(num_words=20, mode="random")
-        print(f"Train/Test words data: {self.train_test_words_data}")       # TODO comment later during training
+        # print(f"Train/Test words data: {self.train_test_words_data}")       # TODO comment later during training
 
     
     def reset(self, seed=None, inputs=None, ep_idx=None):
@@ -308,7 +310,8 @@ class WordActivationRLEnv(Env):
         self._action = -1
 
         # Reset the belief distribution
-        self._normalized_belief_distribution_dict = {}
+        NA = 'non-word'
+        self._normalized_belief_distribution_dict = {NA: 0.333, NA + '-1': 0.333, NA + '-2': 0.333}
         self._normalized_belief_distribution = self.transition_function.reset_state_belief_distribution()
 
         # Reset the word representation
@@ -353,8 +356,7 @@ class WordActivationRLEnv(Env):
                 self._sampled_letters_so_far_representation, self._sampled_letters_so_far = self.transition_function.update_state_seen_letters(
                     action=action, norm_gt_word_rep=self._normalized_ground_truth_word_representation, 
                     seen_letters_representation=self._sampled_letters_so_far_representation, 
-                    seen_letters=self._sampled_letters_so_far, word=self._word,
-                    word_len=self._word_len
+                    seen_letters=self._sampled_letters_so_far, word=self._word, word_len=self._word_len
                 )
 
                 self._normalized_belief_distribution_dict, self._normalized_belief_distribution = self.transition_function.update_state_belief_distribution_dict(
@@ -369,24 +371,37 @@ class WordActivationRLEnv(Env):
 
         else:   # Stop the sampling and recognize the word
 
-            self._word_to_activate = self.transition_function.activate_a_word(normalized_belief_distribution=self._normalized_belief_distribution_dict, deterministic=True) 
+            self._word_to_activate = self.transition_function.activate_a_word(normalized_belief_distribution_dict=self._normalized_belief_distribution_dict, deterministic=True) 
             
             reward = self.reward_function.get_terminate_reward(
                 word_to_recognize=self._word,
                 word_to_activate=self._word_to_activate
             )
 
-            # TODO comment later
-            print(f"Word to be recognized: {self._word}, the word to be activated: {self._word_to_activate}")
-            print(f"Reward: {reward}")
+            done = True
 
-        
+            # # TODO comment later
+            # print(f"Word to be recognized: {self._word}, the word to be activated: {self._word_to_activate}")
+            # print(f"Reward: {reward}")
+
+        if self._steps >= self._ep_len:     # Truncation case
+            self._word_to_activate = self.transition_function.activate_a_word(normalized_belief_distribution_dict=self._normalized_belief_distribution_dict, deterministic=True) 
+            
+            reward = self.reward_function.get_terminate_reward(
+                word_to_recognize=self._word,
+                word_to_activate=self._word_to_activate
+            )
+            # TODO debug see the errors below in the terminal
+            self._truncated = True
+            done = True
+
+
         return self._get_obs(), reward, done, self._truncated, info
 
     def render(self, mode='human'):
         pass
     
-    def _get_obs(self):     # TODO do this later
+    def _get_obs(self):   
         """
         Get the current observation
         """
@@ -394,10 +409,6 @@ class WordActivationRLEnv(Env):
         # Encode the discrete action into a one-hot vector
         action_obs = np.zeros(self.MAX_WORD_LEN + 1 + 1)        # three types of actions -1, fixations, stop
         action_obs[self._action + 1] = 1
-
-        # TODO debug delete later
-        print(f"The belief distribution dict in the observation is: {self._normalized_belief_distribution_dict}, "
-              f"the belief distribution is: {self._normalized_belief_distribution}")
 
         stateful_obs = np.concatenate([self._normalized_belief_distribution, self._word_representation, [self._word_len], action_obs])
 
@@ -486,11 +497,12 @@ class TransitionFunction():
             seen_letters_representation[i] = norm_gt_word_rep[i]
         
         # Update the seen letters -- get all letters that are not -1 in representation from word
-        seen_letters = "".join([word[i] for i in range(len(word)) if seen_letters_representation[i] != -1])
+        # seen_letters = "".join([word[i] for i in range(len(word)) if seen_letters_representation[i] != -1])
+        seen_letters = "".join([word[i] for i in range(len(word)) if i < len(seen_letters_representation) and seen_letters_representation[i] != -1]) or "NON_WORDS"
 
-        # TODO debug comment later
-        print(f"The action value is: {action}, left index: {left_index}, right index: {right_index}; the target word is: {word}, the word length is: {word_len}")
-        print(f"Seen letters representation: {seen_letters_representation}, seen letters: {seen_letters}")
+        # # TODO comment later
+        # print(f"The action value is: {action}, left index: {left_index}, right index: {right_index}; the target word is: {word}, the word length is: {word_len}")
+        # print(f"Seen letters representation: {seen_letters_representation}, seen letters: {seen_letters}")
 
         return seen_letters_representation, seen_letters
     
@@ -517,22 +529,22 @@ class TransitionFunction():
 
         normalized_belief_distribution = list(normalized_belief_distribution_dict.values())
 
-        # TODO debug comment out later
-        print(f"Words, frequencies, and likelihoods: {words_freqs_likelihoods}")
-        print(f"Belief distribution dict: {belief_distribution_dict}, belief distribution: {normalized_belief_distribution}")
-        print(f"Normalized belief distribution: {normalized_belief_distribution_dict}")
+        # # TODO comment out later
+        # print(f"Words, frequencies, and likelihoods: {words_freqs_likelihoods}")
+        # print(f"Belief distribution dict: {belief_distribution_dict}, belief distribution: {normalized_belief_distribution}")
+        # print(f"Normalized belief distribution: {normalized_belief_distribution_dict}")
 
         return normalized_belief_distribution_dict, normalized_belief_distribution
 
-    def activate_a_word(self, normalized_belief_distribution, deterministic=True):
+    def activate_a_word(self, normalized_belief_distribution_dict, deterministic=True):
         """
         Activate a word from the belief distribution, choose the highest for simplicity
         """
         if deterministic:
-            activated_word = max(normalized_belief_distribution, key=normalized_belief_distribution.get)
+            activated_word = max(normalized_belief_distribution_dict, key=normalized_belief_distribution_dict.get)
             return activated_word
         else:
-            return np.random.choice(list(normalized_belief_distribution.keys()), p=list(normalized_belief_distribution.values()))
+            return np.random.choice(list(normalized_belief_distribution_dict.keys()), p=list(normalized_belief_distribution_dict.values()))
 
 if __name__ == "__main__":
     env = WordActivationRLEnv()
