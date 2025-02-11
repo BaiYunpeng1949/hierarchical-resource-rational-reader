@@ -818,11 +818,16 @@ class RL:
             )
         
         #####################################  Store the data   ######################################
-        # Function to convert numpy arrays to lists
+        # Function to convert numpy arrays and other non-serializable types to lists or native Python types
         def convert_ndarray(obj):
             if isinstance(obj, np.ndarray):
-                return obj.tolist()  # Convert numpy array to list
-            raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+                return obj.tolist()  # Convert numpy arrays to lists
+            elif isinstance(obj, np.int64) or isinstance(obj, np.int32):
+                return int(obj)  # Convert NumPy integers to Python integers
+            elif isinstance(obj, np.float64) or isinstance(obj, np.float32):
+                return float(obj)  # Convert NumPy floats to Python floats
+            else:
+                raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
         # Store the data to a json file
         root_path = os.path.dirname(os.path.abspath(__file__))

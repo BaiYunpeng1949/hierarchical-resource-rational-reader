@@ -95,17 +95,23 @@ class LexiconManager():
         total_freq = sum(self.lexicon_w_freq.values())
         self.lexicon_w_freq_prob = {w: f / total_freq for w, f in self.lexicon_w_freq.items()}
 
+        # Get the random predictability of the word in the context
+        self.lexicon_w_pseudo_pred_prob = {w: self.get_predictability(mode="random") for w in self.lexicon_300}
+
         # Other initialization
         self.train_test_words_data = None
     
-    def sample_train_test_words(self, num_words=20, mode="random"):
+    def sample_train_test_words(self, num_words=20, mode="random"):     # TODO solve this, make the train test data set the global dataset
         """
         TODO: maybe remove this later when training is good.
         """
 
-        # Pick 20 words for a train/test subset
-        self.train_test_words_data = random.sample(self.lexicon_300, num_words)
-        return self.train_test_words_data
+        # # Pick 20 words for a train/test subset
+        # self.train_test_words_data = random.sample(self.lexicon_300, num_words)
+        # return self.train_test_words_data
+
+        self.train_test_words_data = self.lexicon_300
+        return self.lexicon_300
 
 
     def get_top_k_words(self, sampled_letters_so_far, top_k):
@@ -136,15 +142,14 @@ class LexiconManager():
         results = []
         for w in matched_words:
             freq = self.lexicon_w_freq_prob[w]
+            pred = self.lexicon_w_pseudo_pred_prob[w]
             likelihood = self.get_likelihood_by_sampled_letters_so_far(sampled_letters_so_far, w, mode="fractional")
-            results.append((w, freq, likelihood))
+            results.append((w, freq, pred, likelihood))
 
-        # 4. If not enough matches, pad with (None, 0)
-        # if len(results) < self._top_k:
-        #     results += [(None, 0)] * (self._top_k - len(results))
+        # 4. If not enough matches, pad with (None, epsilon values)
         prob_epsilons = 0.001
         num_missing = max(0, top_k - len(results))
-        padding = [(f"non-word-{i+1}", prob_epsilons, prob_epsilons) for i in range(num_missing)]
+        padding = [(f"non-word-{i+1}", prob_epsilons, prob_epsilons, prob_epsilons) for i in range(num_missing)]
         results.extend(padding)
         
         # 5. Return exactly top_k items
@@ -194,6 +199,17 @@ class LexiconManager():
         else:
             # If no letters are sampled, everything is equally likely
             return 1.0
+    
+    def get_predictability(self, mode="random"):
+        """
+        Get the predictability of the word in the context
+        """
+        
+        if mode == "random":
+            return random.uniform(0, 1)
+        else:
+            # Use language models to get the predictability
+            return 0.97
 
     def get_word(self):
         return random.choice(self.train_test_words_data)
@@ -226,13 +242,25 @@ class WordActivationRLEnv(Env):
     NOTE: Primary assumptions:
         1. All the words presented are known by the reader -- only words within the lexical memory are presented
 
-    TODO: double check whether the predictability's effect is assuming only the likelihood probability related to the context, so there is a constant value.
-        The predictability -- likelihood could be composed of two parts: static and dynamic. The original contextual predictability, 
-        and the dynamic predictability that changes as the agent samples new letters. 
-        Need to check whether the prior work focuses on the contextual predictability (static part) only.
-        # TODO 0211: check this and come up with a likelihood function if needed.
+    NOTE: word predictability's effect
+    Reference: Word length and frequency effects on text reading are highly similar in 12 alphabetic
+    Quotation: 
+        "It is well established that words that are more predictable in their context are recognized faster and require less cognitive effort of processing."
+        "There are two common ways of measuring a word's predictability, and neither is practical to use here. One approach uses human responses (cloze probability), 
+        and the other relies on computational models estimating word expectancy based on large corpora."
+    Assumption:
+        1. Not just reading time / processing time, the number of fixations are also affected by the word predictability. 
+            Words that are more predictable in their context have fewer number of fixations. 
+    Implementation: we combine word predictability into the **prior**, i.e., p(word)=p(word_freq) * p(word_predictability), instead of merging into the likelihood.
+        This is because Priors influence word recognition before letter processing begins [Bayesian Reader], while likelihoods are updated as letters are sampled.
+        Predictability reduces lexical access time by increasing prior probability before letters are processed, Skipping rates increase before letter evidence is considered [EZReader].
+    Constraints: The predictability and frequency would be the same, but they should be distinct in the real-world application [EZReader].
+        1. Word frequency effects are more consistent (they affect all words equally).
+        2. Predictability effects are stronger for high-context situations (e.g., sentence constraints matter).
+        3. The effect of predictability is typically stronger on skipping rates, while word frequency mainly affects fixation duration. -- Do a task-specific control parameter?
     """
-    # TODO 0211: retrain the model.
+    # TODO 0211: retrain the model with a more reasonable word activation from the corpus. -- Next pirority: work on a larger corpus, and a more activation process
+    # That can be sensitive to the freq and pred effects. -- 0211
 
     def __init__(self):
         
@@ -248,7 +276,7 @@ class WordActivationRLEnv(Env):
 
         # Define constants -- configurations
         # Define word lengths
-        self.MAX_WORD_LEN = 11
+        self.MAX_WORD_LEN = 15
         self.MIN_WORD_LEN = 1
         # Define the top-k candidates when competing for recognition
         self._top_k = 3
@@ -309,8 +337,7 @@ class WordActivationRLEnv(Env):
         # first2pairs = {k: self.lexicon_w_freq_prob[k] for k in sorted(self.lexicon_w_freq_prob.keys())[:2]}
         # print(f"Lexicon with frequency samples: {first2pairs}")
         self.train_test_words_data = self.lex_manager.sample_train_test_words(num_words=20, mode="random")
-        # print(f"Train/Test words data: {self.train_test_words_data}")       # TODO comment later during training
-
+        # print(f"Train/Test words data: {self.train_test_words_data}")    
     
     def reset(self, seed=None, inputs=None, ep_idx=None):
         """
@@ -344,6 +371,7 @@ class WordActivationRLEnv(Env):
         self._word_likelihood_prob = self.lex_manager.get_likelihood_by_sampled_letters_so_far(
             sampled_letters_so_far=self._sampled_letters_so_far, word=self._word, mode="fractional"
             )
+        self._word_predictability_prob = self.lex_manager.lexicon_w_pseudo_pred_prob[self._word]    # Only for training and testing, for actual simulation, need to use actual LLMs
         self._word_to_activate = None
 
         # Initialize the ground truth representation -- the word to be recognize is encoded as:
@@ -379,7 +407,7 @@ class WordActivationRLEnv(Env):
                     seen_letters=self._sampled_letters_so_far, word=self._word, word_len=self._word_len
                 )
 
-                self._normalized_belief_distribution_dict, self._normalized_belief_distribution, words_freqs_pred_top_k_dict = self.transition_function.update_state_belief_distribution_dict(
+                self._normalized_belief_distribution_dict, self._normalized_belief_distribution, words_freqs_pred_likelihood_top_k_dict = self.transition_function.update_state_belief_distribution_dict(
                     seen_letters=self._sampled_letters_so_far, lexicon_manager=self.lex_manager
                 )
 
@@ -400,7 +428,6 @@ class WordActivationRLEnv(Env):
 
             self._done = True
 
-            # # TODO comment later
             # print(f"Word to be recognized: {self._word}, the word to be activated: {self._word_to_activate}")
             # print(f"Reward: {reward}")
 
@@ -411,10 +438,8 @@ class WordActivationRLEnv(Env):
                 word_to_recognize=self._word,
                 word_to_activate=self._word_to_activate
             )
-            # TODO debug see the errors below in the terminal
             self._truncated = True
             self._done = True
-
 
         return self._get_obs(), reward, self._done, self._truncated, self._get_logs(is_initialization=False, mode=self._mode)
 
@@ -450,6 +475,7 @@ class WordActivationRLEnv(Env):
                     "word": self._word,
                     "word_len": self._word_len,     # Used for analyzing the length's effect
                     "word_frequency": self._word_freq_prob,     # Used for analyzing the frequency's effect
+                    "Word predictability": self._word_predictability_prob,    # Used for analyzing the predictability's effect
                     "word_representation": self._word_representation,   
                     "normalized_ground_truth_word_representation": self._normalized_ground_truth_word_representation,
                     "fixations": [],
@@ -486,7 +512,7 @@ class RewardFunction():
         if is_action_valid:
             return -1 * self._weight_effort_cost
         else:
-            return -1 * self._weight_effort_cost * 2
+            return -1 * self._weight_effort_cost        # For faster training, could remove
 
     def get_terminate_reward(self, word_to_recognize, word_to_activate):
         
@@ -528,7 +554,6 @@ class TransitionFunction():
         if len(norm_gt_word_rep) < self.MAX_WORD_LEN:
             norm_gt_word_rep += [-1] * (self.MAX_WORD_LEN - len(norm_gt_word_rep))
         
-        # # TODO debug delete later
         # print(f"Ground truth word representation: {gt_word_rep}, the normalized version: {norm_gt_word_rep}")
 
         return norm_gt_word_rep
@@ -553,7 +578,6 @@ class TransitionFunction():
         # seen_letters = "".join([word[i] for i in range(len(word)) if seen_letters_representation[i] != -1])
         seen_letters = "".join([word[i] for i in range(len(word)) if i < len(seen_letters_representation) and seen_letters_representation[i] != -1]) or "NON_WORDS"
 
-        # # TODO comment later
         # print(f"The action value is: {action}, left index: {left_index}, right index: {right_index}; the target word is: {word}, the word length is: {word_len}")
         # print(f"Seen letters representation: {seen_letters_representation}, seen letters: {seen_letters}")
 
@@ -572,26 +596,32 @@ class TransitionFunction():
         """
 
         # Find the top five words, in terms of the closest letters, and the length (criteria); also get the corresponding frequency probability, and the likelihood probability
-        words_freqs_likelihoods = lexicon_manager.get_top_k_words(sampled_letters_so_far=seen_letters, top_k=self._top_k)
+        words_freqs_preds_likelihoods = lexicon_manager.get_top_k_words(sampled_letters_so_far=seen_letters, top_k=self._top_k)
 
-        # Update the beliefs
-        belief_distribution_dict = {wfl[0]: wfl[1] * wfl[2] for wfl in words_freqs_likelihoods}
+        # Update the beliefs: prior * likelihood, where the prior is p(freq) * p(pred)
+        belief_distribution_dict = {wfpl[0]: wfpl[1] * wfpl[2] * wfpl[3] for wfpl in words_freqs_preds_likelihoods}
 
         # Normalize the beliefs
         normalized_belief_distribution_dict = {k: v / sum(belief_distribution_dict.values()) for k, v in belief_distribution_dict.items()}
 
         normalized_belief_distribution = list(normalized_belief_distribution_dict.values())
 
-        # # TODO comment out later
-        # print(f"Words, frequencies, and likelihoods: {words_freqs_likelihoods}")
-        # print(f"Belief distribution dict: {belief_distribution_dict}, belief distribution: {normalized_belief_distribution}")
-        # print(f"Normalized belief distribution: {normalized_belief_distribution_dict}")
-
-        return normalized_belief_distribution_dict, normalized_belief_distribution, words_freqs_likelihoods
+        return normalized_belief_distribution_dict, normalized_belief_distribution, words_freqs_preds_likelihoods
 
     def activate_a_word(self, normalized_belief_distribution_dict, deterministic=True):
         """
         Activate a word from the belief distribution, choose the highest for simplicity
+
+        TODO: solve this -- the activation is very constrained based on the lexical size. 
+            Sometimes, though a word is very ambiguious, it is still reletively unique in the lexicon, it could be activated with very few fixations.
+
+            What about this: if there are no explicit words matching in the lexicon, we could create some with the same prefix, but has manufactured beliefs
+            Later when activating words, we still rely on the Bernoulli sampling, meaning the words' posterior's exact values still have a call on activation; 
+            not just the relative high and low values.
+            So the structural conflict of limited lexicon is it relies mainly on the relative belief sizes. So sometimes a unique but random word could still be activated.
+            This is because there is an assumption -- the agent can always accurately activate the word in the lexicon, as long as it is unique. But this should not be the case, 
+            human should be confused with only a few words, they are **recognizing -- mapping**, not searching from the lexicon.
+            So we need to rethink how to implement this word activation. Moreover, make it computationally efficient, moreover, make it dependant from the lexicon size.
         """
         if deterministic:
             activated_word = max(normalized_belief_distribution_dict, key=normalized_belief_distribution_dict.get)
