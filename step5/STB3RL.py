@@ -32,6 +32,7 @@ from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
 from step5.utils import constants as constants
 from step5.utils import auxiliaries as aux
+from utils import plot_word_activation_without_vision_figures as plot_word_activation_figures
 
 # from step5.modules.rl_envs.SupervisoryControllerEnv_v0922 import SupervisoryControllerEnv
 # from step5.modules.rl_envs.SupervisoryControllerEnv_v1018 import SupervisoryControllerEnv
@@ -773,7 +774,7 @@ class RL:
         start_time = time.time()
 
         # Initialize the logs dictionary
-        logs = {}
+        logs_across_episodes = []
 
         for episode in range(1, self._num_episodes + 1):
 
@@ -795,26 +796,54 @@ class RL:
 
                 obs, reward, done, truncated, info = self._env.step(action)
                 score += reward
+            
+            # Output results to check whether achieved the learning objectives. Store them to the json files.
+            #   1. optimal word sampling positions and sequences
+            #   2. word length's effect
+            #   3. word frequency's effect
+            #   4. word predictability's effect
 
-            # # Collect the step log only at the end of the episode
-            # step_log = self._env.get_logs()
+            # Get this only after the loop ends -- when the episode ends
+            individual_episode_logs = self._env.log_cumulative_version
 
-            # # Process the step log to make it JSON serializable
-            # step_log_serializable = self._make_serializable(step_log)
-
-            # # Store the serializable step log with the episode index as the key
-            # logs[episode] = step_log_serializable
-
-            # # Log -- Optional: Comment this out when training
-            # final_step_log = self._env.get_logs()
-            # print(f"The final step log is: {final_step_log}")
+            # Insert the episode number as the value
+            individual_episode_logs['episode_idnex'] = episode - 1
+            
+            # Append the individual episode logs to the list of logs across episodes
+            logs_across_episodes.append(individual_episode_logs)
 
             print(
                 f'Episode:{episode}     Score:{score} \n'
                 f'{"-" * 50}\n'
             )
+        
+        #####################################  Store the data   ######################################
+        # Function to convert numpy arrays to lists
+        def convert_ndarray(obj):
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()  # Convert numpy array to list
+            raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
+        # Store the data to a json file
+        root_path = os.path.dirname(os.path.abspath(__file__))
+        data_log_path = os.path.join(root_path, "data", "sim_results", "word_activation", self._config_rl['test']['loaded_model_name'], f"{self._num_episodes}ep")
+        # Create the directory if it does not exist
+        if not os.path.exists(data_log_path):
+            os.makedirs(data_log_path)
+        file_name = os.path.join(data_log_path, f'logs.json')
+        # Write the logs to a JSON file
+        with open(file_name, 'w') as f:
+            json.dump(logs_across_episodes, f, default=convert_ndarray, indent=4)
+        print(f"The logs are saved in {data_log_path}")
+        ###############################################################################################
+
+        #####################################  Analyze the data   ######################################
+        with open(file_name, "r") as f:
+            json_data = f.read()
+        plot_word_activation_figures.analyze_fixations(json_data=json_data, save_file_dir=data_log_path)
 
         print(f'Time elapsed for running the DEBUG/TEST: {time.time() - start_time} seconds')
+        ###############################################################################################
 
     def _supervisory_controller_test(self):     # TODO: get a plot of regression rate vs. appraisal level weights. vs. time constraints.
         """
@@ -853,7 +882,7 @@ class RL:
                 score += reward
 
             # Collect the step log only at the end of the episode
-            step_log = self._env.get_logs()
+            step_log = self._env._get_logs()
 
             # Process the step log to make it JSON serializable
             step_log_serializable = self._make_serializable(step_log)
@@ -862,7 +891,7 @@ class RL:
             logs[episode] = step_log_serializable
 
             # Log -- Optional: Comment this out when training
-            final_step_log = self._env.get_logs()
+            final_step_log = self._env._get_logs()
             print(f"The final step log is: {final_step_log}")
 
             print(
@@ -1304,7 +1333,7 @@ class RL:
                 score += reward
 
             # Collect the step log only at the end of the episode
-            step_log = self._env.get_logs()
+            step_log = self._env._get_logs()
 
             # Process the step log to make it JSON serializable
             step_log_serializable = self._make_serializable(step_log)
@@ -1313,7 +1342,7 @@ class RL:
             logs[episode] = step_log_serializable
 
             # Log
-            final_step_log = self._env.get_logs()
+            final_step_log = self._env._get_logs()
             print(f"The final step log is: {final_step_log}")
             print(f"The number of words in the sentence: {self._env.num_words_in_sentence}, "
                   f"the allocated time constraint: {self._env._time_constraint_level_key}, "

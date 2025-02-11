@@ -93,7 +93,7 @@ class LexiconManager():
 
         # Create a probability distribution of frequency over the lexicon
         total_freq = sum(self.lexicon_w_freq.values())
-        self.lexicon_w_prob = {w: f / total_freq for w, f in self.lexicon_w_freq.items()}
+        self.lexicon_w_freq_prob = {w: f / total_freq for w, f in self.lexicon_w_freq.items()}
 
         # Other initialization
         self.train_test_words_data = None
@@ -135,7 +135,7 @@ class LexiconManager():
         # results = [(w, self.lexicon_w_freq[w]) for w in matched_words]
         results = []
         for w in matched_words:
-            freq = self.lexicon_w_prob[w]
+            freq = self.lexicon_w_freq_prob[w]
             likelihood = self.get_likelihood_by_sampled_letters_so_far(sampled_letters_so_far, w, mode="fractional")
             results.append((w, freq, likelihood))
 
@@ -157,7 +157,8 @@ class LexiconManager():
         
         If none appear, we give a small non-zero probability like 0.01 to avoid strict zero-likelihood.
 
-        NOTE on Likelihood Computation:     # TODO leave this as an issue, run the model first -- 09 Feb 2025
+        NOTE on Likelihood Computation:     # TODO leave this as an issue, run the model first -- 09 Feb 2025; 
+                    maybe DIY a reasonable/simple linear likelihood generator, as a function of numbers of letters sampled. -- 11 Feb 2025
 
         1. This "fractional coverage" likelihood is noisy because it only checks
            whether each sampled letter appears *anywhere* in the candidate word.
@@ -224,7 +225,14 @@ class WordActivationRLEnv(Env):
     
     NOTE: Primary assumptions:
         1. All the words presented are known by the reader -- only words within the lexical memory are presented
+
+    TODO: double check whether the predictability's effect is assuming only the likelihood probability related to the context, so there is a constant value.
+        The predictability -- likelihood could be composed of two parts: static and dynamic. The original contextual predictability, 
+        and the dynamic predictability that changes as the agent samples new letters. 
+        Need to check whether the prior work focuses on the contextual predictability (static part) only.
+        # TODO 0211: check this and come up with a likelihood function if needed.
     """
+    # TODO 0211: retrain the model.
 
     def __init__(self):
         
@@ -235,6 +243,8 @@ class WordActivationRLEnv(Env):
             self._config = yaml.load(f, Loader=yaml.FullLoader)
 
         print(f"Word Activation (No Vision) Environment V0205 -- Deploying the environment in the {self._config['rl']['mode']} mode.")
+
+        self._mode = self._config["rl"]["mode"]
 
         # Define constants -- configurations
         # Define word lengths
@@ -255,6 +265,9 @@ class WordActivationRLEnv(Env):
 
         self._word = None           # The word to be recognized
         self._word_len = None       # The length of the word to be recognized
+        self._word_freq_prob = None      # The frequency of the word to be recognized -- ranges from 0 to 1
+        self._word_predictability_prob = None    # The predictability of the word to be recognized (actually the likelihood prob) -- ranges from 0 to 1
+        self._word_dynamic_predictability_prob = None    # The dynamic predictability of the word to be recognized (actually the likelihood prob) -- ranges from 0 to 1, it changes as the agent samples new letters
         self._sampled_letters_so_far = None    # The letters that have been sampled
 
         # Representations
@@ -282,16 +295,17 @@ class WordActivationRLEnv(Env):
         self.reward_function = RewardFunction()
         
         # Define the training:
-        self._ep_len = 10
+        self.ep_len = 10
         self._steps = None
         self._truncated = None
+        self._done = None
 
         # Define the logger:
-        self._logger = None
+        self.log_cumulative_version = None
 
         # Define the training and testing data (temporary, in the formal training deploy separately)
         self.lex_manager = LexiconManager()
-        self.lexicon_w_freq_prob = self.lex_manager.lexicon_w_prob
+        self.lexicon_w_freq_prob = self.lex_manager.lexicon_w_freq_prob
         # first2pairs = {k: self.lexicon_w_freq_prob[k] for k in sorted(self.lexicon_w_freq_prob.keys())[:2]}
         # print(f"Lexicon with frequency samples: {first2pairs}")
         self.train_test_words_data = self.lex_manager.sample_train_test_words(num_words=20, mode="random")
@@ -305,6 +319,8 @@ class WordActivationRLEnv(Env):
 
         self._steps = 0
         self._truncated = False
+        self._done = False
+        self.log_cumulative_version = {}
 
         # Initialize the action
         self._action = -1
@@ -317,20 +333,24 @@ class WordActivationRLEnv(Env):
         # Reset the word representation
         self._word_representation = self.transition_function.reset_state_word_representation()
 
+        # Reset the seen letters
+        self._sampled_letters_so_far_representation = [-1] * self.MAX_WORD_LEN
+        self._sampled_letters_so_far = ""
+
         # Sample the word to be recognized
         self._word = self.lex_manager.get_word()
         self._word_len = len(self._word)
+        self._word_freq_prob = self.lex_manager.lexicon_w_freq_prob[self._word]
+        self._word_likelihood_prob = self.lex_manager.get_likelihood_by_sampled_letters_so_far(
+            sampled_letters_so_far=self._sampled_letters_so_far, word=self._word, mode="fractional"
+            )
         self._word_to_activate = None
 
         # Initialize the ground truth representation -- the word to be recognize is encoded as:
         self._normalized_ground_truth_word_representation = self.transition_function.get_normalized_ground_truth_word_representation(target_word=self._word)
         # This is only used for identifying words and numerical computations
 
-        # Reset the seen letters
-        self._sampled_letters_so_far_representation = [-1] * self.MAX_WORD_LEN
-        self._sampled_letters_so_far = ""
-
-        return self._get_obs(), {}
+        return self._get_obs(), self._get_logs(is_initialization=True, mode=self._mode)
 
     def step(self, action):
         """
@@ -338,9 +358,9 @@ class WordActivationRLEnv(Env):
         """
 
         # Initialize variables
-        done = False
+        self._done = False
         self._truncated = False
-        info = {}
+        # info = {}
         reward = 0
 
         self._action = action
@@ -359,7 +379,7 @@ class WordActivationRLEnv(Env):
                     seen_letters=self._sampled_letters_so_far, word=self._word, word_len=self._word_len
                 )
 
-                self._normalized_belief_distribution_dict, self._normalized_belief_distribution = self.transition_function.update_state_belief_distribution_dict(
+                self._normalized_belief_distribution_dict, self._normalized_belief_distribution, words_freqs_pred_top_k_dict = self.transition_function.update_state_belief_distribution_dict(
                     seen_letters=self._sampled_letters_so_far, lexicon_manager=self.lex_manager
                 )
 
@@ -378,13 +398,13 @@ class WordActivationRLEnv(Env):
                 word_to_activate=self._word_to_activate
             )
 
-            done = True
+            self._done = True
 
             # # TODO comment later
             # print(f"Word to be recognized: {self._word}, the word to be activated: {self._word_to_activate}")
             # print(f"Reward: {reward}")
 
-        if self._steps >= self._ep_len:     # Truncation case
+        if self._steps >= self.ep_len:     # Truncation case
             self._word_to_activate = self.transition_function.activate_a_word(normalized_belief_distribution_dict=self._normalized_belief_distribution_dict, deterministic=True) 
             
             reward = self.reward_function.get_terminate_reward(
@@ -393,10 +413,10 @@ class WordActivationRLEnv(Env):
             )
             # TODO debug see the errors below in the terminal
             self._truncated = True
-            done = True
+            self._done = True
 
 
-        return self._get_obs(), reward, done, self._truncated, info
+        return self._get_obs(), reward, self._done, self._truncated, self._get_logs(is_initialization=False, mode=self._mode)
 
     def render(self, mode='human'):
         pass
@@ -416,8 +436,41 @@ class WordActivationRLEnv(Env):
 
         return stateful_obs
     
-    def get_logs(self):
-        pass        
+    def _get_logs(self, is_initialization=False, mode="train"):
+        """
+        Obtain the logs
+        """        
+        if mode == "train":
+            return {}
+        elif mode == "debug" or mode == "test":
+            if is_initialization:   # Return the initializations, mainly the 
+
+                self.log_cumulative_version = {
+                    "episode_idnex": "TBD",   # The episode index, to be filled
+                    "word": self._word,
+                    "word_len": self._word_len,     # Used for analyzing the length's effect
+                    "word_frequency": self._word_freq_prob,     # Used for analyzing the frequency's effect
+                    "word_representation": self._word_representation,   
+                    "normalized_ground_truth_word_representation": self._normalized_ground_truth_word_representation,
+                    "fixations": [],
+                }
+
+                return self.log_cumulative_version
+            else:
+                self.log_cumulative_version["fixations"].append({
+                    "steps": self._steps,
+                    "action": self._action,
+                    "done": self._done,
+                    "word_predictability": self.lex_manager.get_likelihood_by_sampled_letters_so_far(
+                        sampled_letters_so_far=self._sampled_letters_so_far, word=self._word, mode="fractional"
+                        ),    # The likelihood probability: P(sampled letters so far | word)
+                    "sampled_letters_so_far": self._sampled_letters_so_far,
+                    "sampled_letters_so_far_representation": self._sampled_letters_so_far_representation,
+                    "word_to_activate": self._word_to_activate,
+                    "normalized_belief_distribution": self._normalized_belief_distribution,
+                    "normalized_belief_distribution_dict": self._normalized_belief_distribution_dict
+                })
+                return self.log_cumulative_version
 
 
 class RewardFunction():
@@ -534,7 +587,7 @@ class TransitionFunction():
         # print(f"Belief distribution dict: {belief_distribution_dict}, belief distribution: {normalized_belief_distribution}")
         # print(f"Normalized belief distribution: {normalized_belief_distribution_dict}")
 
-        return normalized_belief_distribution_dict, normalized_belief_distribution
+        return normalized_belief_distribution_dict, normalized_belief_distribution, words_freqs_likelihoods
 
     def activate_a_word(self, normalized_belief_distribution_dict, deterministic=True):
         """
