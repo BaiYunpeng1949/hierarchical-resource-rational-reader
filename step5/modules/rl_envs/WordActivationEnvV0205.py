@@ -8,6 +8,8 @@ import re
 import math
 import cv2
 import matplotlib.pyplot as plt
+import markovify
+import fasttext
 
 from gymnasium import Env
 from gymnasium.spaces import Box, Dict, Discrete, Tuple
@@ -213,6 +215,43 @@ class LexiconManager():
 
     def get_word(self):
         return random.choice(self.train_test_words_data)
+
+
+class WordGenerator:
+    def __init__(self, corpus):
+        """Train a simple Markov model on word corpus."""
+        self.model = markovify.Text(corpus, state_size=2)  # Uses 2-character states
+    
+    def generate_similar_word(self, prefix):
+        """Generate a similar word given a prefix."""
+        word = prefix
+        for _ in range(10):  # Max word length
+            next_char = self.model.make_sentence(tries=10)  # Sample next letter
+            if next_char:
+                word += next_char[0]  # Take first letter from the sampled word
+            if len(word) > 10 or next_char is None:  # Stop at max length
+                break
+        return word
+
+
+class ApproximateWordGenerator:
+    def __init__(self, alphabet="abcdefghijklmnopqrstuvwxyz"):
+        self.alphabet = list(alphabet)
+    
+    def generate_similar_word(self, prefix):
+        """Generate words similar to the given prefix with small modifications."""
+        word = list(prefix)
+        
+        if len(word) < 10 and random.random() > 0.5:
+            word.append(random.choice(self.alphabet))  # Add a random letter
+        
+        if len(word) > 2 and random.random() > 0.3:
+            word[random.randint(0, len(word) - 1)] = random.choice(self.alphabet)  # Substitute
+        
+        if len(word) > 3 and random.random() > 0.3:
+            word.pop(random.randint(0, len(word) - 1))  # Delete a letter
+
+        return "".join(word)
 
 
 class WordActivationRLEnv(Env):
@@ -612,29 +651,82 @@ class TransitionFunction():
         """
         Activate a word from the belief distribution, choose the highest for simplicity
 
-        TODO: solve this -- the activation is very constrained based on the lexical size. 
-            Sometimes, though a word is very ambiguious, it is still reletively unique in the lexicon, it could be activated with very few fixations.
+        NOTE: some problems:
+        1. The Lexical Size Constraint & Unique Words Activating Too Early
+            Some words are unique in the lexicon, so they get activated too quickly with very few fixations. 
+            This doesn't reflect how humans read, because humans don't search for words—they map letters to possible words and handle ambiguity.
+        2. Activation Shouldn't Be Just Relative; It Should Depend on Posterior Values
+            Right now, the agent activates words based only on relative belief sizes (e.g., highest belief wins).
+            But: Sometimes, a word shouldn't be activated, even if it has the highest belief, because its absolute probability is still low.
+        3. Rethinking Word Activation: Recognizing vs. Searching
+            The current model searches for words in a fixed lexicon, but humans don't do that -- they recognize and map letters dynamically. 
+            Humans don't have a giant lexicon lookup table; they infer meaning from partial, noisy inputs.
+        
+        Solutions:
+        1. Introduce Ambiguous Alternatives
+        2. Bernoulli Sampling for Activation Probability
+        3. Use a Vector Space / Embeddings for Fuzzy Matching
 
-            What about this: if there are no explicit words matching in the lexicon, we could create some with the same prefix, but has manufactured beliefs
-            Later when activating words, we still rely on the Bernoulli sampling, meaning the words' posterior's exact values still have a call on activation; 
-            not just the relative high and low values.
-            So the structural conflict of limited lexicon is it relies mainly on the relative belief sizes. So sometimes a unique but random word could still be activated.
-            This is because there is an assumption -- the agent can always accurately activate the word in the lexicon, as long as it is unique. But this should not be the case, 
-            human should be confused with only a few words, they are **recognizing -- mapping**, not searching from the lexicon.
-            So we need to rethink how to implement this word activation. Moreover, make it computationally efficient, moreover, make it dependant from the lexicon size.
+        How to Implement Solution 1: Ambiguous Alternatives
+        Method 1: Character-Level Language Model (Fast, Efficient), e.g., markovify (https://github.com/jsvine/markovify)
+        Method 2: Approximate String Matching / Edit Distance (Fast)
+        Method 3: Use a Pretrained Word Embedding Model (Most Realistic)
         """
-        if deterministic:
+        if deterministic:   # The greedy approach
+            # Simple, efficient, and deterministic; always picks the most likely word; 
+            #   but the agent does not capture human uncertainty or competition between words. Does not account that in the real case, 
+            #   people sometimes misrecognize words if two candidates have similar probabilties.
             activated_word = max(normalized_belief_distribution_dict, key=normalized_belief_distribution_dict.get)
             return activated_word
-        else:
-            return np.random.choice(list(normalized_belief_distribution_dict.keys()), p=list(normalized_belief_distribution_dict.values()))
+        else:               # The stochastic selection (softmax sampling)
+            # return np.random.choice(list(normalized_belief_distribution_dict.keys()), p=list(normalized_belief_distribution_dict.values()))
+            words, probs = zip(*normalized_belief_distribution_dict.items())  # Unpack words & their probabilities
+            activated_word = random.choices(words, weights=probs, k=1)[0]
+            return activated_word
+        # NOTE: Other methods: confidence-based thresholding (stop when certain). Cons: not adaptive, the threshold needs to be tuned.
+        # NOTE: Other methods: Bayesian Stopping Rule (Confidence + Uncertainty Reduction)
+        # Codes:
+        # def entropy(prob_dist):
+        #     """Compute entropy of a probability distribution."""
+        #     return -sum(p * np.log2(p) for p in prob_dist.values() if p > 0)
+
+        # def recognize_using_entropy(belief_distribution, uncertainty_threshold=0.2):
+        #     best_word, best_prob = max(belief_distribution.items(), key=lambda x: x[1])
+        #     prob_entropy = entropy(belief_distribution)
+
+        #     if prob_entropy < uncertainty_threshold:
+        #         return best_word  # Stop sampling
+        #     return None  # Keep sampling more letters
 
 if __name__ == "__main__":
-    env = WordActivationRLEnv()
-    env.reset()
-    env.step(1)
-    env.step(10)
+    # env = WordActivationRLEnv()
+    # env.reset()
+    # env.step(1)
+    # env.step(10)
 
     # env = LexiconManager()
     # print(env.get_top_k_words("ell"))
     # print(env.get_top_k_words("tell"))
+
+    # # Example usage:      NOTE: issues -- only output 'hel'
+    # corpus = "hello help helmet hall held held hero heat heavy height hello jelly yellow mellow"
+    # word_gen = WordGenerator(corpus)
+    # for i in range(10):
+    #     print(word_gen.generate_similar_word("hel"))  # Might generate "helton" or "helder"
+
+    # # Example usage:        NOTE: issue -- only output words with the same length of 'hel'
+    # word_gen = ApproximateWordGenerator()
+    # for i in range(10):
+    #     print(word_gen.generate_similar_word("hel"))  # Outputs: "helo", "hep", "hella"
+
+    # Load the FastText model once (global variable)
+    fasttext_model = fasttext.load_model("cc.en.300.bin")  # Load once
+
+    def generate_similar_word_fasttext(prefix, k=5):
+        """Find similar words in FastText word embeddings."""
+        similar_words = fasttext_model.get_nearest_neighbors(prefix, k=k)
+        return [word for _, word in similar_words]
+
+    # Example usage:
+    for i in range(10):
+        print(generate_similar_word_fasttext("hel"))  # Outputs: ['hello', 'help', 'helium', 'helmet']
