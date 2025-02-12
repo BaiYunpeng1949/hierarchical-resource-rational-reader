@@ -25,6 +25,11 @@ NOT_READ = "NOT_READ"
 REGRESS = "REGRESS"
 NOT_REGRESS = "NOT_REGRESS"
 
+
+# New Oculomotor Controller
+NO_LETTERS_SAMPLED = "NO_LETTERS_SAMPLED"
+
+
 # Lexicon and image generation related constants
 # ----------------------------------------------------------------------------------------------------------------------
 PUNCTUATION_MARKS = "_punctuation_marks"
