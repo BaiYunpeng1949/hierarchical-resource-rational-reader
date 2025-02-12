@@ -217,7 +217,7 @@ class LexiconManager():
         return random.choice(self.train_test_words_data)
 
 
-class WordGenerator:
+class MarkovWordGenerator:
     def __init__(self, corpus):
         """Train a simple Markov model on word corpus."""
         self.model = markovify.Text(corpus, state_size=2)  # Uses 2-character states
@@ -235,23 +235,75 @@ class WordGenerator:
 
 
 class ApproximateWordGenerator:
-    def __init__(self, alphabet="abcdefghijklmnopqrstuvwxyz"):
-        self.alphabet = list(alphabet)
-    
-    def generate_similar_word(self, prefix):
-        """Generate words similar to the given prefix with small modifications."""
-        word = list(prefix)
-        
-        if len(word) < 10 and random.random() > 0.5:
-            word.append(random.choice(self.alphabet))  # Add a random letter
-        
-        if len(word) > 2 and random.random() > 0.3:
-            word[random.randint(0, len(word) - 1)] = random.choice(self.alphabet)  # Substitute
-        
-        if len(word) > 3 and random.random() > 0.3:
-            word.pop(random.randint(0, len(word) - 1))  # Delete a letter
+    def __init__(self, alphabet="abcdefghijklmnopqrstuvwxyz", variation_prob=0.3):
+        """
+        Initialize the word generator with an alphabet and variation probability.
+        - `variation_prob`: Controls how often random modifications happen.
 
-        return "".join(word)
+        NOTE: this function is only called when letters are sampled.
+        """
+        self.alphabet = list(alphabet)
+        self.variation_prob = variation_prob  # Adjusts randomness level
+
+    def generate_similar_words(self, sampled_letters, original_word, top_k=5):
+        """
+        Generate exactly `top_k` similar words.
+        - Ensures sampled letters (contiguous or non-contiguous) remain in the word.
+        - Keeps sampled letters in their approximate position.
+        - Randomly modifies unobserved letters.
+        - Always includes the original word.
+        - Pads missing entries with synthetic words if fewer than `top_k` are generated.
+        """
+        word_length = len(original_word)  
+        generated_words = {original_word}  # Use a set to avoid duplicates
+
+        # 🔹 Identify the approximate positions of sampled letter chunks in the original word
+        sampled_chunks = sampled_letters.split()  # Assumes spaces separate discontinuous parts
+        chunk_positions = []
+
+        # 🔹 Find where each chunk appears in the original word
+        for chunk in sampled_chunks:
+            pos = original_word.find(chunk)
+            if pos == -1:
+                pos = random.randint(0, max(1, word_length - len(chunk)))  # Approximate if not found
+            chunk_positions.append((chunk, pos))
+
+        while len(generated_words) < top_k:  # Ensure we get exactly `top_k` words
+            word = list(original_word)  # Start with the original word
+            new_word = [""] * word_length  # Empty template
+
+            # 🔹 Insert each sampled chunk into its approximate position 🔹
+            for chunk, pos in chunk_positions:
+                pos = min(pos, word_length - len(chunk))  # Ensure position is within bounds
+                new_word[pos:pos + len(chunk)] = list(chunk)
+
+            # 🔹 Fill in the remaining positions randomly 🔹
+            for i in range(word_length):
+                if new_word[i] == "":  # If it's still empty, insert a letter
+                    if random.random() > self.variation_prob:
+                        new_word[i] = random.choice(self.alphabet)  # Substitute with a random letter
+                    else:
+                        new_word[i] = word[i] if i < len(word) else random.choice(self.alphabet)  # Keep some original letters
+            
+            # 🔹 Randomly insert/delete a letter to create slight length variation 🔹
+            if len(new_word) > 3 and random.random() > 0.5:
+                del new_word[random.randint(0, len(new_word) - 1)]
+
+            if len(new_word) < 15 and random.random() > 0.5:
+                new_word.insert(random.randint(0, len(new_word)), random.choice(self.alphabet))
+
+            generated_words.add("".join(new_word))
+
+        # Convert to list and ensure exactly `top_k` words
+        generated_words = list(generated_words)
+        
+        # If we still don’t have enough words, generate dummy words
+        while len(generated_words) < top_k:
+            filler_word = "".join(random.choices(self.alphabet, k=word_length))  # Generate a random word
+            if filler_word not in generated_words:
+                generated_words.append(filler_word)
+
+        return generated_words[:top_k]  # Ensure exactly `top_k` words
 
 
 class WordActivationRLEnv(Env):
@@ -710,23 +762,36 @@ if __name__ == "__main__":
 
     # # Example usage:      NOTE: issues -- only output 'hel'
     # corpus = "hello help helmet hall held held hero heat heavy height hello jelly yellow mellow"
-    # word_gen = WordGenerator(corpus)
+    # word_gen = MarkovWordGenerator(corpus)
+    # print(f"The Markov model: {word_gen.model}")
     # for i in range(10):
     #     print(word_gen.generate_similar_word("hel"))  # Might generate "helton" or "helder"
 
-    # # Example usage:        NOTE: issue -- only output words with the same length of 'hel'
-    # word_gen = ApproximateWordGenerator()
+    # Example usage:     
+    word_gen = ApproximateWordGenerator()   
+    # TODO: next, sometimes the agent does not sample continuous letters, tackle that as well if we consider the positinoal information
+
+    # Example: If sampled "com   hen" from "comprehensive"
+    original_word = "comprehensive"
+    sampled_letters = "com re ve"  # Two non-contiguous sampled parts
+    top_k = 5
+
+    print(f"Original word: {original_word}, Sampled letters: {sampled_letters}")
+    print(word_gen.generate_similar_words(sampled_letters, original_word, top_k=top_k))
+
+    # # Load the FastText model once (global variable)
+    # fasttext_model = fasttext.load_model("/home/baiy4/reader-agent-zuco/cc.en.300.bin")
+
+    # def generate_similar_word_fasttext(prefix, k=5):
+    #     """Find similar words in FastText word embeddings."""
+    #     similar_words = fasttext_model.get_nearest_neighbors(prefix, k=k)
+    #     return [word for _, word in similar_words]
+
+    # # Example usage:
     # for i in range(10):
-    #     print(word_gen.generate_similar_word("hel"))  # Outputs: "helo", "hep", "hella"
+    #     print(generate_similar_word_fasttext("hel"))  # Outputs: ['hello', 'help', 'helium', 'helmet']
 
-    # Load the FastText model once (global variable)
-    fasttext_model = fasttext.load_model("cc.en.300.bin")  # Load once
+    # print(f"8888888888888888888888888888888888")
 
-    def generate_similar_word_fasttext(prefix, k=5):
-        """Find similar words in FastText word embeddings."""
-        similar_words = fasttext_model.get_nearest_neighbors(prefix, k=k)
-        return [word for _, word in similar_words]
-
-    # Example usage:
-    for i in range(10):
-        print(generate_similar_word_fasttext("hel"))  # Outputs: ['hello', 'help', 'helium', 'helmet']
+    # for i in range(10):     # NOTE: good, this works, but kind of slow, so maybe need to run everything beforehand offline. And also need to deal with special marks/symbols. 
+    #     print(fasttext_model.get_nearest_neighbors("hel", k=5))
