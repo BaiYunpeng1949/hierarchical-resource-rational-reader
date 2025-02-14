@@ -395,9 +395,33 @@ class WordActivationRLEnv(Env):
         1. Word frequency effects are more consistent (they affect all words equally).
         2. Predictability effects are stronger for high-context situations (e.g., sentence constraints matter).
         3. The effect of predictability is typically stronger on skipping rates, while word frequency mainly affects fixation duration. -- Do a task-specific control parameter?
+    
+    NOTE: maybe the fixation sequence will not always go from left to right; because we do not have a phonological (sound) system. 
+        And humans have prior knowledge / are trained to behave in that way.
+
+    TODO: 1. Merge the freq and pred to a single prior parameter that is predifined (not predifined is also fine). 
+        2. Change the obs's word representation to the sampled letters so far.
+        3. The current papers are saying freq and pred's effect on processing the word, are these really factors that could affect the number of fixations?
+        4. Maybe just randomize the words that is read, so get free from the lexicon size.
+        5. TODO: do this, if the proior is useful, then express it before the first fixation sampling, when initializing the word, give it to the agent.
+            Also need to re-design the word activation dynamics.
+
+    Why Is the Agent Ignoring Prior Knowledge (Freq & Pred)?
+        The prior (freq & pred) is multiplied, but the likelihood dominates too quickly.
+
+        This means the agent learns reading (sampling letters) is the only reliable strategy.
+        It does not learn to make educated guesses early based on prior knowledge.
+        The penalty for excessive reading is too weak.
+
+        The agent has no strong incentive to guess early.
+        It keeps reading letters instead of using prior knowledge.
+        Unclear if RL agent gets "reward shaping" for correct recognition using prior knowledge.
+
+        If the agent is not explicitly rewarded for stopping early and activating the right word, it has no reason to do so.    
+
+        NOTE: now the agent relys more on sampled letters since prior knowledge is less deterministic. 
+        
     """
-    # TODO 0211: retrain the model with a more reasonable word activation from the corpus. -- Next pirority: work on a larger corpus, and a more activation process
-    # That can be sensitive to the freq and pred effects. -- 0211
 
     def __init__(self):
         
@@ -558,23 +582,9 @@ class WordActivationRLEnv(Env):
                 reward = self.reward_function.get_step_wise_effort_cost(is_action_valid=False)
 
         else:   # Stop the sampling and recognize the word
-            # self._word_to_activate = self.transition_function.activate_a_word(normalized_belief_distribution_dict=self._normalized_belief_distribution_dict, deterministic=False) 
-            
-            # reward = self.reward_function.get_terminate_reward(
-            #     word_to_recognize=self._word,
-            #     word_to_activate=self._word_to_activate
-            # )
-
-            # self._done = True
             reward, self._done = self._terminate_step()
 
         if self._steps >= self.ep_len:     # Truncation case
-            # self._word_to_activate = self.transition_function.activate_a_word(normalized_belief_distribution_dict=self._normalized_belief_distribution_dict, deterministic=False) 
-            
-            # reward = self.reward_function.get_terminate_reward(
-            #     word_to_recognize=self._word,
-            #     word_to_activate=self._word_to_activate
-            # )
             reward, self._done = self._terminate_step()
             self._truncated = True
 
@@ -606,7 +616,7 @@ class WordActivationRLEnv(Env):
         action_obs = np.zeros(self.MAX_WORD_LEN + 1 + 1)        # three types of actions -1, fixations, stop
         action_obs[self._action + 1] = 1
 
-        stateful_obs = np.concatenate([self._normalized_belief_distribution, self._word_representation, [self._word_len], action_obs])
+        stateful_obs = np.concatenate([self._normalized_belief_distribution, self._sampled_letters_so_far_representation, [self._word_len], action_obs])
 
         assert len(stateful_obs) == self._num_stateful_obs, f"expected {self._num_stateful_obs} but got {len(stateful_obs)}"
 
@@ -642,10 +652,10 @@ class WordActivationRLEnv(Env):
                         sampled_letters_so_far=self._sampled_letters_so_far_with_spaces, word=self._word, word_len=self._word_len
                         ),    # The likelihood probability: P(sampled letters so far | word)
                     "sampled_letters_so_far": self._sampled_letters_so_far_with_spaces,
-                    "sampled_letters_so_far_representation": self._sampled_letters_so_far_representation,
+                    "sampled_letters_so_far_representation": self._sampled_letters_so_far_representation.copy(),
                     "word_to_activate": self._word_to_activate,
-                    "normalized_belief_distribution": self._normalized_belief_distribution,
-                    "normalized_belief_distribution_dict": self._normalized_belief_distribution_dict
+                    "normalized_belief_distribution": self._normalized_belief_distribution.copy(),
+                    "normalized_belief_distribution_dict": self._normalized_belief_distribution_dict.copy(),
                 })
                 return self.log_cumulative_version
 

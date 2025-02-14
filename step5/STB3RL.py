@@ -831,7 +831,7 @@ class RL:
 
         # Store the data to a json file
         root_path = os.path.dirname(os.path.abspath(__file__))
-        data_log_path = os.path.join(root_path, "data", "sim_results", "word_activation", self._config_rl['test']['loaded_model_name'], f"{self._num_episodes}ep")
+        data_log_path = os.path.join(root_path, "data", "sim_results", "word_activation", self._config_rl['train']['checkpoints_folder_name'], self._config_rl['test']['loaded_model_name'], f"{self._num_episodes}ep")
         # Create the directory if it does not exist
         if not os.path.exists(data_log_path):
             os.makedirs(data_log_path)
@@ -845,7 +845,7 @@ class RL:
         #####################################  Analyze the data   ######################################
         with open(file_name, "r") as f:
             json_data = f.read()
-        plot_word_activation_figures.analyze_fixations(json_data=json_data, save_file_dir=data_log_path)
+        plot_word_activation_figures.analyze_fixations(json_data=json_data, save_file_dir=data_log_path, controlled_word_length=10)
 
         print(f'Time elapsed for running the DEBUG/TEST: {time.time() - start_time} seconds')
         ###############################################################################################
