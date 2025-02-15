@@ -824,7 +824,7 @@ class RewardFunction():
         if word_to_recognize == word_to_activate:
             return Bonus
         else:
-            return -1 * Bonus
+            return -0.1 * Bonus
 
 
 class TransitionFunction():
