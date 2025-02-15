@@ -87,13 +87,18 @@ class LexiconManager():
             "vocational", "typography", "understand", "unfathomed", "university", "vacationer", "wrongdoings", "yearningly",
             "watermelon", "woodcutting"
         ]
-
-        # NOTE **very important** when evaluating the effects of word length, frequency, and predictability, 
-        #   I must control the variable! Fix the other two and test the one.
+        # TODO train with a random larger lexicon later, the words could be non-words, for generalizability
 
         # Initialize the prior probabilities: word frequencies and contextual predictabilities
         # Initialize the word frequencies
         self.zipf_param = zipf_param
+
+        # Initialize the prior probability generator
+        # NOTE: when testing freq and pred's effect, use a tunable parameter, say w_p, we could define prior = freq * w_p * pred; 
+        #   Or we just report the freq's effect.
+        self._prior_prob_generator = None
+        self.weight_prior_pred_to_freq = 1.5   # This means prior = freq * pred, pred = freq * 1.5
+        self.prior_dict = None                 # Store all the activated words' prior probabilities during one given episode
 
         # Other initialization
         self.train_test_words_data = None
@@ -102,22 +107,29 @@ class LexiconManager():
         self.approximate_word_generator = ApproximateWordGenerator()
     
     def reset(self):
-        # Initialize the word frequencies
-        self._initialize_fixed_frequencies()  # Precompute only for fixed lexicon
+        """
+        Reset the lexicon manager
 
-        # Initialize the word predictabilities
-        self._initialize_fixed_predictabilities()  # Precompute only for fixed lexicon
+        This function is reset for every RL training episode
+        """
+        # # Initialize the word frequencies
+        # self._initialize_fixed_frequencies()  # Precompute only for fixed lexicon
+
+        # # Initialize the word predictabilities
+        # self._initialize_fixed_predictabilities()  # Precompute only for fixed lexicon
 
         # Sample the training and testing words
         self.train_test_words_data = self.lexicon_300
+
+        # Reset the prior dictionary
+        self.prior_dict = {}
     
-    # def _initialize_fixed_frequencies(self):
-    #     """Precompute Zipfian frequencies for words in the fixed lexicon."""
-    #     # random.seed(42)
-    #     ranks = np.arange(1, len(self.lexicon_300) + 1)
-    #     zipf_probs = 1 / (ranks ** self.zipf_param)
-    #     zipf_probs /= zipf_probs.sum()
-    #     self.lexicon_w_pseudo_freq_prob = {word: prob for word, prob in zip(self.lexicon_300, zipf_probs)}
+    @staticmethod
+    def _generate_prior_probability():
+        """
+        """
+        prior_prob = random.uniform(0, 1)
+        return prior_prob
 
     def _initialize_fixed_frequencies(self):
         """Precompute Zipfian frequencies for words in the fixed lexicon (randomized order)."""
@@ -131,17 +143,8 @@ class LexiconManager():
         zipf_probs /= zipf_probs.sum()  # Normalize to sum to 1
 
         self.lexicon_w_pseudo_freq_prob = {word: prob for word, prob in zip(shuffled_words, zipf_probs)}
-
     
     def _generate_dynamic_frequency(self, word):
-        # """
-        # Generate a frequency probability for a word NOT in the lexicon.
-        # Instead of storing it, we dynamically compute it when needed.
-        # """
-        # word_hash = abs(hash(word)) % 1000  # Create a pseudo-rank from the word's hash
-        # rank_approx = (word_hash % len(self.lexicon_300)) + 1  # Map to an approximate rank
-        # freq = 1 / (rank_approx ** self.zipf_param)
-        # return freq
         """
         Dynamically generate a frequency probability for a word NOT in the lexicon.
         Instead of computing from scratch, sample from existing values to match the dataset's scale.
@@ -163,11 +166,6 @@ class LexiconManager():
         self.lexicon_w_pseudo_pred_prob = {w: self.get_predictability(mode="random") for w in self.lexicon_300}
     
     def _generate_dynamic_predictability(self, word):
-        # """
-        # Generate a predictability probability for a word NOT in the lexicon.
-        # Instead of storing it, we dynamically compute it when needed.
-        # """
-        # return self.get_predictability(mode="random")
         """
         Dynamically generate a predictability probability for a word NOT in the lexicon.
         Similar to frequency, we sample from the dataset's distribution.
@@ -183,15 +181,17 @@ class LexiconManager():
         else:
             return self._generate_dynamic_predictability(word)
     
-    def sample_train_test_words(self, num_words=20, mode="random"):
+    def get_predictability(self, mode="random"):
         """
-        Sample a subset of words for training and testing
+        Get the predictability of the word in the context
         """
-
-        # Use the whole lexicon for training and testing
-        self.train_test_words_data = self.lexicon_300
-        return self.lexicon_300
-
+        
+        if mode == "random":
+            return random.uniform(0, 1)
+        else:
+            # Use language models to get the predictability
+            return 0.97
+    
     def get_top_k_words(self, sampled_letters_so_far_with_spaces, original_word, top_k):
         """
         Use the Approximate Word Generator to get the top-k words that contain the sampled letters so far.
@@ -210,11 +210,19 @@ class LexiconManager():
         generated_words = self.approximate_word_generator.generate_similar_words(sampled_letters_so_far_with_spaces, original_word, top_k=top_k)
 
         results = []
+
+        assert original_word in self.prior_dict, f"the original word {original_word} is not in the prior dictionary"
+
         for w in generated_words:
-            freq = self.get_word_frequency_probability(w)
-            pred = self.get_word_predictability_probability(w)
+            if w not in self.prior_dict:
+                if w is not original_word:  # Randomize a prior probability for the original word (target word)
+                    discount_factor = random.uniform(0.1, 0.5)  # Discount factor for non-target words
+                    self.prior_dict[w] = self.prior_dict[original_word] * discount_factor
+            # freq = self.get_word_frequency_probability(w)
+            # pred = self.get_word_predictability_probability(w)
+            prior = self.prior_dict[w]
             likelihood, correct_factor_alpha = self.get_likelihood_by_sampled_letters_so_far(sampled_letters_so_far_with_spaces, w, word_len=len(w))        
-            results.append((w, freq, pred, likelihood, correct_factor_alpha))
+            results.append((w, prior, likelihood, correct_factor_alpha))
 
         return results
 
@@ -264,20 +272,11 @@ class LexiconManager():
         # return max(combined_prob, 0.01)
         return likelihood, alpha
 
-    
-    def get_predictability(self, mode="random"):
-        """
-        Get the predictability of the word in the context
-        """
-        
-        if mode == "random":
-            return random.uniform(0, 1)
-        else:
-            # Use language models to get the predictability
-            return 0.97
-
     def get_word(self):
-        return random.choice(self.train_test_words_data)
+        word_to_recognize = random.choice(self.train_test_words_data)
+        # Reset the target word in the dictionary
+        self.prior_dict[word_to_recognize] = self._generate_prior_probability()
+        return word_to_recognize
 
 
 class ApproximateWordGenerator:
@@ -291,65 +290,193 @@ class ApproximateWordGenerator:
         self.alphabet = list(alphabet)
         self.variation_prob = variation_prob  # Adjusts randomness level
 
-    def generate_similar_words(self, sampled_letters, original_word, top_k=5):
+    import random
+
+    def generate_similar_words(
+        self,
+        sampled_letters,
+        original_word,
+        top_k=5,
+        chunk_pos_fuzziness=2,         # how far from the found position we can move the chunk
+        chunk_skip_prob=0.1,           # sometimes skip placing the chunk entirely
+        insertion_prob=0.1,            # probability of random insert
+        deletion_prob=0.1,             # probability of random delete
+        substitution_prob=0.2,         # probability of substituting a letter
+        keep_original_letter_prob=0.75, # probability of using the original letter instead of a random one
+        min_length=3,
+        max_length=15,
+    ):
         """
-        Generate exactly `top_k` similar words.
-        - Ensures sampled letters (contiguous or non-contiguous) remain in the word.
-        - Keeps sampled letters in their approximate position.
-        - Randomly modifies unobserved letters.
-        - Always includes the original word.
-        - Pads missing entries with synthetic words if fewer than `top_k` are generated.
-        """
-        word_length = len(original_word)  
-        generated_words = {original_word}  # Use a set to avoid duplicates
-
-        # 🔹 Identify the approximate positions of sampled letter chunks in the original word
-        sampled_chunks = sampled_letters.split()  # Assumes spaces separate discontinuous parts
-        chunk_positions = []
-
-        # 🔹 Find where each chunk appears in the original word
-        for chunk in sampled_chunks:
-            pos = original_word.find(chunk)
-            if pos == -1:
-                pos = random.randint(0, max(1, word_length - len(chunk)))  # Approximate if not found
-            chunk_positions.append((chunk, pos))
-
-        while len(generated_words) < top_k:  # Ensure we get exactly `top_k` words
-            word = list(original_word)  # Start with the original word
-            new_word = [""] * word_length  # Empty template
-
-            # 🔹 Insert each sampled chunk into its approximate position 🔹
-            for chunk, pos in chunk_positions:
-                pos = min(pos, word_length - len(chunk))  # Ensure position is within bounds
-                new_word[pos:pos + len(chunk)] = list(chunk)
-
-            # 🔹 Fill in the remaining positions randomly 🔹
-            for i in range(word_length):
-                if new_word[i] == "":  # If it's still empty, insert a letter
-                    if random.random() > self.variation_prob:
-                        new_word[i] = random.choice(self.alphabet)  # Substitute with a random letter
-                    else:
-                        new_word[i] = word[i] if i < len(word) else random.choice(self.alphabet)  # Keep some original letters
-            
-            # 🔹 Randomly insert/delete a letter to create slight length variation 🔹
-            if len(new_word) > 3 and random.random() > 0.5:
-                del new_word[random.randint(0, len(new_word) - 1)]
-
-            if len(new_word) < 15 and random.random() > 0.5:
-                new_word.insert(random.randint(0, len(new_word)), random.choice(self.alphabet))
-
-            generated_words.add("".join(new_word))
-
-        # Convert to list and ensure exactly `top_k` words
-        generated_words = list(generated_words)
+        Generate exactly `top_k` words that are loosely similar to the `original_word`.
         
-        # If we still don’t have enough words, generate dummy words
-        while len(generated_words) < top_k:
-            filler_word = "".join(random.choices(self.alphabet, k=word_length))  # Generate a random word
-            if filler_word not in generated_words:
-                generated_words.append(filler_word)
+        Relaxations introduced:
+        - chunk_pos_fuzziness: how many positions away from the exact location we can place chunk
+        - chunk_skip_prob: how often we skip placing a chunk altogether
+        - insertion_prob, deletion_prob: how likely we insert/delete letters
+        - substitution_prob: chance of randomly substituting a letter
+        - keep_original_letter_prob: chance of keeping the original letter in that position
+        - min_length, max_length: bounding the length of the word
+        """
+        word_length = len(original_word)
+        generated_words = set()
+        generated_words.add(original_word)  # always include the original word
+        
+        sampled_chunks = sampled_letters.split()  # splits by spaces
+        chunk_positions = []
+        
+        # Identify approximate positions of each chunk
+        for chunk in sampled_chunks:
+            pos_in_original = original_word.find(chunk)
+            
+            if pos_in_original == -1:
+                # approximate if not found
+                pos_in_original = random.randint(0, max(1, word_length - len(chunk)))
+            
+            chunk_positions.append((chunk, pos_in_original))
+        
+        # Helper to place chunk into a new_word with possible fuzziness
+        def place_chunk_with_fuzziness(new_word, chunk, original_pos, 
+                               chunk_pos_fuzziness=2, chunk_skip_prob=0.1):
+            # Possibly skip placing the chunk altogether
+            if random.random() < chunk_skip_prob:
+                return
+            
+            # Random shift in [-chunk_pos_fuzziness, chunk_pos_fuzziness]
+            shift = random.randint(-chunk_pos_fuzziness, chunk_pos_fuzziness)
+            pos = original_pos + shift
+            
+            # Clamp pos to valid range for new_word
+            # (pos must be >= 0, but less than or equal to len(new_word))
+            pos = max(0, min(pos, len(new_word)))
+            
+            # Check if chunk can fit. If not, skip it.
+            if pos + len(chunk) > len(new_word):
+                return
+            
+            # Place the chunk
+            for i, c in enumerate(chunk):
+                new_word[pos + i] = c
 
-        return generated_words[:top_k]  # Ensure exactly `top_k` words
+        # Keep generating until we have at least top_k unique words
+        while len(generated_words) < top_k:
+            # Start from either the original word or an empty slate
+            new_word_length = word_length
+            new_word = list(original_word)
+            
+            # Randomly alter the length: do multiple inserts/deletions
+            # We'll do a single pass for possible insertions and deletions
+            # and then clamp the final length to [min_length, max_length].
+            
+            # Deletions
+            i = 0
+            while i < len(new_word):
+                if random.random() < deletion_prob and len(new_word) > min_length:
+                    del new_word[i]
+                else:
+                    i += 1
+            
+            # Insertions
+            i = 0
+            while i < len(new_word):
+                if random.random() < insertion_prob and len(new_word) < max_length:
+                    new_word.insert(i, random.choice(self.alphabet))
+                    i += 1  # skip over the inserted character
+                i += 1
+            
+            # If after insertion/deletion, new_word is outside [min_length, max_length], clamp it:
+            if len(new_word) < min_length:
+                # pad
+                new_word += [random.choice(self.alphabet) for _ in range(min_length - len(new_word))]
+            elif len(new_word) > max_length:
+                # truncate
+                new_word = new_word[:max_length]
+            
+            # Now place chunks (with fuzziness) – do it on a second pass so length is somewhat final
+            for (chunk, pos) in chunk_positions:
+                place_chunk_with_fuzziness(new_word, chunk, pos)
+            
+            # Randomly substitute letters
+            for i in range(len(new_word)):
+                if random.random() < substitution_prob:
+                    # either keep original or choose random
+                    if random.random() < keep_original_letter_prob and i < len(original_word):
+                        new_word[i] = original_word[i]
+                    else:
+                        new_word[i] = random.choice(self.alphabet)
+            
+            generated_words.add("".join(new_word))
+        
+        # If we still don’t have enough words, generate random filler words
+        generated_words_list = list(generated_words)
+        while len(generated_words_list) < top_k:
+            # random word of random length in [min_length, max_length]
+            rand_len = random.randint(min_length, max_length)
+            filler_word = "".join(random.choices(self.alphabet, k=rand_len))
+            if filler_word not in generated_words_list:
+                generated_words_list.append(filler_word)
+        
+        # Return exactly top_k
+        return generated_words_list[:top_k]
+
+    # def generate_similar_words(self, sampled_letters, original_word, top_k=5):
+    #     """
+    #     Generate exactly `top_k` similar words.
+    #     - Ensures sampled letters (contiguous or non-contiguous) remain in the word.
+    #     - Keeps sampled letters in their approximate position.
+    #     - Randomly modifies unobserved letters.
+    #     - Always includes the original word.
+    #     - Pads missing entries with synthetic words if fewer than `top_k` are generated.
+    #     """
+    #     word_length = len(original_word)  
+    #     generated_words = {original_word}  # Use a set to avoid duplicates
+
+    #     # 🔹 Identify the approximate positions of sampled letter chunks in the original word
+    #     sampled_chunks = sampled_letters.split()  # Assumes spaces separate discontinuous parts
+    #     chunk_positions = []
+
+    #     # 🔹 Find where each chunk appears in the original word
+    #     for chunk in sampled_chunks:
+    #         pos = original_word.find(chunk)
+    #         if pos == -1:
+    #             pos = random.randint(0, max(1, word_length - len(chunk)))  # Approximate if not found
+    #         chunk_positions.append((chunk, pos))
+
+    #     while len(generated_words) < top_k:  # Ensure we get exactly `top_k` words
+    #         word = list(original_word)  # Start with the original word
+    #         new_word = [""] * word_length  # Empty template
+
+    #         # 🔹 Insert each sampled chunk into its approximate position 🔹
+    #         for chunk, pos in chunk_positions:
+    #             pos = min(pos, word_length - len(chunk))  # Ensure position is within bounds
+    #             new_word[pos:pos + len(chunk)] = list(chunk)
+
+    #         # 🔹 Fill in the remaining positions randomly 🔹
+    #         for i in range(word_length):
+    #             if new_word[i] == "":  # If it's still empty, insert a letter
+    #                 if random.random() > self.variation_prob:
+    #                     new_word[i] = random.choice(self.alphabet)  # Substitute with a random letter
+    #                 else:
+    #                     new_word[i] = word[i] if i < len(word) else random.choice(self.alphabet)  # Keep some original letters
+            
+    #         # 🔹 Randomly insert/delete a letter to create slight length variation 🔹
+    #         if len(new_word) > 3 and random.random() > 0.5:
+    #             del new_word[random.randint(0, len(new_word) - 1)]
+
+    #         if len(new_word) < 15 and random.random() > 0.5:
+    #             new_word.insert(random.randint(0, len(new_word)), random.choice(self.alphabet))
+
+    #         generated_words.add("".join(new_word))
+
+    #     # Convert to list and ensure exactly `top_k` words
+    #     generated_words = list(generated_words)
+        
+    #     # If we still don’t have enough words, generate dummy words
+    #     while len(generated_words) < top_k:
+    #         filler_word = "".join(random.choices(self.alphabet, k=word_length))  # Generate a random word
+    #         if filler_word not in generated_words:
+    #             generated_words.append(filler_word)
+
+    #     return generated_words[:top_k]  # Ensure exactly `top_k` words
 
 
 class WordActivationRLEnv(Env):
@@ -399,13 +526,6 @@ class WordActivationRLEnv(Env):
     NOTE: maybe the fixation sequence will not always go from left to right; because we do not have a phonological (sound) system. 
         And humans have prior knowledge / are trained to behave in that way.
 
-    TODO: 1. Merge the freq and pred to a single prior parameter that is predifined (not predifined is also fine). 
-        2. Change the obs's word representation to the sampled letters so far.
-        3. The current papers are saying freq and pred's effect on processing the word, are these really factors that could affect the number of fixations?
-        4. Maybe just randomize the words that is read, so get free from the lexicon size.
-        5. TODO: do this, if the proior is useful, then express it before the first fixation sampling, when initializing the word, give it to the agent.
-            Also need to re-design the word activation dynamics.
-
     Why Is the Agent Ignoring Prior Knowledge (Freq & Pred)?
         The prior (freq & pred) is multiplied, but the likelihood dominates too quickly.
 
@@ -420,7 +540,24 @@ class WordActivationRLEnv(Env):
         If the agent is not explicitly rewarded for stopping early and activating the right word, it has no reason to do so.    
 
         NOTE: now the agent relys more on sampled letters since prior knowledge is less deterministic. 
-        
+    
+    TODO: check Competition Models (McClelland & Rumelhart, 1981)
+    Some justifications given by gpt, need to verify:
+        1.  Interactive Activation Model (McClelland & Rumelhart, 1981)
+            Word recognition is parallel → multiple words get activated at once.
+            Competing words are those that share the same prefix (because they match early letters).
+        2.  Lexical Competition (Marslen-Wilson, 1987)
+            As more letters are sampled, the likelihood of a single word grows.
+            Competing words drop out of the race based on frequency + predictability.
+    
+    Why Should We Lower Competing Words' Priors?
+        1.  Predictability suppresses competitors
+            If "coffee" is highly expected (due to context), then "coffer" and "cofounder" should have much lower priors.
+            This models real-world prediction-based reading where humans don't fixate equally on all words.
+        2.  Better reinforcement learning signal (I first thought of this, then trying to find the cognitive perspective evidence/justifications)
+        3.  Human Eye-Tracking Evidence (Rayner, 1998)
+            Readers skip over predictable words faster.
+            Competing words are only considered when predictability is low.
     """
 
     def __init__(self):
@@ -528,12 +665,12 @@ class WordActivationRLEnv(Env):
             self._word = inputs["word"]
         else:
             self._word = self.lex_manager.get_word()
+
         self._word_len = len(self._word)
-        self._word_freq_prob = self.lex_manager.get_word_frequency_probability(word=self._word)    # Only for training and testing, for actual simulation, need to use actual LLMs  NOTE: could set as controllable parameters
-        self._word_predictability_prob = self.lex_manager.get_word_predictability_probability(word=self._word)    # Only for training and testing, for actual simulation, need to use actual LLMs   NOTE: could set as controllable parameters
-        # self._word_likelihood_prob = self.lex_manager.get_likelihood_by_sampled_letters_so_far(
-        #     sampled_letters_so_far=self._sampled_letters_so_far_with_spaces, word=self._word, mode="fractional"
-        #     )
+        prior = self.lex_manager.prior_dict[self._word] 
+        weight_prior_pred_to_freq = self.lex_manager.weight_prior_pred_to_freq
+        self._word_freq_prob = math.sqrt(prior / weight_prior_pred_to_freq)    # Only for training and testing, for actual simulation, need to use actual LLMs  NOTE: could set as controllable parameters
+        self._word_predictability_prob = self._word_freq_prob * weight_prior_pred_to_freq    # Only for training and testing, for actual simulation, need to use actual LLMs   NOTE: could set as controllable parameters
         self._word_to_activate = None
 
         # Initialize the ground truth representation -- the word to be recognize is encoded as:
@@ -572,7 +709,7 @@ class WordActivationRLEnv(Env):
                 assert self._sampled_letters_so_far_with_spaces != "NO_LETTER_SAMPLED", f"no letters sampled so far, the word is {self._word}, the action is {action}, the word length is {self._word_len}"
                 
                 self._normalized_belief_distribution_dict, self._normalized_belief_distribution, _ = self.transition_function.update_state_belief_distribution_dict(
-                    sampled_letters_so_far_with_spaces=self._sampled_letters_so_far_with_spaces, word_to_be_recognized=self._word, lexicon_manager=self.lex_manager
+                    sampled_letters_so_far_with_spaces=self._sampled_letters_so_far_with_spaces, word_to_recognize=self._word, lexicon_manager=self.lex_manager
                 )
 
                 reward = self.reward_function.get_step_wise_effort_cost(is_action_valid=True)
@@ -734,12 +871,6 @@ class TransitionFunction():
         # Update the seen letters representation in the foveal vision
         for i in range(left_index, right_index+1):
             seen_letters_representation[i] = norm_gt_word_rep[i]
-        
-        # # Update the seen letters -- get all letters that are not -1 in representation from word
-        # # seen_letters = "".join([word[i] for i in range(len(word)) if seen_letters_representation[i] != -1])
-        # seen_letters = "".join([word[i] for i in range(len(word)) if i < len(seen_letters_representation) and seen_letters_representation[i] != -1]) or "NON_WORDS"
-        # # print(f"The action value is: {action}, left index: {left_index}, right index: {right_index}; the target word is: {word}, the word length is: {word_len}")
-        # # print(f"Seen letters representation: {seen_letters_representation}, seen letters: {seen_letters}")
 
         # Handle both contiguous and non-contiguous letters
         seen_letters_list = []
@@ -762,7 +893,7 @@ class TransitionFunction():
 
         return seen_letters_representation, seen_letters
     
-    def update_state_belief_distribution_dict(self, sampled_letters_so_far_with_spaces, word_to_be_recognized, lexicon_manager: LexiconManager):
+    def update_state_belief_distribution_dict(self, sampled_letters_so_far_with_spaces, word_to_recognize, lexicon_manager: LexiconManager):
         """
         Update the belief distribution
         p(w_i|sampled letters so far) = p(w_i) * p(sampled letters so far|w_i) / Sigma_w' p(w') * p(sampled letters|w')
@@ -775,51 +906,47 @@ class TransitionFunction():
         """
 
         # Find the top five words, in terms of the closest letters, and the length (criteria); also get the corresponding frequency probability, and the likelihood probability
-        words_freqs_preds_likelihoods_alphas = lexicon_manager.get_top_k_words(
-            sampled_letters_so_far_with_spaces=sampled_letters_so_far_with_spaces, original_word=word_to_be_recognized, top_k=self._top_k
+        words_priors_likelihoods_alphas = lexicon_manager.get_top_k_words(
+            sampled_letters_so_far_with_spaces=sampled_letters_so_far_with_spaces, original_word=word_to_recognize, top_k=self._top_k
         )
 
-        # def calc_belief(word_freq, word_pred, word_likelihood, correct_factor_alpha):
-        #     prior = word_freq * word_pred
-        #     likelihood = word_likelihood
-        #     corrected_posterior = (prior ** (1 - correct_factor_alpha)) * (likelihood ** correct_factor_alpha)
-        #     return corrected_posterior
-
-        def calc_belief(word_freq, word_pred, word_likelihood, correct_factor_alpha):
+        def calc_belief(prior, word_likelihood, correct_factor_alpha, use_correct_factor=True):
             """
             Compute the final belief (posterior probability) with stronger likelihood dominance.
             
-            - `correct_factor_alpha` dynamically increases as more letters are sampled.
+            - 'correct_factor_alpha' dynamically increases as more letters are sampled.
             - The likelihood is **exponentiated more aggressively** to dominate priors faster.
+
+            NOTE: if we do not have such correct factors, new evidence will not dominates as more evidences are sampled.
             """
 
-            word_freq = float(word_freq)  # Ensure numeric
-            word_pred = float(word_pred)  # Ensure numeric
+            prior = float(prior)
             word_likelihood = float(word_likelihood)  # Ensure numeric
 
-            # Increase Likelihood Dominance as More Letters Are Sampled
-            proportion_sampled = correct_factor_alpha  # % of word seen
-            likelihood_strength = 1 + 10 * proportion_sampled  # Strengthen likelihood as more is sampled
+            if use_correct_factor:
+                # Increase Likelihood Dominance as More Letters Are Sampled
+                proportion_sampled = correct_factor_alpha  # % of word seen
+                likelihood_strength = 1 + 5 * proportion_sampled  # Strengthen likelihood as more is sampled
 
-            # Strengthen likelihood dominance over prior
-            likelihood_corrected = (word_likelihood ** likelihood_strength) * 10  # Scaling to counteract prior imbalance
+                # Strengthen likelihood dominance over prior
+                likelihood_corrected = (word_likelihood ** likelihood_strength) * 10  # Scaling to counteract prior imbalance
 
-            # Apply Correcting Factor (Adjustable)
-            corrected_posterior = (word_freq * word_pred) ** (1 - correct_factor_alpha) * (likelihood_corrected ** correct_factor_alpha)
+                # Apply Correcting Factor (Adjustable)
+                corrected_posterior = prior ** (1 - correct_factor_alpha) * (likelihood_corrected ** correct_factor_alpha)
+            else:
+                corrected_posterior = prior * word_likelihood
 
             return corrected_posterior
 
         # Update the beliefs: prior * likelihood, where the prior is p(freq) * p(pred)
-        belief_distribution_dict = {wfpl[0]: calc_belief(word_freq=wfpl[1], word_pred=wfpl[2], word_likelihood=wfpl[3], correct_factor_alpha=wfpl[4]) for wfpl in words_freqs_preds_likelihoods_alphas}
-        # belief_distribution_dict_without_correction = {wfpl[0]: wfpl[1] * wfpl[2] * wfpl[3] for wfpl in words_freqs_preds_likelihoods_alphas}   
+        belief_distribution_dict = {wpla[0]: calc_belief(prior=wpla[1], word_likelihood=wpla[2], correct_factor_alpha=wpla[3]) for wpla in words_priors_likelihoods_alphas}
 
         # Normalize the beliefs -- we can do the softmax from this later
         normalized_belief_distribution_dict = {k: v / sum(belief_distribution_dict.values()) for k, v in belief_distribution_dict.items()}
-        # normalized_belief_distribution_dict_without_correction = {k: v / sum(belief_distribution_dict_without_correction.values()) for k, v in belief_distribution_dict_without_correction.items()} 
-
+        
         normalized_belief_distribution = list(normalized_belief_distribution_dict.values())
 
-        return normalized_belief_distribution_dict, normalized_belief_distribution, words_freqs_preds_likelihoods_alphas
+        return normalized_belief_distribution_dict, normalized_belief_distribution, words_priors_likelihoods_alphas
 
     def activate_a_word(self, normalized_belief_distribution_dict, deterministic=True):    
         """
@@ -885,10 +1012,6 @@ if __name__ == "__main__":
         env.step(8)
         env.step(3)
         env.step(15)
-
-    # env = LexiconManager()
-    # print(env.get_top_k_words("ell"))
-    # print(env.get_top_k_words("tell"))
 
     # # Example usage:      NOTE: issues -- only output 'hel'
     # corpus = "hello help helmet hall held held hero heat heavy height hello jelly yellow mellow"
