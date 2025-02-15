@@ -430,11 +430,11 @@ class ApproximateWordGenerator:
     #     word_length = len(original_word)  
     #     generated_words = {original_word}  # Use a set to avoid duplicates
 
-    #     # 🔹 Identify the approximate positions of sampled letter chunks in the original word
+    #     # Identify the approximate positions of sampled letter chunks in the original word
     #     sampled_chunks = sampled_letters.split()  # Assumes spaces separate discontinuous parts
     #     chunk_positions = []
 
-    #     # 🔹 Find where each chunk appears in the original word
+    #     # Find where each chunk appears in the original word
     #     for chunk in sampled_chunks:
     #         pos = original_word.find(chunk)
     #         if pos == -1:
@@ -445,12 +445,12 @@ class ApproximateWordGenerator:
     #         word = list(original_word)  # Start with the original word
     #         new_word = [""] * word_length  # Empty template
 
-    #         # 🔹 Insert each sampled chunk into its approximate position 🔹
+    #         # Insert each sampled chunk into its approximate position
     #         for chunk, pos in chunk_positions:
     #             pos = min(pos, word_length - len(chunk))  # Ensure position is within bounds
     #             new_word[pos:pos + len(chunk)] = list(chunk)
 
-    #         # 🔹 Fill in the remaining positions randomly 🔹
+    #         # Fill in the remaining positions randomly
     #         for i in range(word_length):
     #             if new_word[i] == "":  # If it's still empty, insert a letter
     #                 if random.random() > self.variation_prob:
@@ -458,7 +458,7 @@ class ApproximateWordGenerator:
     #                 else:
     #                     new_word[i] = word[i] if i < len(word) else random.choice(self.alphabet)  # Keep some original letters
             
-    #         # 🔹 Randomly insert/delete a letter to create slight length variation 🔹
+    #         # Randomly insert/delete a letter to create slight length variation
     #         if len(new_word) > 3 and random.random() > 0.5:
     #             del new_word[random.randint(0, len(new_word) - 1)]
 
@@ -558,6 +558,9 @@ class WordActivationRLEnv(Env):
         3.  Human Eye-Tracking Evidence (Rayner, 1998)
             Readers skip over predictable words faster.
             Competing words are only considered when predictability is low.
+        
+    TODO: issues -- 1. the likelihood calculation is troublesome; 2. maybe increase the new evidence's weights, if all letters are sampled, then the other candidates should be dying
+    3. (next version) change the reward structure, lower the penalty
     """
 
     def __init__(self):
@@ -594,6 +597,7 @@ class WordActivationRLEnv(Env):
         self._word_freq_prob = None      # The frequency of the word to be recognized -- ranges from 0 to 1
         self._word_predictability_prob = None    # The predictability of the word to be recognized (actually the likelihood prob) -- ranges from 0 to 1
         self._word_dynamic_predictability_prob = None    # The dynamic predictability of the word to be recognized (actually the likelihood prob) -- ranges from 0 to 1, it changes as the agent samples new letters
+        self._word_prior_prob = None     # The prior probability of the word to be recognized -- ranges from 0 to 1, which is a combination of the frequency and predictability
         self._sampled_letters_so_far_with_spaces = None    # The letters that have been sampled
 
         # Representations
@@ -667,9 +671,9 @@ class WordActivationRLEnv(Env):
             self._word = self.lex_manager.get_word()
 
         self._word_len = len(self._word)
-        prior = self.lex_manager.prior_dict[self._word] 
+        self._word_prior_prob = self.lex_manager.prior_dict[self._word] 
         weight_prior_pred_to_freq = self.lex_manager.weight_prior_pred_to_freq
-        self._word_freq_prob = math.sqrt(prior / weight_prior_pred_to_freq)    # Only for training and testing, for actual simulation, need to use actual LLMs  NOTE: could set as controllable parameters
+        self._word_freq_prob = math.sqrt(self._word_prior_prob / weight_prior_pred_to_freq)    # Only for training and testing, for actual simulation, need to use actual LLMs  NOTE: could set as controllable parameters
         self._word_predictability_prob = self._word_freq_prob * weight_prior_pred_to_freq    # Only for training and testing, for actual simulation, need to use actual LLMs   NOTE: could set as controllable parameters
         self._word_to_activate = None
 
@@ -772,6 +776,7 @@ class WordActivationRLEnv(Env):
                     "episode_idnex": "TBD",   # The episode index, to be filled
                     "word": self._word,
                     "word_len": self._word_len,     # Used for analyzing the length's effect
+                    "word_prior_prob": self._word_prior_prob,     # Used for analyzing the prior's effect
                     "word_frequency": self._word_freq_prob,     # Used for analyzing the frequency's effect
                     "Word predictability": self._word_predictability_prob,    # Used for analyzing the predictability's effect
                     "word_representation": self._word_representation,   

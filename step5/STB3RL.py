@@ -846,6 +846,7 @@ class RL:
         with open(file_name, "r") as f:
             json_data = f.read()
         plot_word_activation_figures.analyze_fixations(json_data=json_data, save_file_dir=data_log_path, controlled_word_length=10)
+        # plot_word_activation_figures.analyze_fixations(json_data=json_data, save_file_dir=data_log_path)
 
         print(f'Time elapsed for running the DEBUG/TEST: {time.time() - start_time} seconds')
         ###############################################################################################
