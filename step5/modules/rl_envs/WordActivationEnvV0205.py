@@ -798,6 +798,7 @@ class WordActivationRLEnv(Env):
                     "word_to_activate": self._word_to_activate,
                     "normalized_belief_distribution": self._normalized_belief_distribution.copy(),
                     "normalized_belief_distribution_dict": self._normalized_belief_distribution_dict.copy(),
+                    "accurate_recognition": self._word_to_activate == self._word if self._done else None
                 })
                 return self.log_cumulative_version
 
@@ -1017,38 +1018,3 @@ if __name__ == "__main__":
         env.step(8)
         env.step(3)
         env.step(15)
-
-    # # Example usage:      NOTE: issues -- only output 'hel'
-    # corpus = "hello help helmet hall held held hero heat heavy height hello jelly yellow mellow"
-    # word_gen = MarkovWordGenerator(corpus)
-    # print(f"The Markov model: {word_gen.model}")
-    # for i in range(10):
-    #     print(word_gen.generate_similar_word("hel"))  # Might generate "helton" or "helder"
-
-    # # Example usage:     
-    # word_gen = ApproximateWordGenerator()   
-
-    # # Example: If sampled "com   hen" from "comprehensive"
-    # original_word = "comprehensive"
-    # sampled_letters = "com re ve"  # Two non-contiguous sampled parts
-    # top_k = 5
-
-    # print(f"Original word: {original_word}, Sampled letters: {sampled_letters}")
-    # print(word_gen.generate_similar_words(sampled_letters, original_word, top_k=top_k))
-
-    # # Load the FastText model once (global variable)
-    # fasttext_model = fasttext.load_model("/home/baiy4/reader-agent-zuco/cc.en.300.bin")
-
-    # def generate_similar_word_fasttext(prefix, k=5):
-    #     """Find similar words in FastText word embeddings."""
-    #     similar_words = fasttext_model.get_nearest_neighbors(prefix, k=k)
-    #     return [word for _, word in similar_words]
-
-    # # Example usage:
-    # for i in range(10):
-    #     print(generate_similar_word_fasttext("hel"))  # Outputs: ['hello', 'help', 'helium', 'helmet']
-
-    # print(f"8888888888888888888888888888888888")
-
-    # for i in range(10):     # NOTE: good, this works, but kind of slow, so maybe need to run everything beforehand offline. And also need to deal with special marks/symbols. 
-    #     print(fasttext_model.get_nearest_neighbors("hel", k=5))
