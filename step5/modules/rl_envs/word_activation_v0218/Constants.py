@@ -1,0 +1,1 @@
+NON_WORD = "NON_WORD"

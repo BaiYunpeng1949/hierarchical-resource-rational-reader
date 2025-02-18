@@ -53,7 +53,8 @@ from step5.modules.rl_envs.SentenceLevelControllerEnv_v1014 import SentenceLevel
 # from step5.modules.rl_envs.GeneralOculomotorControllerEnv_v1126 import GeneralOculomotorControllerEnv
 from modules.rl_envs.GeneralOculomotorControllerEnv_v1126 import GeneralOculomotorControllerEnv
 from modules.rl_envs.OMCRLEnvV0128 import OculomotorControllerRLEnv
-from modules.rl_envs.WordActivationEnvV0205 import WordActivationRLEnv
+# from modules.rl_envs.WordActivationEnvV0205 import WordActivationRLEnv
+from modules.rl_envs.word_activation_v0218.WordActivationEnvV0218 import WordActivationRLEnv
 
 _MODES = {
     'train': 'train',

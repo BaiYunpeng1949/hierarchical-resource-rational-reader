@@ -17,12 +17,25 @@ from collections import Counter
 from gymnasium import Env
 from gymnasium.spaces import Box, Dict, Discrete, Tuple
 
-# from memory_profiler import profile
-
 import pandas as pd
 
 from step5.utils import auxiliaries as aux
 from step5.utils import constants as cons
+
+
+# TODO: 
+#   1. change the bayesian update into the classic one, use the posterior as the next step's prior 
+#       -- this can still make sure with more samples as the input becaomes clear (less ambiguous), the correct word's likelihood will dominate
+#   2. remove the correct factor, make the bayesian update be the standard one
+#   3. following the bayesian reader, maybe directly choose the highest posterior word. (Stopping rule: The model “decides” it has recognized a word when the 
+#       posterior probability of a single candidate 𝑊 W crosses some threshold (e.g., 0.95 0.95), or when the \emph{posterior odds} 
+#       between the best and next‐best candidate is sufficiently large.)
+#   4. as for the likelihood function, we do this: p(sampled_letters_so_far | word_i) = norm_distribution(sampled_letters_so_far @ center word_i, std), 
+#       where std = sigma_emp / sqrt(len(sampled_letters_so_far)), and sigma_emp is an empirical value (sensor-level noise), could be plused with a scaling factor M (). 
+#       f(sampled_letters_so_far | word_i) = N(average_sampled_letters_position; word_i, std(t)^2). Since in BR, all words are encoded into a multi-dimensional space, 
+#       so everything is a vector, including the average_sampled_letters_positions and word_i. 
+#       NOTE: if we apply this technical path, we could try from very small lexicon, just using existing embeddings to encode all words, 
+#           and obtain all the frequency and predictability in advance.
 
 
 class LexiconManager():
