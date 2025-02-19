@@ -3,6 +3,7 @@ import math
 import numpy as np
 from collections import Counter
 
+from modules.rl_envs.word_activation_v0218 import Constants
 from modules.rl_envs.word_activation_v0218.Utilities import ApproximateWordGenerator
 
 
@@ -239,13 +240,120 @@ class LexiconManager():
         return dp[n][m]
 
 
+    # def get_likelihood_by_sampled_letters_so_far(
+    #     self,
+    #     sampled_letters_so_far: str,
+    #     candidate_word: str,
+    #     original_word: str,
+    #     distance_scale: float = 0.5,
+    #     misplaced_decay: float = 0.5
+    # ):
+    #     """
+    #     Computes a likelihood P(sampled_letters_so_far | candidate_word, original_word)
+    #     by combining:
+    #     1) Coverage of sampled letters in the candidate (duplicate-aware),
+    #     2) Edit-distance penalty between candidate_word and original_word,
+    #     3) alpha = #sampled_letters / len(original_word).
+
+    #     Returns:
+    #     (likelihood, alpha)
+
+    #     -----------
+    #     Explanation
+    #     -----------
+
+    #     1) We remove spaces from the sampled letters (e.g., "gr w" -> "grw") to count them properly.
+    #     2) We compute a "coverage score" of how many sampled letters appear in candidate_word.
+    #     - e.g., if we have "g", "r", "o" vs. candidate "grow", coverage ~ 3/3 = 1.0
+    #     - partial credit for letters that appear but not in the correct positions can be added
+    #         if you wish to track positions explicitly; for now we do a simpler approach.
+
+    #     3) We measure how different candidate_word is from the original_word via Levenshtein distance.
+    #     - dist_factor = exp(-distance_scale * distance).
+    #         If distance is 0, factor=1, if distance is large, factor~0.
+
+    #     4) Combine coverage score & dist_factor => coverage_score * dist_factor
+
+    #     5) alpha = min(1, (#sampled_letters) / len(original_word))
+    #     This indicates how strongly we trust the likelihood. If you eventually want to combine
+    #     with a prior, do:
+    #         combined_prob = (prior_prob)^(1-alpha) * (likelihood)^(alpha).
+
+    #     6) Return (likelihood, alpha).
+
+    #     -----------
+    #     Parameters
+    #     -----------
+    #     sampled_letters_so_far : str
+    #         The user-sampled letters, possibly containing spaces (e.g. "gr w").
+    #     candidate_word : str
+    #         The candidate word for which we want to compute the likelihood.
+    #     original_word : str
+    #         The actual (ground-truth) word, used to measure how far the candidate is from the real word.
+    #     distance_scale : float
+    #         Strength of the edit distance penalty. Larger = stronger penalty for bigger differences.
+    #     misplaced_decay : float
+    #         Partial credit factor for letters that exist in the candidate but exceed the count
+    #         or are "extra" after coverage. Lower = bigger penalty for mismatch.
+
+    #     -----------
+    #     Returns
+    #     -----------
+    #     (likelihood: float, alpha: float)
+    #     """
+
+    #     # 1. Remove spaces in typed letters
+    #     sample_str = sampled_letters_so_far.replace(" ", "")
+    #     sample_len = len(sample_str)
+
+    #     # 2. Count how many typed letters are in the candidate (accounting for duplicates)
+    #     candidate_counts = Counter(candidate_word)
+    #     sample_counts    = Counter(sample_str)
+
+    #     matched_letters = 0
+    #     misplaced_letters = 0
+
+    #     for ch, s_count in sample_counts.items():
+    #         c_count = candidate_counts.get(ch, 0)
+    #         if s_count <= c_count:
+    #             matched_letters += s_count
+    #         else:
+    #             matched_letters += c_count
+    #             leftover = s_count - c_count
+    #             misplaced_letters += leftover
+
+    #     # --- IMPORTANT CHANGE HERE ---
+    #     # coverage is based on candidate_word length, not just how many letters were typed
+    #     candidate_len = len(candidate_word)
+    #     if candidate_len > 0:
+    #         coverage_score = (matched_letters + misplaced_decay * misplaced_letters) / candidate_len
+    #     else:
+    #         coverage_score = 0.0
+
+    #     # 3. Edit distance penalty between candidate_word & original_word
+    #     dist = self.levenshtein_distance(candidate_word, original_word)
+    #     dist_factor = math.exp(-distance_scale * dist)
+
+    #     # 4. Combine coverage with distance factor
+    #     base_likelihood = coverage_score * dist_factor
+
+    #     # 5. alpha = #typed / #original
+    #     orig_len = len(original_word)
+    #     if orig_len > 0:
+    #         alpha = min(1.0, sample_len / orig_len)
+    #     else:
+    #         alpha = 1.0
+
+    #     return base_likelihood, alpha
+
     def get_likelihood_by_sampled_letters_so_far(
         self,
         sampled_letters_so_far: str,
         candidate_word: str,
         original_word: str,
         distance_scale: float = 0.5,
-        misplaced_decay: float = 0.5
+        misplaced_decay: float = 0.5,
+        c: float = 0.618  # Decay constant for non-original words
     ):
         """
         Computes a likelihood P(sampled_letters_so_far | candidate_word, original_word)
@@ -257,57 +365,41 @@ class LexiconManager():
         Returns:
         (likelihood, alpha)
 
-        -----------
-        Explanation
-        -----------
+        -----------  
+        Updated Logic:  
+        -----------  
+        - If `candidate_word == original_word`, likelihood = progress (coverage).  
+        - Otherwise, likelihood is scaled by (1 - c^(1 - progress)).  
 
-        1) We remove spaces from the sampled letters (e.g., "gr w" -> "grw") to count them properly.
-        2) We compute a "coverage score" of how many sampled letters appear in candidate_word.
-        - e.g., if we have "g", "r", "o" vs. candidate "grow", coverage ~ 3/3 = 1.0
-        - partial credit for letters that appear but not in the correct positions can be added
-            if you wish to track positions explicitly; for now we do a simpler approach.
+        -----------  
+        Parameters:  
+        -----------  
+        sampled_letters_so_far : str  
+            The user-sampled letters, possibly containing spaces (e.g. "gr w").  
+        candidate_word : str  
+            The candidate word for which we want to compute the likelihood.  
+        original_word : str  
+            The actual (ground-truth) word, used to measure how far the candidate is from the real word.  
+        distance_scale : float  
+            Strength of the edit distance penalty. Larger = stronger penalty for bigger differences.  
+        misplaced_decay : float  
+            Partial credit factor for letters that exist in the candidate but exceed the count.  
+        c : float  
+            Decay constant for scaling non-original words' probabilities.  
 
-        3) We measure how different candidate_word is from the original_word via Levenshtein distance.
-        - dist_factor = exp(-distance_scale * distance).
-            If distance is 0, factor=1, if distance is large, factor~0.
-
-        4) Combine coverage score & dist_factor => coverage_score * dist_factor
-
-        5) alpha = min(1, (#sampled_letters) / len(original_word))
-        This indicates how strongly we trust the likelihood. If you eventually want to combine
-        with a prior, do:
-            combined_prob = (prior_prob)^(1-alpha) * (likelihood)^(alpha).
-
-        6) Return (likelihood, alpha).
-
-        -----------
-        Parameters
-        -----------
-        sampled_letters_so_far : str
-            The user-sampled letters, possibly containing spaces (e.g. "gr w").
-        candidate_word : str
-            The candidate word for which we want to compute the likelihood.
-        original_word : str
-            The actual (ground-truth) word, used to measure how far the candidate is from the real word.
-        distance_scale : float
-            Strength of the edit distance penalty. Larger = stronger penalty for bigger differences.
-        misplaced_decay : float
-            Partial credit factor for letters that exist in the candidate but exceed the count
-            or are "extra" after coverage. Lower = bigger penalty for mismatch.
-
-        -----------
-        Returns
-        -----------
-        (likelihood: float, alpha: float)
+        -----------  
+        Returns:  
+        -----------  
+        (likelihood: float, alpha: float)  
         """
 
-        # 1. Remove spaces in typed letters
+        # 1. Remove spaces in sampled letters
         sample_str = sampled_letters_so_far.replace(" ", "")
         sample_len = len(sample_str)
 
-        # 2. Count how many typed letters are in the candidate (accounting for duplicates)
+        # 2. Count how many sampled letters appear in the candidate
         candidate_counts = Counter(candidate_word)
-        sample_counts    = Counter(sample_str)
+        sample_counts = Counter(sample_str)
 
         matched_letters = 0
         misplaced_letters = 0
@@ -318,32 +410,36 @@ class LexiconManager():
                 matched_letters += s_count
             else:
                 matched_letters += c_count
-                leftover = s_count - c_count
-                misplaced_letters += leftover
+                misplaced_letters += s_count - c_count
 
-        # --- IMPORTANT CHANGE HERE ---
-        # coverage is based on candidate_word length, not just how many letters were typed
+        # 3. Compute coverage score based on candidate word length
         candidate_len = len(candidate_word)
         if candidate_len > 0:
             coverage_score = (matched_letters + misplaced_decay * misplaced_letters) / candidate_len
         else:
             coverage_score = 0.0
 
-        # 3. Edit distance penalty between candidate_word & original_word
-        dist = self.levenshtein_distance(candidate_word, original_word)
-        dist_factor = math.exp(-distance_scale * dist)
-
-        # 4. Combine coverage with distance factor
-        base_likelihood = coverage_score * dist_factor
-
-        # 5. alpha = #typed / #original
+        # 4. Compute progress for the original word
         orig_len = len(original_word)
-        if orig_len > 0:
-            alpha = min(1.0, sample_len / orig_len)
-        else:
-            alpha = 1.0
+        progress = min(1.0, sample_len / orig_len) if orig_len > 0 else 1.0
 
-        return base_likelihood, alpha
+        # 5. If candidate is the original word, return progress as likelihood
+        if candidate_word == original_word:
+            likelihood = progress
+        else:
+            # Compute base likelihood using edit distance
+            dist = self.levenshtein_distance(candidate_word, original_word)
+            dist_factor = math.exp(-distance_scale * dist)
+            base_likelihood = coverage_score * dist_factor
+
+            # Apply (1 - c^(1 - progress))
+            likelihood = base_likelihood * (1 - c ** (1 - progress))
+
+        # 6. Compute alpha
+        alpha = progress
+
+        return max(Constants.EPSILON, likelihood), alpha  # Avoid zero likelihood
+
 
     def get_word(self):
         word_to_recognize = random.choice(self.train_test_words_data)

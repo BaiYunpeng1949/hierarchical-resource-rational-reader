@@ -1,1 +1,2 @@
 NON_WORD = "NON_WORD"
+EPSILON = 1e-5

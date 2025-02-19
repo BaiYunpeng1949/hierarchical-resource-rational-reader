@@ -154,10 +154,6 @@ class TransitionFunction():
         else:   # For the following fixations, we use the last step's posterior as priors
             assert words_norm_beliefs_dict is not None, "The last step's belief distribution should be provided for the Bayesian inference."
             for word in words_norm_beliefs_dict:
-
-                # # TODO debug delete later
-                # print(f"word: {word}, words_norm_beliefs_dict[word]: {words_norm_beliefs_dict[word]}, words_likelihood_dict[word]: {words_likelihood_dict[word]}")
-
                 words_posteriors_dict[word] = words_norm_beliefs_dict[word] * words_likelihood_dict[word] 
         
         # Normalize the posteriors
