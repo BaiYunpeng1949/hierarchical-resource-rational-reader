@@ -861,6 +861,11 @@ class RL:
             os.makedirs(word_length_effect_data_log_save_path)
         plot_word_activation_figures.analyze_word_length_effect(json_data=json_data, save_file_dir=word_length_effect_data_log_save_path)
 
+        prior_vs_word_length_data_log_save_path = os.path.join(data_log_path, "prior_vs_word_length")
+        if not os.path.exists(prior_vs_word_length_data_log_save_path):
+            os.makedirs(prior_vs_word_length_data_log_save_path)
+        plot_word_activation_figures.analyze_prior_vs_word_length(json_data=json_data, save_file_dir=prior_vs_word_length_data_log_save_path)
+
         print(f'Time elapsed for running the DEBUG/TEST: {time.time() - start_time} seconds')
         ###############################################################################################
 

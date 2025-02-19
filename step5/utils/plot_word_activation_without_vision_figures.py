@@ -170,7 +170,7 @@ def analyze_priors_effect(json_data, save_file_dir):
     generate_universal_plots(universal_freq, universal_fixations, "Word Frequency", "word_frequency", "green")
     generate_universal_plots(universal_pred, universal_fixations, "Word Predictability", "word_predictability", "purple")
     
-    print(f"Plots saved successfully in {save_file_dir}")
+    print(f"Word' Prior Effect Plots saved successfully in {save_file_dir}")
 
 
 def analyze_word_length_effect(json_data, save_file_dir):
@@ -282,6 +282,64 @@ def analyze_word_length_effect(json_data, save_file_dir):
     plt.title("Average Fixations vs. Word Length (Universal)")
     plt.grid(True)
     plt.savefig(os.path.join(universal_dir, "avg_fixations_vs_word_length.png"))
+    plt.close()
+    
+    print(f"Word Length's Effect Analyze Plots saved successfully in {save_file_dir}")
+
+
+def analyze_prior_vs_word_length(json_data, save_file_dir):
+    """
+    Generates fixation analysis plots for word prior probability vs. word length.
+    Includes scatter plots, linear regression plots, and averaged line plots.
+    """
+    data = json.loads(json_data)
+    os.makedirs(save_file_dir, exist_ok=True)
+    
+    prior_values = []
+    word_lengths = []
+    
+    for episode in data:
+        w_prior = episode["word_prior_prob"]
+        w_len = episode["word_len"]
+        
+        prior_values.append(w_prior)
+        word_lengths.append(w_len)
+    
+    universal_dir = os.path.join(save_file_dir, "prior_vs_word_length")
+    os.makedirs(universal_dir, exist_ok=True)
+    
+    # Scatter plot
+    plt.figure(figsize=(8, 6))
+    plt.scatter(word_lengths, prior_values, alpha=0.7)
+    plt.xlabel("Word Length")
+    plt.ylabel("Word Prior Probability")
+    plt.title("Word Length vs. Word Prior Probability (Universal)")
+    plt.grid(True)
+    plt.savefig(os.path.join(universal_dir, "scatter_word_length_vs_prior.png"))
+    plt.close()
+    
+    # Linear regression plot
+    slope, intercept, _, _, _ = linregress(word_lengths, prior_values)
+    plt.figure(figsize=(8, 6))
+    plt.scatter(word_lengths, prior_values, alpha=0.7, label="Data")
+    plt.plot(word_lengths, np.array(word_lengths) * slope + intercept, color='red', label="Linear Fit")
+    plt.xlabel("Word Length")
+    plt.ylabel("Word Prior Probability")
+    plt.title("Linear Regression: Word Length vs. Word Prior Probability")
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(os.path.join(universal_dir, "linear_word_length_vs_prior.png"))
+    plt.close()
+    
+    # Line chart connecting averages
+    x_sorted, y_means = compute_average_fixations(word_lengths, prior_values)
+    plt.figure(figsize=(8, 6))
+    plt.plot(x_sorted, y_means, marker='o', linestyle='-', color='green')
+    plt.xlabel("Word Length")
+    plt.ylabel("Average Word Prior Probability")
+    plt.title("Average Word Prior Probability vs. Word Length (Universal)")
+    plt.grid(True)
+    plt.savefig(os.path.join(universal_dir, "avg_word_length_vs_prior.png"))
     plt.close()
     
     print(f"Plots saved successfully in {save_file_dir}")

@@ -92,7 +92,8 @@ class WordActivationRLEnv(Env):
         3.  Human Eye-Tracking Evidence (Rayner, 1998)
             Readers skip over predictable words faster.
             Competing words are only considered when predictability is low.
-    TODO: check the logs' belief distributions
+    
+    NOTE: now the issue is, the word cannot easily revive from a very low init prior, even though short and could be easily fully traversed.
     """
 
     def __init__(self):
@@ -121,8 +122,13 @@ class WordActivationRLEnv(Env):
         self.transition_function = TransitionFunction(max_word_len=self.MAX_WORD_LEN, num_top_k_candidates=self._top_k, foveal_size=self._foveal_size)
 
         # Internal belief of the agent: belief over the top-k words, empirically set to a constant
-        self._normalized_belief_distribution_for_parallel_activation_with_k_words = self.transition_function.reset_state_normalized_belief_distribution()      # The belief distribution has to be normalized, sumed up to 1
-        self._normalized_belief_distribution_dict_for_parallel_activation_with_k_words = None
+        self._normalized_belief_distribution_parallel_activation_with_k_words = self.transition_function.reset_state_normalized_belief_distribution()      # The belief distribution has to be normalized, sumed up to 1
+        self._normalized_belief_distribution_dict_parallel_activation_with_k_words = None
+
+        # Initialize the prior dictionary across candidate words
+        self._prior_distribution_dict_parallel_activation_with_k_words = None
+        # Initialize the likelihood dictionary across candidate words
+        self._likelihood_dict_parallel_activation_with_k_words = None
 
         self._word = None           # The word to be recognized
         self._word_len = None       # The length of the word to be recognized
@@ -150,7 +156,7 @@ class WordActivationRLEnv(Env):
         # Define the observation space:
         self.STATEFUL_OBS = "stateful_obs"
         self.ACTION_OBS = "action_obs"
-        self._num_stateful_obs = len(self._normalized_belief_distribution_for_parallel_activation_with_k_words) + len(self._word_representation) + 1 + (self.MAX_WORD_LEN + 1 + 1) # Belief distribution, word representation with sampled letters, word length
+        self._num_stateful_obs = len(self._normalized_belief_distribution_parallel_activation_with_k_words) + len(self._word_representation) + 1 + (self.MAX_WORD_LEN + 1 + 1) # Belief distribution, word representation with sampled letters, word length
         self.observation_space = Box(low=-1, high=1, shape=(self._num_stateful_obs,))
 
         # Initialize the reward function
@@ -186,8 +192,14 @@ class WordActivationRLEnv(Env):
 
         # Reset the belief distribution
         non_word = Constants.NON_WORD
-        self._normalized_belief_distribution_dict_for_parallel_activation_with_k_words = {non_word: 0.20, non_word + '-1': 0.20, non_word + '-2': 0.20, non_word + '-3': 0.20, non_word + '-4': 0.20}
-        self._normalized_belief_distribution_for_parallel_activation_with_k_words = self.transition_function.reset_state_normalized_belief_distribution()
+        self._normalized_belief_distribution_dict_parallel_activation_with_k_words = {non_word: 0.20, non_word + '-1': 0.20, non_word + '-2': 0.20, non_word + '-3': 0.20, non_word + '-4': 0.20}
+        self._normalized_belief_distribution_parallel_activation_with_k_words = self.transition_function.reset_state_normalized_belief_distribution()
+
+        # Reset the likelihodd distribution dictionary
+        self._likelihood_dict_parallel_activation_with_k_words = {non_word: 0.20, non_word + '-1': 0.20, non_word + '-2': 0.20, non_word + '-3': 0.20, non_word + '-4': 0.20}
+
+        # Reset the prior distribution dictionary
+        self._prior_distribution_dict_parallel_activation_with_k_words = {non_word: 0.20, non_word + '-1': 0.20, non_word + '-2': 0.20, non_word + '-3': 0.20, non_word + '-4': 0.20}
 
         # Reset the word representation
         self._word_representation = self.transition_function.reset_state_word_representation()
@@ -244,11 +256,11 @@ class WordActivationRLEnv(Env):
 
                 assert self._sampled_letters_so_far_with_spaces != "NO_LETTER_SAMPLED", f"no letters sampled so far, the word is {self._word}, the action is {action}, the word length is {self._word_len}"
                 
-                self._normalized_belief_distribution_dict_for_parallel_activation_with_k_words, self._normalized_belief_distribution_for_parallel_activation_with_k_words = self.transition_function.update_state_normalized_belief_distribution_dict(
+                self._prior_distribution_dict_parallel_activation_with_k_words, self._normalized_belief_distribution_dict_parallel_activation_with_k_words, self._normalized_belief_distribution_parallel_activation_with_k_words, self._likelihood_dict_parallel_activation_with_k_words = self.transition_function.update_state_normalized_belief_distribution_dict(
                     sampled_letters_so_far_with_spaces=self._sampled_letters_so_far_with_spaces, word_to_recognize=self._word, 
-                    parallelly_activated_words_dict=self._normalized_belief_distribution_dict_for_parallel_activation_with_k_words,
+                    parallelly_activated_words_beliefs_dict=self._normalized_belief_distribution_dict_parallel_activation_with_k_words,
                     lexicon_manager=self.lex_manager
-                )  
+                ) 
 
                 reward = self.reward_function.get_step_wise_effort_cost(is_action_valid=True)
             
@@ -270,7 +282,7 @@ class WordActivationRLEnv(Env):
     
     def _terminate_step(self):
         self._word_to_activate = self.transition_function.activate_a_word(
-            normalized_belief_distribution_dict=self._normalized_belief_distribution_dict_for_parallel_activation_with_k_words, deterministic=True
+            normalized_belief_distribution_dict=self._normalized_belief_distribution_dict_parallel_activation_with_k_words, deterministic=True
         )
             
         reward = self.reward_function.get_terminate_reward(
@@ -291,7 +303,7 @@ class WordActivationRLEnv(Env):
         action_obs = np.zeros(self.MAX_WORD_LEN + 1 + 1)        # three types of actions -1, fixations, stop
         action_obs[self._action + 1] = 1
 
-        stateful_obs = np.concatenate([self._normalized_belief_distribution_for_parallel_activation_with_k_words, self._sampled_letters_so_far_representation, [self._word_len], action_obs])
+        stateful_obs = np.concatenate([self._normalized_belief_distribution_parallel_activation_with_k_words, self._sampled_letters_so_far_representation, [self._word_len], action_obs])
 
         assert len(stateful_obs) == self._num_stateful_obs, f"expected {self._num_stateful_obs} but got {len(stateful_obs)}"
 
@@ -330,8 +342,10 @@ class WordActivationRLEnv(Env):
                     "sampled_letters_so_far": self._sampled_letters_so_far_with_spaces,
                     "sampled_letters_so_far_representation": self._sampled_letters_so_far_representation.copy(),
                     "word_to_activate": self._word_to_activate,
-                    "normalized_belief_distribution": self._normalized_belief_distribution_for_parallel_activation_with_k_words.copy(),
-                    "normalized_belief_distribution_dict": self._normalized_belief_distribution_dict_for_parallel_activation_with_k_words.copy(),
+                    "prior_distribution_dict": self._prior_distribution_dict_parallel_activation_with_k_words.copy(),
+                    "likelihood_distribution_dict": self._likelihood_dict_parallel_activation_with_k_words.copy(),
+                    "normalized_belief_distribution_dict": self._normalized_belief_distribution_dict_parallel_activation_with_k_words.copy(),
+                    "normalized_belief_distribution": self._normalized_belief_distribution_parallel_activation_with_k_words.copy(),
                     "accurate_recognition": self._word_to_activate == self._word if self._done else None
                 })
                 return self.log_cumulative_version

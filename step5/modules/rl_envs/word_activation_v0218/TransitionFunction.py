@@ -83,7 +83,7 @@ class TransitionFunction():
             self, 
             sampled_letters_so_far_with_spaces, 
             word_to_recognize, 
-            parallelly_activated_words_dict,
+            parallelly_activated_words_beliefs_dict,
             lexicon_manager: LexiconManager
         ):
         """
@@ -101,10 +101,12 @@ class TransitionFunction():
         Not making sense in terms of the word length's effect
         """
         
-        belief_distribution_list = []
+        norm_belief_distribution_list = []
+
+        words_prior_dict = {}
 
         # Do the Bayesian updating
-        first_activated_word = next(iter(parallelly_activated_words_dict))  # Get the first activated word
+        first_activated_word = next(iter(parallelly_activated_words_beliefs_dict))  # Get the first activated word
         if first_activated_word == Constants.NON_WORD:  # If this is the first valid fixation, i.e., sampling letter information, then use fixed freq and preds as priors
             words_priors_likelihoods_alphas = lexicon_manager.get_top_k_words(
                 sampled_letters_so_far_with_spaces=sampled_letters_so_far_with_spaces, original_word=word_to_recognize, top_k=self._top_k
@@ -115,26 +117,25 @@ class TransitionFunction():
             words_norm_belief_dict = self._bayesian_inference(
                 words_norm_beliefs_dict=None, words_likelihood_dict=words_likelihoods_dict, words_norm_freq_dict=words_norm_init_priors_dict
             )
+            words_prior_dict = words_norm_init_priors_dict
         else:   # If this is not the first valid fixation, i.e., sampling letter information, then use the last step's posterior as priors
             # Get the likelihoods of the activated words
-            words_likelihoods_dict = {w: lexicon_manager.get_likelihood_by_sampled_letters_so_far(sampled_letters_so_far=sampled_letters_so_far_with_spaces, candidate_word=w, original_word=word_to_recognize)[0] for w in parallelly_activated_words_dict}
+            words_likelihoods_dict = {w: lexicon_manager.get_likelihood_by_sampled_letters_so_far(sampled_letters_so_far=sampled_letters_so_far_with_spaces, candidate_word=w, original_word=word_to_recognize)[0] for w in parallelly_activated_words_beliefs_dict}
 
             # Bayesian update
             words_norm_belief_dict = self._bayesian_inference(
-                words_norm_beliefs_dict=parallelly_activated_words_dict, words_likelihood_dict=words_likelihoods_dict, 
+                words_norm_beliefs_dict=parallelly_activated_words_beliefs_dict, words_likelihood_dict=words_likelihoods_dict, 
                 words_norm_freq_dict=None
             )
+
+            words_prior_dict = parallelly_activated_words_beliefs_dict.copy()
         
         # Get the norm belief distribution as a list
-        belief_distribution_list = [words_norm_belief_dict[w] for w in words_norm_belief_dict]
+        norm_belief_distribution_list = [words_norm_belief_dict[w] for w in words_norm_belief_dict]
 
-        # # TODO debug delete later
-        # print(f"The word to recognize is: {word_to_recognize}, the sampled letters till this step is: {sampled_letters_so_far_with_spaces}")
-        # print(f"The belief dict is: {words_norm_belief_dict}")
-        
         # NOTE: last time the agent could not learn well maybe because the agent does not know the belief's corresponding words, which is big and small. 
         #   Maybe think about how to encode the dictionary into the agent's observation
-        return words_norm_belief_dict, belief_distribution_list
+        return words_prior_dict, words_norm_belief_dict, norm_belief_distribution_list, words_likelihoods_dict
         
     def _bayesian_inference(self, words_norm_beliefs_dict=None, words_likelihood_dict=None, words_norm_freq_dict=None):
         """
