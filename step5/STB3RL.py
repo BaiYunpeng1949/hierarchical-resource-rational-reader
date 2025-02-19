@@ -1,5 +1,6 @@
 import os
 
+import os.path
 import time
 import yaml
 import csv
@@ -847,7 +848,18 @@ class RL:
         with open(file_name, "r") as f:
             json_data = f.read()
         # plot_word_activation_figures.analyze_fixations(json_data=json_data, save_file_dir=data_log_path, controlled_word_length=10)
-        plot_word_activation_figures.analyze_fixations(json_data=json_data, save_file_dir=data_log_path)
+        # plot_word_activation_figures.analyze_fixations(json_data=json_data, save_file_dir=data_log_path)
+        # Do the piror's effects -- freq and pred
+
+        prior_data_effect_log_save_path = os.path.join(data_log_path, "prior_effects")
+        if not os.path.exists(prior_data_effect_log_save_path):
+            os.makedirs(prior_data_effect_log_save_path)
+        plot_word_activation_figures.analyze_priors_effect(json_data=json_data, save_file_dir=prior_data_effect_log_save_path)
+
+        word_length_effect_data_log_save_path = os.path.join(data_log_path, "word_length_effect")
+        if not os.path.exists(word_length_effect_data_log_save_path):
+            os.makedirs(word_length_effect_data_log_save_path)
+        plot_word_activation_figures.analyze_word_length_effect(json_data=json_data, save_file_dir=word_length_effect_data_log_save_path)
 
         print(f'Time elapsed for running the DEBUG/TEST: {time.time() - start_time} seconds')
         ###############################################################################################

@@ -2,261 +2,413 @@ import os
 import matplotlib.pyplot as plt
 import json
 import numpy as np
+from collections import defaultdict
+from scipy.stats import linregress
 
-def analyze_fixations(json_data, save_file_dir, controlled_word_length=None):
+def compute_average_fixations(xs, ys):
     """
-    Analyzes fixation data and generates:
-      1. Scatter plots of Number of Fixations vs. (Word Length | Word Frequency | Word Predictability).
-      2. Line plots of Average Fixations vs. (Word Length | Word Frequency | Word Predictability).
-         - For Frequency and Predictability, you can optionally control for a specific word length
-           via the 'controlled_word_length' parameter.
-      3. A scatter plot of Fixation Position Analysis (color hue = fixation order).
-      4. A bar plot showing the overall recognition accuracy (in %), based on "accurate_recognition"
-         in the final fixation (the one with "done"=True).
-
-    Saves the plots in the specified directory.
+    Groups data by unique x-values and computes the mean of y-values per group.
+    Returns (x_sorted, y_means) for plotting.
     """
+    aggregator = defaultdict(list)
+    for x_val, y_val in zip(xs, ys):
+        aggregator[x_val].append(y_val)
+    
+    x_unique_sorted = sorted(aggregator.keys())
+    y_means = [np.mean(aggregator[xv]) for xv in x_unique_sorted]
+    return x_unique_sorted, y_means
 
-    # Parse the JSON data
+# def analyze_priors_effect(json_data, save_file_dir):
+#     """
+#     Generates fixation analysis plots for word frequency and predictability
+#     across different word lengths. Saves results in separate folders.
+#     Includes linear regression and averaged line plots.
+#     """
+#     data = json.loads(json_data)
+#     os.makedirs(save_file_dir, exist_ok=True)
+    
+#     # Collect data by word length
+#     word_lengths = set()
+#     fixations_by_length = defaultdict(lambda: {"freq": [], "fixations": [], "pred": []})
+    
+#     for episode in data:
+#         w_len = episode["word_len"]
+#         w_freq = episode["word_frequency"]
+#         w_pred = episode.get("Word predictability", 0.0)
+#         num_fixations = sum(1 for f in episode["fixations"] if not f["done"])
+        
+#         word_lengths.add(w_len)
+#         fixations_by_length[w_len]["freq"].append(w_freq)
+#         fixations_by_length[w_len]["fixations"].append(num_fixations)
+#         fixations_by_length[w_len]["pred"].append(w_pred)
+    
+#     # Create separate directories
+#     freq_dir = os.path.join(save_file_dir, "word_frequency")
+#     pred_dir = os.path.join(save_file_dir, "word_predictability")
+#     os.makedirs(freq_dir, exist_ok=True)
+#     os.makedirs(pred_dir, exist_ok=True)
+    
+#     # Generate plots for each word length
+#     for w_len in sorted(word_lengths):
+#         freq_x = fixations_by_length[w_len]["freq"]
+#         fix_y = fixations_by_length[w_len]["fixations"]
+#         pred_x = fixations_by_length[w_len]["pred"]
+        
+#         # Scatter plot: Fixations vs. Word Frequency
+#         plt.figure(figsize=(8, 6))
+#         plt.scatter(freq_x, fix_y, alpha=0.7)
+#         plt.xlabel("Word Frequency")
+#         plt.ylabel("Number of Fixations")
+#         plt.title(f"Fixations vs. Word Frequency | Word Length = {w_len}")
+#         plt.grid(True)
+#         plt.savefig(os.path.join(freq_dir, f"fixations_vs_word_freq_len_{w_len}.png"))
+#         plt.close()
+        
+#         # Linear regression plot
+#         slope, intercept, _, _, _ = linregress(freq_x, fix_y)
+#         plt.figure(figsize=(8, 6))
+#         plt.scatter(freq_x, fix_y, alpha=0.7, label="Data")
+#         plt.plot(freq_x, np.array(freq_x) * slope + intercept, color='red', label="Linear Fit")
+#         plt.xlabel("Word Frequency")
+#         plt.ylabel("Number of Fixations")
+#         plt.title(f"Linear Regression: Fixations vs. Word Frequency | Word Length = {w_len}")
+#         plt.legend()
+#         plt.grid(True)
+#         plt.savefig(os.path.join(freq_dir, f"linear_fixations_vs_word_freq_len_{w_len}.png"))
+#         plt.close()
+        
+#         # Line chart connecting averages
+#         x_sorted, y_means = compute_average_fixations(freq_x, fix_y)
+#         plt.figure(figsize=(8, 6))
+#         plt.plot(x_sorted, y_means, marker='o', linestyle='-', color='blue')
+#         plt.xlabel("Word Frequency")
+#         plt.ylabel("Average Number of Fixations")
+#         plt.title(f"Average Fixations vs. Word Frequency | Word Length = {w_len}")
+#         plt.grid(True)
+#         plt.savefig(os.path.join(freq_dir, f"avg_fixations_vs_word_freq_len_{w_len}.png"))
+#         plt.close()
+        
+#         # Scatter plot: Fixations vs. Word Predictability
+#         plt.figure(figsize=(8, 6))
+#         plt.scatter(pred_x, fix_y, alpha=0.7)
+#         plt.xlabel("Word Predictability")
+#         plt.ylabel("Number of Fixations")
+#         plt.title(f"Fixations vs. Word Predictability | Word Length = {w_len}")
+#         plt.grid(True)
+#         plt.savefig(os.path.join(pred_dir, f"fixations_vs_word_pred_len_{w_len}.png"))
+#         plt.close()
+        
+#         # Linear regression plot
+#         slope, intercept, _, _, _ = linregress(pred_x, fix_y)
+#         plt.figure(figsize=(8, 6))
+#         plt.scatter(pred_x, fix_y, alpha=0.7, label="Data")
+#         plt.plot(pred_x, np.array(pred_x) * slope + intercept, color='red', label="Linear Fit")
+#         plt.xlabel("Word Predictability")
+#         plt.ylabel("Number of Fixations")
+#         plt.title(f"Linear Regression: Fixations vs. Word Predictability | Word Length = {w_len}")
+#         plt.legend()
+#         plt.grid(True)
+#         plt.savefig(os.path.join(pred_dir, f"linear_fixations_vs_word_pred_len_{w_len}.png"))
+#         plt.close()
+        
+#         # Line chart connecting averages
+#         x_sorted, y_means = compute_average_fixations(pred_x, fix_y)
+#         plt.figure(figsize=(8, 6))
+#         plt.plot(x_sorted, y_means, marker='o', linestyle='-', color='green')
+#         plt.xlabel("Word Predictability")
+#         plt.ylabel("Average Number of Fixations")
+#         plt.title(f"Average Fixations vs. Word Predictability | Word Length = {w_len}")
+#         plt.grid(True)
+#         plt.savefig(os.path.join(pred_dir, f"avg_fixations_vs_word_pred_len_{w_len}.png"))
+#         plt.close()
+    
+#     print(f"Plots saved successfully in {save_file_dir}")
+
+
+def analyze_priors_effect(json_data, save_file_dir):
+    """
+    Generates fixation analysis plots for word frequency and predictability
+    across different word lengths. Saves results in separate folders.
+    Includes linear regression, averaged line plots, and universal plots.
+    """
     data = json.loads(json_data)
-
-    # Ensure the directory exists
     os.makedirs(save_file_dir, exist_ok=True)
-
-    # ------------------------------------------------------------------
-    # PART A: EXTRACT FIXATION DATA FOR PLOTS
-    # ------------------------------------------------------------------
-    word_lengths_all = []
-    word_frequencies_all = []
-    word_predictabilities_all = []
-    num_fixations_all = []
-    fixation_positions = []
-
-    # For recognition accuracy
-    total_episodes_with_done = 0
-    total_correct_recognitions = 0
-
+    
+    # Collect data by word length
+    word_lengths = set()
+    fixations_by_length = defaultdict(lambda: {"freq": [], "fixations": [], "pred": []})
+    universal_freq = []
+    universal_pred = []
+    universal_fixations = []
+    universal_word_lengths = []
+    
     for episode in data:
-        w_len  = episode["word_len"]
+        w_len = episode["word_len"]
         w_freq = episode["word_frequency"]
-        # Safely get predictability from logs
         w_pred = episode.get("Word predictability", 0.0)
+        num_fixations = sum(1 for f in episode["fixations"] if not f["done"])
+        
+        word_lengths.add(w_len)
+        fixations_by_length[w_len]["freq"].append(w_freq)
+        fixations_by_length[w_len]["fixations"].append(num_fixations)
+        fixations_by_length[w_len]["pred"].append(w_pred)
+        
+        universal_freq.append(w_freq)
+        universal_pred.append(w_pred)
+        universal_fixations.append(num_fixations)
+        universal_word_lengths.append(w_len)
+    
+    # Create separate directories
+    freq_dir = os.path.join(save_file_dir, "word_frequency")
+    pred_dir = os.path.join(save_file_dir, "word_predictability")
+    universal_dir = os.path.join(save_file_dir, "universal_plots")
+    os.makedirs(freq_dir, exist_ok=True)
+    os.makedirs(pred_dir, exist_ok=True)
+    os.makedirs(universal_dir, exist_ok=True)
+    
+    # Generate universal plots
+    def generate_universal_plots(x_data, y_data, xlabel, filename, color):
+        plt.figure(figsize=(8, 6))
+        plt.scatter(x_data, y_data, alpha=0.7)
+        plt.xlabel(xlabel)
+        plt.ylabel("Number of Fixations")
+        plt.title(f"Fixations vs. {xlabel} (Universal)")
+        plt.grid(True)
+        plt.savefig(os.path.join(universal_dir, f"fixations_vs_{filename}.png"))
+        plt.close()
+        
+        slope, intercept, _, _, _ = linregress(x_data, y_data)
+        plt.figure(figsize=(8, 6))
+        plt.scatter(x_data, y_data, alpha=0.7, label="Data")
+        plt.plot(x_data, np.array(x_data) * slope + intercept, color='red', label="Linear Fit")
+        plt.xlabel(xlabel)
+        plt.ylabel("Number of Fixations")
+        plt.title(f"Linear Regression: Fixations vs. {xlabel} (Universal)")
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(os.path.join(universal_dir, f"linear_fixations_vs_{filename}.png"))
+        plt.close()
+        
+        x_sorted, y_means = compute_average_fixations(x_data, y_data)
+        plt.figure(figsize=(8, 6))
+        plt.plot(x_sorted, y_means, marker='o', linestyle='-', color=color)
+        plt.xlabel(xlabel)
+        plt.ylabel("Average Number of Fixations")
+        plt.title(f"Average Fixations vs. {xlabel} (Universal)")
+        plt.grid(True)
+        plt.savefig(os.path.join(universal_dir, f"avg_fixations_vs_{filename}.png"))
+        plt.close()
+    
+    generate_universal_plots(universal_word_lengths, universal_fixations, "Word Length", "word_length", "blue")
+    generate_universal_plots(universal_freq, universal_fixations, "Word Frequency", "word_frequency", "green")
+    generate_universal_plots(universal_pred, universal_fixations, "Word Predictability", "word_predictability", "purple")
+    
+    print(f"Plots saved successfully in {save_file_dir}")
 
-        fixations = episode["fixations"]
 
-        # (1) Count how many fixations have done=False
-        num_fixations_not_done = sum(1 for f in fixations if not f["done"])
 
-        # (2) Add to arrays for scatter/line plots
-        word_lengths_all.append(w_len)
-        word_frequencies_all.append(w_freq)
-        word_predictabilities_all.append(w_pred)
-        num_fixations_all.append(num_fixations_not_done)
+# def analyze_word_length_effect(json_data, save_file_dir):
+#     """
+#     Generates fixation analysis plots for word prior probability.
+#     Splits data into 10 bins based on word prior probability (0.0-1.0 range) and 
+#     creates scatter plots, linear regression plots, and averaged line plots.
+#     """
+#     data = json.loads(json_data)
+#     os.makedirs(save_file_dir, exist_ok=True)
+    
+#     # Collect data by word prior probability bins
+#     bins = np.linspace(0, 1, 11)  # 10 bins: [0-0.1), [0.1-0.2), ..., [0.9-1.0]
+#     fixations_by_prior = defaultdict(lambda: {"word_lengths": [], "fixations": []})
+    
+#     for episode in data:
+#         w_prior = episode["word_prior_prob"]
+#         w_len = episode["word_len"]
+#         num_fixations = sum(1 for f in episode["fixations"] if not f["done"])
+        
+#         # Assign to the appropriate bin
+#         for i in range(10):
+#             if bins[i] <= w_prior < bins[i + 1]:
+#                 fixations_by_prior[i]["word_lengths"].append(w_len)
+#                 fixations_by_prior[i]["fixations"].append(num_fixations)
+#                 break
+    
+#     # Create separate directory for prior probability
+#     prior_dir = os.path.join(save_file_dir, "word_prior_probability")
+#     os.makedirs(prior_dir, exist_ok=True)
+    
+#     # Generate plots for each prior bin
+#     for i in range(10):
+#         word_x = fixations_by_prior[i]["word_lengths"]
+#         fix_y = fixations_by_prior[i]["fixations"]
+        
+#         if not word_x:  # Skip empty bins
+#             continue
+        
+#         # Scatter plot: Fixations vs. Word Length
+#         plt.figure(figsize=(8, 6))
+#         plt.scatter(word_x, fix_y, alpha=0.7)
+#         plt.xlabel("Word Length")
+#         plt.ylabel("Number of Fixations")
+#         plt.title(f"Fixations vs. Word Length | Prior Bin {bins[i]:.1f}-{bins[i+1]:.1f}")
+#         plt.grid(True)
+#         plt.savefig(os.path.join(prior_dir, f"fixations_vs_word_length_bin_{i}.png"))
+#         plt.close()
+        
+#         # Linear regression plot
+#         slope, intercept, _, _, _ = linregress(word_x, fix_y)
+#         plt.figure(figsize=(8, 6))
+#         plt.scatter(word_x, fix_y, alpha=0.7, label="Data")
+#         plt.plot(word_x, np.array(word_x) * slope + intercept, color='red', label="Linear Fit")
+#         plt.xlabel("Word Length")
+#         plt.ylabel("Number of Fixations")
+#         plt.title(f"Linear Regression: Fixations vs. Word Length | Prior Bin {bins[i]:.1f}-{bins[i+1]:.1f}")
+#         plt.legend()
+#         plt.grid(True)
+#         plt.savefig(os.path.join(prior_dir, f"linear_fixations_vs_word_length_bin_{i}.png"))
+#         plt.close()
+        
+#         # Line chart connecting averages
+#         x_sorted, y_means = compute_average_fixations(word_x, fix_y)
+#         plt.figure(figsize=(8, 6))
+#         plt.plot(x_sorted, y_means, marker='o', linestyle='-', color='blue')
+#         plt.xlabel("Word Length")
+#         plt.ylabel("Average Number of Fixations")
+#         plt.title(f"Average Fixations vs. Word Length | Prior Bin {bins[i]:.1f}-{bins[i+1]:.1f}")
+#         plt.grid(True)
+#         plt.savefig(os.path.join(prior_dir, f"avg_fixations_vs_word_length_bin_{i}.png"))
+#         plt.close()
+    
+#     print(f"Plots saved successfully in {save_file_dir}")
 
-        # (3) For position analysis, store all fixations
-        for f in fixations:
-            fixation_positions.append({
-                "word_length": w_len,
-                "steps": f["steps"],
-                "position": f["action"],
-                "done": f["done"]
-            })
+import os
+import matplotlib.pyplot as plt
+import json
+import numpy as np
+from collections import defaultdict
+from scipy.stats import linregress
 
-        # (4) Find the final done fixation to compute recognition accuracy
-        #     Usually only one done fixation, but let's be safe:
-        done_fixations = [fx for fx in fixations if fx["done"]]
-        if len(done_fixations) > 0:
-            final_fixation = done_fixations[-1]  # assume the last "done" is the final
-            accurate = final_fixation.get("accurate_recognition", None)
-            if accurate is not None:
-                total_episodes_with_done += 1
-                if accurate is True:
-                    total_correct_recognitions += 1
+def compute_average_fixations(xs, ys):
+    """
+    Groups data by unique x-values and computes the mean of y-values per group.
+    Returns (x_sorted, y_means) for plotting.
+    """
+    aggregator = defaultdict(list)
+    for x_val, y_val in zip(xs, ys):
+        aggregator[x_val].append(y_val)
+    
+    x_unique_sorted = sorted(aggregator.keys())
+    y_means = [np.mean(aggregator[xv]) for xv in x_unique_sorted]
+    return x_unique_sorted, y_means
 
-    # ------------------------------------------------------------------
-    # PART B: SCATTER PLOTS
-    # ------------------------------------------------------------------
-
-    # (1) Word Length vs. Fixations (scatter)
+def analyze_word_length_effect(json_data, save_file_dir):
+    """
+    Generates fixation analysis plots for word prior probability.
+    Splits data into 10 bins based on word prior probability (0.0-1.0 range) and 
+    creates scatter plots, linear regression plots, and averaged line plots.
+    Additionally, generates universal plots without bin separation.
+    """
+    data = json.loads(json_data)
+    os.makedirs(save_file_dir, exist_ok=True)
+    
+    # Collect data by word prior probability bins
+    bins = np.linspace(0, 1, 11)  # 10 bins: [0-0.1), [0.1-0.2), ..., [0.9-1.0]
+    fixations_by_prior = defaultdict(lambda: {"word_lengths": [], "fixations": []})
+    universal_word_lengths = []
+    universal_fixations = []
+    
+    for episode in data:
+        w_prior = episode["word_prior_prob"]
+        w_len = episode["word_len"]
+        num_fixations = sum(1 for f in episode["fixations"] if not f["done"])
+        
+        universal_word_lengths.append(w_len)
+        universal_fixations.append(num_fixations)
+        
+        # Assign to the appropriate bin
+        for i in range(10):
+            if bins[i] <= w_prior < bins[i + 1]:
+                fixations_by_prior[i]["word_lengths"].append(w_len)
+                fixations_by_prior[i]["fixations"].append(num_fixations)
+                break
+    
+    # Create separate directory for prior probability
+    prior_dir = os.path.join(save_file_dir, "word_prior_probability")
+    universal_dir = os.path.join(save_file_dir, "universal_plots")
+    os.makedirs(prior_dir, exist_ok=True)
+    os.makedirs(universal_dir, exist_ok=True)
+    
+    # Generate plots for each prior bin
+    for i in range(10):
+        word_x = fixations_by_prior[i]["word_lengths"]
+        fix_y = fixations_by_prior[i]["fixations"]
+        
+        if not word_x:  # Skip empty bins
+            continue
+        
+        # Scatter plot: Fixations vs. Word Length
+        plt.figure(figsize=(8, 6))
+        plt.scatter(word_x, fix_y, alpha=0.7)
+        plt.xlabel("Word Length")
+        plt.ylabel("Number of Fixations")
+        plt.title(f"Fixations vs. Word Length | Prior Bin {bins[i]:.1f}-{bins[i+1]:.1f}")
+        plt.grid(True)
+        plt.savefig(os.path.join(prior_dir, f"fixations_vs_word_length_bin_{i}.png"))
+        plt.close()
+        
+        # Linear regression plot
+        slope, intercept, _, _, _ = linregress(word_x, fix_y)
+        plt.figure(figsize=(8, 6))
+        plt.scatter(word_x, fix_y, alpha=0.7, label="Data")
+        plt.plot(word_x, np.array(word_x) * slope + intercept, color='red', label="Linear Fit")
+        plt.xlabel("Word Length")
+        plt.ylabel("Number of Fixations")
+        plt.title(f"Linear Regression: Fixations vs. Word Length | Prior Bin {bins[i]:.1f}-{bins[i+1]:.1f}")
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(os.path.join(prior_dir, f"linear_fixations_vs_word_length_bin_{i}.png"))
+        plt.close()
+        
+        # Line chart connecting averages
+        x_sorted, y_means = compute_average_fixations(word_x, fix_y)
+        plt.figure(figsize=(8, 6))
+        plt.plot(x_sorted, y_means, marker='o', linestyle='-', color='blue')
+        plt.xlabel("Word Length")
+        plt.ylabel("Average Number of Fixations")
+        plt.title(f"Average Fixations vs. Word Length | Prior Bin {bins[i]:.1f}-{bins[i+1]:.1f}")
+        plt.grid(True)
+        plt.savefig(os.path.join(prior_dir, f"avg_fixations_vs_word_length_bin_{i}.png"))
+        plt.close()
+    
+    # Generate universal plots without bin separation
     plt.figure(figsize=(8, 6))
-    plt.scatter(word_lengths_all, num_fixations_all, alpha=0.7)
+    plt.scatter(universal_word_lengths, universal_fixations, alpha=0.7)
     plt.xlabel("Word Length")
     plt.ylabel("Number of Fixations")
-    plt.title("Number of Fixations vs. Word Length (Scatter)")
+    plt.title("Fixations vs. Word Length (Universal)")
     plt.grid(True)
-    plt.savefig(os.path.join(save_file_dir, "fixations_vs_word_length.png"))
+    plt.savefig(os.path.join(universal_dir, "fixations_vs_word_length.png"))
     plt.close()
-
-    # (2) Word Frequency vs. Fixations (scatter) -- can filter on word length
-    if controlled_word_length is not None:
-        freq_x = [wf for (wf, wl) in zip(word_frequencies_all, word_lengths_all) 
-                  if wl == controlled_word_length]
-        fix_y = [nf for (nf, wl) in zip(num_fixations_all, word_lengths_all) 
-                 if wl == controlled_word_length]
-    else:
-        freq_x = word_frequencies_all
-        fix_y  = num_fixations_all
-
+    
+    slope, intercept, _, _, _ = linregress(universal_word_lengths, universal_fixations)
     plt.figure(figsize=(8, 6))
-    plt.scatter(freq_x, fix_y, alpha=0.7)
-    plt.xlabel("Word Frequency")
+    plt.scatter(universal_word_lengths, universal_fixations, alpha=0.7, label="Data")
+    plt.plot(universal_word_lengths, np.array(universal_word_lengths) * slope + intercept, color='red', label="Linear Fit")
+    plt.xlabel("Word Length")
     plt.ylabel("Number of Fixations")
-    if controlled_word_length is not None:
-        plt.title(f"Fixations vs. Word Frequency (Scatter) | Word Length = {controlled_word_length}")
-    else:
-        plt.title("Number of Fixations vs. Word Frequency (Scatter)")
+    plt.title("Linear Regression: Fixations vs. Word Length (Universal)")
+    plt.legend()
     plt.grid(True)
-    plt.savefig(os.path.join(save_file_dir, "fixations_vs_word_frequency.png"))
+    plt.savefig(os.path.join(universal_dir, "linear_fixations_vs_word_length.png"))
     plt.close()
-
-    # (3) Word Predictability vs. Fixations (scatter)
-    if controlled_word_length is not None:
-        pred_x = [wp for (wp, wl) in zip(word_predictabilities_all, word_lengths_all)
-                  if wl == controlled_word_length]
-        fix_y_pred = [nf for (nf, wl) in zip(num_fixations_all, word_lengths_all)
-                      if wl == controlled_word_length]
-    else:
-        pred_x     = word_predictabilities_all
-        fix_y_pred = num_fixations_all
-
+    
+    x_sorted, y_means = compute_average_fixations(universal_word_lengths, universal_fixations)
     plt.figure(figsize=(8, 6))
-    plt.scatter(pred_x, fix_y_pred, alpha=0.7)
-    plt.xlabel("Word Predictability")
-    plt.ylabel("Number of Fixations")
-    if controlled_word_length is not None:
-        plt.title(f"Fixations vs. Word Predictability (Scatter) | Word Length = {controlled_word_length}")
-    else:
-        plt.title("Number of Fixations vs. Word Predictability (Scatter)")
-    plt.grid(True)
-    plt.savefig(os.path.join(save_file_dir, "fixations_vs_word_predictability.png"))
-    plt.close()
-
-    # ------------------------------------------------------------------
-    # PART C: LINE PLOTS (average fixations by factor)
-    # ------------------------------------------------------------------
-    from collections import defaultdict
-
-    def compute_average_fixations(xs, ys):
-        """
-        Groups data by unique x-values and computes the mean of y-values per group.
-        Returns (x_sorted, y_means) for plotting.
-        """
-        aggregator = defaultdict(list)
-        for x_val, y_val in zip(xs, ys):
-            aggregator[x_val].append(y_val)
-
-        x_unique_sorted = sorted(aggregator.keys())
-        y_means = [np.mean(aggregator[xv]) for xv in x_unique_sorted]
-        return x_unique_sorted, y_means
-
-    # (1) Word Length vs. Average Fixations
-    x_sorted_len, y_means_len = compute_average_fixations(word_lengths_all, num_fixations_all)
-    plt.figure(figsize=(8, 6))
-    plt.plot(x_sorted_len, y_means_len, marker='o', linestyle='-', color='orange')
+    plt.plot(x_sorted, y_means, marker='o', linestyle='-', color='green')
     plt.xlabel("Word Length")
     plt.ylabel("Average Number of Fixations")
-    plt.title("Average Fixations vs. Word Length (Line)")
+    plt.title("Average Fixations vs. Word Length (Universal)")
     plt.grid(True)
-    plt.savefig(os.path.join(save_file_dir, "fixations_vs_word_length_line.png"))
+    plt.savefig(os.path.join(universal_dir, "avg_fixations_vs_word_length.png"))
     plt.close()
-
-    # (2) Word Frequency vs. Average Fixations
-    if controlled_word_length is not None:
-        freq_filtered, fix_filtered = [], []
-        for (wf, wl, nf) in zip(word_frequencies_all, word_lengths_all, num_fixations_all):
-            if wl == controlled_word_length:
-                freq_filtered.append(wf)
-                fix_filtered.append(nf)
-    else:
-        freq_filtered = word_frequencies_all
-        fix_filtered  = num_fixations_all
-
-    x_sorted_freq, y_means_freq = compute_average_fixations(freq_filtered, fix_filtered)
-    plt.figure(figsize=(8, 6))
-    plt.plot(x_sorted_freq, y_means_freq, marker='o', linestyle='-', color='green')
-    plt.xlabel("Word Frequency")
-    plt.ylabel("Average Number of Fixations")
-    if controlled_word_length is not None:
-        plt.title(f"Average Fixations vs. Word Frequency (Line)\nWord Length = {controlled_word_length}")
-    else:
-        plt.title("Average Fixations vs. Word Frequency (Line)")
-    plt.grid(True)
-    plt.savefig(os.path.join(save_file_dir, "fixations_vs_word_frequency_line.png"))
-    plt.close()
-
-    # (3) Word Predictability vs. Average Fixations
-    if controlled_word_length is not None:
-        pred_filtered, fix_filtered_pred = [], []
-        for (wp, wl, nf) in zip(word_predictabilities_all, word_lengths_all, num_fixations_all):
-            if wl == controlled_word_length:
-                pred_filtered.append(wp)
-                fix_filtered_pred.append(nf)
-    else:
-        pred_filtered = word_predictabilities_all
-        fix_filtered_pred = num_fixations_all
-
-    x_sorted_pred, y_means_pred = compute_average_fixations(pred_filtered, fix_filtered_pred)
-    plt.figure(figsize=(8, 6))
-    plt.plot(x_sorted_pred, y_means_pred, marker='o', linestyle='-', color='purple')
-    plt.xlabel("Word Predictability")
-    plt.ylabel("Average Number of Fixations")
-    if controlled_word_length is not None:
-        plt.title(f"Average Fixations vs. Word Predictability (Line)\nWord Length = {controlled_word_length}")
-    else:
-        plt.title("Average Fixations vs. Word Predictability (Line)")
-    plt.grid(True)
-    plt.savefig(os.path.join(save_file_dir, "fixations_vs_word_predictability_line.png"))
-    plt.close()
-
-    # ------------------------------------------------------------------
-    # PART D: FIXATION POSITION ANALYSIS (existing code)
-    # ------------------------------------------------------------------
-    fixation_x = [f["position"] for f in fixation_positions if not f["done"]]
-    fixation_y = [f["word_length"] for f in fixation_positions if not f["done"]]
-    fixation_steps = [f["steps"] for f in fixation_positions if not f["done"]]
-
-    if fixation_steps:
-        min_step, max_step = min(fixation_steps), max(fixation_steps)
-        step_range = max(1, max_step - min_step)
-        fixation_steps_normalized = (np.array(fixation_steps) - min_step) / step_range
-    else:
-        fixation_steps_normalized = np.zeros_like(fixation_steps)
-
-    plt.figure(figsize=(10, 6))
-    scatter = plt.scatter(
-        fixation_x,
-        fixation_y,
-        c=fixation_steps_normalized,
-        cmap="Blues",
-        alpha=0.7
-    )
-    plt.xlabel("Fixation Position (Action)")
-    plt.ylabel("Word Length")
-    plt.title("Fixation Position Analysis (Hue = Fixation Order)")
-    plt.colorbar(scatter, label="Fixation Order (Earlier → Darker)")
-    plt.grid(True)
-    plt.savefig(os.path.join(save_file_dir, "fixation_positions_hue.png"))
-    plt.close()
-
-    # ------------------------------------------------------------------
-    # PART E: OVERALL RECOGNITION ACCURACY
-    # ------------------------------------------------------------------
-    accuracy_pct = 0.0
-    if total_episodes_with_done > 0:
-        accuracy_pct = (total_correct_recognitions / total_episodes_with_done) * 100.0
-
-    # We can plot it as a single bar or as text.
-    plt.figure(figsize=(4, 6))
-    plt.bar([0], [accuracy_pct], color='skyblue', width=0.5)
-    plt.ylim([0, 100])
-    plt.xticks([0], ["Overall"])  # Single category label on x-axis
-    plt.ylabel("Recognition Accuracy (%)")
-    plt.title("Overall Recognition Accuracy")
-    # Optionally annotate the bar with the exact percentage
-    plt.text(0, accuracy_pct + 1, f"{accuracy_pct:.2f}%", ha='center', va='bottom', fontsize=12)
-    plt.grid(True, axis="y", alpha=0.5)
-    plt.savefig(os.path.join(save_file_dir, "recognition_accuracy.png"))
-    plt.close()
-
-    print("Plots saved successfully in:", save_file_dir)
-    print(f"Overall Recognition Accuracy: {accuracy_pct:.2f}%")
+    
+    print(f"Plots saved successfully in {save_file_dir}")
