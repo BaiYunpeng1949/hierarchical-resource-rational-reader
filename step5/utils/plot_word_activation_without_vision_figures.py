@@ -165,6 +165,80 @@ def analyze_priors_effect(json_data, save_file_dir):
     os.makedirs(freq_dir, exist_ok=True)
     os.makedirs(pred_dir, exist_ok=True)
     os.makedirs(universal_dir, exist_ok=True)
+
+    # Generate plots for each word length
+    for w_len in sorted(word_lengths):
+        freq_x = fixations_by_length[w_len]["freq"]
+        fix_y = fixations_by_length[w_len]["fixations"]
+        pred_x = fixations_by_length[w_len]["pred"]
+        
+        # Scatter plot: Fixations vs. Word Frequency
+        plt.figure(figsize=(8, 6))
+        plt.scatter(freq_x, fix_y, alpha=0.7)
+        plt.xlabel("Word Frequency")
+        plt.ylabel("Number of Fixations")
+        plt.title(f"Fixations vs. Word Frequency | Word Length = {w_len}")
+        plt.grid(True)
+        plt.savefig(os.path.join(freq_dir, f"fixations_vs_word_freq_len_{w_len}.png"))
+        plt.close()
+        
+        # Linear regression plot
+        slope, intercept, _, _, _ = linregress(freq_x, fix_y)
+        plt.figure(figsize=(8, 6))
+        plt.scatter(freq_x, fix_y, alpha=0.7, label="Data")
+        plt.plot(freq_x, np.array(freq_x) * slope + intercept, color='red', label="Linear Fit")
+        plt.xlabel("Word Frequency")
+        plt.ylabel("Number of Fixations")
+        plt.title(f"Linear Regression: Fixations vs. Word Frequency | Word Length = {w_len}")
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(os.path.join(freq_dir, f"linear_fixations_vs_word_freq_len_{w_len}.png"))
+        plt.close()
+        
+        # Line chart connecting averages
+        x_sorted, y_means = compute_average_fixations(freq_x, fix_y)
+        plt.figure(figsize=(8, 6))
+        plt.plot(x_sorted, y_means, marker='o', linestyle='-', color='blue')
+        plt.xlabel("Word Frequency")
+        plt.ylabel("Average Number of Fixations")
+        plt.title(f"Average Fixations vs. Word Frequency | Word Length = {w_len}")
+        plt.grid(True)
+        plt.savefig(os.path.join(freq_dir, f"avg_fixations_vs_word_freq_len_{w_len}.png"))
+        plt.close()
+        
+        # Scatter plot: Fixations vs. Word Predictability
+        plt.figure(figsize=(8, 6))
+        plt.scatter(pred_x, fix_y, alpha=0.7)
+        plt.xlabel("Word Predictability")
+        plt.ylabel("Number of Fixations")
+        plt.title(f"Fixations vs. Word Predictability | Word Length = {w_len}")
+        plt.grid(True)
+        plt.savefig(os.path.join(pred_dir, f"fixations_vs_word_pred_len_{w_len}.png"))
+        plt.close()
+        
+        # Linear regression plot
+        slope, intercept, _, _, _ = linregress(pred_x, fix_y)
+        plt.figure(figsize=(8, 6))
+        plt.scatter(pred_x, fix_y, alpha=0.7, label="Data")
+        plt.plot(pred_x, np.array(pred_x) * slope + intercept, color='red', label="Linear Fit")
+        plt.xlabel("Word Predictability")
+        plt.ylabel("Number of Fixations")
+        plt.title(f"Linear Regression: Fixations vs. Word Predictability | Word Length = {w_len}")
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(os.path.join(pred_dir, f"linear_fixations_vs_word_pred_len_{w_len}.png"))
+        plt.close()
+        
+        # Line chart connecting averages
+        x_sorted, y_means = compute_average_fixations(pred_x, fix_y)
+        plt.figure(figsize=(8, 6))
+        plt.plot(x_sorted, y_means, marker='o', linestyle='-', color='green')
+        plt.xlabel("Word Predictability")
+        plt.ylabel("Average Number of Fixations")
+        plt.title(f"Average Fixations vs. Word Predictability | Word Length = {w_len}")
+        plt.grid(True)
+        plt.savefig(os.path.join(pred_dir, f"avg_fixations_vs_word_pred_len_{w_len}.png"))
+        plt.close()
     
     # Generate universal plots
     def generate_universal_plots(x_data, y_data, xlabel, filename, color):
@@ -279,26 +353,6 @@ def analyze_priors_effect(json_data, save_file_dir):
 #         plt.close()
     
 #     print(f"Plots saved successfully in {save_file_dir}")
-
-import os
-import matplotlib.pyplot as plt
-import json
-import numpy as np
-from collections import defaultdict
-from scipy.stats import linregress
-
-def compute_average_fixations(xs, ys):
-    """
-    Groups data by unique x-values and computes the mean of y-values per group.
-    Returns (x_sorted, y_means) for plotting.
-    """
-    aggregator = defaultdict(list)
-    for x_val, y_val in zip(xs, ys):
-        aggregator[x_val].append(y_val)
-    
-    x_unique_sorted = sorted(aggregator.keys())
-    y_means = [np.mean(aggregator[xv]) for xv in x_unique_sorted]
-    return x_unique_sorted, y_means
 
 def analyze_word_length_effect(json_data, save_file_dir):
     """
