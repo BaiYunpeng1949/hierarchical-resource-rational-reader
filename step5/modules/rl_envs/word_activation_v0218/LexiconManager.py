@@ -200,10 +200,6 @@ class LexiconManager():
         for w in generated_words:
             if w not in self.prior_dict:
                 if w is not original_word:  # Randomize a prior probability for the original word (target word)
-                    # # Method 1
-                    # discount_factor = random.uniform(0.1, 0.5)  # Discount factor for non-target words   # TODO note this as a key assumption if used
-                    # self.prior_dict[w] = self.prior_dict[original_word] * discount_factor
-                    # Method 2
                     self.prior_dict[w] = self._generate_prior_probability()     # Randomize the prior probability   # NOTE: good good!
             prior = self.prior_dict[w]
             likelihood, correct_factor_alpha = self.get_likelihood_by_sampled_letters_so_far(

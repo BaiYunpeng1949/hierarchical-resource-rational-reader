@@ -96,7 +96,9 @@ class TransitionFunction():
             Such simplification is reasonable because human are limited in the STM buffer, and the number of words they can activate at the same time.
             Technically speaking, this is beneficial in terms of computational efficiency.
         
-        TODO: debug this, see whether them making sense, if not, we can apply Bayesian Reader's multi-dim space and Gaussian-based likelihood calculation
+        TODO: debug this, see whether them making sense, 
+            if not, we can apply Bayesian Reader's multi-dim space and Gaussian-based likelihood calculation
+        Not making sense in terms of the word length's effect
         """
         
         belief_distribution_list = []

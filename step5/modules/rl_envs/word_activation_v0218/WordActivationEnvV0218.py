@@ -92,9 +92,7 @@ class WordActivationRLEnv(Env):
         3.  Human Eye-Tracking Evidence (Rayner, 1998)
             Readers skip over predictable words faster.
             Competing words are only considered when predictability is low.
-        
-    TODO: issues -- 1. the likelihood calculation is troublesome; 2. maybe increase the new evidence's weights, if all letters are sampled, then the other candidates should be dying
-    3. (next version) change the reward structure, lower the penalty
+    TODO: check the logs' belief distributions
     """
 
     def __init__(self):
