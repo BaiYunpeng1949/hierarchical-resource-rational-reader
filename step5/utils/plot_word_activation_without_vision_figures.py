@@ -343,3 +343,31 @@ def analyze_prior_vs_word_length(json_data, save_file_dir):
     plt.close()
     
     print(f"Plots saved successfully in {save_file_dir}")
+
+def analyze_accuracy(json_data, save_file_dir):
+    # Ensure json_data is a parsed list, not a string
+    if isinstance(json_data, str):
+        json_data = json.loads(json_data)
+
+    total_recognitions = 0
+    correct_recognitions = 0
+    
+    for episode in json_data:
+        if isinstance(episode, dict):  # Ensure it's a dictionary
+            for fixation in episode.get("fixations", []):
+                accurate_recognition = fixation.get("accurate_recognition")
+                if accurate_recognition is not None:
+                    total_recognitions += 1
+                    if accurate_recognition:
+                        correct_recognitions += 1
+    
+    accuracy = (correct_recognitions / total_recognitions) * 100 if total_recognitions > 0 else 0
+    
+    # Save results to a text file
+    result = f"Total Recognitions: {total_recognitions}\nCorrect Recognitions: {correct_recognitions}\nAccuracy: {accuracy:.2f}%"
+    save_file_dir = os.path.join(save_file_dir, "accuracy_results.txt")
+    with open(save_file_dir, "w") as file:
+        file.write(result)
+    
+    return accuracy
+
