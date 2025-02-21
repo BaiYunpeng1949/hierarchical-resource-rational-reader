@@ -5,7 +5,7 @@ rl:
 
   train:
     total_timesteps: 100000000
-    checkpoints_folder_name: 0218_word_activation_v0218_04
+    checkpoints_folder_name: 0218_word_activation_v0218_03
     num_workers: 20   # Smaller than the server's number of processes: 16 - should not be the maximum capacity of the processors, otherwise the local memory will overflow.
     num_steps: 10000   # Don't change this parameter -- previously 5000
     batch_size: 1000  # We recommend using a `batch_size` that is a factor of `n_steps * n_envs` -- previously 500
@@ -23,8 +23,8 @@ rl:
     save_freq: 10000000  # Save a checkpoint every 0.50 million steps
 
   test:
-    num_episodes: 5000
-    loaded_model_name: 'rl_model_20000000_steps'
+    num_episodes: 3000
+    loaded_model_name: 'rl_model_40000000_steps'
     continual_logs_name: 'PPO_18'
     dataset_for_testing: 'simulate'   # OPTIONS: 'test', 'train', 'simulate'
     grid_params:
