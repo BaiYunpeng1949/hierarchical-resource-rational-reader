@@ -1,6 +1,8 @@
 # Cognitive constraints
 FOVEAL_SIZE = 5
 WORKING_MEMORY_SIZE = 5
+DETERMINISTIC_WORD_ACTIVATION = True
+
 
 # Variables
 NON_WORD = "NON_WORD"

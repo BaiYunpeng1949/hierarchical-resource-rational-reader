@@ -282,7 +282,7 @@ class WordActivationRLEnv(Env):
     
     def _terminate_step(self):
         self._word_to_activate = self.transition_function.activate_a_word(
-            normalized_belief_distribution_dict=self._normalized_belief_distribution_dict_parallel_activation_with_k_words, deterministic=False
+            normalized_belief_distribution_dict=self._normalized_belief_distribution_dict_parallel_activation_with_k_words, deterministic=Constants.DETERMINISTIC_WORD_ACTIVATION
         )
             
         reward = self.reward_function.get_terminate_reward(
