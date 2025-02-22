@@ -293,6 +293,9 @@ class WordActivationRLEnv(Env):
         done = True
 
         return reward, done
+    
+    # TODO: implement a non-linear model for mapping number of fixations to gaze duration.
+    # TODO tune the parameters for simulation results to map for empirical data.
 
     def _get_obs(self):   
         """
