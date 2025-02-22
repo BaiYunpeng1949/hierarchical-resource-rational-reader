@@ -113,9 +113,9 @@ class WordActivationRLEnv(Env):
         self.MAX_WORD_LEN = 15
         self.MIN_WORD_LEN = 1
         # Define the top-k candidates when competing for recognition
-        self._top_k = 5     # Set as five for the STM buffer's limitation
+        self._top_k = Constants.WORKING_MEMORY_SIZE     # Set as five for the STM buffer's limitation
         # Define the foveal vision size
-        self._foveal_size = 3       # one letter on the left, one in the middle, one on the right side  
+        self._foveal_size = Constants.FOVEAL_SIZE       # one letter on the left, one in the middle, one on the right side  
 
         # Initialize necessary classes
         # Initialize the transition function

@@ -369,5 +369,8 @@ def analyze_accuracy(json_data, save_file_dir):
     with open(save_file_dir, "w") as file:
         file.write(result)
     
+    print(result)
+    print(f"Accuracy results saved successfully in {save_file_dir}")
+
     return accuracy
 
