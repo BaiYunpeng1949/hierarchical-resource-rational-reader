@@ -161,6 +161,15 @@ class TransitionFunction():
 
         return words_norm_posteriors_dict
     
+    def calculate_fixation_duration_in_ms(self, t0=250, lamda=1.0, entropy_diff=0.0):
+        """
+        Calculate the fixation duration in milliseconds
+
+        Using the non-linear formula: t = t0 * exp(-lamda * entropy_diff)
+        """
+        return t0 * np.exp(-lamda * entropy_diff)
+
+
     def activate_a_word(self, normalized_belief_distribution_dict, deterministic=True):    
         """
         Activate a word from the belief distribution, choose the highest for simplicity

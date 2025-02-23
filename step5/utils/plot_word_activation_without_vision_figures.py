@@ -172,6 +172,96 @@ def analyze_priors_effect(json_data, save_file_dir):
     
     print(f"Word' Prior Effect Plots saved successfully in {save_file_dir}")
 
+def analyze_priors_effect_on_gaze_duration(json_data, save_file_dir):
+    """
+    Generates gaze duration analysis plots for word frequency and predictability.
+    """
+    data = json.loads(json_data)
+    os.makedirs(save_file_dir, exist_ok=True)
+    
+    word_frequencies = []
+    word_predictabilities = []
+    gaze_durations = []
+    
+    for episode in data:
+        w_freq = episode["word_frequency"]
+        w_pred = episode.get("Word predictability", 0.0)
+        last_fixation = next(f for f in reversed(episode["fixations"]) if f["done"])
+        gaze_duration = last_fixation["gaze_duration"]
+        
+        word_frequencies.append(w_freq)
+        word_predictabilities.append(w_pred)
+        gaze_durations.append(gaze_duration)
+    
+    # Scatter plot - Word Frequency
+    plt.figure(figsize=(8, 6))
+    plt.scatter(word_frequencies, gaze_durations, alpha=0.7)
+    plt.xlabel("Word Frequency")
+    plt.ylabel("Gaze Duration (ms)")
+    plt.title("Gaze Duration vs. Word Frequency")
+    plt.grid(True)
+    plt.savefig(os.path.join(save_file_dir, "gaze_duration_vs_word_frequency.png"))
+    plt.close()
+    
+    # Linear regression - Word Frequency
+    slope, intercept, _, _, _ = linregress(word_frequencies, gaze_durations)
+    plt.figure(figsize=(8, 6))
+    plt.scatter(word_frequencies, gaze_durations, alpha=0.7, label="Data")
+    plt.plot(word_frequencies, np.array(word_frequencies) * slope + intercept, color='red', label="Linear Fit")
+    plt.xlabel("Word Frequency")
+    plt.ylabel("Gaze Duration (ms)")
+    plt.title("Linear Regression: Gaze Duration vs. Word Frequency")
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(os.path.join(save_file_dir, "linear_gaze_duration_vs_word_frequency.png"))
+    plt.close()
+    
+    # Mean value line chart - Word Frequency
+    x_sorted, y_means = compute_average_gaze(word_frequencies, gaze_durations)
+    plt.figure(figsize=(8, 6))
+    plt.plot(x_sorted, y_means, marker='o', linestyle='-', color='green')
+    plt.xlabel("Word Frequency")
+    plt.ylabel("Average Gaze Duration (ms)")
+    plt.title("Average Gaze Duration vs. Word Frequency")
+    plt.grid(True)
+    plt.savefig(os.path.join(save_file_dir, "avg_gaze_duration_vs_word_frequency.png"))
+    plt.close()
+    
+    # Scatter plot - Word Predictability
+    plt.figure(figsize=(8, 6))
+    plt.scatter(word_predictabilities, gaze_durations, alpha=0.7)
+    plt.xlabel("Word Predictability")
+    plt.ylabel("Gaze Duration (ms)")
+    plt.title("Gaze Duration vs. Word Predictability")
+    plt.grid(True)
+    plt.savefig(os.path.join(save_file_dir, "gaze_duration_vs_word_predictability.png"))
+    plt.close()
+    
+    # Linear regression - Word Predictability
+    slope, intercept, _, _, _ = linregress(word_predictabilities, gaze_durations)
+    plt.figure(figsize=(8, 6))
+    plt.scatter(word_predictabilities, gaze_durations, alpha=0.7, label="Data")
+    plt.plot(word_predictabilities, np.array(word_predictabilities) * slope + intercept, color='red', label="Linear Fit")
+    plt.xlabel("Word Predictability")
+    plt.ylabel("Gaze Duration (ms)")
+    plt.title("Linear Regression: Gaze Duration vs. Word Predictability")
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(os.path.join(save_file_dir, "linear_gaze_duration_vs_word_predictability.png"))
+    plt.close()
+    
+    # Mean value line chart - Word Predictability
+    x_sorted, y_means = compute_average_gaze(word_predictabilities, gaze_durations)
+    plt.figure(figsize=(8, 6))
+    plt.plot(x_sorted, y_means, marker='o', linestyle='-', color='purple')
+    plt.xlabel("Word Predictability")
+    plt.ylabel("Average Gaze Duration (ms)")
+    plt.title("Average Gaze Duration vs. Word Predictability")
+    plt.grid(True)
+    plt.savefig(os.path.join(save_file_dir, "avg_gaze_duration_vs_word_predictability.png"))
+    plt.close()
+    
+    print(f"Prior Effects Analysis Plots saved successfully in {save_file_dir}")
 
 def analyze_word_length_effect(json_data, save_file_dir):
     """
@@ -285,6 +375,66 @@ def analyze_word_length_effect(json_data, save_file_dir):
     plt.close()
     
     print(f"Word Length's Effect Analyze Plots saved successfully in {save_file_dir}")
+
+def compute_average_gaze(word_lengths, gaze_durations):
+    """Computes average gaze duration per word length."""
+    unique_lengths = sorted(set(word_lengths))
+    avg_gazes = [np.mean([g for w, g in zip(word_lengths, gaze_durations) if w == ul]) for ul in unique_lengths]
+    return unique_lengths, avg_gazes
+
+def analyze_word_length_gaze_duration(json_data, save_file_dir):
+    """
+    Generates gaze duration analysis plots for word length.
+    """
+    data = json.loads(json_data)
+    os.makedirs(save_file_dir, exist_ok=True)
+    
+    word_lengths = []
+    gaze_durations = []
+    
+    for episode in data:
+        w_len = episode["word_len"]
+        last_fixation = next(f for f in reversed(episode["fixations"]) if f["done"])
+        gaze_duration = last_fixation["gaze_duration"]
+        
+        word_lengths.append(w_len)
+        gaze_durations.append(gaze_duration)
+    
+    # Scatter plot
+    plt.figure(figsize=(8, 6))
+    plt.scatter(word_lengths, gaze_durations, alpha=0.7)
+    plt.xlabel("Word Length")
+    plt.ylabel("Gaze Duration (ms)")
+    plt.title("Gaze Duration vs. Word Length")
+    plt.grid(True)
+    plt.savefig(os.path.join(save_file_dir, "gaze_duration_vs_word_length.png"))
+    plt.close()
+    
+    # Linear regression plot
+    slope, intercept, _, _, _ = linregress(word_lengths, gaze_durations)
+    plt.figure(figsize=(8, 6))
+    plt.scatter(word_lengths, gaze_durations, alpha=0.7, label="Data")
+    plt.plot(word_lengths, np.array(word_lengths) * slope + intercept, color='red', label="Linear Fit")
+    plt.xlabel("Word Length")
+    plt.ylabel("Gaze Duration (ms)")
+    plt.title("Linear Regression: Gaze Duration vs. Word Length")
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(os.path.join(save_file_dir, "linear_gaze_duration_vs_word_length.png"))
+    plt.close()
+    
+    # Mean value line chart
+    x_sorted, y_means = compute_average_gaze(word_lengths, gaze_durations)
+    plt.figure(figsize=(8, 6))
+    plt.plot(x_sorted, y_means, marker='o', linestyle='-', color='green')
+    plt.xlabel("Word Length")
+    plt.ylabel("Average Gaze Duration (ms)")
+    plt.title("Average Gaze Duration vs. Word Length")
+    plt.grid(True)
+    plt.savefig(os.path.join(save_file_dir, "avg_gaze_duration_vs_word_length.png"))
+    plt.close()
+    
+    print(f"Gaze Duration Analysis Plots saved successfully in {save_file_dir}")
 
 
 def analyze_prior_vs_word_length(json_data, save_file_dir):

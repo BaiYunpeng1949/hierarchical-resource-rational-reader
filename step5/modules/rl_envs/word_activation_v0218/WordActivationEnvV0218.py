@@ -138,11 +138,25 @@ class WordActivationRLEnv(Env):
         self._word_prior_prob = None     # The prior probability of the word to be recognized -- ranges from 0 to 1, which is a combination of the frequency and predictability
         self._sampled_letters_so_far_with_spaces = None    # The letters that have been sampled
 
+        # Entropy
+        self._previous_step_entropy = None
+        self._current_step_entropy = None
+        self._entropy_diff = None
+
         # Representations
         self._word_representation = self.transition_function.reset_state_word_representation()    # The word representation, it stores the sampled letters. Here is a vector of letters sampled from the ASCII space
         self._normalized_ground_truth_word_representation = None
 
         self._sampled_letters_so_far_representation = None   # The letters that have been sampled
+
+        # Temporal variables
+        self._current_fixation_duration = None      # Unit is milliseconds, the time spent for a single fixation
+        self._individual_fixations_durations_list = None    # The list of individual fixation durations
+        self._gaze_duration = None      # Unit is milliseconds, the total time spent for a first-pass of a word
+
+        # Fixtion to duration mapping non-linear equation parameters
+        self._t_0 = Constants.DEFAULT_FIXATION_DURATION    # The default average fixation duration, unit is milliseconds
+        self._lamda = 0.1    # The decay rate, the larger the value, the faster the decay
 
         # Define the word that is recognized
         self._word_to_activate = None
@@ -201,8 +215,18 @@ class WordActivationRLEnv(Env):
         # Reset the prior distribution dictionary
         self._prior_distribution_dict_parallel_activation_with_k_words = {non_word: 0.20, non_word + '-1': 0.20, non_word + '-2': 0.20, non_word + '-3': 0.20, non_word + '-4': 0.20}
 
+        # Reset the entropy
+        self._previous_step_entropy = self._calculate_entropy(probability_distribution=self._normalized_belief_distribution_parallel_activation_with_k_words)
+        self._current_step_entropy = self._previous_step_entropy
+        self._entropy_diff = 0
+
         # Reset the word representation
         self._word_representation = self.transition_function.reset_state_word_representation()
+
+        # Temporal variables
+        self._current_fixation_duration = 0
+        self._individual_fixations_durations_list = []
+        self._gaze_duration = 0
 
         # Reset the seen letters
         self._sampled_letters_so_far_representation = [-1] * self.MAX_WORD_LEN
@@ -246,7 +270,7 @@ class WordActivationRLEnv(Env):
         # Update states
         if action <= self.MAX_WORD_LEN - 1:     # Still fixating on the letters
 
-            if action <= self._word_len - 1:    # The action is valid, sampling letters
+            if action <= self._word_len - 1:    # The action is a valid fixation, sampling letters
                 
                 self._sampled_letters_so_far_representation, self._sampled_letters_so_far_with_spaces = self.transition_function.update_state_sampled_letters_so_far_include_non_contiguous_letters(
                     action=action, norm_gt_word_rep=self._normalized_ground_truth_word_representation, 
@@ -262,6 +286,19 @@ class WordActivationRLEnv(Env):
                     lexicon_manager=self.lex_manager
                 ) 
 
+                # Calculate the entropy change
+                self._current_step_entropy = self._calculate_entropy(probability_distribution=self._normalized_belief_distribution_parallel_activation_with_k_words)
+                self._entropy_diff = self._previous_step_entropy - self._current_step_entropy
+                self._previous_step_entropy = self._current_step_entropy
+
+                # Get the fixation durations
+                self._current_fixation_duration = self.transition_function.calculate_fixation_duration_in_ms(
+                    lamda=self._lamda, t0=self._t_0, entropy_diff=self._entropy_diff
+                )
+                self._individual_fixations_durations_list.append(self._current_fixation_duration)
+                self._gaze_duration += self._current_fixation_duration
+
+                # Get the reward
                 reward = self.reward_function.get_step_wise_effort_cost(is_action_valid=True)
             
             else:   # The action is invalid, sampling nothing, doing nothing, wasting time
@@ -288,14 +325,22 @@ class WordActivationRLEnv(Env):
         reward = self.reward_function.get_terminate_reward(
             word_to_recognize=self._word,
             word_to_activate=self._word_to_activate
-        )
+        )       
 
         done = True
 
         return reward, done
     
-    # TODO: implement a non-linear model for mapping number of fixations to gaze duration.
-    # TODO tune the parameters for simulation results to map for empirical data.
+    @staticmethod
+    def _calculate_entropy(probability_distribution):
+        """
+        Calculate the entropy of a probability distribution
+        """
+        entropy = 0
+        for prob in probability_distribution:
+            if prob > 0:
+                entropy -= prob * math.log(prob)
+        return entropy
 
     def _get_obs(self):   
         """
@@ -349,6 +394,11 @@ class WordActivationRLEnv(Env):
                     "likelihood_distribution_dict": self._likelihood_dict_parallel_activation_with_k_words.copy(),
                     "normalized_belief_distribution_dict": self._normalized_belief_distribution_dict_parallel_activation_with_k_words.copy(),
                     "normalized_belief_distribution": self._normalized_belief_distribution_parallel_activation_with_k_words.copy(),
+                    "current_step_entropy": self._current_step_entropy,
+                    "entropy_diff": self._entropy_diff,
+                    "current_fixation_duration": self._current_fixation_duration,
+                    "individual_fixations_durations_list": self._individual_fixations_durations_list.copy(),
+                    "gaze_duration": self._gaze_duration,
                     "accurate_recognition": self._word_to_activate == self._word if self._done else None
                 })
                 return self.log_cumulative_version
