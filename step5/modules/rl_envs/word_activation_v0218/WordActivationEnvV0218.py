@@ -29,6 +29,15 @@ class WordActivationRLEnv(Env):
         1. Learn to fixate on the most informative letter (could be a sub-optimal strategy, just like human)
         2. Learn to stop sampling when the word is recognized as soon and accurate as possible
     
+    NOTE: 
+        1. according to SWIFT, both frequency and predictability are contributing to the word recognition and the predictability is happening 
+            earlier than freqeuncy's effect.
+        2. Both of them could serve as parts of prior, but not neither simply adding or multiplying together.
+        3. In the paper "Length, frequency, and predictability effects of words on eye movements in reading" they use CELEX Frequency Norms to obtain
+            their corpus's word frequency (as log frequency); and use human to lable words' predictability (as logit predictability). So we could map their 
+            data and our pseudo priors ranges from 0 to 1 independently and accordingly. Because in the paper's study, they intentionally use words 
+            that could independently analyze the words' freqeuncy and predictability's effects.
+        
     NOTE: this function will be called n times, where n is the number of parallel environments. So better configure everything only once, 
         outside of this function for training efficiency.
 
@@ -156,7 +165,7 @@ class WordActivationRLEnv(Env):
 
         # Fixtion to duration mapping non-linear equation parameters
         self._t_0 = Constants.DEFAULT_FIXATION_DURATION    # The default average fixation duration, unit is milliseconds
-        self._lamda = 0.1    # The decay rate, the larger the value, the faster the decay
+        self._lamda = Constants.GAZE_DURATION_LAMDA    # The decay rate, the larger the value, the faster the decay
 
         # Define the word that is recognized
         self._word_to_activate = None
@@ -372,7 +381,7 @@ class WordActivationRLEnv(Env):
                     "word_len": self._word_len,     # Used for analyzing the length's effect
                     "word_prior_prob": self._word_prior_prob,     # Used for analyzing the prior's effect
                     "word_frequency": self._word_freq_prob,     # Used for analyzing the frequency's effect
-                    "Word predictability": self._word_predictability_prob,    # Used for analyzing the predictability's effect
+                    "word_predictability": self._word_predictability_prob,    # Used for analyzing the predictability's effect
                     "word_representation": self._word_representation,   
                     "normalized_ground_truth_word_representation": self._normalized_ground_truth_word_representation,
                     "fixations": [],

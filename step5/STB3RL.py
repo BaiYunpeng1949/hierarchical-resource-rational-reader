@@ -852,16 +852,25 @@ class RL:
         # Do the piror's effects -- freq and pred
 
         prior_data_effect_log_save_path = os.path.join(data_log_path, "prior_effects")
+        word_freq_effect_data_csv_file_path = os.path.join(prior_data_effect_log_save_path, "gaze_duration_vs_word_frequency.csv")
+        word_log_freq_effect_data_csv_file_path = os.path.join(prior_data_effect_log_save_path, "gaze_duration_vs_word_log_frequency.csv")
+        word_pred_effect_data_csv_file_path = os.path.join(prior_data_effect_log_save_path, "gaze_duration_vs_word_predictability.csv")
         if not os.path.exists(prior_data_effect_log_save_path):
             os.makedirs(prior_data_effect_log_save_path)
         plot_word_activation_figures.analyze_priors_effect(json_data=json_data, save_file_dir=prior_data_effect_log_save_path)
-        plot_word_activation_figures.analyze_priors_effect_on_gaze_duration(json_data=json_data, save_file_dir=prior_data_effect_log_save_path)
+        plot_word_activation_figures.analyze_priors_effect_on_gaze_duration(
+            json_data=json_data, save_file_dir=prior_data_effect_log_save_path, csv_freq_file_path=word_freq_effect_data_csv_file_path, 
+            csv_pred_file_path=word_pred_effect_data_csv_file_path, csv_log_freq_file_path=word_log_freq_effect_data_csv_file_path,
+        )
 
         word_length_effect_data_log_save_path = os.path.join(data_log_path, "word_length_effect")
+        word_length_effect_data_csv_file_path = os.path.join(word_length_effect_data_log_save_path, "gaze_duration_vs_word_length.csv")
         if not os.path.exists(word_length_effect_data_log_save_path):
             os.makedirs(word_length_effect_data_log_save_path)
         plot_word_activation_figures.analyze_word_length_effect(json_data=json_data, save_file_dir=word_length_effect_data_log_save_path)
-        plot_word_activation_figures.analyze_word_length_gaze_duration(json_data=json_data, save_file_dir=word_length_effect_data_log_save_path)
+        plot_word_activation_figures.analyze_word_length_gaze_duration(
+            json_data=json_data, save_file_dir=word_length_effect_data_log_save_path, csv_file_path=word_length_effect_data_csv_file_path
+        )
 
         prior_vs_word_length_data_log_save_path = os.path.join(data_log_path, "prior_vs_word_length")
         if not os.path.exists(prior_vs_word_length_data_log_save_path):

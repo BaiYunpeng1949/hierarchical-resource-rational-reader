@@ -2,8 +2,11 @@ import os
 import matplotlib.pyplot as plt
 import json
 import numpy as np
+import pandas as pd
 from collections import defaultdict
 from scipy.stats import linregress
+
+from modules.rl_envs.word_activation_v0218 import Constants
 
 def compute_average_fixations(xs, ys):
     """
@@ -38,7 +41,7 @@ def analyze_priors_effect(json_data, save_file_dir):
     for episode in data:
         w_len = episode["word_len"]
         w_freq = episode["word_frequency"]
-        w_pred = episode.get("Word predictability", 0.0)
+        w_pred = episode.get("word_predictability", 0.0)
         num_fixations = sum(1 for f in episode["fixations"] if not f["done"])
         
         word_lengths.add(w_len)
@@ -172,7 +175,9 @@ def analyze_priors_effect(json_data, save_file_dir):
     
     print(f"Word' Prior Effect Plots saved successfully in {save_file_dir}")
 
-def analyze_priors_effect_on_gaze_duration(json_data, save_file_dir):
+def analyze_priors_effect_on_gaze_duration(
+        json_data, save_file_dir, csv_freq_file_path, csv_pred_file_path, csv_log_freq_file_path                               
+    ):
     """
     Generates gaze duration analysis plots for word frequency and predictability.
     """
@@ -184,8 +189,8 @@ def analyze_priors_effect_on_gaze_duration(json_data, save_file_dir):
     gaze_durations = []
     
     for episode in data:
-        w_freq = episode["word_frequency"]
-        w_pred = episode.get("Word predictability", 0.0)
+        w_freq = episode["word_prior_prob"]             # All get the default prior's values, refine in the data processing parts later
+        w_pred = episode.get("word_prior_prob", 0.0)    # For freq and pred, we could use different non-linear gaze duration models, or even rl models to generate data 
         last_fixation = next(f for f in reversed(episode["fixations"]) if f["done"])
         gaze_duration = last_fixation["gaze_duration"]
         
@@ -193,6 +198,21 @@ def analyze_priors_effect_on_gaze_duration(json_data, save_file_dir):
         word_predictabilities.append(w_pred)
         gaze_durations.append(gaze_duration)
     
+    # Save to csv
+    df_freq = pd.DataFrame({"frequency": word_frequencies, "average_gaze_duration": gaze_durations})
+    df_pred = pd.DataFrame({"predictability": word_predictabilities, "average_gaze_duration": gaze_durations})
+
+    # 2) Create a log-frequency DataFrame
+    #    Here we map [0, 1] in the pseudo-freq to [0, 6], which is a typical log10 range for CELEX
+    df_log_freq = pd.DataFrame({
+        "log_frequency": [Constants.CELEX_LOG_WORD_FREQ_MAX * f for f in word_frequencies],
+        "average_gaze_duration": gaze_durations
+    })
+    df_log_freq.to_csv(csv_log_freq_file_path, index=False)
+
+    df_freq.to_csv(csv_freq_file_path, index=False)
+    df_pred.to_csv(csv_pred_file_path, index=False)
+
     # Scatter plot - Word Frequency
     plt.figure(figsize=(8, 6))
     plt.scatter(word_frequencies, gaze_durations, alpha=0.7)
@@ -382,7 +402,7 @@ def compute_average_gaze(word_lengths, gaze_durations):
     avg_gazes = [np.mean([g for w, g in zip(word_lengths, gaze_durations) if w == ul]) for ul in unique_lengths]
     return unique_lengths, avg_gazes
 
-def analyze_word_length_gaze_duration(json_data, save_file_dir):
+def analyze_word_length_gaze_duration(json_data, save_file_dir, csv_file_path):
     """
     Generates gaze duration analysis plots for word length.
     """
@@ -399,6 +419,13 @@ def analyze_word_length_gaze_duration(json_data, save_file_dir):
         
         word_lengths.append(w_len)
         gaze_durations.append(gaze_duration)
+    
+    # Compute mean values
+    x_sorted, y_means = compute_average_gaze(word_lengths, gaze_durations)
+    
+    # Save to CSV
+    df = pd.DataFrame({"word_length": x_sorted, "average_gaze_duration": y_means})
+    df.to_csv(csv_file_path, index=False)
     
     # Scatter plot
     plt.figure(figsize=(8, 6))
