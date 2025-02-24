@@ -226,6 +226,7 @@ class WordActivationRLEnv(Env):
 
         # Reset the entropy
         self._previous_step_entropy = self._calculate_entropy(probability_distribution=self._normalized_belief_distribution_parallel_activation_with_k_words)
+
         self._current_step_entropy = self._previous_step_entropy
         self._entropy_diff = 0
 
@@ -301,7 +302,7 @@ class WordActivationRLEnv(Env):
                 self._previous_step_entropy = self._current_step_entropy
 
                 # Get the fixation durations
-                self._current_fixation_duration = self.transition_function.calculate_fixation_duration_in_ms(
+                self._current_fixation_duration = self.transition_function.calculate_fixation_duration_in_ms_nonlinear(
                     lamda=self._lamda, t0=self._t_0, entropy_diff=self._entropy_diff
                 )
                 self._individual_fixations_durations_list.append(self._current_fixation_duration)

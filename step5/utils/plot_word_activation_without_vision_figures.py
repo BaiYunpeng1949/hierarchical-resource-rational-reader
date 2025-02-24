@@ -8,6 +8,10 @@ from scipy.stats import linregress
 
 from modules.rl_envs.word_activation_v0218 import Constants
 
+def clamp(value, low, high):
+    """Helper to keep 'value' between 'low' and 'high'."""
+    return max(low, min(value, high))
+
 def compute_average_fixations(xs, ys):
     """
     Groups data by unique x-values and computes the mean of y-values per group.
@@ -176,7 +180,7 @@ def analyze_priors_effect(json_data, save_file_dir):
     print(f"Word' Prior Effect Plots saved successfully in {save_file_dir}")
 
 def analyze_priors_effect_on_gaze_duration(
-        json_data, save_file_dir, csv_freq_file_path, csv_pred_file_path, csv_log_freq_file_path                               
+        json_data, save_file_dir, csv_freq_file_path, csv_pred_file_path, csv_log_freq_file_path, csv_logit_pred_file_path                               
     ):
     """
     Generates gaze duration analysis plots for word frequency and predictability.
@@ -186,6 +190,7 @@ def analyze_priors_effect_on_gaze_duration(
     
     word_frequencies = []
     word_predictabilities = []
+    word_predictabilities_clamped = []
     gaze_durations = []
     
     for episode in data:
@@ -194,21 +199,33 @@ def analyze_priors_effect_on_gaze_duration(
         last_fixation = next(f for f in reversed(episode["fixations"]) if f["done"])
         gaze_duration = last_fixation["gaze_duration"]
         
+        # Clamp the word predictability values
+        w_pred_clamped = clamp(w_pred, Constants.PREDICTABILITY_MIN, Constants.PREDICTABILITY_MAX)
+
         word_frequencies.append(w_freq)
         word_predictabilities.append(w_pred)
+        word_predictabilities_clamped.append(w_pred_clamped)
         gaze_durations.append(gaze_duration)
     
     # Save to csv
     df_freq = pd.DataFrame({"frequency": word_frequencies, "average_gaze_duration": gaze_durations})
     df_pred = pd.DataFrame({"predictability": word_predictabilities, "average_gaze_duration": gaze_durations})
 
-    # 2) Create a log-frequency DataFrame
+    # Create a log-frequency DataFrame
     #    Here we map [0, 1] in the pseudo-freq to [0, 6], which is a typical log10 range for CELEX
     df_log_freq = pd.DataFrame({
         "log_frequency": [Constants.CELEX_LOG_WORD_FREQ_MAX * f for f in word_frequencies],
         "average_gaze_duration": gaze_durations
     })
     df_log_freq.to_csv(csv_log_freq_file_path, index=False)
+
+    # Create a logit-predictability DataFrame
+    #   Here we clap predictability ranges from [min, max] using the logit function 
+    df_logit_pred = pd.DataFrame({
+        "logit_predictability": [np.log(p / (1.0 - p)) for p in word_predictabilities_clamped],
+        "average_gaze_duration": gaze_durations
+    })
+    df_logit_pred.to_csv(csv_logit_pred_file_path, index=False)
 
     df_freq.to_csv(csv_freq_file_path, index=False)
     df_pred.to_csv(csv_pred_file_path, index=False)

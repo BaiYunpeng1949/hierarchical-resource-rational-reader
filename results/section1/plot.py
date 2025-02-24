@@ -1,62 +1,3 @@
-# import os
-# import numpy as np
-# import pandas as pd
-# import matplotlib.pyplot as plt
-# from collections import defaultdict
-# from scipy.stats import linregress
-
-# def analyze_and_compare_gaze_duration(human_csv, sim_csv, save_dir):
-#     """
-#     Reads human and simulated gaze data from CSV files, 
-#     plots scatter points with linear regression lines, and saves the figure.
-#     """
-#     os.makedirs(save_dir, exist_ok=True)
-    
-#     # Load data
-#     human_df = pd.read_csv(human_csv)
-#     sim_df = pd.read_csv(sim_csv)
-
-#     # Scatter plot
-#     plt.figure(figsize=(8, 6))
-    
-#     plt.scatter(human_df["word_length"], human_df["average_gaze_duration"], 
-#                 color='blue', alpha=0.6, label="Human Data")
-#     plt.scatter(sim_df["word_length"], sim_df["average_gaze_duration"], 
-#                 color='red', alpha=0.6, label="Simulated Data")
-    
-#     # Linear regression for human data
-#     human_slope, human_intercept, _, _, _ = linregress(human_df["word_length"], human_df["average_gaze_duration"])
-#     plt.plot(human_df["word_length"], 
-#              human_slope * human_df["word_length"] + human_intercept, 
-#              color='blue', linestyle='dashed')
-
-#     # Linear regression for simulated data
-#     sim_slope, sim_intercept, _, _, _ = linregress(sim_df["word_length"], sim_df["average_gaze_duration"])
-#     plt.plot(sim_df["word_length"], 
-#              sim_slope * sim_df["word_length"] + sim_intercept, 
-#              color='red', linestyle='dashed')
-
-#     # Labels and formatting
-#     plt.xlabel("Word Length")
-#     plt.ylabel("Average Gaze Duration (ms)")
-#     plt.title("Comparison: Gaze Duration vs. Word Length")
-#     plt.legend()
-#     plt.grid(True)
-    
-#     # Save plot
-#     save_path = os.path.join(save_dir, "gaze_duration_comparison.png")
-#     plt.savefig(save_path)
-#     plt.close()
-    
-#     print(f"Comparison plot saved at {save_path}")
-
-# if __name__ == "__main__":
-#     analyze_and_compare_gaze_duration(
-#         human_csv="human_data/gaze_duration_vs_word_length.csv",
-#         sim_csv="simulated_results/gaze_duration_vs_word_length.csv",
-#         save_dir="figures"
-#     )
-
 import os
 import json
 import pandas as pd
@@ -111,12 +52,12 @@ def compare_gaze_duration(
     plt.scatter(
         human_df[x_col], 
         human_df[y_col],
-        color='blue', alpha=0.6, label="Human Data"
+        color='blue', alpha=0.2, label="Human Data"
     )
     plt.scatter(
         sim_df[x_col], 
         sim_df[y_col],
-        color='red', alpha=0.6, label="Simulated Data"
+        color='red', alpha=0.2, label="Simulated Data"
     )
     
     # Linear regression for human data
@@ -124,7 +65,8 @@ def compare_gaze_duration(
     plt.plot(
         human_df[x_col],
         human_slope * human_df[x_col] + human_intercept, 
-        color='blue', linestyle='dashed'
+        color='blue', linestyle='dashed',
+        linewidth=3
     )
 
     # Linear regression for simulated data
@@ -132,7 +74,8 @@ def compare_gaze_duration(
     plt.plot(
         sim_df[x_col],
         sim_slope * sim_df[x_col] + sim_intercept,
-        color='red', linestyle='dashed'
+        color='red', linestyle='dashed', 
+        linewidth=3
     )
 
     # Labels and formatting
@@ -171,12 +114,24 @@ if __name__ == "__main__":
     compare_gaze_duration(
         human_csv=os.path.join(human_data_dir, "gaze_duration_vs_word_log_frequency.csv"),
         sim_csv=os.path.join(sim_data_dir, "gaze_duration_vs_word_log_frequency.csv"),
-        x_col="log_frequency",  # or whatever the column is named
+        x_col="log_frequency", 
         y_col="average_gaze_duration",
         x_label="Log Frequency",
         y_label="Average Gaze Duration (ms)",
         title="Comparison: Gaze Duration vs. Log Frequency",
         save_dir=save_dir,
-        output_filename="log_freq_comparison.png"
+        output_filename="log_frequency_comparison.png"
+    )
+
+    compare_gaze_duration(
+        human_csv=os.path.join(human_data_dir, "gaze_duration_vs_word_logit_predictability.csv"),
+        sim_csv=os.path.join(sim_data_dir, "gaze_duration_vs_word_logit_predictability.csv"),
+        x_col="logit_predictability", 
+        y_col="average_gaze_duration",
+        x_label="Predictability",
+        y_label="Average Gaze Duration (ms)",
+        title="Comparison: Gaze Duration vs. Logit Predictability",
+        save_dir=save_dir,
+        output_filename="logit_predictability_comparison.png"
     )
 
