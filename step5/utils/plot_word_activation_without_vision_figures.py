@@ -25,6 +25,78 @@ def compute_average_fixations(xs, ys):
     y_means = [np.mean(aggregator[xv]) for xv in x_unique_sorted]
     return x_unique_sorted, y_means
 
+def pseudo_freq_to_raw(p, min_freq=1, max_freq=1000000):
+    """
+    Converts pseudo-frequency values back to raw frequency values.
+    """
+    return min_freq + (max_freq - min_freq) * p
+
+def bin_and_aggregate_frequency(df, bin_dict, freq_col="raw_data", logfreq_col="log_frequency", gaze_col="average_gaze_duration"):
+    """
+    Bins rows by their raw frequency per million (from 'freq_col'),
+    then computes the mean log_frequency & mean gaze_duration
+    for each bin.
+
+    Returns a DataFrame with columns: 
+        ['class', 'log_frequency', 'gaze_duration', 'count']
+    """
+    rows = []
+    for class_label, (low, high) in bin_dict.items():
+        # Select rows whose freq_per_million is in [low, high)
+        mask = (df[freq_col] >= low) & (df[freq_col] < high)
+        subset = df[mask]
+        
+        if len(subset) > 0:
+            mean_log_freq = subset[logfreq_col].mean()
+            mean_gaze = subset[gaze_col].mean()
+            n = len(subset)
+        else:
+            # If no data falls in this bin, store NaN
+            mean_log_freq = np.nan
+            mean_gaze = np.nan
+            n = 0
+        
+        rows.append({
+            "class": class_label,
+            "log_frequency": mean_log_freq,
+            "average_gaze_duration": mean_gaze,
+            "count": n
+        })
+    
+    return pd.DataFrame(rows)
+
+def bin_and_aggregate_predictability(df, bin_dict, logit_col="logit_predictability", gaze_col="average_gaze_duration"):
+    """
+    Bins rows by their logit_predictability (from 'logit_col'),
+    then computes the mean logit_predictability & mean gaze_duration
+    for each bin.
+
+    Returns a DataFrame with columns:
+        ['class', 'logit_predictability', 'gaze_duration', 'count']
+    """
+    rows = []
+    for class_label, (low, high) in bin_dict.items():
+        mask = (df[logit_col] >= low) & (df[logit_col] < high)
+        subset = df[mask]
+        
+        if len(subset) > 0:
+            mean_logit = subset[logit_col].mean()
+            mean_gaze = subset[gaze_col].mean()
+            n = len(subset)
+        else:
+            mean_logit = np.nan
+            mean_gaze = np.nan
+            n = 0
+        
+        rows.append({
+            "class": class_label,
+            "logit_predictability": mean_logit,
+            "average_gaze_duration": mean_gaze,
+            "count": n
+        })
+    
+    return pd.DataFrame(rows)
+
 def analyze_priors_effect(json_data, save_file_dir):
     """
     Generates fixation analysis plots for word frequency and predictability
@@ -180,7 +252,7 @@ def analyze_priors_effect(json_data, save_file_dir):
     print(f"Word' Prior Effect Plots saved successfully in {save_file_dir}")
 
 def analyze_priors_effect_on_gaze_duration(
-        json_data, save_file_dir, csv_freq_file_path, csv_pred_file_path, csv_log_freq_file_path, csv_logit_pred_file_path                               
+        json_data, save_file_dir, csv_log_freq_file_path, csv_logit_pred_file_path, csv_binned_log_freq_file_path, csv_binned_logit_pred_file_path,                                
     ):
     """
     Generates gaze duration analysis plots for word frequency and predictability.
@@ -207,28 +279,48 @@ def analyze_priors_effect_on_gaze_duration(
         word_predictabilities_clamped.append(w_pred_clamped)
         gaze_durations.append(gaze_duration)
     
-    # Save to csv
-    df_freq = pd.DataFrame({"frequency": word_frequencies, "average_gaze_duration": gaze_durations})
-    df_pred = pd.DataFrame({"predictability": word_predictabilities, "average_gaze_duration": gaze_durations})
+    # Convert pseudo freq -> raw freq -> log10
+    # NOTE: reference: Length, frequency, and predictability effects of words on eye movements in reading
+    raw_freqs = [pseudo_freq_to_raw(f) for f in word_frequencies]
+    log_freqs = [np.log10(f) for f in raw_freqs]
+
+    # Convert pseudo pred -> clamp -> logit
+    clamped_preds = [clamp(p, Constants.PREDICTABILITY_MIN, Constants.PREDICTABILITY_MAX) for p in word_predictabilities]
+
+    # TODO debug delete later
+    print(f"The clamp range is: {Constants.PREDICTABILITY_MIN} - {Constants.PREDICTABILITY_MAX}")
+
+    logit_preds = [0.5 * np.log(p / (1.0 - p)) for p in clamped_preds]
+
+    # # Save to csv
+    # df_freq = pd.DataFrame({"frequency": word_frequencies, "average_gaze_duration": gaze_durations})
+    # df_pred = pd.DataFrame({"predictability": word_predictabilities, "average_gaze_duration": gaze_durations})
 
     # Create a log-frequency DataFrame
-    #    Here we map [0, 1] in the pseudo-freq to [0, 6], which is a typical log10 range for CELEX
     df_log_freq = pd.DataFrame({
-        "log_frequency": [Constants.CELEX_LOG_WORD_FREQ_MAX * f for f in word_frequencies],
+        "raw_data": raw_freqs,
+        "log_frequency": log_freqs,
         "average_gaze_duration": gaze_durations
     })
     df_log_freq.to_csv(csv_log_freq_file_path, index=False)
 
     # Create a logit-predictability DataFrame
-    #   Here we clap predictability ranges from [min, max] using the logit function 
     df_logit_pred = pd.DataFrame({
-        "logit_predictability": [np.log(p / (1.0 - p)) for p in word_predictabilities_clamped],
+        "logit_predictability": logit_preds,
         "average_gaze_duration": gaze_durations
     })
     df_logit_pred.to_csv(csv_logit_pred_file_path, index=False)
 
-    df_freq.to_csv(csv_freq_file_path, index=False)
-    df_pred.to_csv(csv_pred_file_path, index=False)
+    # Get the binned and aggregated version
+    df_log_freq_binned = bin_and_aggregate_frequency(df=df_log_freq, bin_dict=Constants.LOG_FREQ_BINS)
+    df_logit_pred_binned = bin_and_aggregate_predictability(df_logit_pred, Constants.LOGIT_PRED_BINS)
+
+    # Save to csv
+    df_log_freq_binned.to_csv(csv_binned_log_freq_file_path, index=False)
+    df_logit_pred_binned.to_csv(csv_binned_logit_pred_file_path, index=False)
+
+    # df_freq.to_csv(csv_freq_file_path, index=False)
+    # df_pred.to_csv(csv_pred_file_path, index=False)
 
     # Scatter plot - Word Frequency
     plt.figure(figsize=(8, 6))

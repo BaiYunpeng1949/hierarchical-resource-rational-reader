@@ -12,5 +12,19 @@ NON_WORD = "NON_WORD"
 EPSILON = 1e-5
 CELEX_LOG_WORD_FREQ_MIN = 0
 CELEX_LOG_WORD_FREQ_MAX = 6
-PREDICTABILITY_MIN = 0.07   # Cater to the paper's logit predictability ranges from -2.5 to 1
-PREDICTABILITY_MAX = 0.73   # Logit predictability = ln(p/(1-p)), when p=0.07, logit predictability = -2.5; when p=0.73, logit predictability = 1
+PREDICTABILITY_MIN = 1/(2*83)  # Reference: Length, frequency, and predictability effects of words on eye movements in reading   
+PREDICTABILITY_MAX = (2*83-1)/(2*83)  # Reference: Length, frequency, and predictability effects of words on eye movements in reading
+LOG_FREQ_BINS = {
+    "class 1": (1, 10),
+    "class 2": (10, 100),
+    "class 3": (100, 1000),
+    "class 4": (1000, 10000),
+    "class 5": (10000, 100000),
+}
+LOGIT_PRED_BINS = {
+    "class 1": (-2.553, -1.5),
+    "class 2": (-1.5, -1.0),
+    "class 3": (-1.0, -0.5),
+    "class 4": (-0.5, 0.0),
+    "class 5": (0.0, 2.553),
+}

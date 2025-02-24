@@ -135,3 +135,27 @@ if __name__ == "__main__":
         output_filename="logit_predictability_comparison.png"
     )
 
+    compare_gaze_duration(
+        human_csv=os.path.join(human_data_dir, "gaze_duration_vs_word_log_frequency.csv"),
+        sim_csv=os.path.join(sim_data_dir, "gaze_duration_vs_word_log_frequency_binned.csv"),
+        x_col="log_frequency", 
+        y_col="average_gaze_duration",
+        x_label="Log Frequency",
+        y_label="Average Gaze Duration (ms)",
+        title="Comparison: Gaze Duration vs. Log Frequency",
+        save_dir=save_dir,
+        output_filename="log_frequency_binned_comparison.png"
+    )
+
+    compare_gaze_duration(
+        human_csv=os.path.join(human_data_dir, "gaze_duration_vs_word_logit_predictability.csv"),
+        sim_csv=os.path.join(sim_data_dir, "gaze_duration_vs_word_logit_predictability_binned.csv"),
+        x_col="logit_predictability", 
+        y_col="average_gaze_duration",
+        x_label="Predictability",
+        y_label="Average Gaze Duration (ms)",
+        title="Comparison: Gaze Duration vs. Logit Predictability",
+        save_dir=save_dir,
+        output_filename="logit_predictability_binned_comparison.png"
+    )
+
