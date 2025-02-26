@@ -134,6 +134,12 @@ class WordActivationRLEnv(Env):
         self._normalized_belief_distribution_parallel_activation_with_k_words = self.transition_function.reset_state_normalized_belief_distribution()      # The belief distribution has to be normalized, sumed up to 1
         self._normalized_belief_distribution_dict_parallel_activation_with_k_words = None
 
+        # Prior type: frequency and predictability
+        #   Since our prior could represent either frequency or predictability, we need to 
+        #   differentiate them because they have very differnet distributions, for e.g., predictability is uniform, 
+        #   but frequency follows the Zipf's law
+        self._prior_type = None     # 0 stands for frequency, 1 stands for predictability
+        
         # Initialize the prior dictionary across candidate words
         self._prior_distribution_dict_parallel_activation_with_k_words = None
         # Initialize the likelihood dictionary across candidate words
@@ -179,7 +185,7 @@ class WordActivationRLEnv(Env):
         # Define the observation space:
         self.STATEFUL_OBS = "stateful_obs"
         self.ACTION_OBS = "action_obs"
-        self._num_stateful_obs = len(self._normalized_belief_distribution_parallel_activation_with_k_words) + len(self._word_representation) + 1 + (self.MAX_WORD_LEN + 1 + 1) # Belief distribution, word representation with sampled letters, word length
+        self._num_stateful_obs = len(self._normalized_belief_distribution_parallel_activation_with_k_words) + len(self._word_representation) + 1 + (self.MAX_WORD_LEN + 1 + 1) + 1 # Belief distribution, word representation with sampled letters, word length, prior type
         self.observation_space = Box(low=-1, high=1, shape=(self._num_stateful_obs,))
 
         # Initialize the reward function
@@ -207,8 +213,11 @@ class WordActivationRLEnv(Env):
         self._done = False
         self.log_cumulative_version = {}
 
+        # Initialize the prior's type       # TODO: set this as a controllable parameter later
+        self._prior_type = np.random.choice([Constants.PRIOR_AS_FREQ, Constants.PRIOR_AS_PRED])
+
         # Reset the lexicon
-        self.lex_manager.reset()
+        self.lex_manager.reset(prior_type=self._prior_type)
 
         # Initialize the action
         self._action = -1
@@ -245,14 +254,17 @@ class WordActivationRLEnv(Env):
         # Sample the word to be recognized
         if inputs is not None:
             self._word = inputs["word"]
+            self._word_prior_prob = self.lex_manager.prior_dict[self._word] 
+            self._raw_occurance = inputs["raw_occurance"]   # TODO, if use, fix
         else:
-            self._word = self.lex_manager.get_word()
+            self._word, self._word_prior_prob, self._raw_occurance = self.lex_manager.get_word()
 
         self._word_len = len(self._word)
-        self._word_prior_prob = self.lex_manager.prior_dict[self._word] 
-        weight_prior_pred_to_freq = self.lex_manager.weight_prior_pred_to_freq
-        self._word_freq_prob = math.sqrt(self._word_prior_prob / weight_prior_pred_to_freq)    # Only for training and testing, for actual simulation, need to use actual LLMs  NOTE: could set as controllable parameters
-        self._word_predictability_prob = self._word_freq_prob * weight_prior_pred_to_freq    # Only for training and testing, for actual simulation, need to use actual LLMs   NOTE: could set as controllable parameters
+        # self._word_prior_prob = self.lex_manager.prior_dict[self._word] 
+
+        # weight_prior_pred_to_freq = self.lex_manager.weight_prior_pred_to_freq    # NOTE we separetely analyze word frequency and predictability's effect
+        # self._word_freq_prob = math.sqrt(self._word_prior_prob / weight_prior_pred_to_freq)    # Only for training and testing, for actual simulation, need to use actual LLMs  NOTE: could set as controllable parameters
+        # self._word_predictability_prob = self._word_freq_prob * weight_prior_pred_to_freq    # Only for training and testing, for actual simulation, need to use actual LLMs   NOTE: could set as controllable parameters
         self._word_to_activate = None
 
         # Initialize the ground truth representation -- the word to be recognize is encoded as:
@@ -361,7 +373,7 @@ class WordActivationRLEnv(Env):
         action_obs = np.zeros(self.MAX_WORD_LEN + 1 + 1)        # three types of actions -1, fixations, stop
         action_obs[self._action + 1] = 1
 
-        stateful_obs = np.concatenate([self._normalized_belief_distribution_parallel_activation_with_k_words, self._sampled_letters_so_far_representation, [self._word_len], action_obs])
+        stateful_obs = np.concatenate([self._normalized_belief_distribution_parallel_activation_with_k_words, self._sampled_letters_so_far_representation, [self._word_len], action_obs, [self._prior_type]])
 
         assert len(stateful_obs) == self._num_stateful_obs, f"expected {self._num_stateful_obs} but got {len(stateful_obs)}"
 
@@ -380,7 +392,9 @@ class WordActivationRLEnv(Env):
                     "episode_idnex": "TBD",   # The episode index, to be filled
                     "word": self._word,
                     "word_len": self._word_len,     # Used for analyzing the length's effect
+                    "prior_type": self._prior_type,     # Used for analyzing the prior's effect
                     "word_prior_prob": self._word_prior_prob,     # Used for analyzing the prior's effect
+                    "occurance": self._raw_occurance,     # Used for analyzing the frequency's effect
                     "word_frequency": self._word_freq_prob,     # Used for analyzing the frequency's effect
                     "word_predictability": self._word_predictability_prob,    # Used for analyzing the predictability's effect
                     "word_representation": self._word_representation,   

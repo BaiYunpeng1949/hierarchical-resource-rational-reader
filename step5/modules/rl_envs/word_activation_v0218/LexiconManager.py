@@ -74,9 +74,20 @@ class LexiconManager():
         ]
         # TODO train with a random larger lexicon later, the words could be non-words, for generalizability
 
+        # Initialize the type of prior
+        self.prior_type = None
+
         # Initialize the prior probabilities: word frequencies and contextual predictabilities
         # Initialize the word frequencies
-        self.zipf_param = zipf_param
+        self.raw_occurances, self.normalized_freqs = self.sample_pareto(
+            n_words=Constants.NUM_WORDS_IN_LEXICON, alpha=Constants.ZIPF_PARAM_PARETO_ALPHA
+        )
+
+        # # TODO debug delete later
+        # print(f"self.raw_occurances[:10]: {self.raw_occurances[:10]}")
+        # print(f"self.nomralized_freqs[:10]: {self.normalized_freqs[:10]}")
+        # print(f"The sum of self.normalized_freqs: {sum(self.normalized_freqs)}, the sum of self.raw_occurances: {sum(self.raw_occurances)}")
+        # print(f"")
 
         # Initialize the prior probability generator
         # NOTE: when testing freq and pred's effect, use a tunable parameter, say w_p, we could define prior = freq * w_p * pred; 
@@ -91,91 +102,117 @@ class LexiconManager():
         # Initialize the Approximate Word Generator to generate likely words
         self.approximate_word_generator = ApproximateWordGenerator()
     
-    def reset(self):
+    def reset(self, prior_type=Constants.PRIOR_AS_PRED):
         """
         Reset the lexicon manager
 
         This function is reset for every RL training episode
         """
-        # # Initialize the word frequencies
-        # self._initialize_fixed_frequencies()  # Precompute only for fixed lexicon
-
-        # # Initialize the word predictabilities
-        # self._initialize_fixed_predictabilities()  # Precompute only for fixed lexicon
-
         # Sample the training and testing words
         self.train_test_words_data = self.lexicon_300
+
+        # The type of prior probability
+        self.prior_type = prior_type
 
         # Reset the prior dictionary
         self.prior_dict = {}
     
+    def _generate_prior_probability(self):
+        """
+        Generate a random prior probability for a word. Could either be a frequency or predictability.
+        Depends on the prior type input.
+        """
+        if self.prior_type == Constants.PRIOR_AS_FREQ:
+            index_in_the_list = random.randint(0, len(self.normalized_freqs) - 1)
+            raw_occurrance = self.raw_occurances[index_in_the_list]
+            prior_prob = self.normalized_freqs[index_in_the_list]
+        elif self.prior_type == Constants.PRIOR_AS_PRED:
+            prior_prob = random.uniform(0, 1)
+            raw_occurrance = 0
+        else:
+            raise ValueError(f"Invalid prior type: {self.prior_type}")
+        return prior_prob, raw_occurrance
+
     @staticmethod
-    def _generate_prior_probability():
+    def sample_pareto(n_words=1000, alpha=1.0):
         """
+        Samples frequencies from a Pareto (power-law) distribution:
+        p(x) ~ (1/x^(alpha+1)) for x >= 1
+        Then normalizes them to sum=1.
+        The parameter 'alpha' controls how steep the tail is.
         """
-        prior_prob = random.uniform(0, 1)
-        return prior_prob
-
-    def _initialize_fixed_frequencies(self):
-        """Precompute Zipfian frequencies for words in the fixed lexicon (randomized order)."""
-        random.seed()  # Ensure different shuffle each time
-
-        shuffled_words = self.lexicon_300.copy()
-        random.shuffle(shuffled_words)  # Shuffle words before assigning ranks
-
-        ranks = np.arange(1, len(shuffled_words) + 1)  # Assign new ranks
-        zipf_probs = 1 / (ranks ** self.zipf_param)
-        zipf_probs /= zipf_probs.sum()  # Normalize to sum to 1
-
-        self.lexicon_w_pseudo_freq_prob = {word: prob for word, prob in zip(shuffled_words, zipf_probs)}
-    
-    def _generate_dynamic_frequency(self, word):
-        """
-        Dynamically generate a frequency probability for a word NOT in the lexicon.
-        Instead of computing from scratch, sample from existing values to match the dataset's scale.
-        """
-        sampled_existing_freq = random.choice(list(self.lexicon_w_pseudo_freq_prob.values()))  # Sample existing frequency
-        noise_factor = np.random.uniform(0.8, 1.2)  # Add slight variation
-        return max(np.clip(sampled_existing_freq * noise_factor, 0, 1), 0.0001)  # Avoid zero probability
-
-    def get_word_frequency_probability(self, word):
-        """Retrieve or dynamically generate the word's probability."""
-        if word in self.lexicon_w_pseudo_freq_prob:
-            return self.lexicon_w_pseudo_freq_prob[word]
-        else:
-            return self._generate_dynamic_frequency(word)
-
-    def _initialize_fixed_predictabilities(self):
-        """Precompute random predictabilities for words in the fixed lexicon."""
-        # random.seed(42)
-        self.lexicon_w_pseudo_pred_prob = {w: self.get_predictability(mode="random") for w in self.lexicon_300}
-    
-    def _generate_dynamic_predictability(self, word):
-        """
-        Dynamically generate a predictability probability for a word NOT in the lexicon.
-        Similar to frequency, we sample from the dataset's distribution.
-        """
-        sampled_existing_pred = random.choice(list(self.lexicon_w_pseudo_pred_prob.values()))  # Sample from existing
-        noise_factor = np.random.uniform(0.9, 1.1)  # Slight variation
-        return max(np.clip(sampled_existing_pred * noise_factor, 0, 1), 0.001)  # Avoid zero probability
-
-    def get_word_predictability_probability(self, word):
-        """Retrieve or dynamically generate the word's probability."""
-        if word in self.lexicon_w_pseudo_pred_prob:
-            return self.lexicon_w_pseudo_pred_prob[word]
-        else:
-            return self._generate_dynamic_predictability(word)
-    
-    def get_predictability(self, mode="random"):
-        """
-        Get the predictability of the word in the context
-        """
+        # 1) sample from Pareto
+        raw = np.random.pareto(alpha, size=n_words)
         
-        if mode == "random":
-            return random.uniform(0, 1)
-        else:
-            # Use language models to get the predictability
-            return 0.97
+        # 2) shift so it starts ~ 1
+        #    Pareto gives x >= 0, so we often do x+1 or something similar. 
+        raw += Constants.ZIPF_PARAM_PARETO_XMIN
+        
+        # 3) normalize
+        freqs = raw / raw.sum()
+        return raw, freqs
+
+    # def _initialize_fixed_frequencies(self):
+    #     """Precompute Zipfian frequencies for words in the fixed lexicon (randomized order)."""
+    #     # random.seed()  # Ensure different shuffle each time
+
+    #     # shuffled_words = self.lexicon_300.copy()
+    #     # random.shuffle(shuffled_words)  # Shuffle words before assigning ranks
+
+    #     # ranks = np.arange(1, len(shuffled_words) + 1)  # Assign new ranks
+    #     # zipf_probs = 1 / (ranks ** self.zipf_param)
+    #     # zipf_probs /= zipf_probs.sum()  # Normalize to sum to 1
+
+    #     # self.lexicon_w_pseudo_freq_prob = {word: prob for word, prob in zip(shuffled_words, zipf_probs)}
+    #     self.sample_pareto(n_words=Constants.NUM_WORDS_IN_LEXICON, alpha=Constants.ZIPF_PARAM_PARETO_ALPHA)
+    
+    # def _generate_dynamic_frequency(self, word):
+    #     """
+    #     Dynamically generate a frequency probability for a word NOT in the lexicon.
+    #     Instead of computing from scratch, sample from existing values to match the dataset's scale.
+    #     """
+    #     sampled_existing_freq = random.choice(list(self.lexicon_w_pseudo_freq_prob.values()))  # Sample existing frequency
+    #     noise_factor = np.random.uniform(0.8, 1.2)  # Add slight variation
+    #     return max(np.clip(sampled_existing_freq * noise_factor, 0, 1), 0.0001)  # Avoid zero probability
+
+    # def get_word_frequency_probability(self, word):
+    #     """Retrieve or dynamically generate the word's probability."""
+    #     if word in self.lexicon_w_pseudo_freq_prob:
+    #         return self.lexicon_w_pseudo_freq_prob[word]
+    #     else:
+    #         return self._generate_dynamic_frequency(word)
+
+    # def _initialize_fixed_predictabilities(self):
+    #     """Precompute random predictabilities for words in the fixed lexicon."""
+    #     # random.seed(42)
+    #     self.lexicon_w_pseudo_pred_prob = {w: self.get_predictability(mode="random") for w in self.lexicon_300}
+    
+    # def _generate_dynamic_predictability(self, word):
+    #     """
+    #     Dynamically generate a predictability probability for a word NOT in the lexicon.
+    #     Similar to frequency, we sample from the dataset's distribution.
+    #     """
+    #     sampled_existing_pred = random.choice(list(self.lexicon_w_pseudo_pred_prob.values()))  # Sample from existing
+    #     noise_factor = np.random.uniform(0.9, 1.1)  # Slight variation
+    #     return max(np.clip(sampled_existing_pred * noise_factor, 0, 1), 0.001)  # Avoid zero probability
+
+    # def get_word_predictability_probability(self, word):
+    #     """Retrieve or dynamically generate the word's probability."""
+    #     if word in self.lexicon_w_pseudo_pred_prob:
+    #         return self.lexicon_w_pseudo_pred_prob[word]
+    #     else:
+    #         return self._generate_dynamic_predictability(word)
+    
+    # def get_predictability(self, mode="random"):
+    #     """
+    #     Get the predictability of the word in the context
+    #     """
+        
+    #     if mode == "random":
+    #         return random.uniform(0, 1)
+    #     else:
+    #         # Use language models to get the predictability
+    #         return 0.97
     
     def get_top_k_words(self, sampled_letters_so_far_with_spaces, original_word, top_k):
         """
@@ -201,7 +238,8 @@ class LexiconManager():
         for w in generated_words:
             if w not in self.prior_dict:
                 if w is not original_word:  # Randomize a prior probability for the original word (target word)
-                    self.prior_dict[w] = self._generate_prior_probability()     # Randomize the prior probability   # NOTE: good good!
+                    # TODO fix here, differentiate the type of prior probability
+                    self.prior_dict[w], _ = self._generate_prior_probability()     # Randomize the prior probability   # NOTE: good good!
             prior = self.prior_dict[w]
             likelihood, correct_factor_alpha = self.get_likelihood_by_sampled_letters_so_far(
                 sampled_letters_so_far=sampled_letters_so_far_with_spaces,
@@ -338,9 +376,8 @@ class LexiconManager():
 
         return max(Constants.EPSILON, likelihood), alpha  # Avoid zero likelihood
 
-
     def get_word(self):
         word_to_recognize = random.choice(self.train_test_words_data)
         # Reset the target word in the dictionary
-        self.prior_dict[word_to_recognize] = self._generate_prior_probability()
-        return word_to_recognize
+        self.prior_dict[word_to_recognize], raw_occurance_of_target_word = self._generate_prior_probability()
+        return word_to_recognize, self.prior_dict[word_to_recognize], raw_occurance_of_target_word

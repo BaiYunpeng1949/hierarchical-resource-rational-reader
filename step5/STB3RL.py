@@ -1343,7 +1343,7 @@ class RL:
         This method generates the RL env testing results with or without a pre-trained RL model in a manual way.
         """
         if self._mode == _MODES['debug']:
-            print('\nThe MuJoCo env and tasks baseline: ')
+            print('\nThe env and tasks baseline: ')
         elif self._mode == _MODES['test']:
             print('\nThe pre-trained RL model testing: ')
 
