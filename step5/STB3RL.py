@@ -858,7 +858,7 @@ class RL:
         word_binned_logit_pred_effect_data_csv_file_path = os.path.join(prior_data_effect_log_save_path, "gaze_duration_vs_word_logit_predictability_binned.csv")
         if not os.path.exists(prior_data_effect_log_save_path):
             os.makedirs(prior_data_effect_log_save_path)
-        plot_word_activation_figures.analyze_priors_effect(json_data=json_data, save_file_dir=prior_data_effect_log_save_path)
+        # plot_word_activation_figures.analyze_priors_effect(json_data=json_data, save_file_dir=prior_data_effect_log_save_path)
         plot_word_activation_figures.analyze_priors_effect_on_gaze_duration(
             json_data=json_data, save_file_dir=prior_data_effect_log_save_path, 
             csv_log_freq_file_path=word_log_freq_effect_data_csv_file_path, csv_logit_pred_file_path=word_logit_pred_effect_data_csv_file_path,
@@ -874,10 +874,10 @@ class RL:
             json_data=json_data, save_file_dir=word_length_effect_data_log_save_path, csv_file_path=word_length_effect_data_csv_file_path
         )
 
-        prior_vs_word_length_data_log_save_path = os.path.join(data_log_path, "prior_vs_word_length")
-        if not os.path.exists(prior_vs_word_length_data_log_save_path):
-            os.makedirs(prior_vs_word_length_data_log_save_path)
-        plot_word_activation_figures.analyze_prior_vs_word_length(json_data=json_data, save_file_dir=prior_vs_word_length_data_log_save_path)
+        # prior_vs_word_length_data_log_save_path = os.path.join(data_log_path, "prior_vs_word_length")
+        # if not os.path.exists(prior_vs_word_length_data_log_save_path):
+        #     os.makedirs(prior_vs_word_length_data_log_save_path)
+        # plot_word_activation_figures.analyze_prior_vs_word_length(json_data=json_data, save_file_dir=prior_vs_word_length_data_log_save_path)
 
         acc_data_log_save_path = os.path.join(data_log_path, "accuracy")
         if not os.path.exists(acc_data_log_save_path):
