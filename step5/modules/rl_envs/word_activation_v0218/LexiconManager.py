@@ -315,7 +315,15 @@ class LexiconManager():
         return max(Constants.EPSILON, likelihood), alpha  # Avoid zero likelihood
 
     def get_word(self):
-        word_to_recognize = random.choice(self.train_test_words_data)
+
+        # word_to_recognize = random.choice(self.train_test_words_data)
+
+        # Generate a random word
+        # First, randomly choose the word length
+        word_length = random.randint(Constants.MIN_WORD_LENGTH, Constants.MAX_WORD_LENGTH)
+        # Then, generate a random word with the given length
+        word_to_recognize = self.approximate_word_generator.generate_a_random_word(word_length=word_length)
+
         # Reset the target word in the dictionary
         self.prior_dict[word_to_recognize], raw_occurance_of_target_word = self._generate_prior_probability()
         return word_to_recognize, self.prior_dict[word_to_recognize], raw_occurance_of_target_word
