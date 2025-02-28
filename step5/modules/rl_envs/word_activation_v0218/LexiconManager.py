@@ -151,68 +151,6 @@ class LexiconManager():
         # 3) normalize
         freqs = raw / raw.sum()
         return raw, freqs
-
-    # def _initialize_fixed_frequencies(self):
-    #     """Precompute Zipfian frequencies for words in the fixed lexicon (randomized order)."""
-    #     # random.seed()  # Ensure different shuffle each time
-
-    #     # shuffled_words = self.lexicon_300.copy()
-    #     # random.shuffle(shuffled_words)  # Shuffle words before assigning ranks
-
-    #     # ranks = np.arange(1, len(shuffled_words) + 1)  # Assign new ranks
-    #     # zipf_probs = 1 / (ranks ** self.zipf_param)
-    #     # zipf_probs /= zipf_probs.sum()  # Normalize to sum to 1
-
-    #     # self.lexicon_w_pseudo_freq_prob = {word: prob for word, prob in zip(shuffled_words, zipf_probs)}
-    #     self.sample_pareto(n_words=Constants.NUM_WORDS_IN_LEXICON, alpha=Constants.ZIPF_PARAM_PARETO_ALPHA)
-    
-    # def _generate_dynamic_frequency(self, word):
-    #     """
-    #     Dynamically generate a frequency probability for a word NOT in the lexicon.
-    #     Instead of computing from scratch, sample from existing values to match the dataset's scale.
-    #     """
-    #     sampled_existing_freq = random.choice(list(self.lexicon_w_pseudo_freq_prob.values()))  # Sample existing frequency
-    #     noise_factor = np.random.uniform(0.8, 1.2)  # Add slight variation
-    #     return max(np.clip(sampled_existing_freq * noise_factor, 0, 1), 0.0001)  # Avoid zero probability
-
-    # def get_word_frequency_probability(self, word):
-    #     """Retrieve or dynamically generate the word's probability."""
-    #     if word in self.lexicon_w_pseudo_freq_prob:
-    #         return self.lexicon_w_pseudo_freq_prob[word]
-    #     else:
-    #         return self._generate_dynamic_frequency(word)
-
-    # def _initialize_fixed_predictabilities(self):
-    #     """Precompute random predictabilities for words in the fixed lexicon."""
-    #     # random.seed(42)
-    #     self.lexicon_w_pseudo_pred_prob = {w: self.get_predictability(mode="random") for w in self.lexicon_300}
-    
-    # def _generate_dynamic_predictability(self, word):
-    #     """
-    #     Dynamically generate a predictability probability for a word NOT in the lexicon.
-    #     Similar to frequency, we sample from the dataset's distribution.
-    #     """
-    #     sampled_existing_pred = random.choice(list(self.lexicon_w_pseudo_pred_prob.values()))  # Sample from existing
-    #     noise_factor = np.random.uniform(0.9, 1.1)  # Slight variation
-    #     return max(np.clip(sampled_existing_pred * noise_factor, 0, 1), 0.001)  # Avoid zero probability
-
-    # def get_word_predictability_probability(self, word):
-    #     """Retrieve or dynamically generate the word's probability."""
-    #     if word in self.lexicon_w_pseudo_pred_prob:
-    #         return self.lexicon_w_pseudo_pred_prob[word]
-    #     else:
-    #         return self._generate_dynamic_predictability(word)
-    
-    # def get_predictability(self, mode="random"):
-    #     """
-    #     Get the predictability of the word in the context
-    #     """
-        
-    #     if mode == "random":
-    #         return random.uniform(0, 1)
-    #     else:
-    #         # Use language models to get the predictability
-    #         return 0.97
     
     def get_top_k_words(self, sampled_letters_so_far_with_spaces, original_word, top_k):
         """
