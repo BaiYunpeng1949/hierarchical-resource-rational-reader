@@ -175,6 +175,11 @@ class TransitionFunction():
     #     """
     #     return 
 
+    def calculate_saccade_duration_in_ms_emma(self, delta_visual_angle_in_degree=2.0):
+        """
+        Calculate the saccade duration in milliseconds (T_exec in EMMA)
+        """
+        return 50 + 20 + delta_visual_angle_in_degree * 2
 
     def activate_a_word(self, normalized_belief_distribution_dict, deterministic=True):    
         """

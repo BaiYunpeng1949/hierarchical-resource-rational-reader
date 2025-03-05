@@ -4,94 +4,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import linregress
 
-# def compare_gaze_duration(
-#     human_csv, 
-#     sim_csv, 
-#     x_col, 
-#     y_col, 
-#     x_label, 
-#     y_label, 
-#     title, 
-#     save_dir, 
-#     output_filename
-# ):
-#     """
-#     Reads human and simulated data from CSV files, plots scatter points 
-#     with linear regression lines, and saves the figure.
-
-#     Parameters:
-#     -----------
-#     human_csv : str
-#         Path to the CSV file with human data.
-#     sim_csv : str
-#         Path to the CSV file with simulated data.
-#     x_col : str
-#         Name of the column in the CSV that will be used for the x-axis.
-#     y_col : str
-#         Name of the column in the CSV that will be used for the y-axis.
-#     x_label : str
-#         Label to use for the x-axis on the plot.
-#     y_label : str
-#         Label to use for the y-axis on the plot.
-#     title : str
-#         Plot title.
-#     save_dir : str
-#         Directory where the plot image will be saved.
-#     output_filename : str
-#         Name of the output image file (e.g., "comparison.png").
-#     """
-#     os.makedirs(save_dir, exist_ok=True)
-    
-#     # Load data
-#     human_df = pd.read_csv(human_csv)
-#     sim_df = pd.read_csv(sim_csv)
-
-#     plt.figure(figsize=(8, 6))
-    
-#     # Scatter plots
-#     plt.scatter(
-#         human_df[x_col], 
-#         human_df[y_col],
-#         color='blue', alpha=0.2, label="Human Data"
-#     )
-#     plt.scatter(
-#         sim_df[x_col], 
-#         sim_df[y_col],
-#         color='red', alpha=0.2, label="Simulated Data"
-#     )
-    
-#     # Linear regression for human data
-#     human_slope, human_intercept, _, _, _ = linregress(human_df[x_col], human_df[y_col])
-#     plt.plot(
-#         human_df[x_col],
-#         human_slope * human_df[x_col] + human_intercept, 
-#         color='blue', linestyle='dashed',
-#         linewidth=3
-#     )
-
-#     # Linear regression for simulated data
-#     sim_slope, sim_intercept, _, _, _ = linregress(sim_df[x_col], sim_df[y_col])
-#     plt.plot(
-#         sim_df[x_col],
-#         sim_slope * sim_df[x_col] + sim_intercept,
-#         color='red', linestyle='dashed', 
-#         linewidth=3
-#     )
-
-#     # Labels and formatting
-#     plt.xlabel(x_label)
-#     plt.ylabel(y_label)
-#     plt.title(title)
-#     plt.legend()
-#     plt.grid(True)
-    
-#     # Save plot
-#     save_path = os.path.join(save_dir, output_filename)
-#     plt.savefig(save_path)
-#     plt.close()
-    
-#     print(f"Comparison plot saved at {save_path}")
-
 def compare_gaze_duration(
     human_csv, 
     sim_csv, 
@@ -103,7 +15,10 @@ def compare_gaze_duration(
     save_dir, 
     output_filename,
     use_log_x=False,
-    poly_degree=1
+    poly_degree=1,
+    font_size=12,        # New parameter for base font size
+    tick_size=10,        # New parameter for tick label size
+    legend_size=10       # New parameter for legend font size
 ):
     """
     Reads human and simulated data from CSV files, plots scatter points 
@@ -135,99 +50,112 @@ def compare_gaze_duration(
         The degree of the polynomial to use in regression. 
         - 1 means simple linear.
         - 2, 3, etc. means polynomial fit.
+    font_size : int
+        Base font size for the plot.
+    tick_size : int
+        Tick label size for the plot.
+    legend_size : int
+        Legend font size for the plot.
     """
     os.makedirs(save_dir, exist_ok=True)
     
     # Load data
     human_df = pd.read_csv(human_csv)
-    sim_df   = pd.read_csv(sim_csv)
+    sim_df = pd.read_csv(sim_csv)
 
-    # If using log scale for x, create log_x columns
-    # (and filter out non-positive x)
-    if use_log_x:
-        human_df = human_df[human_df[x_col] > 0].copy()
-        sim_df   = sim_df[sim_df[x_col] > 0].copy()
-        
-        human_df["transformed_x"] = np.log(human_df[x_col])
-        sim_df["transformed_x"]   = np.log(sim_df[x_col])
-    else:
-        human_df["transformed_x"] = human_df[x_col]
-        sim_df["transformed_x"]   = sim_df[x_col]
+    # Set font sizes
+    plt.rcParams.update({'font.size': font_size})
+    plt.rc('xtick', labelsize=tick_size)
+    plt.rc('ytick', labelsize=tick_size)
 
+    # Plot 1: Regression lines
     plt.figure(figsize=(8, 6))
     
-    # Scatter plots (use original x values for plotting)
-    plt.scatter(
-        human_df[x_col], 
-        human_df[y_col],
-        color='blue', alpha=0.2, label="Human Data"
-    )
-    plt.scatter(
-        sim_df[x_col], 
-        sim_df[y_col],
-        color='red', alpha=0.2, label="Simulated Data"
-    )
-    
-    # Generate a smooth range of x values (for the final plotted line)
+    # Scatter plots
+    plt.scatter(human_df[x_col], human_df[y_col], color='blue', alpha=0.2, label="Human Data")
+    plt.scatter(sim_df[x_col], sim_df[y_col], color='red', alpha=0.2, label="Simulated Data")
+
+    # Fit and plot regression lines with statistics
+    if use_log_x:
+        human_df['transformed_x'] = np.log(human_df[x_col])
+        sim_df['transformed_x'] = np.log(sim_df[x_col])
+    else:
+        human_df['transformed_x'] = human_df[x_col]
+        sim_df['transformed_x'] = sim_df[x_col]
+
     x_min = min(human_df[x_col].min(), sim_df[x_col].min())
     x_max = max(human_df[x_col].max(), sim_df[x_col].max())
-    x_line = np.linspace(x_min, x_max, 200)  # denser for a smoother curve
+    x_line = np.linspace(x_min, x_max, 200)
 
-    # We'll fit polynomial of 'poly_degree' on "transformed_x".
-    # Then, to get y_line, we compute p(poly_of_x_line).
-    # For the transform, we either do log(x) or x, 
-    # so we must generate the "transformed_x_line" accordingly:
-    if use_log_x:
-        # Avoid log(0) issues
-        x_line_for_fit = np.log(x_line[x_line > 0])
-        # If x_line includes values <= 0, we skip them
-        x_line_for_plot = x_line[x_line > 0]
-    else:
-        x_line_for_fit = x_line
-        x_line_for_plot = x_line
-    
-    # Fit polynomial for human data
-    # polyfit(x_data, y_data, deg=poly_degree)
-    human_coeffs = np.polyfit(human_df["transformed_x"], human_df[y_col], deg=poly_degree)
-    human_poly   = np.poly1d(human_coeffs)
-    # Evaluate on x_line_for_fit
-    human_y_line = human_poly(x_line_for_fit)
+    for df, color, label in [(human_df, 'blue', 'Human'), (sim_df, 'red', 'Simulation')]:
+        # Calculate regression
+        coeffs = np.polyfit(df['transformed_x'], df[y_col], deg=poly_degree)
+        poly = np.poly1d(coeffs)
+        
+        # Calculate R-squared
+        y_pred = poly(df['transformed_x'])
+        r_squared = np.corrcoef(df[y_col], y_pred)[0,1]**2
+        
+        # Format equation string
+        if poly_degree == 1:
+            eq_str = f'y = {coeffs[1]:.2f} + {coeffs[0]:.2f}x'
+        else:
+            eq_str = f'y = {coeffs[-1]:.2f}'
+            for i, coef in enumerate(coeffs[:-1][::-1]):
+                eq_str += f' + {coef:.2f}x^{i+1}'
+        
+        # Plot with detailed legend
+        if use_log_x:
+            x_plot = x_line[x_line > 0]
+            y_plot = poly(np.log(x_plot))
+        else:
+            x_plot = x_line
+            y_plot = poly(x_plot)
+            
+        plt.plot(x_plot, y_plot, color=color, linestyle='dashed', 
+                linewidth=3, label=f"{label} (R²={r_squared:.2f}):\n{eq_str}")
 
-    # Fit polynomial for sim data
-    sim_coeffs = np.polyfit(sim_df["transformed_x"], sim_df[y_col], deg=poly_degree)
-    sim_poly   = np.poly1d(sim_coeffs)
-    sim_y_line = sim_poly(x_line_for_fit)
-
-    # Plot the polynomial lines
-    plt.plot(
-        x_line_for_plot, human_y_line, 
-        color='blue', linestyle='dashed', linewidth=3,
-        label=f"Human Poly deg={poly_degree}"
-    )
-    plt.plot(
-        x_line_for_plot, sim_y_line, 
-        color='red', linestyle='dashed', linewidth=3,
-        label=f"Sim Poly deg={poly_degree}"
-    )
-
-    # Labels and formatting
-    x_label_final = x_label
-    if use_log_x:
-        x_label_final += " (log scale for regression)"
-    plt.xlabel(x_label_final)
-    plt.ylabel(y_label)
-    plt.title(title)
-
-    # We already added data labels, so let's remove duplicates in legend
-    plt.legend()
+    plt.xlabel(x_label + (" (log scale for regression)" if use_log_x else ""), fontsize=font_size)
+    plt.ylabel(y_label, fontsize=font_size)
+    plt.title(title + " (Regression)", fontsize=font_size+2)
+    plt.legend(fontsize=legend_size)
     plt.grid(True)
     
-    # Save plot
-    save_path = os.path.join(save_dir, output_filename)
-    plt.savefig(save_path)
+    base_name = os.path.splitext(output_filename)[0]
+    regression_path = os.path.join(save_dir, f"{base_name}_regression.png")
+    plt.savefig(regression_path)
+    plt.close()
+
+    # Plot 2: Connected points with confidence bands
+    plt.figure(figsize=(8, 6))
+    
+    # Plot human data points connected
+    plt.plot(human_df[x_col], human_df[y_col], 
+            'o-', color='blue', label="Human Data", alpha=0.7)
+
+    # Plot simulation data points with confidence band
+    plt.plot(sim_df[x_col], sim_df[y_col], 
+            'o-', color='red', label="Simulated Data", alpha=0.7)
+    
+    if all(col in sim_df.columns for col in ['ci_95_lower', 'ci_95_upper']):
+        plt.fill_between(
+            sim_df[x_col],
+            sim_df['ci_95_lower'],
+            sim_df['ci_95_upper'],
+            color='red', alpha=0.1, label='95% CI'
+        )
+
+    plt.xlabel(x_label, fontsize=font_size)
+    plt.ylabel(y_label, fontsize=font_size)
+    plt.title(title + " (Connected Points)", fontsize=font_size+2)
+    plt.legend(fontsize=legend_size)
+    plt.grid(True)
+    
+    connected_path = os.path.join(save_dir, f"{base_name}_connected.png")
+    plt.savefig(connected_path)
     plt.close()
     
-    print(f"Comparison plot (poly_degree={poly_degree}) saved at {save_path}")
+    print(f"Comparison plots saved at {regression_path} and {connected_path}")
 
 
 
@@ -236,6 +164,12 @@ if __name__ == "__main__":
     human_data_dir = "human_data"
     sim_data_dir = "simulated_results"
     save_dir = "figures"
+
+    # Plot configurations
+    poly_degree = 1
+    font_size = 15
+    tick_size = 15
+    legend_size = 15
 
     compare_gaze_duration(
         human_csv=os.path.join(human_data_dir, "gaze_duration_vs_word_length.csv"),
@@ -248,32 +182,35 @@ if __name__ == "__main__":
         save_dir=save_dir,
         output_filename="word_length_comparison.png",
         use_log_x=False,
-        poly_degree=1
+        poly_degree=poly_degree,
+        font_size=font_size,      # Larger base font size
+        tick_size=tick_size,      # Slightly smaller tick labels
+        legend_size=legend_size     # Legend font size
     )
 
-    compare_gaze_duration(
-        human_csv=os.path.join(human_data_dir, "gaze_duration_vs_word_log_frequency.csv"),
-        sim_csv=os.path.join(sim_data_dir, "gaze_duration_vs_word_log_frequency.csv"),
-        x_col="log_frequency", 
-        y_col="average_gaze_duration",
-        x_label="Log Frequency",
-        y_label="Average Gaze Duration (ms)",
-        title="Comparison: Gaze Duration vs. Log Frequency",
-        save_dir=save_dir,
-        output_filename="log_frequency_comparison.png"
-    )
+    # compare_gaze_duration(
+    #     human_csv=os.path.join(human_data_dir, "gaze_duration_vs_word_log_frequency.csv"),
+    #     sim_csv=os.path.join(sim_data_dir, "gaze_duration_vs_word_log_frequency.csv"),
+    #     x_col="log_frequency", 
+    #     y_col="average_gaze_duration",
+    #     x_label="Log Frequency",
+    #     y_label="Average Gaze Duration (ms)",
+    #     title="Comparison: Gaze Duration vs. Log Frequency",
+    #     save_dir=save_dir,
+    #     output_filename="log_frequency_comparison.png"
+    # )
 
-    compare_gaze_duration(
-        human_csv=os.path.join(human_data_dir, "gaze_duration_vs_word_logit_predictability.csv"),
-        sim_csv=os.path.join(sim_data_dir, "gaze_duration_vs_word_logit_predictability.csv"),
-        x_col="logit_predictability", 
-        y_col="average_gaze_duration",
-        x_label="Predictability",
-        y_label="Average Gaze Duration (ms)",
-        title="Comparison: Gaze Duration vs. Logit Predictability",
-        save_dir=save_dir,
-        output_filename="logit_predictability_comparison.png"
-    )
+    # compare_gaze_duration(
+    #     human_csv=os.path.join(human_data_dir, "gaze_duration_vs_word_logit_predictability.csv"),
+    #     sim_csv=os.path.join(sim_data_dir, "gaze_duration_vs_word_logit_predictability.csv"),
+    #     x_col="logit_predictability", 
+    #     y_col="average_gaze_duration",
+    #     x_label="Predictability",
+    #     y_label="Average Gaze Duration (ms)",
+    #     title="Comparison: Gaze Duration vs. Logit Predictability",
+    #     save_dir=save_dir,
+    #     output_filename="logit_predictability_comparison.png"
+    # )
 
     compare_gaze_duration(
         human_csv=os.path.join(human_data_dir, "gaze_duration_vs_word_log_frequency.csv"),
@@ -284,7 +221,12 @@ if __name__ == "__main__":
         y_label="Average Gaze Duration (ms)",
         title="Comparison: Gaze Duration vs. Log Frequency",
         save_dir=save_dir,
-        output_filename="log_frequency_binned_comparison.png"
+        output_filename="log_frequency_binned_comparison.png",
+        use_log_x=False,
+        poly_degree=poly_degree,
+        font_size=font_size,      # Larger base font size
+        tick_size=tick_size,      # Slightly smaller tick labels
+        legend_size=legend_size     # Legend font size
     )
 
     compare_gaze_duration(
@@ -296,6 +238,11 @@ if __name__ == "__main__":
         y_label="Average Gaze Duration (ms)",
         title="Comparison: Gaze Duration vs. Logit Predictability",
         save_dir=save_dir,
-        output_filename="logit_predictability_binned_comparison.png"
+        output_filename="logit_predictability_binned_comparison.png",
+        use_log_x=False,
+        poly_degree=poly_degree,
+        font_size=font_size,      # Larger base font size
+        tick_size=tick_size,      # Slightly smaller tick labels
+        legend_size=legend_size     # Legend font size
     )
 

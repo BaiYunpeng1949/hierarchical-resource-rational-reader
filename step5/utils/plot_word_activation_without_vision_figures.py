@@ -32,48 +32,34 @@ def pseudo_freq_to_raw(p, min_freq=1, max_freq=1000000):
     return min_freq + (max_freq - min_freq) * p
 
 def bin_and_aggregate_frequency(df, bin_dict, freq_col="raw_data", logfreq_col="log_frequency", gaze_col="average_gaze_duration"):
-    """
-    Bins rows by their raw frequency per million (from 'freq_col'),
-    then computes the mean log_frequency & mean gaze_duration
-    for each bin.
-
-    Returns a DataFrame with columns: 
-        ['class', 'log_frequency', 'gaze_duration', 'count']
-    """
+    """Bins rows by frequency with additional statistics."""
     rows = []
     for class_label, (low, high) in bin_dict.items():
-        # Select rows whose freq_per_million is in [low, high)
         mask = (df[freq_col] >= low) & (df[freq_col] < high)
         subset = df[mask]
         
         if len(subset) > 0:
             mean_log_freq = subset[logfreq_col].mean()
             mean_gaze = subset[gaze_col].mean()
+            std_gaze = subset[gaze_col].std()
             n = len(subset)
-        else:
-            # If no data falls in this bin, store NaN
-            mean_log_freq = np.nan
-            mean_gaze = np.nan
-            n = 0
-        
-        rows.append({
-            "class": class_label,
-            "log_frequency": mean_log_freq,
-            "average_gaze_duration": mean_gaze,
-            "count": n
-        })
+            std_error = std_gaze / np.sqrt(n)
+            
+            rows.append({
+                "class": class_label,
+                "log_frequency": mean_log_freq,
+                "average_gaze_duration": mean_gaze,
+                "std_deviation": std_gaze,
+                "n_samples": n,
+                "std_error": std_error,
+                "ci_95_lower": mean_gaze - 1.96 * std_error,
+                "ci_95_upper": mean_gaze + 1.96 * std_error
+            })
     
     return pd.DataFrame(rows)
 
 def bin_and_aggregate_predictability(df, bin_dict, logit_col="logit_predictability", gaze_col="average_gaze_duration"):
-    """
-    Bins rows by their logit_predictability (from 'logit_col'),
-    then computes the mean logit_predictability & mean gaze_duration
-    for each bin.
-
-    Returns a DataFrame with columns:
-        ['class', 'logit_predictability', 'gaze_duration', 'count']
-    """
+    """Bins rows by predictability with additional statistics."""
     rows = []
     for class_label, (low, high) in bin_dict.items():
         mask = (df[logit_col] >= low) & (df[logit_col] < high)
@@ -82,18 +68,20 @@ def bin_and_aggregate_predictability(df, bin_dict, logit_col="logit_predictabili
         if len(subset) > 0:
             mean_logit = subset[logit_col].mean()
             mean_gaze = subset[gaze_col].mean()
+            std_gaze = subset[gaze_col].std()
             n = len(subset)
-        else:
-            mean_logit = np.nan
-            mean_gaze = np.nan
-            n = 0
-        
-        rows.append({
-            "class": class_label,
-            "logit_predictability": mean_logit,
-            "average_gaze_duration": mean_gaze,
-            "count": n
-        })
+            std_error = std_gaze / np.sqrt(n)
+            
+            rows.append({
+                "class": class_label,
+                "logit_predictability": mean_logit,
+                "average_gaze_duration": mean_gaze,
+                "std_deviation": std_gaze,
+                "n_samples": n,
+                "std_error": std_error,
+                "ci_95_lower": mean_gaze - 1.96 * std_error,
+                "ci_95_upper": mean_gaze + 1.96 * std_error
+            })
     
     return pd.DataFrame(rows)
 
@@ -292,73 +280,93 @@ def analyze_word_length_effect(json_data, save_file_dir):
     
     print(f"Word Length's Effect Analyze Plots saved successfully in {save_file_dir}")
 
-def compute_average_gaze(word_lengths, gaze_durations):
-    """Computes average gaze duration per word length."""
-    unique_lengths = sorted(set(word_lengths))
-    avg_gazes = [np.mean([g for w, g in zip(word_lengths, gaze_durations) if w == ul]) for ul in unique_lengths]
-    return unique_lengths, avg_gazes
+def compute_average_gaze_with_stats(word_lengths, gaze_durations):
+    """Computes average gaze duration and statistics per word length."""
+    stats = {}
+    for w_len in sorted(set(word_lengths)):
+        # Get all gaze durations for this word length
+        gazes = [g for w, g in zip(word_lengths, gaze_durations) if w == w_len]
+        stats[w_len] = {
+            'average_gaze_duration': np.mean(gazes),
+            'std_deviation': np.std(gazes),
+            'n_samples': len(gazes),
+            'std_error': np.std(gazes) / np.sqrt(len(gazes))  # Standard Error
+        }
+    return stats
 
 def analyze_word_length_gaze_duration(json_data, save_file_dir, csv_file_path):
     """
-    Generates gaze duration analysis plots for word length.
+    Generates gaze duration analysis plots for word length with statistics.
     """
     data = json.loads(json_data)
     os.makedirs(save_file_dir, exist_ok=True)
     
-    word_lengths = []
-    gaze_durations = []
-    
+    # Group data by word length
+    word_length_data = defaultdict(list)
     for episode in data:
         w_len = episode["word_len"]
         last_fixation = next(f for f in reversed(episode["fixations"]) if f["done"])
         gaze_duration = last_fixation["gaze_duration"]
-        
-        word_lengths.append(w_len)
-        gaze_durations.append(gaze_duration)
+        word_length_data[w_len].append(gaze_duration)
     
-    # Compute mean values
-    x_sorted, y_means = compute_average_gaze(word_lengths, gaze_durations)
+    # Calculate statistics for each word length
+    stats_data = []
+    for w_len in sorted(word_length_data.keys()):
+        durations = word_length_data[w_len]
+        mean_duration = np.mean(durations)
+        std_dev = np.std(durations)
+        n_samples = len(durations)
+        std_error = std_dev / np.sqrt(n_samples)
+        
+        stats_data.append({
+            'word_length': w_len,
+            'average_gaze_duration': mean_duration,
+            'std_deviation': std_dev,
+            'n_samples': n_samples,
+            'std_error': std_error,
+            'ci_95_lower': mean_duration - 1.96 * std_error,
+            'ci_95_upper': mean_duration + 1.96 * std_error
+        })
     
     # Save to CSV
-    df = pd.DataFrame({"word_length": x_sorted, "average_gaze_duration": y_means})
+    df = pd.DataFrame(stats_data)
     df.to_csv(csv_file_path, index=False)
-    
-    # Scatter plot
-    plt.figure(figsize=(8, 6))
-    plt.scatter(word_lengths, gaze_durations, alpha=0.7)
-    plt.xlabel("Word Length")
-    plt.ylabel("Gaze Duration (ms)")
-    plt.title("Gaze Duration vs. Word Length")
-    plt.grid(True)
-    plt.savefig(os.path.join(save_file_dir, "gaze_duration_vs_word_length.png"))
-    plt.close()
-    
-    # Linear regression plot
-    slope, intercept, _, _, _ = linregress(word_lengths, gaze_durations)
-    plt.figure(figsize=(8, 6))
-    plt.scatter(word_lengths, gaze_durations, alpha=0.7, label="Data")
-    plt.plot(word_lengths, np.array(word_lengths) * slope + intercept, color='red', label="Linear Fit")
-    plt.xlabel("Word Length")
-    plt.ylabel("Gaze Duration (ms)")
-    plt.title("Linear Regression: Gaze Duration vs. Word Length")
-    plt.legend()
-    plt.grid(True)
-    plt.savefig(os.path.join(save_file_dir, "linear_gaze_duration_vs_word_length.png"))
-    plt.close()
-    
-    # Mean value line chart
-    x_sorted, y_means = compute_average_gaze(word_lengths, gaze_durations)
-    plt.figure(figsize=(8, 6))
-    plt.plot(x_sorted, y_means, marker='o', linestyle='-', color='green')
-    plt.xlabel("Word Length")
-    plt.ylabel("Average Gaze Duration (ms)")
-    plt.title("Average Gaze Duration vs. Word Length")
-    plt.grid(True)
-    plt.savefig(os.path.join(save_file_dir, "avg_gaze_duration_vs_word_length.png"))
-    plt.close()
-    
-    print(f"Gaze Duration Analysis Plots saved successfully in {save_file_dir}")
 
+    # # Scatter plot
+    # plt.figure(figsize=(8, 6))
+    # plt.scatter(word_lengths, gaze_durations, alpha=0.7)
+    # plt.xlabel("Word Length")
+    # plt.ylabel("Gaze Duration (ms)")
+    # plt.title("Gaze Duration vs. Word Length")
+    # plt.grid(True)
+    # plt.savefig(os.path.join(save_file_dir, "gaze_duration_vs_word_length.png"))
+    # plt.close()
+    
+    # # Linear regression plot
+    # slope, intercept, _, _, _ = linregress(word_lengths, gaze_durations)
+    # plt.figure(figsize=(8, 6))
+    # plt.scatter(word_lengths, gaze_durations, alpha=0.7, label="Data")
+    # plt.plot(word_lengths, np.array(word_lengths) * slope + intercept, color='red', label="Linear Fit")
+    # plt.xlabel("Word Length")
+    # plt.ylabel("Gaze Duration (ms)")
+    # plt.title("Linear Regression: Gaze Duration vs. Word Length")
+    # plt.legend()
+    # plt.grid(True)
+    # plt.savefig(os.path.join(save_file_dir, "linear_gaze_duration_vs_word_length.png"))
+    # plt.close()
+    
+    # # Mean value line chart
+    # x_sorted, y_means = compute_average_fixations(word_lengths, gaze_durations)
+    # plt.figure(figsize=(8, 6))
+    # plt.plot(x_sorted, y_means, marker='o', linestyle='-', color='green')
+    # plt.xlabel("Word Length")
+    # plt.ylabel("Average Gaze Duration (ms)")
+    # plt.title("Average Gaze Duration vs. Word Length")
+    # plt.grid(True)
+    # plt.savefig(os.path.join(save_file_dir, "avg_gaze_duration_vs_word_length.png"))
+    # plt.close()
+    
+    # print(f"Gaze Duration Analysis Plots saved successfully in {save_file_dir}")
 
 def analyze_prior_vs_word_length(json_data, save_file_dir):
     """
@@ -381,41 +389,41 @@ def analyze_prior_vs_word_length(json_data, save_file_dir):
     universal_dir = os.path.join(save_file_dir, "prior_vs_word_length")
     os.makedirs(universal_dir, exist_ok=True)
     
-    # Scatter plot
-    plt.figure(figsize=(8, 6))
-    plt.scatter(word_lengths, prior_values, alpha=0.7)
-    plt.xlabel("Word Length")
-    plt.ylabel("Word Prior Probability")
-    plt.title("Word Length vs. Word Prior Probability (Universal)")
-    plt.grid(True)
-    plt.savefig(os.path.join(universal_dir, "scatter_word_length_vs_prior.png"))
-    plt.close()
+    # # Scatter plot
+    # plt.figure(figsize=(8, 6))
+    # plt.scatter(word_lengths, prior_values, alpha=0.7)
+    # plt.xlabel("Word Length")
+    # plt.ylabel("Word Prior Probability")
+    # plt.title("Word Length vs. Word Prior Probability (Universal)")
+    # plt.grid(True)
+    # plt.savefig(os.path.join(universal_dir, "scatter_word_length_vs_prior.png"))
+    # plt.close()
     
-    # Linear regression plot
-    slope, intercept, _, _, _ = linregress(word_lengths, prior_values)
-    plt.figure(figsize=(8, 6))
-    plt.scatter(word_lengths, prior_values, alpha=0.7, label="Data")
-    plt.plot(word_lengths, np.array(word_lengths) * slope + intercept, color='red', label="Linear Fit")
-    plt.xlabel("Word Length")
-    plt.ylabel("Word Prior Probability")
-    plt.title("Linear Regression: Word Length vs. Word Prior Probability")
-    plt.legend()
-    plt.grid(True)
-    plt.savefig(os.path.join(universal_dir, "linear_word_length_vs_prior.png"))
-    plt.close()
+    # # Linear regression plot
+    # slope, intercept, _, _, _ = linregress(word_lengths, prior_values)
+    # plt.figure(figsize=(8, 6))
+    # plt.scatter(word_lengths, prior_values, alpha=0.7, label="Data")
+    # plt.plot(word_lengths, np.array(word_lengths) * slope + intercept, color='red', label="Linear Fit")
+    # plt.xlabel("Word Length")
+    # plt.ylabel("Word Prior Probability")
+    # plt.title("Linear Regression: Word Length vs. Word Prior Probability")
+    # plt.legend()
+    # plt.grid(True)
+    # plt.savefig(os.path.join(universal_dir, "linear_word_length_vs_prior.png"))
+    # plt.close()
     
-    # Line chart connecting averages
-    x_sorted, y_means = compute_average_fixations(word_lengths, prior_values)
-    plt.figure(figsize=(8, 6))
-    plt.plot(x_sorted, y_means, marker='o', linestyle='-', color='green')
-    plt.xlabel("Word Length")
-    plt.ylabel("Average Word Prior Probability")
-    plt.title("Average Word Prior Probability vs. Word Length (Universal)")
-    plt.grid(True)
-    plt.savefig(os.path.join(universal_dir, "avg_word_length_vs_prior.png"))
-    plt.close()
+    # # Line chart connecting averages
+    # x_sorted, y_means = compute_average_fixations(word_lengths, prior_values)
+    # plt.figure(figsize=(8, 6))
+    # plt.plot(x_sorted, y_means, marker='o', linestyle='-', color='green')
+    # plt.xlabel("Word Length")
+    # plt.ylabel("Average Word Prior Probability")
+    # plt.title("Average Word Prior Probability vs. Word Length (Universal)")
+    # plt.grid(True)
+    # plt.savefig(os.path.join(universal_dir, "avg_word_length_vs_prior.png"))
+    # plt.close()
     
-    print(f"Plots saved successfully in {save_file_dir}")
+    # print(f"Plots saved successfully in {save_file_dir}")
 
 def analyze_accuracy(json_data, save_file_dir):
     # Ensure json_data is a parsed list, not a string
@@ -446,4 +454,3 @@ def analyze_accuracy(json_data, save_file_dir):
     print(f"Accuracy results saved successfully in {save_file_dir}")
 
     return accuracy
-
