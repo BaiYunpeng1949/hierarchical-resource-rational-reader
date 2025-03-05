@@ -8,7 +8,7 @@ DETERMINISTIC_WORD_ACTIVATION = True
 GAZE_DURATION_LAMDA = 0.1
 NUM_WORDS_IN_LEXICON = 1000000      # Number of words in the lexicon, 1 million, used for calculating the word frequency
 ZIPF_PARAM_PARETO_ALPHA = 1.0
-ZIPF_PARAM_PARETO_XMIN = 1  
+XMIN = 1  
 
 # Variables
 NON_WORD = "NON_WORD"

@@ -169,12 +169,6 @@ class TransitionFunction():
         """
         return t0 * (1 + np.exp(-lamda * entropy_diff))
 
-    # def calculate_fixation_duration_in_ms_linear(self, t0=250, lamda=1.0, entropy_diff=0.0):
-    #     """
-    #     Calculate the fixation duration in milliseconds
-    #     """
-    #     return 
-
     def calculate_saccade_duration_in_ms_emma(self, delta_visual_angle_in_degree=2.0):
         """
         Calculate the saccade duration in milliseconds (T_exec in EMMA)

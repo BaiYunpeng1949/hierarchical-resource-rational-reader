@@ -14,66 +14,6 @@ class LexiconManager():
 
     def __init__(self, zipf_param=1.5):
         
-        self.lexicon_300 = [
-            # 1-letter words (2 total)
-            "a", "i",
-
-            # 2-letter words (10 total)
-            "am", "an", "as", "at", "be", "by", "do", "go", "he", "if",
-
-            # 3-letter words (20 total)
-            "cat", "dog", "pig", "cow", "ant", "bee", "car", "bar", "win", "fun",
-            "run", "day", "sky", "red", "mom", "dad", "sun", "jet", "cut", "fit",
-
-            # 4-letter words (30 total)
-            "tree", "milk", "over", "past", "club", "hard", "soft", "fast", "math", "love",
-            "code", "ball", "corn", "film", "grow", "hero", "lady", "tell", "bear", "king",
-            "jump", "silk", "talk", "walk", "rock", "rain", "turn", "lift", "mind", "weak",
-
-            # 5-letter words (30 total)
-            "smile", "angry", "apple", "baker", "cable", "chalk", "dance", "eager", "fancy", "giant",
-            "honor", "igloo", "jelly", "knead", "latch", "mimic", "noble", "ocean", "piano", "queen",
-            "reach", "sauce", "tiger", "urban", "vague", "waltz", "xylem", "yield", "zesty", "raven",
-
-            # 6-letter words (40 total)
-            "absorb", "absent", "bright", "canvas", "damage", "danger", "effort", "family",
-            "garden", "harbor", "hammer", "junior", "kidnap", "launch", "legacy", "matter",
-            "narrow", "orange", "police", "quiver", "review", "silver", "shadow", "thrive",
-            "unrest", "vacuum", "wonder", "xenial", "yolked", "zephyr", "bounty", "caught",
-            "desert", "excuse", "fridge", "gender", "hiatus", "injury", "ignite", "banana",
-
-            # 7-letter words (40 total)
-            "already", "ammonia", "another", "bargain", "caution", "central", "darkest", "denying",
-            "examine", "fiction", "freedom", "genuine", "harvest", "impress", "jubilee", "kingdom",
-            "mixture", "nuggets", "observe", "plunder", "quality", "realign", "rebirth", "scanner",
-            "teacher", "unclear", "villain", "warrior", "xeroxed", "yellowy", "zippers", "academy",
-            "brownie", "captain", "delight", "exploit", "flaming", "hostage", "justice", "captors",  # replaced an accidental repeat
-
-            # 8-letter words (40 total)
-            "absolute", "attitude", "backpack", "baseball", "building", "carefully", "chatroom", "creative",
-            "dinosaur", "director", "doorstep", "equipment", "eyepiece", "firewall", "football", "forgotten",
-            "handmade", "homework", "infinity", "keyboard", "lifestyle", "linoleum", "marathon", "movement",
-            "overcome", "particle", "quizzical", "regional", "shoulder", "sketches", "terrible", "tutorial",
-            "umbrella", "vertical", "weekdays", "whenever", "wireless", "woodland", "xenoliths", "yardstick",
-
-            # 9-letter words (30 total)
-            "aardvarks", "adjective", "aquariums", "blackboard", "blueprint", "buttercup", "childbirth", "commenter",
-            "confident", "creations", "dangerous", "dedicated", "defensive", "direction", "dimension", "drizzling",
-            "excellent", "factories", "fantastic", "favourite", "formation", "forgotten", "gravitons", "hairbrush",
-            "hysterics", "important", "landscape", "machinery", "drainpipes", "testflight",  # added 2 to keep total correct
-
-            # 10-letter words (58 total)
-            "accelerate", "advisories", "alphabetic", "amazements", "apocalypse", "authorized", "background", "bestseller",
-            "blacksmith", "bombardiers", "carbonation", "chronicling", "commercial", "confiscate", "controller", "courthouse",
-            "deactivate", "departures", "enthusiasm", "excitations", "foundation", "glittering", "greenhouse", "influencer",
-            "journalism", "leadership", "livelihood", "lumberjack", "mainstream", "marketplace", "miraculous", "narrations",
-            "noticeably", "overloading", "peppermint", "personality", "philosophy", "principled", "protecting", "quintupling",
-            "reassuring", "renovations", "retrieving", "separations", "spectacles", "spiralling", "summertime", "switchboard",
-            "vocational", "typography", "understand", "unfathomed", "university", "vacationer", "wrongdoings", "yearningly",
-            "watermelon", "woodcutting"
-        ]
-        # TODO train with a random larger lexicon later, the words could be non-words, for generalizability
-
         # Initialize the type of prior
         self.prior_type = None
 
@@ -83,12 +23,6 @@ class LexiconManager():
             n_words=Constants.NUM_WORDS_IN_LEXICON, alpha=Constants.ZIPF_PARAM_PARETO_ALPHA
         )
 
-        # # TODO debug delete later
-        # print(f"self.raw_occurances[:10]: {self.raw_occurances[:10]}")
-        # print(f"self.nomralized_freqs[:10]: {self.normalized_freqs[:10]}")
-        # print(f"The sum of self.normalized_freqs: {sum(self.normalized_freqs)}, the sum of self.raw_occurances: {sum(self.raw_occurances)}")
-        # print(f"")
-
         # Initialize the prior probability generator
         # NOTE: when testing freq and pred's effect, use a tunable parameter, say w_p, we could define prior = freq * w_p * pred; 
         #   Or we just report the freq's effect.
@@ -96,8 +30,8 @@ class LexiconManager():
         self.weight_prior_pred_to_freq = 1.5   # This means prior = freq * pred, pred = freq * 1.5
         self.prior_dict = None                 # Store all the activated words' prior probabilities during one given episode
 
-        # Other initialization
-        self.train_test_words_data = None
+        # # Other initialization
+        # self.train_test_words_data = None
 
         # Initialize the Approximate Word Generator to generate likely words
         self.approximate_word_generator = ApproximateWordGenerator()
@@ -108,8 +42,8 @@ class LexiconManager():
 
         This function is reset for every RL training episode
         """
-        # Sample the training and testing words
-        self.train_test_words_data = self.lexicon_300
+        # # Sample the training and testing words
+        # self.train_test_words_data = self.lexicon_300
 
         # The type of prior probability
         self.prior_type = prior_type
@@ -126,6 +60,7 @@ class LexiconManager():
             index_in_the_list = random.randint(0, len(self.normalized_freqs) - 1)
             raw_occurrance = self.raw_occurances[index_in_the_list]
             prior_prob = self.normalized_freqs[index_in_the_list]
+
         elif self.prior_type == Constants.PRIOR_AS_PRED:
             prior_prob = random.uniform(0, 1)
             raw_occurrance = 0
@@ -133,24 +68,35 @@ class LexiconManager():
             raise ValueError(f"Invalid prior type: {self.prior_type}")
         return prior_prob, raw_occurrance
 
-    @staticmethod
-    def sample_pareto(n_words=1000, alpha=1.0):
+    def sample_pareto(self, n_words=1000000, alpha=1.0):
         """
         Samples frequencies from a Pareto (power-law) distribution:
         p(x) ~ (1/x^(alpha+1)) for x >= 1
         Then normalizes them to sum=1.
         The parameter 'alpha' controls how steep the tail is.
         """
-        # 1) sample from Pareto
-        raw = np.random.pareto(alpha, size=n_words)
-        
+        # 1) sample from Pareto, this is for computing the raw frequencies, serve as the denominator
+        zipf_raw = np.random.pareto(alpha, size=n_words)
+
         # 2) shift so it starts ~ 1
         #    Pareto gives x >= 0, so we often do x+1 or something similar. 
-        raw += Constants.ZIPF_PARAM_PARETO_XMIN
-        
+        zipf_raw += Constants.XMIN
+
+        self.zipf_raw_max = max(zipf_raw)
+        self.zipf_raw_min = min(zipf_raw)
+
         # 3) normalize
-        freqs = raw / raw.sum()
-        return raw, freqs
+        freqs = zipf_raw / zipf_raw.sum()
+
+        # # 3) create a new list of raw words, but following a uniform distribution
+        # # NOTE: this is for computing the prior probabilities, serve as the numerator. 
+        # #       If not uniformly sampled, the training and testing would be unbalanced.
+        # uniform_raw = np.random.uniform(self.zipf_raw_min, self.zipf_raw_max, size=n_words)
+        
+        # # 4) nomralize
+        # freqs = uniform_raw / zipf_raw.sum()
+        
+        return zipf_raw, freqs
     
     def get_top_k_words(self, sampled_letters_so_far_with_spaces, original_word, top_k):
         """

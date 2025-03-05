@@ -313,23 +313,9 @@ class WordActivationRLEnv(Env):
                 ) 
 
                 # Calculate the entropy change
-                # self._current_step_entropy = self._calculate_entropy(probability_distribution=self._normalized_belief_distribution_parallel_activation_with_k_words)
-                # self._entropy_diff = self._previous_step_entropy - self._current_step_entropy
-                # self._previous_step_entropy = self._current_step_entropy
                 self._calculate_entropy_diff()
 
                 # Get the fixation durations
-                # self._current_fixation_duration = self.transition_function.calculate_fixation_duration_in_ms_nonlinear(
-                #     lamda=self._lamda, t0=self._t_0, entropy_diff=self._entropy_diff
-                # )
-                # self._individual_fixations_durations_list.append(self._current_fixation_duration)
-                # # Get the saccade durations
-                # self._current_saccade_duration = self.transition_function.calculate_saccade_duration_in_ms_emma()
-                # self._individual_saccades_durations_list.append(self._current_saccade_duration)
-                # # Update the gaze duration
-                # segment_duration = self._current_fixation_duration + self._current_saccade_duration
-                # self._gaze_duration += segment_duration
-                # # self._gaze_duration += self._current_fixation_duration
                 self._calculate_gaze_duration()
 
                 # Get the reward
