@@ -1,11 +1,11 @@
 # Cognitive constraints
 FOVEAL_SIZE = 5
 WORKING_MEMORY_SIZE = 5
-DEFAULT_FIXATION_DURATION = 30
+DEFAULT_FIXATION_DURATION = 8
 DETERMINISTIC_WORD_ACTIVATION = True
 
 # Heuristic model parameters
-GAZE_DURATION_LAMDA = 0.1
+GAZE_DURATION_LAMDA = 10
 NUM_WORDS_IN_LEXICON = 1000000      # Number of words in the lexicon, 1 million, used for calculating the word frequency
 ZIPF_PARAM_PARETO_ALPHA = 1.0
 XMIN = 1  
