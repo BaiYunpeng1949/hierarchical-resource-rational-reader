@@ -3,6 +3,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import linregress
+import seaborn as sns
+from matplotlib.lines import Line2D
 
 def compare_gaze_duration(
     human_csv, 
@@ -68,57 +70,59 @@ def compare_gaze_duration(
     plt.rc('xtick', labelsize=tick_size)
     plt.rc('ytick', labelsize=tick_size)
 
-    # Plot 1: Regression lines
+    # Plot 1: Regression lines with confidence bands
     plt.figure(figsize=(8, 6))
     
-    # Scatter plots
-    plt.scatter(human_df[x_col], human_df[y_col], color='blue', alpha=0.2, label="Human Data")
-    plt.scatter(sim_df[x_col], sim_df[y_col], color='red', alpha=0.2, label="Simulated Data")
-
-    # Fit and plot regression lines with statistics
-    if use_log_x:
-        human_df['transformed_x'] = np.log(human_df[x_col])
-        sim_df['transformed_x'] = np.log(sim_df[x_col])
-    else:
-        human_df['transformed_x'] = human_df[x_col]
-        sim_df['transformed_x'] = sim_df[x_col]
-
-    x_min = min(human_df[x_col].min(), sim_df[x_col].min())
-    x_max = max(human_df[x_col].max(), sim_df[x_col].max())
-    x_line = np.linspace(x_min, x_max, 200)
-
-    for df, color, label in [(human_df, 'blue', 'Human'), (sim_df, 'red', 'Simulation')]:
-        # Calculate regression
-        coeffs = np.polyfit(df['transformed_x'], df[y_col], deg=poly_degree)
+    # Function to calculate regression stats and equation
+    def get_regression_stats(df):
+        if use_log_x:
+            x = np.log(df[x_col])
+        else:
+            x = df[x_col]
+        y = df[y_col]
+        coeffs = np.polyfit(x, y, deg=poly_degree)
         poly = np.poly1d(coeffs)
+        y_pred = poly(x)
+        r_squared = np.corrcoef(y, y_pred)[0,1]**2
         
-        # Calculate R-squared
-        y_pred = poly(df['transformed_x'])
-        r_squared = np.corrcoef(df[y_col], y_pred)[0,1]**2
-        
-        # Format equation string
         if poly_degree == 1:
             eq_str = f'y = {coeffs[1]:.2f} + {coeffs[0]:.2f}x'
         else:
             eq_str = f'y = {coeffs[-1]:.2f}'
             for i, coef in enumerate(coeffs[:-1][::-1]):
                 eq_str += f' + {coef:.2f}x^{i+1}'
-        
-        # Plot with detailed legend
-        if use_log_x:
-            x_plot = x_line[x_line > 0]
-            y_plot = poly(np.log(x_plot))
-        else:
-            x_plot = x_line
-            y_plot = poly(x_plot)
-            
-        plt.plot(x_plot, y_plot, color=color, linestyle='dashed', 
-                linewidth=3, label=f"{label} (R²={r_squared:.2f}):\n{eq_str}")
+        return r_squared, eq_str
+
+    # Calculate regression stats for both datasets
+    human_r2, human_eq = get_regression_stats(human_df)
+    sim_r2, sim_eq = get_regression_stats(sim_df)
+    
+    # Plot regression with confidence bands for human data
+    human_plot = sns.regplot(data=human_df, x=x_col, y=y_col,
+                scatter=True, color='blue', 
+                label=f'Human (R²={human_r2:.2f}):\n{human_eq}',
+                scatter_kws={'alpha': 0.2},
+                line_kws={'linestyle': 'dashed', 'linewidth': 2})
+
+    # Plot regression with confidence bands for simulation data
+    sim_plot = sns.regplot(data=sim_df, x=x_col, y=y_col,
+                scatter=True, color='red', 
+                label=f'Simulation (R²={sim_r2:.2f}):\n{sim_eq}',
+                scatter_kws={'alpha': 0.2},
+                line_kws={'linestyle': 'dashed', 'linewidth': 2})
 
     plt.xlabel(x_label + (" (log scale for regression)" if use_log_x else ""), fontsize=font_size)
     plt.ylabel(y_label, fontsize=font_size)
     plt.title(title + " (Regression)", fontsize=font_size+2)
-    plt.legend(fontsize=legend_size)
+    
+    # Create custom legend handles with dashed lines
+    legend_elements = [
+        Line2D([0], [0], color='blue', linestyle='dashed', linewidth=2,
+               label=f'Human (R²={human_r2:.2f}):\n{human_eq}'),
+        Line2D([0], [0], color='red', linestyle='dashed', linewidth=2,
+               label=f'Simulation (R²={sim_r2:.2f}):\n{sim_eq}')
+    ]
+    plt.legend(handles=legend_elements, fontsize=legend_size)
     plt.grid(True)
     
     base_name = os.path.splitext(output_filename)[0]
@@ -157,8 +161,6 @@ def compare_gaze_duration(
     
     print(f"Comparison plots saved at {regression_path} and {connected_path}")
 
-
-
 if __name__ == "__main__":
     
     human_data_dir = "human_data"
@@ -187,30 +189,6 @@ if __name__ == "__main__":
         tick_size=tick_size,      # Slightly smaller tick labels
         legend_size=legend_size     # Legend font size
     )
-
-    # compare_gaze_duration(
-    #     human_csv=os.path.join(human_data_dir, "gaze_duration_vs_word_log_frequency.csv"),
-    #     sim_csv=os.path.join(sim_data_dir, "gaze_duration_vs_word_log_frequency.csv"),
-    #     x_col="log_frequency", 
-    #     y_col="average_gaze_duration",
-    #     x_label="Log Frequency",
-    #     y_label="Average Gaze Duration (ms)",
-    #     title="Comparison: Gaze Duration vs. Log Frequency",
-    #     save_dir=save_dir,
-    #     output_filename="log_frequency_comparison.png"
-    # )
-
-    # compare_gaze_duration(
-    #     human_csv=os.path.join(human_data_dir, "gaze_duration_vs_word_logit_predictability.csv"),
-    #     sim_csv=os.path.join(sim_data_dir, "gaze_duration_vs_word_logit_predictability.csv"),
-    #     x_col="logit_predictability", 
-    #     y_col="average_gaze_duration",
-    #     x_label="Predictability",
-    #     y_label="Average Gaze Duration (ms)",
-    #     title="Comparison: Gaze Duration vs. Logit Predictability",
-    #     save_dir=save_dir,
-    #     output_filename="logit_predictability_comparison.png"
-    # )
 
     compare_gaze_duration(
         human_csv=os.path.join(human_data_dir, "gaze_duration_vs_word_log_frequency.csv"),
