@@ -113,7 +113,7 @@ def compare_gaze_duration(
 
     plt.xlabel(x_label + (" (log scale for regression)" if use_log_x else ""), fontsize=font_size)
     plt.ylabel(y_label, fontsize=font_size)
-    plt.title(title + " (Regression)", fontsize=font_size+2)
+    plt.title(title, fontsize=font_size+2)
     
     # Create custom legend handles with dashed lines
     legend_elements = [
@@ -180,7 +180,7 @@ if __name__ == "__main__":
         y_col="average_gaze_duration",
         x_label="Word Length",
         y_label="Average Gaze Duration (ms)",
-        title="Comparison: Gaze Duration vs. Word Length",
+        title="Word Length's Effect on Gaze Duration",
         save_dir=save_dir,
         output_filename="word_length_comparison.png",
         use_log_x=False,
@@ -197,7 +197,7 @@ if __name__ == "__main__":
         y_col="average_gaze_duration",
         x_label="Log Frequency",
         y_label="Average Gaze Duration (ms)",
-        title="Comparison: Gaze Duration vs. Log Frequency",
+        title="Frequency's Effect on Gaze Duration",
         save_dir=save_dir,
         output_filename="log_frequency_binned_comparison.png",
         use_log_x=False,
@@ -212,9 +212,9 @@ if __name__ == "__main__":
         sim_csv=os.path.join(sim_data_dir, "gaze_duration_vs_word_logit_predictability_binned.csv"),
         x_col="logit_predictability", 
         y_col="average_gaze_duration",
-        x_label="Predictability",
+        x_label="Logit Predictability",
         y_label="Average Gaze Duration (ms)",
-        title="Comparison: Gaze Duration vs. Logit Predictability",
+        title="Predictability's Effect on Gaze Duration",
         save_dir=save_dir,
         output_filename="logit_predictability_binned_comparison.png",
         use_log_x=False,
