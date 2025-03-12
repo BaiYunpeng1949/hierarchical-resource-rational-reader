@@ -10,13 +10,23 @@ class TransitionFunction():
     """
 
     def __init__(self):
-        self._comprehension_threshold = 0.7  # Minimum comprehension level needed for confident understanding
-        self._integration_decay = 0.1  # Rate at which previous word comprehension decays
-        self._context_weight = 0.3  # Weight of contextual influence on comprehension
+        """
+        Comprehension thresholds and weights
+        """
+
+        # NOTE: these are the parameters could be tuned for more human-like reading behavior
+        self._comprehension_threshold = 0.8  # Increased threshold to make comprehension more difficult, previously 0.7
+        self._integration_decay = 0.3  # Increased decay rate to create more need for regressions, previously 0.1
+        self._context_weight = 0.2  # Reduced context weight to make skipping less reliable
+        
+        self._regression_boost = 0.5  # Increased regression boost, previously 0.5
+        self._appraisal_decay_baseline = 0.2     # Previously 0.3
+
+        self._skip_word_predictability_weight = 0.3  # Previously 0.3
 
         self._context_size = 3
-        self._initial_comprehension = 0.7
-        self._initial_skip_comprehension = 0.7
+        self._initial_comprehension = 0.5  # Reduced initial comprehension, previously 0.7
+        self._initial_skip_comprehension = 0.5  # Reduced skip comprehension significantly, previously 0.7
 
     def reset(self, sentence_length: int):
         """
@@ -40,7 +50,7 @@ class TransitionFunction():
             current_word_index -= 1
             # Regression improves comprehension but not to perfect level
             prev_appraisal = appraisals[current_word_index]
-            appraisals[current_word_index] = min(1.0, prev_appraisal + 0.5)
+            appraisals[current_word_index] = min(1.0, prev_appraisal + self._regression_boost)
         
         return appraisals, current_word_index, action_validity
     
@@ -61,12 +71,13 @@ class TransitionFunction():
             #  NOTE: this is a simple fixed decay mechanism; try complex ones later when needed.
             for i in range(current_word_index):
                 if appraisals[i] > 0:  # Only decay positive appraisals
-                    appraisals[i] = max(0.3, appraisals[i] - self._integration_decay)
+                    appraisals[i] = max(self._appraisal_decay_baseline, appraisals[i] - self._integration_decay)
             
-            # New word comprehension depends on previous context
-            context_comprehension = sum(appraisals[max(0, current_word_index-self._context_size):current_word_index]) / self._context_size if current_word_index > 0 else 1.0
-            initial_comprehension = self._initial_comprehension + self._context_weight * context_comprehension  # Base comprehension + context effect
-            appraisals[current_word_index] = initial_comprehension
+            # # New word comprehension depends on previous context
+            # context_comprehension = sum(appraisals[max(0, current_word_index-self._context_size):current_word_index]) / self._context_size if current_word_index > 0 else 1.0
+            # initial_comprehension = self._initial_comprehension + self._context_weight * context_comprehension  # Base comprehension + context effect
+            # appraisals[current_word_index] = initial_comprehension
+            appraisals[current_word_index] = self.calc_read_word_appraisal(appraisals, current_word_index, sentence_length) 
 
         return appraisals, current_word_index, action_validity
     
@@ -77,33 +88,47 @@ class TransitionFunction():
         2. Context quality
         3. Risk of comprehension failure
         """
-        if current_word_index >= sentence_length - 1:
+        if current_word_index >= sentence_length - 1:     # Do not skip 
             action_validity = False
-        else:
+        else:       # Normally skip the next word
             action_validity = True
             
             # Calculate context quality from previous words
             context_quality = sum(appraisals[max(0, current_word_index-(self._context_size-1)):current_word_index+1]) / self._context_size if current_word_index >= 0 else 0
             
             # Skipped word comprehension depends on both predictability and context
-            skip_comprehension = self._initial_skip_comprehension + self._context_weight * context_quality
+            skip_comprehension = min(0.7, self._initial_skip_comprehension + self._context_weight * context_quality + self._skip_word_predictability_weight * skip_word_predictability)
             
+            # Update skipped word's appraisal
+            appraisals[current_word_index-1] = skip_comprehension
+
             # Update positions
             if current_word_index >= sentence_length - 2:
                 current_word_index = sentence_length    # Anchor the fixation position to <EOS>
             else:
                 current_word_index += 2
-                appraisals[current_word_index] = 0.7  # Initial comprehension for the word after skipped word
-            
-            # Update skipped word's appraisal
-            appraisals[current_word_index-1] = skip_comprehension
+
+                appraisals[current_word_index] = self.calc_read_word_appraisal(appraisals, current_word_index, sentence_length)
             
             # Higher chance of low comprehension when skipping
             if skip_comprehension < self._comprehension_threshold:
                 # Decay previous words' comprehension more to increase regression probability
                 for i in range(current_word_index-1):
                     if appraisals[i] > 0:
-                        appraisals[i] = max(0.2, appraisals[i] - 2 * self._integration_decay)
+                        appraisals[i] = max(0.2, appraisals[i] - 2.5 * self._integration_decay)
 
         return appraisals, current_word_index, action_validity
-        
+    
+    def calc_read_word_appraisal(self, appraisals: list, current_word_index: int, sentence_length: int):
+        """
+        Calculate the appraisal for the next word to read
+        """
+        if current_word_index >= sentence_length - 1:
+            return 0
+        else:
+            # New word comprehension depends on previous context
+            context_comprehension = sum(appraisals[max(0, current_word_index-self._context_size):current_word_index]) / self._context_size if current_word_index > 0 else 1.0
+            initial_comprehension = self._initial_comprehension + self._context_weight * context_comprehension  # Base comprehension + context effect
+            appraisals[current_word_index] = initial_comprehension
+
+            return appraisals[current_word_index]
