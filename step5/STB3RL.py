@@ -34,6 +34,7 @@ from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from step5.utils import constants as constants
 from step5.utils import auxiliaries as aux
 from utils import plot_word_activation_without_vision_figures as plot_word_activation_figures
+from utils import plot_sentence_reading_figures as plot_sentence_reading_figures
 
 # from step5.modules.rl_envs.SupervisoryControllerEnv_v0922 import SupervisoryControllerEnv
 # from step5.modules.rl_envs.SupervisoryControllerEnv_v1018 import SupervisoryControllerEnv
@@ -919,34 +920,94 @@ class RL:
         # Initialize the logs dictionary
         logs_across_episodes = []
 
-        for episode in range(1, self._num_episodes + 1):
+        # Statistics across all episodes
+        all_skipping_rates = []
+        all_regression_rates = []
+        all_sentence_lengths = []
+        all_word_predictabilities = []  # New list for word predictabilities
+        all_skipping_decisions = []     # New list for skipping decisions
 
+        for episode in range(1, self._num_episodes + 1):
             obs, info = self._env.reset()
             done = False
             score = 0
-
-            # Initialize a list to store step logs for this episode
-            episode_logs = []
 
             while not done:
                 if self._mode == _MODES['debug']:
                     action = self._env.action_space.sample()
                 elif self._mode == _MODES['test']:
                     action, _states = self._model.predict(obs, deterministic=True)
-                    # action, _states = self._model.predict(obs, deterministic=False)
                 else:
                     raise ValueError(f'Invalid mode {self._mode}.')
 
                 obs, reward, done, truncated, info = self._env.step(action)
                 score += reward
 
+            # Get episode logs after episode is done
+            episode_logs = self._env.get_episode_logs()
+            
+            # Add episode index to logs
+            episode_logs['episode'] = episode
+            episode_logs['score'] = score
+            
+            # Collect statistics
+            all_skipping_rates.append(episode_logs['skipping_rate'])
+            all_regression_rates.append(episode_logs['regression_rate'])
+            all_sentence_lengths.append(episode_logs['sentence_length'])
+            
+            # Collect word predictabilities and skipping decisions
+            if 'word_predictabilities' in episode_logs:
+                all_word_predictabilities.extend(episode_logs['word_predictabilities'])
+                all_skipping_decisions.extend(episode_logs['skipping_decisions'])
+            
+            # Store episode logs
+            logs_across_episodes.append(episode_logs)
+
             print(
-                f'Episode:{episode}     Score:{score} \n'
+                f'Episode:{episode}     Score:{score}\n'
+                f'Sentence Length: {episode_logs["sentence_length"]}\n'
+                f'Skipping Rate: {episode_logs["skipping_rate"]:.2f}%\n'
+                f'Regression Rate: {episode_logs["regression_rate"]:.2f}%\n'
                 f'{"-" * 50}\n'
             )
-    
-    ################################################################################################### 
-    
+
+        # Calculate overall statistics
+        avg_skipping_rate = np.mean(all_skipping_rates)
+        avg_regression_rate = np.mean(all_regression_rates)
+        avg_sentence_length = np.mean(all_sentence_lengths)
+        
+        print(f"\nOverall Statistics ({self._num_episodes} episodes):")
+        print(f"Average Sentence Length: {avg_sentence_length:.2f}")
+        print(f"Average Skipping Rate: {avg_skipping_rate:.2f}%")
+        print(f"Average Regression Rate: {avg_regression_rate:.2f}%")
+        print(f'Time elapsed for running the DEBUG/TEST: {time.time() - start_time} seconds')
+
+        # Save logs if in test mode
+        if self._mode == _MODES['test']:
+            # Create the log directory
+            root_path = os.path.dirname(os.path.abspath(__file__))
+            rl_model_name = self._config_rl['train']['checkpoints_folder_name'] + '_' + self._config_rl['test']['loaded_model_name']
+            log_dir = os.path.join(root_path, "data", "sim_results", "sentence_reading", rl_model_name)
+            
+            # Save logs to JSON
+            plot_sentence_reading_figures.save_json_file(logs_across_episodes, log_dir)
+
+            # Create and save summary plots
+            plot_sentence_reading_figures.plot_reading_behavior_summary(
+                log_dir=log_dir,
+                skipping_rates=all_skipping_rates,
+                regression_rates=all_regression_rates,
+                sentence_lengths=all_sentence_lengths
+            )
+
+            # Create and save skipping vs predictability plot if we have the data
+            if all_word_predictabilities and all_skipping_decisions:
+                plot_sentence_reading_figures.plot_skipping_vs_predictability(
+                    log_dir=log_dir,
+                    word_predictabilities=all_word_predictabilities,
+                    skipping_decisions=all_skipping_decisions
+                )
+
     def _supervisory_controller_test(self):     # TODO: get a plot of regression rate vs. appraisal level weights. vs. time constraints.
         """
         This method generates the RL env testing results with or without a pre-trained RL model in a manual way.

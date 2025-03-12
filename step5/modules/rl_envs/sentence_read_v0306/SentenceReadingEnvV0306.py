@@ -34,11 +34,11 @@ class SentenceReadingEnv(Env):
         Noisy information input (observation).
 
         NOTE: my understanding of word skipping and revisiting
-            1. Word Skipping: “I Already Know Enough.”
+            1. Word Skipping: "I Already Know Enough."
                 High Confidence / Low Utility of Further Fixation
                 Rate of Information Gain Falls Below Threshold
-                Hence a Single “Skip or Not” Decision
-            2. Revisiting (Regressions): “I Don't Understand Enough Yet.”
+                Hence a Single "Skip or Not" Decision
+            2. Revisiting (Regressions): "I Don't Understand Enough Yet."
                 Detecting a Comprehension or Integration Problem
                 Cost-Benefit Trade-Off
                 Adaptive Correction (coherence)
@@ -182,9 +182,10 @@ class SentenceReadingEnv(Env):
             self._words_appraisals_in_sentence, self._current_word_index, action_validity = self.transition_function.update_state_regress(
                 appraisals=self._words_appraisals_in_sentence,
                 current_word_index=self._current_word_index,
-                
             )    
-            reward += self.reward_function.compute_regress_reward()    
+            reward += self.reward_function.compute_regress_reward()
+            if action_validity:
+                self._regressed_words_indexes.append(self._current_word_index)
         
         elif action == self._READ_ACTION:
             
@@ -203,7 +204,9 @@ class SentenceReadingEnv(Env):
                 sentence_length=self._sentence_len,
                 skip_word_predictability=self._next_word_predictability,
             )    
-            reward += self.reward_function.compute_skip_reward()  
+            reward += self.reward_function.compute_skip_reward()
+            if action_validity:
+                self._skipped_words_indexes.append(self._current_word_index)
 
         elif action == self._STOP_ACTION:
             self._terminate = True
@@ -245,11 +248,45 @@ class SentenceReadingEnv(Env):
         """
         Update the logs
         """
-
         self._reading_sequence_of_word_indexes.append(self._current_word_index)
-
         return self._reading_sequence_of_word_indexes
     
+    def get_episode_logs(self):
+        """
+        Get the logs for the current episode
+        Returns a dictionary containing:
+        - sentence_length: length of the current sentence
+        - word_predictabilities: predictabilities of words in the sentence
+        - reading_sequence: sequence of word indexes that were read
+        - skipped_words: list of skipped word indexes
+        - regressed_words: list of regressed word indexes
+        - skipping_rate: percentage of words skipped
+        - regression_rate: percentage of regressions
+        - skipping_decisions: binary list indicating whether each word was skipped (1) or not (0)
+        """
+        # Calculate rates
+        total_words = self._sentence_len
+        num_skips = len(self._skipped_words_indexes)
+        num_regressions = len(self._regressed_words_indexes)
+        
+        skipping_rate = (num_skips / total_words) * 100 if total_words > 0 else 0
+        regression_rate = (num_regressions / len(self._reading_sequence_of_word_indexes)) * 100 if len(self._reading_sequence_of_word_indexes) > 0 else 0
+        
+        # Create skipping decisions list
+        skipping_decisions = [1 if i in self._skipped_words_indexes else 0 for i in range(total_words)]
+        
+        return {
+            "sentence_length": self._sentence_len,
+            "word_predictabilities": self._words_predictabilities_in_sentence.tolist() if isinstance(self._words_predictabilities_in_sentence, np.ndarray) else self._words_predictabilities_in_sentence,
+            "reading_sequence": self._reading_sequence_of_word_indexes,
+            "skipped_words": self._skipped_words_indexes,
+            "regressed_words": self._regressed_words_indexes,
+            "skipping_rate": skipping_rate,
+            "regression_rate": regression_rate,
+            "final_appraisals": self._words_appraisals_in_sentence.tolist() if isinstance(self._words_appraisals_in_sentence, np.ndarray) else self._words_appraisals_in_sentence,
+            "skipping_decisions": skipping_decisions
+        }
+
 
 if __name__ == "__main__":
 

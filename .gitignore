@@ -214,7 +214,6 @@ sysinfo.txt
 *.unitypackage
 
 /step5/training/
-/step5/data/sim_results/
 /step5/data/gen_envs/
 /data_analysis/human_data/
 /data_analysis/.ipynb_checkpoints/
@@ -233,3 +232,4 @@ sysinfo.txt
 /cc.en.300.bin
 /results/section1/simulated_results/archives
 /data/human_data/read_under_time_pressure
+/step5/data/sim_results/word_activation/
