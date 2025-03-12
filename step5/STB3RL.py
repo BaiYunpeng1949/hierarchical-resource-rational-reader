@@ -56,6 +56,8 @@ from modules.rl_envs.GeneralOculomotorControllerEnv_v1126 import GeneralOculomot
 from modules.rl_envs.OMCRLEnvV0128 import OculomotorControllerRLEnv
 # from modules.rl_envs.WordActivationEnvV0205 import WordActivationRLEnv
 from modules.rl_envs.word_activation_v0218.WordActivationEnvV0218 import WordActivationRLEnv
+from modules.rl_envs.sentence_read_v0306.SentenceReadingEnvV0306 import SentenceReadingEnv
+
 
 _MODES = {
     'train': 'train',
@@ -330,7 +332,7 @@ class RL:
             )
 
         # Get the environment class
-        env_class = WordActivationRLEnv # OculomotorControllerRLEnv # GeneralOculomotorControllerEnv           # GeneralOculomotorControllerEnv, SentenceLevelControllerEnv, SupervisoryControllerEnv
+        env_class = SentenceReadingEnv # WordActivationRLEnv # OculomotorControllerRLEnv # GeneralOculomotorControllerEnv           # GeneralOculomotorControllerEnv, SentenceLevelControllerEnv, SupervisoryControllerEnv
 
         # Load the dataset (if needed)
         shared_dataset_metadata_of_stimuli = None
@@ -399,6 +401,20 @@ class RL:
                 seed=42,
                 vec_env_cls=SubprocVecEnv,
             )
+        elif env_class == SentenceReadingEnv:
+            self._env = SentenceReadingEnv()
+            def make_env():
+                env = SentenceReadingEnv()
+                # env = Monitor(env)
+                return env
+            # Initialise parallel environments
+            self._parallel_envs = make_vec_env(
+                env_id=make_env,
+                # env_id=self._env.__class__,
+                n_envs=self._config_rl['train']["num_workers"],
+                seed=42,
+                vec_env_cls=SubprocVecEnv,
+            )
         elif env_class == SentenceLevelControllerEnv:
             # Get an env instance for further constructing parallel environments.
             self._env = SentenceLevelControllerEnv()    # SentenceLevelControllerEnv()    # SupervisoryControllerEnv()  
@@ -450,7 +466,7 @@ class RL:
                     normalize_images=False
                 )
                 policy = "MultiInputPolicy"     # Choose from CnnPolicy, MlpPolicy, MultiInputPolicy
-            elif isinstance(self._env, WordActivationRLEnv):
+            elif isinstance(self._env, WordActivationRLEnv) or isinstance(self._env, SentenceReadingEnv):
                 policy_kwargs = dict(
                     features_extractor_class=StatefulInformationExtractor,       
                     features_extractor_kwargs=dict(features_dim=128),
@@ -887,6 +903,50 @@ class RL:
         print(f'Time elapsed for running the DEBUG/TEST: {time.time() - start_time} seconds')
         ###############################################################################################
 
+    def _sentence_reading_test(self):
+        """
+        Test the sentence reading environment.
+        """
+        
+        if self._mode == _MODES['debug']:
+            print('\nThe MuJoCo env and tasks baseline: ')
+        elif self._mode == _MODES['test']:
+            print('\nThe pre-trained RL model testing: ')
+
+        # Start the timer
+        start_time = time.time()
+
+        # Initialize the logs dictionary
+        logs_across_episodes = []
+
+        for episode in range(1, self._num_episodes + 1):
+
+            obs, info = self._env.reset()
+            done = False
+            score = 0
+
+            # Initialize a list to store step logs for this episode
+            episode_logs = []
+
+            while not done:
+                if self._mode == _MODES['debug']:
+                    action = self._env.action_space.sample()
+                elif self._mode == _MODES['test']:
+                    action, _states = self._model.predict(obs, deterministic=True)
+                    # action, _states = self._model.predict(obs, deterministic=False)
+                else:
+                    raise ValueError(f'Invalid mode {self._mode}.')
+
+                obs, reward, done, truncated, info = self._env.step(action)
+                score += reward
+
+            print(
+                f'Episode:{episode}     Score:{score} \n'
+                f'{"-" * 50}\n'
+            )
+    
+    ################################################################################################### 
+    
     def _supervisory_controller_test(self):     # TODO: get a plot of regression rate vs. appraisal level weights. vs. time constraints.
         """
         This method generates the RL env testing results with or without a pre-trained RL model in a manual way.
@@ -1649,6 +1709,8 @@ class RL:
                 self._oculomotor_controller_test()
             elif isinstance(self._env, WordActivationRLEnv):
                 self._word_activation_test()
+            elif isinstance(self._env, SentenceReadingEnv):
+                self._sentence_reading_test()
             elif isinstance(self._env, SupervisoryControllerEnv):
                 self._supervisory_controller_test()
             elif isinstance(self._env, SentenceLevelControllerEnv):

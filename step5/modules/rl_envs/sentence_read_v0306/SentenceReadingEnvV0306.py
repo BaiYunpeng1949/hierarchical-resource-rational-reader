@@ -14,7 +14,7 @@ from modules.rl_envs.sentence_read_v0306.RewardFunction import RewardFunction
 from modules.rl_envs.sentence_read_v0306 import Constants
 
 
-class SentenceReadingEnvV0306(Env):
+class SentenceReadingEnv(Env):
 
     def __init__(self):
         """
@@ -83,27 +83,41 @@ class SentenceReadingEnvV0306(Env):
         self.reward_function = RewardFunction()
 
         #########################################################################################################
-
-        #########################################################################################################
         
         # Define states
         # Words in the sentence
-        self._num_words_in_sentence = None
+        self._sentence_len = None
         self._num_read_words_in_sentence = None     # Including the words that have been skipped
         self._num_left_words_in_sentence = None
-        # Belief-level states
-        self._predictabilities = None               # Includes the parafoveal preview, frequency, and contextual predictability
-        # Belief
-        self._sentence_belief = None                # Appraisal of the sentence, how the reader feels about his understanding of the sentence
+        # Preset predictabilities of the words in the sentence, it helps the agent to make the decision of word skipping and regressions, 
+        #   this does not change according to the actions, but providing evidence for forming the belief / appraisal
+        self._words_predictabilities_in_sentence = None     # The overall predictability of the words (all in one metric)
+        self._words_contextual_predictabilities_in_sentence = None     # The contextual predictability of the words (contextual predictability)
+        self._words_frequencies_in_sentence = None          # Frequency of the words
+        self._words_difficulties_in_sentence = None         # Difficulty of the words
+        self._words_lengths_in_sentence = None              # Length of the words
+        # Words beliefs / appraisals, the agent actively update it itself through actions
+        self._words_appraisals_in_sentence = None                # Appraisal of the sentence, how the reader feels about his understanding of the sentence
+
+        # Other states
+        self._current_word_index = None
+        self._current_word_predictability = None
+        self._next_word_predictability = None
 
         # Counter variables
-        pass  # TODO fill them in later
+        # NOTE: same definition of how we process the ZuCo 1.0 Task 2 Natural Reading data; 
+        #   skipped words are words that are not fixed during the first-pass reading
+        self._skipped_words_indexes = None      
+        # regressed words are words that are regressed to the previous word (before the reading progress and current fixation)
+        self._regressed_words_indexes = None
+        # The reading sequence of the words
+        self._reading_sequence_of_word_indexes = None
 
         #########################################################################################################
 
         # Define the RL env spaces
         self._steps = None
-        self.ep_len = 2 * Constants.MAX_NUM_WORDS_PER_SENTENCE      # times 2 because we have word regressions
+        self.ep_len = 2 * Constants.MAX_SENTENCE_LENGTH      # times 2 because we have word regressions
         self._terminate = None
         self._truncated = None
 
@@ -111,12 +125,14 @@ class SentenceReadingEnvV0306(Env):
         self._REGRESS_ACTION = 0
         self._READ_ACTION = 1
         self._SKIP_ACTION = 2
-        self.action_space = Discrete(3)     
+        self._STOP_ACTION = 3    
+        self.action_space = Discrete(4)     
         # 0: regression to the one previous word; 1: read the next word; 2: skip the next word to read the next next.
-        #   NOTE: We do not specify the termination control here, it belongs to sec.2.5
+        #   NOTE: We do not specify the termination control here, it belongs to sec.2.5. 
+        #   So the agent stops reading when it reaches the end of the sentence.
 
-        # Define the observation space -- TODO the type may needs to be changed later
-        self._num_stateful_info_obs = 7
+        # Define the observation space -- The overall appraisal of the sentence, current fixation (word index), next word predictability
+        self._num_stateful_info_obs = Constants.MAX_SENTENCE_LENGTH + 1 + 1
         self.observation_space = Box(low=0, high=1, shape=(self._num_stateful_info_obs,))
         
     def reset(self, seed=42, inputs: dict = None):
@@ -131,15 +147,20 @@ class SentenceReadingEnvV0306(Env):
         self._truncated = False
         self._terminate = False
 
-        self.fixated_word_index = -1
-        self.fixated_indexes_in_sentence = []
+        # Reset the sentences manager (external environment)
+        self._sentence_len, self._words_predictabilities_in_sentence = self.sentences_manager.reset()
 
-        # TODO check the necessity of these variables
-        self.num_words_skipped_in_sentence = 0
-        self.num_saccades_on_word_level = 0
+        # Reset the transition function
+        self._words_appraisals_in_sentence = self.transition_function.reset(sentence_length=self._sentence_len)
 
-        # TODO initialize the predictability_list, initialize the sentence, initialize the belief/appraisal of the sentence.
+        # Reset the action-related states for logs later
+        self._current_word_index = -1
+        self._next_word_predictability = self._words_predictabilities_in_sentence[0]    # Start with the first word's predictability
 
+        # Reset the logs
+        self._skipped_words_indexes = []
+        self._regressed_words_indexes = []
+        self._reading_sequence_of_word_indexes = []
         return self._get_obs(), {}
     
     def step(self, action):
@@ -155,21 +176,39 @@ class SentenceReadingEnvV0306(Env):
         # Update the steps
         self._steps += 1
 
-        # TODO think about the mechanisms of updating appraisals, and corresponding rewards.
+        # Update the states
         if action == self._REGRESS_ACTION:
             
-            updated_states = self.transition_function.update_state_regress(states=self._states)    # TODO fix later
-            reward += self.reward_function.compute_regress_reward(states=updated_states)    # TODO fix later
+            self._words_appraisals_in_sentence, self._current_word_index, action_validity = self.transition_function.update_state_regress(
+                appraisals=self._words_appraisals_in_sentence,
+                current_word_index=self._current_word_index,
+                
+            )    
+            reward += self.reward_function.compute_regress_reward()    
         
         elif action == self._READ_ACTION:
             
-            updated_states = self.transition_function.update_state_read_next_word(states=self._states)    # TODO fix later
-            reward += self.reward_function.compute_read_reward(states=updated_states)    # TODO fix later
+            self._words_appraisals_in_sentence, self._current_word_index, action_validity = self.transition_function.update_state_read_next_word(
+                appraisals=self._words_appraisals_in_sentence,
+                current_word_index=self._current_word_index,
+                sentence_length=self._sentence_len,
+            )    
+            reward += self.reward_function.compute_read_reward()    
         
         elif action == self._SKIP_ACTION:
             
-            updated_states = self.transition_function.update_state_skip_next_word(states=self._states)    # TODO fix later
-            reward += self.reward_function.compute_skip_reward(states=updated_states)    # TODO fix later
+            self._words_appraisals_in_sentence, self._current_word_index, action_validity = self.transition_function.update_state_skip_next_word(
+                appraisals=self._words_appraisals_in_sentence,
+                current_word_index=self._current_word_index,
+                sentence_length=self._sentence_len,
+                skip_word_predictability=self._next_word_predictability,
+            )    
+            reward += self.reward_function.compute_skip_reward()  
+
+        elif action == self._STOP_ACTION:
+            self._terminate = True
+            self._truncated = False
+            # Get the reward later
         
         else:
             raise ValueError(f"Invalid action: {action}")
@@ -178,30 +217,38 @@ class SentenceReadingEnvV0306(Env):
         if self._steps >= self.ep_len:     # Truncation case
             self._terminate = True
             self._truncated = True
-        else:       # Termination case
-            self._terminate = self.transition_function.check_terminate_state(states=self._states)
         
         # Get the termination reward
         if self._terminate or self._truncated:
-            reward += self.reward_function.compute_terminate_reward(states=self._states)    # TODO fix later
+            reward += self.reward_function.compute_terminate_reward(sentence_appraisals=self._words_appraisals_in_sentence)
         
-        return self._get_obs(), reward, done, self._truncated, {}
+        # Update the logs
+        self._update_logs()
+        
+        return self._get_obs(), reward, self._terminate, self._truncated, {}
     
     def _get_obs(self):
         """
         Get the observation
         """
 
-        return self._states
+        # Normalize the current word index, allowed to take values in [0, 1], because <EOS> is included.
+        normalized_current_word_index = self._current_word_index / self._sentence_len   
+        
+        stateful_obs = np.concatenate([self._words_appraisals_in_sentence, [normalized_current_word_index], [self._next_word_predictability]])
+
+        assert len(stateful_obs) == self._num_stateful_info_obs, f"expected {self._num_stateful_info_obs} but got {len(stateful_obs)}"
+
+        return stateful_obs
     
-    def _get_logs(self):
+    def _update_logs(self):
         """
-        Get the logs
+        Update the logs
         """
 
-        # TODO the next word's predictability; the so-far read sentence's appraisals; 
+        self._reading_sequence_of_word_indexes.append(self._current_word_index)
 
-        return self._logs
+        return self._reading_sequence_of_word_indexes
     
 
 if __name__ == "__main__":

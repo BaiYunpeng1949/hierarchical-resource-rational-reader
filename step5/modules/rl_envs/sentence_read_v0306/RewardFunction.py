@@ -9,21 +9,21 @@ class RewardFunction():
     def __init__(self):
         pass
 
-    def compute_regress_reward(self, states: list):
+    def compute_regress_reward(self):
         """
         Compute the reward for the regress action
         """
 
         return -0.1
 
-    def compute_read_reward(self, states: list):
+    def compute_read_reward(self):
         """
         Compute the reward for the read action
         """
 
         return -0.1
     
-    def compute_skip_reward(self, states: list):
+    def compute_skip_reward(self):
         """
         Compute the reward for the skip action
         """
@@ -38,6 +38,11 @@ class RewardFunction():
         NOTE: maybe need to make this more explainable for a NHB paper. Now it is tricky. 
             Not really sentence comprehension or coherence.
         """
+
+        # TODO check the reward here
+
+        # First get rid of the -1 from the sentence_appraisals
+        sentence_appraisals = [a for a in sentence_appraisals if a != -1]
 
         # To avoid sampled sentences' length, we apply 10 * average sentence appraisals as the reward.
         # Use the Bernoulli distribution to sample the reward. Each word's reward is independent.
