@@ -924,8 +924,10 @@ class RL:
         all_skipping_rates = []
         all_regression_rates = []
         all_sentence_lengths = []
-        all_word_predictabilities = []  # New list for word predictabilities
-        all_skipping_decisions = []     # New list for skipping decisions
+        all_word_predictabilities = []
+        all_skipping_decisions = []
+        all_regressed_words = []
+        all_word_appraisals = []
 
         for episode in range(1, self._num_episodes + 1):
             obs, info = self._env.reset()
@@ -959,6 +961,12 @@ class RL:
             if 'word_predictabilities' in episode_logs:
                 all_word_predictabilities.extend(episode_logs['word_predictabilities'])
                 all_skipping_decisions.extend(episode_logs['skipping_decisions'])
+            
+            # Collect regression and appraisal data
+            if 'regressed_words' in episode_logs:
+                all_regressed_words.extend(episode_logs['regressed_words'])
+            if 'final_appraisals' in episode_logs:
+                all_word_appraisals.extend(episode_logs['final_appraisals'])
             
             # Store episode logs
             logs_across_episodes.append(episode_logs)
@@ -1007,6 +1015,20 @@ class RL:
                     word_predictabilities=all_word_predictabilities,
                     skipping_decisions=all_skipping_decisions
                 )
+            
+            # Create and save regression vs appraisals plot if we have the data
+            if all_regressed_words and all_word_appraisals:
+                plot_sentence_reading_figures.plot_regression_vs_appraisals(
+                    log_dir=log_dir,
+                    regressed_words=all_regressed_words,
+                    word_appraisals=all_word_appraisals
+                )
+            
+            # Create and save comprehensive reading behavior metrics
+            plot_sentence_reading_figures.plot_reading_behavior_metrics(
+                log_dir=log_dir,
+                logs_across_episodes=logs_across_episodes
+            )
 
     def _supervisory_controller_test(self):     # TODO: get a plot of regression rate vs. appraisal level weights. vs. time constraints.
         """
