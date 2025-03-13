@@ -64,6 +64,20 @@ class SentenceReadingEnv(Env):
             Word skipping, average skip distance: 1.93 words; max skip distance mean: 3.51 words;
             Word regression, average regression distance: 1.59 words; max regression distance mean: 1.96 words;
             NOTE: But there are a lot of outliers with huge jumps. So for the simplicity, we are mainly simulating one word regression and one word skipping first.
+        
+        NOTE: Sentence reading as a resource-rational agent:
+        Begin by positioning human reading as a cognitively demanding, goal-directed task performed under resource constraints 
+        (e.g., limited attention, limited memory, or computational resources). Explain that readers cannot process every detail at once. 
+        Thus, they must strategically allocate their cognitive resources.
+        Key points: 1. Humans aim for a balance between accuracy/comprehension (performance) and cognitive cost (effort/time).
+        2. Reading behavior (skipping, regression, stopping) emerges naturally as adaptive solutions to this resource trade-off.
+
+        POMDP: 
+            State: comprehension level of the sentence (sent_comprhension_level), uncertainty of meaning, exectations about upcoming words.
+            Action: word skipping, word regression, word reading, stopping.
+            Observation: comprehension, observed and interpreted words, exectations about upcoming words (predictability or something else).
+            Reward: cognitive cost (time, effort, etc.); and performance (accuracy reward: high comprehension, correct interpretation, goal achievement).
+            Transition: skip increases uncertainty but reduces cost/time; regressing reduces uncertainty but increases cost/time.; stopping halts costs but risks incompletion.
         """
 
         # Get the current root directory
