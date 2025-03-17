@@ -43,20 +43,27 @@ class TransitionFunction():
             batch_first=True
         )
         
-        # Uncertainty estimation:  a feedforward nn that estimates the uncertainty of the comprehension state
-        # Inputs: the concatenation of the current word's embedding and the context state, thus hidden_size * 2
-        # Outputs: a scalar between 0 and 1, representing the uncertainty of the comprehension state
+        # Comment out the neural network approach
+        """
         self.uncertainty_estimator = nn.Sequential(
             nn.Linear(self.hidden_size * 2, self.hidden_size),
             nn.ReLU(),
             nn.Linear(self.hidden_size, 1),
             nn.Sigmoid()
         )
+        """
 
     def reset(self, sentence_words: list[str]):
         """Initialize comprehension state for new sentence"""
         self.sentence_words = sentence_words
         self.word_embeddings = self._get_word_embeddings(sentence_words)
+
+        # TODO debug delete later
+        print(f"------------- Reset -------------------")
+        print(f"Sentence words: {self.sentence_words}")
+        print(f"The length of the sentence words is: {len(self.sentence_words)}")
+        print(f"Word embeddings shape: {self.word_embeddings.shape}")
+        
         # Initialize hidden state with correct shape: [num_layers, batch_size, hidden_size]
         self.cumulative_comprehension_state = torch.zeros(
             self.num_gru_layers, 
@@ -64,19 +71,34 @@ class TransitionFunction():
             self.hidden_size
         )
         self.word_states = [None] * len(sentence_words)
-
-        # NOTE: issue 1: all words' embeddings or contexts have different shapes, need to be padded to the same shape.
-        # NOTE: issue 2: some words are read in with marks, e.g., (BB-9), (BB-28) from the sentence: 
-        #       ['Following', 'attendance', 'at', 'the', 'Marine', "Officers'", 'School', 'at', 'Port', 'Royal,', 'South', 'Carolina,', 'he', 'served', 'as', 'a', 'member', 'of', 'the', 'Marine', 'detachments', 'aboard', 'Wisconsin', '(BB-9)', 'and', 'Delaware', '(BB-28).']
-
-        # TODO debug delete later
-        print(f"--------------------------------")
-        print(f"Sentence words: {self.sentence_words}, the length is {len(self.sentence_words)}")
-        print(f"Word embeddings shape: {self.word_embeddings.shape}")
-        print(f"Cumulative comprehension state shape: {self.cumulative_comprehension_state.shape}")
-        print(f"Word states shape: {self.word_states}")
-        print(f"--------------------------------")
-
+        
+        # Get contextual embeddings with proper shape handling
+        encoding = self.tokenizer(
+            sentence_words,
+            return_tensors="pt",
+            padding=True,
+            return_offsets_mapping=True
+        )
+        
+        with torch.no_grad():
+            outputs = self.language_model(**{k: v for k, v in encoding.items() if k in ['input_ids', 'attention_mask']})
+        
+        # Get word-level embeddings (similar to _get_word_embeddings)
+        hidden_states = outputs.last_hidden_state  # [batch_size, sequence_length, hidden_size]
+        word_ids = encoding.word_ids(0)  # 0 is the batch index
+        
+        # Initialize tensor for context embeddings
+        self.sentence_context_embeddings = torch.zeros(1, len(sentence_words), self.hidden_size)
+        
+        # Average embeddings for subwords belonging to the same word
+        for word_idx in range(len(sentence_words)):
+            token_positions = [i for i, wid in enumerate(word_ids) if wid == word_idx]
+            if token_positions:
+                self.sentence_context_embeddings[0, word_idx] = hidden_states[0, token_positions].mean(dim=0)
+        
+        print(f"Sentence context embeddings shape: {self.sentence_context_embeddings.shape}")
+        # Should now be [1, sentence_length, hidden_size]
+        
         return self.word_states
     
     def _get_word_embeddings(self, words):
@@ -117,18 +139,18 @@ class TransitionFunction():
         current_word_idx += 1
 
         # TODO debug delete later
-        print(f"--------------- Update state: read next word -----------------")
-        print(f"Current word idx: {current_word_idx}, sentence length: {sentence_length}")
+        # print(f"--------------- Update state: read next word -----------------")
+        # print(f"Current word idx: {current_word_idx}, sentence length: {sentence_length}")
         
         # Get word embedding and update comprehension state
         word_embedding = self.word_embeddings[:, current_word_idx].detach()  # shape: [batch_size, hidden_size]
         # detach() is used to ensure that the word_embedding is not part of the computation graph, 
         # so that it is not updated during backpropagation
-        print(f"Word embedding shape: {word_embedding.shape}")
+        # print(f"Word embedding shape: {word_embedding.shape}")
         
         # Add sequence length dimension for GRU input
         word_embedding_expanded = word_embedding.unsqueeze(1)  # shape: [batch_size, 1, hidden_size]
-        print(f"After unsqueeze shape: {word_embedding_expanded.shape}")
+        # print(f"After unsqueeze shape: {word_embedding_expanded.shape}")
         
         # Update cumulative comprehension with new word
         output, hidden = self.comprehension_tracker(
@@ -139,15 +161,15 @@ class TransitionFunction():
         
         # Estimate integration difficulty
         context_state = self._get_context_state(end_word_idx=current_word_idx)
-        print(f"Context state shape: {context_state.shape}")
-        print(f"The shape of the cumulative comprehension state: {self.cumulative_comprehension_state.shape}")
-        print(f"The shape of the last layer's hidden state: {hidden[-1].shape}")
+        # print(f"Context state shape: {context_state.shape}")
+        # print(f"The shape of the cumulative comprehension state: {self.cumulative_comprehension_state.shape}")
+        # print(f"The shape of the last layer's hidden state: {hidden[-1].shape}")
         integration_difficulty = self._compute_integration_difficulty(
             hidden[-1].unsqueeze(0),  # Use last layer's (global, higher-level comprehension) hidden state, shape: [1, 1, hidden_size]
             context_state.unsqueeze(1)  # Add sequence dimension, shape: [1, 1, hidden_size]
         )
-        print(f"Integration difficulty shape: {integration_difficulty.shape}")
-        print(f"The integration difficulty: {integration_difficulty}")
+        # print(f"Integration difficulty shape: {integration_difficulty.shape}")
+        # print(f"The integration difficulty: {integration_difficulty}")
         
         # Update word state based on integration success
         states[current_word_idx] = {
@@ -164,35 +186,27 @@ class TransitionFunction():
     def update_state_skip_next_word(self, states, current_word_idx, sentence_length, predictability):
         """
         Update state when skipping word, using predictability and context
-        to estimate comprehension loss
+        to estimate comprehension loss.
+        Updates both:
+        1. The skipped word state (current_word_idx + 1)
+        2. The word being read (current_word_idx + 2)
         """
-        # TODO debug delete later
-        print(f"-------------- Update state: skip next word ------------------")
-        print(f"Current word idx: {current_word_idx}")
-        print(f"--------------------------------")
-
-        if current_word_idx >= sentence_length - 1:
+        if current_word_idx >= sentence_length - 2:  # Need space for both skip and read
             return states, current_word_idx, False
             
-        # Skip to next word
-        current_word_idx += 2
+        # First handle the skipped word (current_word_idx + 1)
+        skipped_word_idx = current_word_idx + 1
         
         # Estimate skipped word comprehension from context
-        context_state = self._get_context_state(end_word_idx=current_word_idx - 1)
-        print(f"Context state shape: {context_state.shape}")
-
+        context_state = self._get_context_state(end_word_idx=skipped_word_idx)
         predicted_state = self._predict_skipped_meaning(
-            context_state, 
-            predictability
+            skipped_word_idx=skipped_word_idx, 
+            predictability=predictability
         )
-        print(f"Predicted state shape: {predicted_state.shape}")
         
         # Higher uncertainty for skipped words
-        uncertainty = self.uncertainty_estimator(
-            torch.cat([context_state, predicted_state], dim=-1)  # Now both have shape [1, hidden_size]
-        )
-        print(f"Uncertainty shape: {uncertainty.shape}")
-
+        uncertainty = self._compute_uncertainty(context_state, predicted_state)
+        
         # Create a GRU-like state for consistency with read actions
         # Layer 1: local context (predicted state)
         # Layer 2: global context (weighted by uncertainty)
@@ -201,11 +215,18 @@ class TransitionFunction():
             predicted_state * (1 - uncertainty.squeeze())  # Global layer, reduced by uncertainty
         ])  # Shape: [2, 1, hidden_size]
         
-        states[current_word_idx - 1] = {
+        # Update skipped word state
+        states[skipped_word_idx] = {
             'embedding': predicted_state.detach(),
-            'comprehension': skipped_comprehension.detach(),  # Now matches GRU state shape
+            'comprehension': skipped_comprehension.detach(),
             'difficulty': uncertainty.detach()
         }
+
+        # Now handle the word being read (current_word_idx + 2) by reusing update_state_read_next_word
+        # We need to increment current_word_idx by 1 first because update_state_read_next_word 
+        # will increment it again internally
+        current_word_idx += 1
+        states, current_word_idx, success = self.update_state_read_next_word(states, current_word_idx, sentence_length)
         
         return states, current_word_idx, True
         
@@ -305,37 +326,41 @@ class TransitionFunction():
         integration_difficulty = torch.norm(current - context, dim=-1)
         return integration_difficulty
         
-    def _predict_skipped_meaning(self, context, predictability):
+    def _predict_skipped_meaning(self, skipped_word_idx, predictability):
         """
-        Predict meaning of skipped word from context
-        context: The context from previous words, shape: [1, hidden_size]
-        predictability: The predictability of the skipped word
-        Returns: predicted embedding with shape [1, hidden_size]
+        TODO: Enhanced word prediction with parafoveal preview
+        Future improvements:
+        1. Parafoveal Information:
+            - First n letters of skipped word
+            - Estimated word length
+            - Word shape (ascenders/descenders)
+        
+        2. Implementation Plan:
+            a) Create preview representation:
+               - Encode available letters using BERT subword tokens
+               - Encode length as positional feature
+               - Encode word shape features
+            
+            b) Enhanced prediction:
+               - Combine context prediction with preview info
+               - Weight by preview clarity/confidence
+               - Consider frequency effects for words matching preview
+        
+        Example:
+        If skipping "house" with preview "ho__e" (length=5):
+        - Context suggests: home, horse, house
+        - Preview "ho__e" filters candidates
+        - Length=5 further constrains
+        - Frequency effects favor "house"
         """
-        # Get embeddings for context
-        context_embedding = self.language_model(**self.tokenizer(
-            self.sentence_words, 
-            return_tensors="pt", 
-            padding=True
-        )).last_hidden_state  # [batch, seq_len, hidden_size]
-        print(f"Context embedding shape: {context_embedding.shape}")
+        # Current implementation (context-based only)
+        context_window = self.sentence_context_embeddings[:, 
+            max(0, skipped_word_idx-self._context_size):skipped_word_idx]
         
-        # Use attention to predict skipped word
-        attention_weights = torch.softmax(
-            torch.matmul(context_embedding, context_embedding.transpose(-1, -2)),
-            dim=-1
-        )
-        print(f"Attention weights shape: {attention_weights.shape}")
+        weights = torch.softmax(torch.arange(context_window.size(1), dtype=torch.float), dim=0)
+        weights = weights.unsqueeze(0).unsqueeze(-1)
         
-        # Weighted sum of context embeddings
-        predicted_embedding = torch.matmul(attention_weights, context_embedding)
-        print(f"Raw predicted embedding shape: {predicted_embedding.shape}")
-        
-        # Average over sequence dimension to get a single embedding
-        predicted_embedding = predicted_embedding.mean(dim=[0, 1]).unsqueeze(0)  # [1, hidden_size]
-        print(f"Final predicted embedding shape: {predicted_embedding.shape}")
-        
-        # Scale by predictability
+        predicted_embedding = (context_window * weights).sum(dim=1)
         return predicted_embedding * predictability
         
     def _apply_memory_decay(self, states, current_idx):
@@ -347,3 +372,38 @@ class TransitionFunction():
         #         states[i]['comprehension'] *= decay
         #         states[i]['difficulty'] = min(1.0, states[i]['difficulty'] + (1 - decay))
         pass    # NOTE: do not decay memory first, see whether needed for realisitic regressions.
+
+    def _compute_uncertainty(self, context_state: torch.Tensor, predicted_state: torch.Tensor):
+        """
+        Simple uncertainty estimation based on cosine similarity
+        between predicted state and actual word embedding.
+        Handles edge cases:
+        - Zero vectors: returns maximum uncertainty (1.0)
+        - Numerical stability: adds small epsilon to norm
+        """
+        # Add small epsilon for numerical stability
+        eps = 1e-8
+        
+        # Check for zero vectors
+        context_zero = torch.all(context_state == 0)
+        predicted_zero = torch.all(predicted_state == 0)
+        
+        if context_zero or predicted_zero:
+            # If either vector is zero, return maximum uncertainty
+            return torch.ones_like(context_state[:, :1])
+            
+        # Normalize vectors for cosine similarity with numerical stability
+        context_norm = context_state / (context_state.norm(dim=-1, keepdim=True) + eps)
+        predicted_norm = predicted_state / (predicted_state.norm(dim=-1, keepdim=True) + eps)
+        
+        # Cosine similarity is in [-1, 1]
+        similarity = torch.sum(context_norm * predicted_norm, dim=-1)
+        similarity = torch.clamp(similarity, min=-1.0, max=1.0)
+
+        # Uncertainty conversion to [0, 1]
+        uncertainty = (1 - similarity) / 2
+
+        # Used later as confidence weight
+        predicted_state * (1 - uncertainty.squeeze())
+
+        return uncertainty.unsqueeze(-1)  # Match original shape

@@ -287,8 +287,15 @@ if __name__ == "__main__":
     env = SentenceReadingEnv()
     env.reset()
     for i in range(10):
-        action = env.action_space.sample()
-        # action = 1  # TODO: debug, Proceed to read the next word
+        # action = env.action_space.sample()
+        
+        if i <= 3:
+            action = 1
+        elif i <= 8:
+            action = 2
+        else:
+            action = 0
+
         obs, reward, terminated, truncated, info = env.step(action)
         print(f"Action: {action}, Reward: {reward}, Terminated: {terminated}, Truncated: {truncated}")
         print(obs)
