@@ -227,13 +227,13 @@ class SentenceReadingEnv(Env):
         word_states_tensor = torch.zeros(Constants.MAX_SENTENCE_LENGTH, self.transition_function.hidden_size)
         for i, state in enumerate(self._word_states):
             if state is not None:
-                word_states_tensor[i] = state['comprehension'].squeeze()
+                word_states_tensor[i] = state['comprehension'][-1].squeeze()  # Use last layer's state
                 
         return {
-            'word_states': word_states_tensor.numpy(),
+            'word_states': word_states_tensor.detach().numpy(),
             'current_position': np.array([self._current_word_index / self._sentence_len]),
             'next_word_pred': np.array([self._next_word_predictability]),
-            'global_comprehension': self._global_comprehension.numpy()
+            'global_comprehension': self._global_comprehension.detach().numpy()
         }
         
     def _update_global_comprehension(self):
@@ -288,11 +288,10 @@ if __name__ == "__main__":
     env.reset()
     for i in range(10):
         action = env.action_space.sample()
+        # action = 1  # TODO: debug, Proceed to read the next word
         obs, reward, terminated, truncated, info = env.step(action)
         print(f"Action: {action}, Reward: {reward}, Terminated: {terminated}, Truncated: {truncated}")
         print(obs)
         print(info)
         print("-"*100)
-        
-        
         

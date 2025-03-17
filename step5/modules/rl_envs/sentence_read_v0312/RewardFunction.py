@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 
 class RewardFunction():
@@ -7,7 +8,8 @@ class RewardFunction():
     """
 
     def __init__(self):
-        pass
+        self._terminate_reward = 1.0
+        self._good_comprehension_threshold = 0.5  # Threshold for good comprehension
 
     def compute_regress_reward(self):
         """
@@ -30,28 +32,20 @@ class RewardFunction():
 
         return -0.1
     
-    def compute_terminate_reward(self, sentence_appraisals: list):
+    def compute_terminate_reward(self, global_comprehension):
         """
-        Compute the reward for the terminate action
-        This should be a positive reward based on the sentence's overall appraisal.
-
-        NOTE: maybe need to make this more explainable for a NHB paper. Now it is tricky. 
-            Not really sentence comprehension or coherence.
+        Compute reward for terminating reading.
+        Rewards high comprehension, penalizes poor comprehension.
+        global_comprehension: tensor of shape [hidden_size] or [num_layers, hidden_size]
         """
-
-        # TODO check the reward here
-
-        # First get rid of the -1 from the sentence_appraisals
-        sentence_appraisals = [a for a in sentence_appraisals if a != -1]
-
-        # To avoid sampled sentences' length, we apply 10 * average sentence appraisals as the reward.
-        # Use the Bernoulli distribution to sample the reward. Each word's reward is independent.
-        sampled_words_info_gain = [np.random.choice([0, 1], p=[1 - a, a]) for a in sentence_appraisals]
-
-        # Get the average reward
-        average_reward = np.mean(sampled_words_info_gain)
-
-        # Apply the reward
-        reward = 10 * average_reward
-
-        return reward
+        # If global_comprehension is 2D (from GRU layers), use the last layer
+        if len(global_comprehension.shape) > 1:
+            global_comprehension = global_comprehension[-1]  # Use last layer's state
+            
+        # Convert to scalar value between 0 and 1
+        comprehension_score = torch.mean(torch.abs(global_comprehension)).item()
+        
+        if comprehension_score > self._good_comprehension_threshold:
+            return self._terminate_reward
+        else:
+            return -self._terminate_reward
