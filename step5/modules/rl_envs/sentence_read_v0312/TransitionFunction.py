@@ -207,24 +207,24 @@ class TransitionFunction():
         # Higher uncertainty for skipped words
         uncertainty = self._compute_uncertainty(context_state, predicted_state)
         
-        # Create a GRU-like state for consistency with read actions
-        # Layer 1: local context (predicted state)
-        # Layer 2: global context (weighted by uncertainty)
-        skipped_comprehension = torch.stack([
-            predicted_state,  # Local layer
-            predicted_state * (1 - uncertainty.squeeze())  # Global layer, reduced by uncertainty
-        ])  # Shape: [2, 1, hidden_size]
+        # Process predicted state through GRU to maintain consistent comprehension tracking
+        predicted_expanded = predicted_state.unsqueeze(1)  # Add sequence dimension [batch_size, 1, hidden_size]
+        
+        # Update comprehension with predicted state, weighted by uncertainty
+        output, hidden = self.comprehension_tracker(
+            predicted_expanded * (1 - uncertainty.squeeze()),  # Reduce input based on uncertainty
+            self.cumulative_comprehension_state
+        )
+        self.cumulative_comprehension_state = hidden  # Update cumulative state with new hidden state
         
         # Update skipped word state
         states[skipped_word_idx] = {
             'embedding': predicted_state.detach(),
-            'comprehension': skipped_comprehension.detach(),
+            'comprehension': self.cumulative_comprehension_state.detach(),  # Use GRU state instead of manual stacking
             'difficulty': uncertainty.detach()
         }
 
-        # Now handle the word being read (current_word_idx + 2) by reusing update_state_read_next_word
-        # We need to increment current_word_idx by 1 first because update_state_read_next_word 
-        # will increment it again internally
+        # Now handle the word being read (current_word_idx + 2)
         current_word_idx += 1
         states, current_word_idx, success = self.update_state_read_next_word(states, current_word_idx, sentence_length)
         
@@ -232,47 +232,55 @@ class TransitionFunction():
         
     def update_state_regress(self, states, current_word_idx):
         """
-        Update state during regression, attempting to reduce uncertainty
+        Update state during regression, attempting to reduce uncertainty.
+        When regressing, we:
+        1. Include context up to where we regressed from
+        2. Reprocess the word with both backward and forward context
+        3. Strengthen its representation in the cumulative comprehension
         """
-        # TODO debug delete later
-        print(f"-------------- Update state: regress ------------------")
-        print(f"Current word idx: {current_word_idx}")
-        print(f"--------------------------------")
-
         if current_word_idx <= 0:
             return states, current_word_idx, False
             
+        # Store the index we're regressing from for context
+        regression_from_idx = current_word_idx
         current_word_idx -= 1
         
-        # Re-read word with additional context
+        # Re-read word with additional context up to where we regressed from
         word_embedding = self.word_embeddings[:, current_word_idx].detach()
-        context_state = self._get_context_state(end_word_idx=current_word_idx)
+        
+        # Get context including words up to AND INCLUDING where we regressed from
+        context_embeddings = self.word_embeddings[:, :regression_from_idx + 1]  # +1 to include the word we regressed from
+        context_state = context_embeddings.mean(dim=1)  # Average all context including regression point
         
         # Add sequence dimension for GRU input
         word_embedding_expanded = word_embedding.unsqueeze(1)  # [batch_size, 1, hidden_size]
         
-        # Create initial hidden state with correct shape
-        initial_hidden = torch.zeros(
-            self.num_gru_layers,  # 2 layers
-            self.batch_size,      # batch size 1
-            self.hidden_size      # 768 features
-        )
+        # Strengthen the word's representation by combining with context
+        strengthened_embedding = (word_embedding + context_state) / 2  # Average with context, do this for strengthening because GRU cannot handle bi-directional now.
+        strengthened_embedding = strengthened_embedding.unsqueeze(1)  # [batch_size, 1, hidden_size]
         
-        # Update comprehension with new context
+        # Update comprehension using strengthened representation
         output, hidden = self.comprehension_tracker(
-            word_embedding_expanded,  # [batch_size, 1, hidden_size]
-            initial_hidden           # [num_layers, batch_size, hidden_size]
+            strengthened_embedding,  # Use strengthened embedding
+            self.cumulative_comprehension_state
         )
         
-        # Update state with improved comprehension
+        # Update both local and cumulative states with strengthened comprehension
+        self.cumulative_comprehension_state = hidden
         states[current_word_idx]['comprehension'] = hidden.detach()
-        states[current_word_idx]['difficulty'] *= 0.5  # Reduce uncertainty
+        
+        # Compute new integration difficulty with full context
+        integration_difficulty = self._compute_integration_difficulty(
+            hidden[-1].unsqueeze(0),  # Use updated comprehension
+            context_state.unsqueeze(1)  # Compare against full context
+        )
+        states[current_word_idx]['difficulty'] = integration_difficulty.detach()
         
         return states, current_word_idx, True
         
-    def _get_context_state(self, end_word_idx):
+    def _get_context_state(self, end_word_idx: int) -> torch.Tensor:
         """
-        Get contextual state from previous words
+        Get contextual state from previous words (mean of previous words embeddings)
         end_word_idx: the index of the last word to include in the context
         Raw word embeddings averaged together, Represents surface-level context from nearby words, 
         No processing through GRU/comprehension
@@ -289,7 +297,7 @@ class TransitionFunction():
         print(f"--------------------------------")
         return mean_context_embedding
         
-    def _compute_integration_difficulty(self, current, context):
+    def _compute_integration_difficulty(self, current: torch.Tensor, context: torch.Tensor) -> torch.Tensor:
         """
         Compute difficulty of integrating new information
         current: The current word's comprehension state
@@ -326,7 +334,7 @@ class TransitionFunction():
         integration_difficulty = torch.norm(current - context, dim=-1)
         return integration_difficulty
         
-    def _predict_skipped_meaning(self, skipped_word_idx, predictability):
+    def _predict_skipped_meaning(self, skipped_word_idx: int, predictability: float) -> torch.Tensor:
         """
         TODO: Enhanced word prediction with parafoveal preview
         Future improvements:
@@ -354,16 +362,17 @@ class TransitionFunction():
         - Frequency effects favor "house"
         """
         # Current implementation (context-based only)
-        context_window = self.sentence_context_embeddings[:, 
-            max(0, skipped_word_idx-self._context_size):skipped_word_idx]
+        context_window = self.sentence_context_embeddings[:, max(0, skipped_word_idx-self._context_size):skipped_word_idx]
         
+        # Get weights for context window according to distance from skipped word
         weights = torch.softmax(torch.arange(context_window.size(1), dtype=torch.float), dim=0)
-        weights = weights.unsqueeze(0).unsqueeze(-1)
+        weights = weights.unsqueeze(0).unsqueeze(-1)    # Reshape to [1, context_size, 1]
         
+        # Predict the next word's embedding only based on context distance weights
         predicted_embedding = (context_window * weights).sum(dim=1)
         return predicted_embedding * predictability
         
-    def _apply_memory_decay(self, states, current_idx):
+    def _apply_memory_decay(self, states: list[dict], current_idx: int):
         """Apply decay to previous states based on distance"""
         # for i in range(current_idx):
         #     if states[i] is not None:
@@ -373,7 +382,7 @@ class TransitionFunction():
         #         states[i]['difficulty'] = min(1.0, states[i]['difficulty'] + (1 - decay))
         pass    # NOTE: do not decay memory first, see whether needed for realisitic regressions.
 
-    def _compute_uncertainty(self, context_state: torch.Tensor, predicted_state: torch.Tensor):
+    def _compute_uncertainty(self, context_state: torch.Tensor, predicted_state: torch.Tensor) -> torch.Tensor:
         """
         Simple uncertainty estimation based on cosine similarity
         between predicted state and actual word embedding.

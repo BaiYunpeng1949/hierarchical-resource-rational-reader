@@ -229,7 +229,7 @@ class SentenceReadingEnv(Env):
             if state is not None:
                 word_states_tensor[i] = state['comprehension'][-1].squeeze()  # Use last layer's state
                 
-        return {
+        return {    # TODO I do not think the agent needs to know so much details. Just some representative appraisals would be enough.
             'word_states': word_states_tensor.detach().numpy(),
             'current_position': np.array([self._current_word_index / self._sentence_len]),
             'next_word_pred': np.array([self._next_word_predictability]),
@@ -298,7 +298,7 @@ if __name__ == "__main__":
 
         obs, reward, terminated, truncated, info = env.step(action)
         print(f"Action: {action}, Reward: {reward}, Terminated: {terminated}, Truncated: {truncated}")
-        print(obs)
-        print(info)
-        print("-"*100)
+        # print(obs)
+        # print(info)
+        # print("-"*100)
         
