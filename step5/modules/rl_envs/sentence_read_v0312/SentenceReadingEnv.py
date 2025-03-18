@@ -96,34 +96,34 @@ class SentenceReadingEnv(Env):
         self.sentences_manager = SentencesManager()
         self.transition_function = TransitionFunction()
         self.reward_function = RewardFunction()
-        
+
         # State tracking
         self._sentence_info = None
         self._sentence_len = None
         self._current_word_index = None
         self._next_word_predictability = None
-        
+
         # Neural comprehension states
         self._word_states = None  # Will hold embeddings and comprehension states
         self._global_comprehension = None  # Overall sentence understanding
         
         # Reading behavior tracking
-        self._skipped_words_indexes = None
+        self._skipped_words_indexes = None      
         self._regressed_words_indexes = None
         self._reading_sequence = None
-        
+
         # Environment parameters
         self._steps = None
         self.ep_len = 2 * Constants.MAX_SENTENCE_LENGTH
         self._terminate = None
         self._truncated = None
-        
+
         # Action space
         self._REGRESS_ACTION = 0
         self._READ_ACTION = 1
         self._SKIP_ACTION = 2
-        self._STOP_ACTION = 3
-        self.action_space = Discrete(4)
+        self._STOP_ACTION = 3    
+        self.action_space = Discrete(4)     
         
         # Observation space - now includes embedding dimensions
         hidden_size = self.transition_function.hidden_size
@@ -141,7 +141,7 @@ class SentenceReadingEnv(Env):
             sentence_idx: Optional specific sentence index for controlled testing
         """
         super().reset(seed=seed)
-        
+
         self._steps = 0
         self._terminate = False
         self._truncated = False
@@ -157,19 +157,19 @@ class SentenceReadingEnv(Env):
         # Reset reading state
         self._current_word_index = -1
         self._next_word_predictability = self._sentence_info['word_contextual_predictabilities'][0]
-        
+
         # Reset tracking
         self._skipped_words_indexes = []
         self._regressed_words_indexes = []
         self._reading_sequence = []
         
         return self._get_obs(), {}
-        
+    
     def step(self, action):
         """Take action and update neural comprehension states"""
         self._steps += 1
         reward = 0
-        
+
         if action == self._REGRESS_ACTION:
             self._word_states, self._current_word_index, action_validity = (
                 self.transition_function.update_state_regress(
@@ -181,7 +181,7 @@ class SentenceReadingEnv(Env):
                 self._regressed_words_indexes.append(self._current_word_index)
                 self._update_global_comprehension()
             reward = self.reward_function.compute_regress_reward()
-            
+        
         elif action == self._READ_ACTION:
             self._word_states, self._current_word_index, action_validity = (
                 self.transition_function.update_state_read_next_word(
@@ -193,7 +193,7 @@ class SentenceReadingEnv(Env):
             if action_validity:
                 self._update_global_comprehension()
             reward = self.reward_function.compute_read_reward()
-            
+        
         elif action == self._SKIP_ACTION:
             self._word_states, self._current_word_index, action_validity = (
                 self.transition_function.update_state_skip_next_word(
@@ -207,11 +207,11 @@ class SentenceReadingEnv(Env):
                 self._skipped_words_indexes.append(self._current_word_index)
                 self._update_global_comprehension()
             reward = self.reward_function.compute_skip_reward()
-            
+
         elif action == self._STOP_ACTION:
             self._terminate = True
             reward = self.reward_function.compute_terminate_reward(self._global_comprehension)
-            
+        
         # Update reading sequence
         self._reading_sequence.append(self._current_word_index)
         
@@ -219,13 +219,13 @@ class SentenceReadingEnv(Env):
         if self._steps >= self.ep_len:
             self._terminate = True
             self._truncated = True
-            
+        
         # Update next word predictability if not at end
         if self._current_word_index < self._sentence_len - 1:
             self._next_word_predictability = self._sentence_info['word_contextual_predictabilities'][self._current_word_index + 1]
-            
-        return self._get_obs(), reward, self._terminate, self._truncated, {}
         
+        return self._get_obs(), reward, self._terminate, self._truncated, {}
+    
     def _get_obs(self):
         """Get observation including neural states"""
         word_states_tensor = torch.zeros(Constants.MAX_SENTENCE_LENGTH, self.transition_function.hidden_size)
@@ -241,23 +241,25 @@ class SentenceReadingEnv(Env):
         }
         
     def _update_global_comprehension(self):
-        """Update global sentence comprehension state using weighted average
+        """Update global sentence comprehension state using the latest GRU state
         
-        Uses exponential weighting to:
-        1. Give more weight to recent words (recency effect)
-        2. Maintain influence of earlier context
-        3. Prevent comprehension dilution as more words are processed
+        The GRU's hidden state already maintains cumulative comprehension of all words read so far.
+        We simply use the latest state which contains the understanding of all previous words.
         """
-        valid_states = [s['comprehension'] for s in self._word_states if s is not None]
-        if valid_states:
-            # Create exponentially increasing weights for recency effect
-            weights = torch.exp(torch.linspace(0, 1, len(valid_states)))  # [1, e^0.2, e^0.4, ..., e^1]
-            # Stack states and apply weights
-            states_tensor = torch.stack(valid_states)
-            weighted_states = states_tensor * weights.unsqueeze(-1)
-            # Compute weighted average
-            self._global_comprehension = torch.sum(weighted_states, dim=0).squeeze() / weights.sum()
-            
+        # Get the latest word state
+        latest_state = None
+        for state in reversed(self._word_states):
+            if state is not None and not torch.isnan(state['comprehension']).any():
+                latest_state = state['comprehension']
+                break
+                
+        if latest_state is not None:
+            # Use the last layer's state which has processed all previous words
+            self._global_comprehension = latest_state[-1].squeeze().detach()
+        else:
+            # Initialize with zeros if no valid state found
+            self._global_comprehension = torch.zeros(self.transition_function.hidden_size)
+    
     def get_episode_logs(self):
         """Get enhanced logs including neural states"""
         # Calculate rates
@@ -278,7 +280,7 @@ class SentenceReadingEnv(Env):
             else:
                 word_comprehension_states.append(None)
                 word_difficulties.append(None)
-                
+        
         return {
             'sentence_length': self._sentence_len,
             'reading_sequence': self._reading_sequence,
@@ -298,7 +300,7 @@ class SentenceReadingEnv(Env):
 
 
 if __name__ == "__main__":
-    
+
     def print_comprehension_state(env, step, action_name, additional_word_idx=None):
         """Helper to print comprehension metrics
         Args:
@@ -472,4 +474,4 @@ if __name__ == "__main__":
         
     # Run controlled tests
     test_reading_patterns(sentence_idx=0)  # Use first sentence for consistent comparison
-
+        
