@@ -196,6 +196,10 @@ class TransitionFunction():
             
         # First handle the skipped word (current_word_idx + 1)
         skipped_word_idx = current_word_idx + 1
+        next_word_idx = skipped_word_idx + 1
+        
+        # Get the actual word embedding for uncertainty calculation
+        actual_word_embedding = self.word_embeddings[:, skipped_word_idx]
         
         # Estimate skipped word comprehension from context
         context_state = self._get_context_state(end_word_idx=skipped_word_idx)
@@ -204,29 +208,66 @@ class TransitionFunction():
             predictability=predictability
         )
         
-        # Higher uncertainty for skipped words
-        uncertainty = self._compute_uncertainty(context_state, predicted_state)
+        # Higher uncertainty for skipped words - compare predicted with actual
+        uncertainty = self._compute_uncertainty(actual_word_embedding, predicted_state)
         
         # Process predicted state through GRU to maintain consistent comprehension tracking
         predicted_expanded = predicted_state.unsqueeze(1)  # Add sequence dimension [batch_size, 1, hidden_size]
         
-        # Update comprehension with predicted state, weighted by uncertainty
-        output, hidden = self.comprehension_tracker(
-            predicted_expanded * (1 - uncertainty.squeeze()),  # Reduce input based on uncertainty
-            self.cumulative_comprehension_state
-        )
-        self.cumulative_comprehension_state = hidden  # Update cumulative state with new hidden state
+        # Reduce both the input and the previous state based on uncertainty
+        confidence = (1 - uncertainty.squeeze())
+
+        # TODO debug delete later
+        print(f"The confidence: {confidence}")
+        reduced_input = predicted_expanded * confidence
+        reduced_state = self.cumulative_comprehension_state * confidence
+
+        print(f"The reduced state: {reduced_state}")    # TODO now they are all 0s
         
-        # Update skipped word state
+        # Update comprehension with reduced state and input
+        output, hidden = self.comprehension_tracker(
+            reduced_input,
+            reduced_state
+        )
+        
+        # Apply uncertainty reduction to the new hidden state as well
+        self.cumulative_comprehension_state = hidden * confidence
+        
+        # Update skipped word state with reduced comprehension
         states[skipped_word_idx] = {
             'embedding': predicted_state.detach(),
-            'comprehension': self.cumulative_comprehension_state.detach(),  # Use GRU state instead of manual stacking
+            'comprehension': (hidden * confidence).detach(),  # Store reduced comprehension
             'difficulty': uncertainty.detach()
         }
 
-        # Now handle the word being read (current_word_idx + 2)
-        current_word_idx += 1
-        states, current_word_idx, success = self.update_state_read_next_word(states, current_word_idx, sentence_length)
+        # Now handle the word being read (next_word_idx)
+        # Get word embedding and update comprehension state
+        word_embedding = self.word_embeddings[:, next_word_idx].detach()
+        word_embedding_expanded = word_embedding.unsqueeze(1)
+        
+        # Update comprehension with actual word, starting from reduced state
+        output, hidden = self.comprehension_tracker(
+            word_embedding_expanded,
+            self.cumulative_comprehension_state  # Already reduced from skipping
+        )
+        self.cumulative_comprehension_state = hidden
+        
+        # Compute integration difficulty for read word
+        context_state = self._get_context_state(end_word_idx=next_word_idx)
+        integration_difficulty = self._compute_integration_difficulty(
+            hidden[-1].unsqueeze(0),
+            context_state.unsqueeze(1)
+        )
+        
+        # Update read word state
+        states[next_word_idx] = {
+            'embedding': word_embedding.detach(),
+            'comprehension': hidden.detach(),
+            'difficulty': integration_difficulty.detach()
+        }
+        
+        # After both states are updated, move current_word_idx
+        current_word_idx = next_word_idx
         
         return states, current_word_idx, True
         
@@ -249,8 +290,10 @@ class TransitionFunction():
         word_embedding = self.word_embeddings[:, current_word_idx].detach()
         
         # Get context including words up to AND INCLUDING where we regressed from
-        context_embeddings = self.word_embeddings[:, :regression_from_idx + 1]  # +1 to include the word we regressed from
-        context_state = context_embeddings.mean(dim=1)  # Average all context including regression point
+        # context_embeddings = self.word_embeddings[:, :regression_from_idx + 1]  # +1 to include the word we regressed from
+        # context_state = context_embeddings.mean(dim=1)  # Average all context including regression point
+        # Get context including words up to AND INCLUDING where we regressed from
+        context_state = self._get_context_state(end_word_idx=regression_from_idx+1)
         
         # Add sequence dimension for GRU input
         word_embedding_expanded = word_embedding.unsqueeze(1)  # [batch_size, 1, hidden_size]
@@ -382,37 +425,40 @@ class TransitionFunction():
         #         states[i]['difficulty'] = min(1.0, states[i]['difficulty'] + (1 - decay))
         pass    # NOTE: do not decay memory first, see whether needed for realisitic regressions.
 
-    def _compute_uncertainty(self, context_state: torch.Tensor, predicted_state: torch.Tensor) -> torch.Tensor:
+    def _compute_uncertainty(self, actual_state: torch.Tensor, predicted_state: torch.Tensor) -> torch.Tensor:
         """
-        Simple uncertainty estimation based on cosine similarity
-        between predicted state and actual word embedding.
-        Handles edge cases:
-        - Zero vectors: returns maximum uncertainty (1.0)
-        - Numerical stability: adds small epsilon to norm
+        Compute uncertainty by comparing predicted state with actual word embedding.
+        This better reflects prediction accuracy than comparing with context.
+        
+        Args:
+            actual_state: The actual word embedding we're trying to predict
+            predicted_state: Our prediction based on context
+            
+        Returns:
+            Uncertainty score in [0,1] where:
+            0 = perfect prediction
+            1 = completely different from actual
         """
         # Add small epsilon for numerical stability
         eps = 1e-8
         
         # Check for zero vectors
-        context_zero = torch.all(context_state == 0)
+        actual_zero = torch.all(actual_state == 0)
         predicted_zero = torch.all(predicted_state == 0)
         
-        if context_zero or predicted_zero:
+        if actual_zero or predicted_zero:
             # If either vector is zero, return maximum uncertainty
-            return torch.ones_like(context_state[:, :1])
+            return torch.ones_like(actual_state[:, :1])
             
         # Normalize vectors for cosine similarity with numerical stability
-        context_norm = context_state / (context_state.norm(dim=-1, keepdim=True) + eps)
+        actual_norm = actual_state / (actual_state.norm(dim=-1, keepdim=True) + eps)
         predicted_norm = predicted_state / (predicted_state.norm(dim=-1, keepdim=True) + eps)
         
         # Cosine similarity is in [-1, 1]
-        similarity = torch.sum(context_norm * predicted_norm, dim=-1)
+        similarity = torch.sum(actual_norm * predicted_norm, dim=-1)
         similarity = torch.clamp(similarity, min=-1.0, max=1.0)
 
         # Uncertainty conversion to [0, 1]
         uncertainty = (1 - similarity) / 2
-
-        # Used later as confidence weight
-        predicted_state * (1 - uncertainty.squeeze())
 
         return uncertainty.unsqueeze(-1)  # Match original shape

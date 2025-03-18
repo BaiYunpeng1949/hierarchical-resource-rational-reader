@@ -19,6 +19,42 @@ The environment uses a three-component architecture:
   - Hidden states maintain cumulative understanding
   - Each layer processes different levels of meaning
   - Shape: [num_layers=2, batch_size=1, hidden_size=768]
+- **Comprehension Measurement**:
+  - Global comprehension: Weighted average of processed word states
+  - Exponential weighting scheme:
+    - Recent words receive higher weights (recency effect)
+    - Earlier context maintains influence but with reduced weight
+    - Prevents comprehension dilution with sentence length
+  - Vector norm as comprehension strength indicator:
+    - Larger norm = stronger/more confident understanding
+    - Smaller norm = weaker/less certain understanding
+  - Cognitive plausibility:
+    - Recency effect: Aligns with human working memory, where recent information is more accessible
+    - Cumulative processing: Maintains influence of earlier context while emphasizing new information
+    - Dynamic updating: Comprehension grows with each word rather than being diluted
+    - Working memory constraints: Natural decay of older information without complete loss
+
+### Individual Differences in Reading
+- **Random GRU Initialization**:
+  - Each environment instance initializes GRU weights randomly
+  - Results in slightly different comprehension values for the same word
+  - Models individual differences in reading comprehension
+- **Cognitive Plausibility**:
+  - Different readers process the same text differently
+  - Initial mental states vary between reading sessions
+  - Base comprehension strength varies across individuals
+  - Aligns with empirical observations of reading variability
+- **Implementation Details**:
+  - Non-deterministic processing through random GRU initialization
+  - Same word can yield different comprehension values:
+    - Across different reading sessions
+    - Even with identical context and reading actions
+  - Maintains unpredictability in reading behavior
+- **Benefits**:
+  - Natural modeling of reader variability
+  - Avoids overly deterministic text processing
+  - Captures session-to-session reading variations
+  - Enables exploration of individual reading strategies
 
 ### 2. Integration Difficulty
 - **Computation**: Euclidean distance between:
@@ -37,7 +73,9 @@ The environment uses a three-component architecture:
 - **Uncertainty Estimation**:
   - Based on cosine similarity between predicted and context states
   - Range [0,1]: 0=certain, 1=uncertain
-  - Affects comprehension integration through confidence weighting
+  - Affects comprehension integration through confidence weighting:
+    - High confidence → stronger contribution to global state
+    - Low confidence → reduced impact on comprehension
 - **Dual State Update**:
   1. Skipped Word:
      - Predicted meaning from context
@@ -51,16 +89,25 @@ The environment uses a three-component architecture:
 - **Process**:
   - Returns to previous word
   - Recomputes comprehension with updated context
-  - Reduces uncertainty through re-reading
-- **Effect**: Improves integration of difficult content
+  - Strengthens representation by combining:
+    - Original word embedding
+    - Full context (including words that triggered regression)
+- **Effect**: 
+  - Improves integration of difficult content
+  - Strengthens overall comprehension through bidirectional context
+  - Increases confidence through multiple processing passes
 
 ## Implementation Details
 
 ### State Management
 - **Word States**: Track for each word:
   - Embedding: Raw word representation
-  - Comprehension: Processed understanding
+  - Comprehension: Processed understanding (GRU state)
   - Difficulty: Integration/uncertainty measure
+- **Global Comprehension**:
+  - Maintained as running average of processed states
+  - Reflects overall sentence understanding
+  - Updates dynamically with each reading action
 
 ### Context Processing
 - **Window Size**: Configurable context window
@@ -92,6 +139,7 @@ The environment uses a three-component architecture:
 - Basic uncertainty estimation
 - Limited working memory modeling
 - No explicit syntax processing
+- Unidirectional GRU (could be enhanced with bidirectional processing)
 
 ## References
 

@@ -3,10 +3,45 @@ Official codes for the computationally rational model on reading simulation. "Co
 
 ## Publications
 [publication_name](publication_link), VENUE'XX
-```
-<Bibtext>
 
-```
+## Word Skipping Mechanism
+
+### Current Implementation
+The model implements a sophisticated word skipping mechanism that reflects human reading behavior:
+
+1. **Uncertainty-based Comprehension**
+   - Compares predicted word meaning with actual word embedding
+   - Uncertainty affects comprehension at multiple levels:
+     * Reduces the input (predicted word state)
+     * Reduces the previous comprehension state
+     * Reduces the new hidden state
+   - Higher uncertainty leads to lower comprehension, reflecting reduced understanding when skipping difficult words
+
+2. **State Propagation**
+   - Reduced comprehension from skipped words affects subsequent word processing
+   - Maintains cognitive plausibility where poor understanding of skipped words impacts overall sentence comprehension
+
+### Future Enhancements: Preview Effects
+The model will be enhanced with preview effects to better simulate human reading:
+
+1. **Parafoveal Preview**
+   - First few letters of upcoming words (e.g., "com" for "comprehension")
+   - Word length information
+   - Word shape features (ascenders/descenders)
+
+2. **Prediction Mechanism**
+   - Context-based prediction combined with preview information
+   - Higher likelihood of skipping when:
+     * Word is predictable from context
+     * Preview information matches prediction
+     * Word is frequent/familiar
+
+3. **Uncertainty Calculation**
+   - Will incorporate both contextual and visual information
+   - Lower uncertainty when preview confirms predictions
+   - More realistic skipping behavior for common/predictable words
+
+This implementation aims to capture the cognitive processes involved in word skipping during natural reading, where readers make decisions based on both contextual understanding and visual preview information.
 
 ## Contact person
 [Bai Yunpeng](https://baiyunpeng1949.github.io/bai.yunpeng/)

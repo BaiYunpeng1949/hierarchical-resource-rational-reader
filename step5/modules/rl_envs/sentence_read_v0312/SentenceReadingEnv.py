@@ -134,16 +134,20 @@ class SentenceReadingEnv(Env):
             'global_comprehension': Box(low=-np.inf, high=np.inf, shape=(hidden_size,))
         })
         
-    def reset(self, seed=42, inputs=None):
-        """Reset environment and initialize neural states"""
+    def reset(self, seed=42, sentence_idx=None):
+        """Reset environment and initialize neural states
+        Args:
+            seed: Random seed for reproducibility
+            sentence_idx: Optional specific sentence index for controlled testing
+        """
         super().reset(seed=seed)
         
         self._steps = 0
         self._terminate = False
         self._truncated = False
         
-        # Get new sentence
-        self._sentence_info = self.sentences_manager.reset()
+        # Get new sentence, using specific index if provided
+        self._sentence_info = self.sentences_manager.reset(sentence_idx)
         self._sentence_len = len(self._sentence_info['words'])
         
         # Initialize neural states
@@ -237,10 +241,22 @@ class SentenceReadingEnv(Env):
         }
         
     def _update_global_comprehension(self):
-        """Update global sentence comprehension state"""
+        """Update global sentence comprehension state using weighted average
+        
+        Uses exponential weighting to:
+        1. Give more weight to recent words (recency effect)
+        2. Maintain influence of earlier context
+        3. Prevent comprehension dilution as more words are processed
+        """
         valid_states = [s['comprehension'] for s in self._word_states if s is not None]
         if valid_states:
-            self._global_comprehension = torch.mean(torch.stack(valid_states), dim=0).squeeze()
+            # Create exponentially increasing weights for recency effect
+            weights = torch.exp(torch.linspace(0, 1, len(valid_states)))  # [1, e^0.2, e^0.4, ..., e^1]
+            # Stack states and apply weights
+            states_tensor = torch.stack(valid_states)
+            weighted_states = states_tensor * weights.unsqueeze(-1)
+            # Compute weighted average
+            self._global_comprehension = torch.sum(weighted_states, dim=0).squeeze() / weights.sum()
             
     def get_episode_logs(self):
         """Get enhanced logs including neural states"""
@@ -282,23 +298,178 @@ class SentenceReadingEnv(Env):
 
 
 if __name__ == "__main__":
-
-    # Test here 
-    env = SentenceReadingEnv()
-    env.reset()
-    for i in range(10):
-        # action = env.action_space.sample()
+    
+    def print_comprehension_state(env, step, action_name, additional_word_idx=None):
+        """Helper to print comprehension metrics
+        Args:
+            env: The environment instance
+            step: Current step number
+            action_name: Name of the action (READ/SKIP/REGRESS)
+            additional_word_idx: Optional additional word index to print (for skipped words)
+        """
+        print(f"\nStep {step} - {action_name}")
+        if env._current_word_index >= 0:
+            word = env._sentence_info['words'][env._current_word_index]
+            print(f"Current word: '{word}'")
+            if env._word_states[env._current_word_index] is not None:
+                state = env._word_states[env._current_word_index]['comprehension']
+                norm = torch.norm(state[-1]).item()  # Use last layer's norm
+                difficulty = float(env._word_states[env._current_word_index]['difficulty'])
+                print(f"Current word state norm: {norm:.4f}")
+                print(f"Integration difficulty: {difficulty:.4f}")
+                
+        # For skipped words, show their predicted state too
+        if additional_word_idx is not None and additional_word_idx >= 0:
+            skipped_word = env._sentence_info['words'][additional_word_idx]
+            if env._word_states[additional_word_idx] is not None:
+                skip_state = env._word_states[additional_word_idx]['comprehension']
+                skip_norm = torch.norm(skip_state[-1]).item()
+                skip_difficulty = float(env._word_states[additional_word_idx]['difficulty'])
+                print(f"Skipped word '{skipped_word}' state norm: {skip_norm:.4f}")
+                print(f"Skipped word difficulty: {skip_difficulty:.4f}")
+                
+        print(f"Global comprehension norm: {torch.norm(torch.tensor(env._global_comprehension)).item():.4f}")
         
-        if i <= 3:
-            action = 1
-        elif i <= 8:
-            action = 2
-        else:
-            action = 0
-
-        obs, reward, terminated, truncated, info = env.step(action)
-        print(f"Action: {action}, Reward: {reward}, Terminated: {terminated}, Truncated: {truncated}")
-        # print(obs)
-        # print(info)
-        # print("-"*100)
+    def test_reading_patterns(sentence_idx=0):
+        """Compare different reading patterns on the same sentence"""
+        print("\n=== Testing Reading Patterns on Same Sentence ===")
         
+        # Test 1: Normal full reading
+        print("\n--- Test 1: Normal Full Reading ---")
+        env = SentenceReadingEnv()
+        obs = env.reset(sentence_idx=sentence_idx)
+        print(f"Sentence: {' '.join(env._sentence_info['words'])}\n")
+        
+        comprehension_history = []
+        reading_sequence = []
+        for i in range(min(8, env._sentence_len)):
+            obs, reward, term, trunc, info = env.step(env._READ_ACTION)
+            comp_norm = torch.norm(torch.tensor(env._global_comprehension)).item()
+            word_norm = torch.norm(env._word_states[i]['comprehension'][-1]).item()
+            comprehension_history.append((word_norm, comp_norm))
+            reading_sequence.append(f"Read({i}:'{env._sentence_info['words'][i]}')")
+            print_comprehension_state(env, i, "READ")
+            
+        print("\nFinal comprehension (full reading):", comprehension_history[-1][1])
+        
+        # Test 2: Reading with skips
+        print("\n--- Test 2: Reading with Skips ---")
+        env = SentenceReadingEnv()
+        obs = env.reset(sentence_idx=sentence_idx)
+        
+        # Read-Skip pattern
+        actions = [
+            (env._READ_ACTION, f"Read(0:'{env._sentence_info['words'][0]}')", None),
+            (env._READ_ACTION, f"Read(1:'{env._sentence_info['words'][1]}')", None),
+            (env._SKIP_ACTION, f"Skip(2:'{env._sentence_info['words'][2]}') & Read(3:'{env._sentence_info['words'][3]}')", 2),
+            (env._SKIP_ACTION, f"Skip(4:'{env._sentence_info['words'][4]}') & Read(5:'{env._sentence_info['words'][5]}')", 4),
+            (env._READ_ACTION, f"Read(6:'{env._sentence_info['words'][6]}')", None),
+            (env._READ_ACTION, f"Read(7:'{env._sentence_info['words'][7]}')", None),
+            (env._READ_ACTION, f"Read(8:'{env._sentence_info['words'][8]}')", None),
+            (env._READ_ACTION, f"Read(9:'{env._sentence_info['words'][9]}')", None)
+        ]
+        
+        skip_comprehension_history = []
+        skip_sequence = []
+        for i, (action, action_desc, skipped_idx) in enumerate(actions):
+            obs, reward, term, trunc, info = env.step(action)
+            comp_norm = torch.norm(torch.tensor(env._global_comprehension)).item()
+            
+            # Get current word norm
+            curr_word_norm = torch.norm(env._word_states[env._current_word_index]['comprehension'][-1]).item()
+            
+            # Get skipped word norm if applicable
+            skipped_word_norm = None
+            if skipped_idx is not None:
+                skipped_word_norm = torch.norm(env._word_states[skipped_idx]['comprehension'][-1]).item()
+            
+            skip_comprehension_history.append((curr_word_norm, skipped_word_norm, comp_norm))
+            skip_sequence.append(action_desc)
+            print_comprehension_state(env, i, "SKIP" if action == env._SKIP_ACTION else "READ", skipped_idx)
+            
+        print("\nFinal comprehension (with skips):", skip_comprehension_history[-1][2])
+        print("Skipped words:", [f"{i}:'{env._sentence_info['words'][i]}'" for i in env._skipped_words_indexes])
+        print("Total words processed:", env._current_word_index + 1)
+        
+        # Test 3: Reading with regressions
+        print("\n--- Test 3: Reading with Regressions ---")
+        env = SentenceReadingEnv()
+        obs = env.reset(sentence_idx=sentence_idx)
+        
+        # Read forward then regress pattern
+        regression_actions = [
+            (env._READ_ACTION, f"Read(0:'{env._sentence_info['words'][0]}')", None),    # Word 1
+            (env._READ_ACTION, f"Read(1:'{env._sentence_info['words'][1]}')", None),    # Word 2
+            (env._READ_ACTION, f"Read(2:'{env._sentence_info['words'][2]}')", None),    # Word 3
+            (env._READ_ACTION, f"Read(3:'{env._sentence_info['words'][3]}')", None),    # Word 4
+            (env._REGRESS_ACTION, f"Back(3→2:'{env._sentence_info['words'][3]}'→'{env._sentence_info['words'][2]}')", 2),  # Back to Word 2
+            (env._READ_ACTION, f"Read(3:'{env._sentence_info['words'][3]}')", None),    # Word 4 again
+            (env._READ_ACTION, f"Read(4:'{env._sentence_info['words'][4]}')", None),    # Word 5
+            (env._READ_ACTION, f"Read(5:'{env._sentence_info['words'][5]}')", None)     # Word 6
+        ]
+        
+        regression_comprehension_history = []
+        regression_sequence = []
+        for i, (action, action_desc, regress_idx) in enumerate(regression_actions):
+            obs, reward, term, trunc, info = env.step(action)
+            comp_norm = torch.norm(torch.tensor(env._global_comprehension)).item()
+            
+            # Get current word norm
+            curr_word_norm = torch.norm(env._word_states[env._current_word_index]['comprehension'][-1]).item()
+            
+            # Get regressed word norm if applicable
+            regress_word_norm = None
+            if regress_idx is not None:
+                regress_word_norm = torch.norm(env._word_states[regress_idx]['comprehension'][-1]).item()
+            
+            regression_comprehension_history.append((curr_word_norm, regress_word_norm, comp_norm))
+            regression_sequence.append(action_desc)
+            print_comprehension_state(env, i, "REGRESS" if action == env._REGRESS_ACTION else "READ", regress_idx)
+            
+        print("\nFinal comprehension (with regressions):", regression_comprehension_history[-1][2])
+        print("Regression points:", [f"{i}:'{env._sentence_info['words'][i]}'" for i in env._regressed_words_indexes])
+        print("Total words processed:", env._current_word_index + 1)
+        
+        # Compare comprehension patterns
+        print("\n=== Comprehension Pattern Comparison ===")
+        print("\nNormal reading:")
+        for i, (word_comp, global_comp) in enumerate(comprehension_history):
+            print(f"Step {i}: {reading_sequence[i]:30} → Word: {word_comp:.4f}, Global: {global_comp:.4f}")
+            
+        print("\nSkip reading (showing both skipped and read word comprehension):")
+        for i, (curr_comp, skip_comp, global_comp) in enumerate(skip_comprehension_history):
+            if skip_comp is not None:
+                print(f"Step {i}: {skip_sequence[i]:50} → Current: {curr_comp:.4f}, Skipped: {skip_comp:.4f}, Global: {global_comp:.4f}")
+            else:
+                print(f"Step {i}: {skip_sequence[i]:50} → Current: {curr_comp:.4f}, Global: {global_comp:.4f}")
+            
+        print("\nRegression reading:")
+        for i, (curr_comp, regress_comp, global_comp) in enumerate(regression_comprehension_history):
+            if regress_comp is not None:
+                print(f"Step {i}: {regression_sequence[i]:50} → Current: {curr_comp:.4f}, Regressed: {regress_comp:.4f}, Global: {global_comp:.4f}")
+            else:
+                print(f"Step {i}: {regression_sequence[i]:50} → Current: {curr_comp:.4f}, Global: {global_comp:.4f}")
+            
+        # Show progression comparison
+        print("\nProgression Summary:")
+        print("Normal reading progression:")
+        for i, (word_comp, global_comp) in enumerate(comprehension_history):
+            print(f"  Step {i}: Word: {word_comp:.4f}, Global: {global_comp:.4f}")
+            
+        print("\nSkip reading progression:")
+        for i, (curr_comp, skip_comp, global_comp) in enumerate(skip_comprehension_history):
+            if skip_comp is not None:
+                print(f"  Step {i}: Current: {curr_comp:.4f}, Skipped: {skip_comp:.4f}, Global: {global_comp:.4f}")
+            else:
+                print(f"  Step {i}: Current: {curr_comp:.4f}, Global: {global_comp:.4f}")
+            
+        print("\nRegression reading progression:")
+        for i, (curr_comp, regress_comp, global_comp) in enumerate(regression_comprehension_history):
+            if regress_comp is not None:
+                print(f"  Step {i}: Current: {curr_comp:.4f}, Regressed: {regress_comp:.4f}, Global: {global_comp:.4f}")
+            else:
+                print(f"  Step {i}: Current: {curr_comp:.4f}, Global: {global_comp:.4f}")
+        
+    # Run controlled tests
+    test_reading_patterns(sentence_idx=0)  # Use first sentence for consistent comparison
+

@@ -21,46 +21,40 @@ class SentencesManager():
         self._max_sent_len = max(all_lengths)
         self._min_sent_len = min(all_lengths)
 
-    def reset(self):
+    def reset(self, sentence_idx=None):
         """
-        Reset the sentences manager by sampling a new sentence.
+        Get a sentence for reading
+        Args:
+            sentence_idx: Optional specific sentence index for controlled testing
         Returns:
-            - number_of_words: Length of sampled sentence
-            - word_predictabilities: List of predictability values for each word
+            dict with sentence information including:
+            - words: list of words in the sentence
+            - word_contextual_predictabilities: list of predictability values
+            - other word-level metadata
         """
-        # Randomly sample a sentence index
-        sentence_idx = str(random.randint(0, self._num_sentences - 1))
-        sampled_sentence = self._sentences_dataset[sentence_idx]
-        
+        # Get sentence data either by index or randomly
+        if sentence_idx is not None and 0 <= sentence_idx < self._num_sentences:
+            sentence_data = self._sentences_dataset[str(sentence_idx)]
+        else:
+            random_idx = random.randint(0, self._num_sentences - 1)
+            sentence_data = self._sentences_dataset[str(random_idx)]
+            
         # Extract word-level information
-        words_metadata = sampled_sentence["words"]
-        number_of_words = len(words_metadata)
-        word_indices = [word["word_id"] for word in words_metadata]
-        words = [word["word"] for word in words_metadata]
-        clean_words = [word["word_clean"] for word in words_metadata]
-        word_lengths = [len(word["word"]) for word in words_metadata]
-        word_difficulties = [word["difficulty"] for word in words_metadata]
-        word_frequencies = [word["frequency"] for word in words_metadata]
-        word_log_frequencies = [word["log_frequency"] for word in words_metadata]
-        word_contextual_predictabilities = [word["predictability"] for word in words_metadata]
-        word_logit_contextual_predictabilities = [word["logit_predictability"] for word in words_metadata]
-
-        # forge these information into a dictionary
+        words_metadata = sentence_data["words"]
+        
+        # Format sentence information
         sentence_info = {
-            "word_indices": word_indices,
-            "words": words,
-            "clean_words": clean_words,
-            "word_lengths": word_lengths,
-            "word_difficulties": word_difficulties,
-            "word_frequencies": word_frequencies,
-            "word_log_frequencies": word_log_frequencies,
-            "word_contextual_predictabilities": word_contextual_predictabilities,
-            "word_logit_contextual_predictabilities": word_logit_contextual_predictabilities,
+            "words": [word["word"] for word in words_metadata],
+            "clean_words": [word["word_clean"] for word in words_metadata],
+            "word_indices": [word["word_id"] for word in words_metadata],
+            "word_lengths": [len(word["word"]) for word in words_metadata],
+            "word_difficulties": [word["difficulty"] for word in words_metadata],
+            "word_frequencies": [word["frequency"] for word in words_metadata],
+            "word_log_frequencies": [word["log_frequency"] for word in words_metadata],
+            "word_contextual_predictabilities": [word["predictability"] for word in words_metadata],
+            "word_logit_contextual_predictabilities": [word["logit_predictability"] for word in words_metadata],
         }
-
-        # Check if all the information are position-wise aligned
-        assert len(word_indices) == len(word_lengths) == len(word_difficulties) == len(word_frequencies) == len(word_log_frequencies) == len(word_contextual_predictabilities) == len(word_logit_contextual_predictabilities) == number_of_words
-
+        
         return sentence_info
 
 
