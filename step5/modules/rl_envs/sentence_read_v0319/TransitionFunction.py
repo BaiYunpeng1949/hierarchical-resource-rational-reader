@@ -103,8 +103,9 @@ class TransitionFunction():
 
     def _compute_integration_difficulty(self, context: list[str], word: str) -> float:
         """
-        Compute how difficult it is to integrate a word into its context.
-        Uses a masked language model to predict the word given its context.
+        Compute how difficult it is to integrate a word into its context using surprisal.
+        For BERT, we use both left and right context since it's a bidirectional model.
+        Surprisal = -log P(word | context_left, context_right), converted to difficulty score.
         
         Args:
             context: List of words before the target word
@@ -114,59 +115,55 @@ class TransitionFunction():
             float: Integration difficulty score in [0,1]
             Higher values mean the word is harder to integrate with its context
         """
-        # Prepare the input with [MASK] token and special tokens
-        masked_text = "[CLS] " + " ".join(context) + " [MASK] [SEP]"
+        # Find the current word's position in the full sentence
+        current_word_idx = len(context)
+        full_sentence = self.sentence_words  # Get the full sentence
         
-        # Tokenize the input
+        # Prepare input by replacing the target word with [MASK]
+        masked_sentence = full_sentence.copy()
+        masked_sentence[current_word_idx] = "[MASK]"
+        masked_text = "[CLS] " + " ".join(masked_sentence) + " [SEP]"
+        
+        # Tokenize the masked input
         inputs = self.tokenizer(masked_text, return_tensors="pt", padding=True, truncation=True)
         
         # Find the position of the [MASK] token
         mask_token_id = self.tokenizer.mask_token_id
         mask_position = (inputs["input_ids"][0] == mask_token_id).nonzero().item()
         
-        # Get model predictions
+        # Get model predictions at mask position
         with torch.no_grad():
             outputs = self.masked_lm_model(**inputs)
-            predictions = outputs.logits[0, mask_position]  # Get predictions for masked position
+            logits = outputs.logits[0, mask_position]  # Shape: [vocab_size]
             
         # Get the token ID for the actual word
         word_tokens = self.tokenizer(word, return_tensors="pt", padding=True, add_special_tokens=False)
         word_token_id = word_tokens["input_ids"][0, 0]  # Get first token ID
         
-        # Filter out special tokens and punctuation
-        valid_token_ids = []
-        for i in range(len(self.tokenizer)):
-            token = self.tokenizer.decode([i])
-            # Skip special tokens and single punctuation marks
-            if (token not in self.tokenizer.all_special_tokens and 
-                not (len(token) == 1 and token in '.,!?;:') and
-                not token.startswith('##')):  # Skip subword tokens
-                valid_token_ids.append(i)
+        # Compute probability of the actual word
+        probs = torch.softmax(logits, dim=0)
+        word_prob = probs[word_token_id]  # Keep as tensor
         
-        # Apply mask to filter out invalid tokens
-        mask = torch.zeros_like(predictions)
-        mask[valid_token_ids] = 1
-        filtered_predictions = predictions * mask
+        # Compute surprisal: -log P(word | context)
+        eps = 1e-10  # Small epsilon to avoid log(0)
+        surprisal = -torch.log(word_prob + eps)
         
-        # Get the probability of the actual word
-        word_prob = torch.softmax(filtered_predictions, dim=0)[word_token_id].item()
-        
-        # Convert probability to difficulty score
-        # Higher probability = easier to integrate = lower difficulty
-        difficulty = 1.0 - word_prob
+        # Convert surprisal to integration difficulty using sigmoid
+        alpha = 0.5  # Scaling factor as suggested
+        difficulty = torch.sigmoid(alpha * surprisal).item()
         
         # Add debug print
         print(f"\nDebug - Integration Difficulty Calculation:")
-        print(f"Context: {' '.join(context)}")
+        print(f"Left context: {' '.join(context)}")
         print(f"Word: {word}")
+        print(f"Right context: {' '.join(full_sentence[current_word_idx + 1:])}")
         print(f"Masked text: {masked_text}")
-        print(f"Mask position: {mask_position}")
-        print(f"Word token ID: {word_token_id}")
-        print(f"Word probability: {word_prob:.4f}")
-        print(f"Final difficulty: {difficulty:.4f}")
+        print(f"Word probability: {word_prob.item():.4f}")
+        print(f"Surprisal (-log prob): {surprisal.item():.4f}")
+        print(f"Final difficulty (sigmoid): {difficulty:.4f}")
         
-        # Get top 5 predictions for debugging (filtered)
-        top_5_probs, top_5_indices = torch.topk(torch.softmax(filtered_predictions, dim=0), 5)
+        # Get top 5 predictions for debugging
+        top_5_probs, top_5_indices = torch.topk(probs, 5)
         top_5_words = [self.tokenizer.decode([idx]) for idx in top_5_indices]
         print("\nTop 5 predicted words:")
         for word, prob in zip(top_5_words, top_5_probs):
@@ -361,38 +358,108 @@ class TransitionFunction():
 
         return uncertainty.unsqueeze(-1)
 
+    def _compute_word_predictability(self, context: list[str], target_word: str, preview_letters: int = 3) -> tuple[float, list[tuple[str, float]]]:
+        """
+        Compute predictability of a word given its context and parafoveal preview information.
+        
+        Args:
+            context: List of words before the target word
+            target_word: The actual word to predict
+            preview_letters: Number of letters visible in parafoveal preview (default 3)
+            
+        Returns:
+            tuple[float, list[tuple[str, float]]]: (predictability of target word, list of top predictions with probabilities)
+        """
+        # Prepare input text with context
+        input_text = "[CLS] " + " ".join(context) + " [SEP]"
+        
+        # Tokenize input
+        inputs = self.tokenizer(input_text, return_tensors="pt", padding=True, truncation=True)
+        
+        # Get model predictions for next word
+        with torch.no_grad():
+            outputs = self.masked_lm_model(**inputs)
+            logits = outputs.logits[0, -2]  # Take predictions at the last real token
+            
+        # Get probabilities for all words
+        probs = torch.softmax(logits, dim=0)
+        
+        # Get preview information
+        preview = target_word[:preview_letters].lower()
+        target_length = len(target_word)
+        length_tolerance = 2  # Allow words within ±2 length of target
+        
+        # Get top 100 predictions initially
+        top_k = 100
+        top_probs, top_indices = torch.topk(probs, top_k)
+        candidates = [self.tokenizer.decode([idx]).strip() for idx in top_indices]
+        
+        # Filter candidates by preview and length
+        filtered_predictions = []
+        total_filtered_prob = 0.0
+        
+        for word, prob in zip(candidates, top_probs):
+            word = word.lower().strip()
+            # Check if word starts with preview and is within length tolerance
+            if (word.startswith(preview) and 
+                abs(len(word) - target_length) <= length_tolerance):
+                filtered_predictions.append((word, prob.item()))
+                total_filtered_prob += prob.item()
+        
+        # Sort filtered predictions by probability
+        filtered_predictions.sort(key=lambda x: x[1], reverse=True)
+        
+        # Get target word probability
+        target_prob = 0.0
+        for word, prob in filtered_predictions:
+            if word.lower() == target_word.lower():
+                target_prob = prob
+                break
+        
+        # Normalize probabilities if we have any filtered predictions
+        if filtered_predictions:
+            filtered_predictions = [(w, p/total_filtered_prob) for w, p in filtered_predictions]
+            target_prob = target_prob/total_filtered_prob if target_prob > 0 else 0.0
+        
+        return target_prob, filtered_predictions[:5]  # Return top 5 filtered predictions
+
 
 if __name__ == "__main__":
     def test_integration_difficulty():
         """Test the integration difficulty calculation with different contexts"""
         transition_function = TransitionFunction()
         
-        # Test cases with different contexts
+        # Test cases with different contexts and full sentences
         test_cases = [
             {
-                "context": ["The", "cat", "is"],
-                "word": "sleeping",
-                "description": "Simple verb after 'The cat is'"
+                "sentence": ["The", "cat", "is", "sleeping", "on", "the", "mat"],
+                "word_idx": 3,
+                "description": "Simple verb 'sleeping' in normal context"
             },
             {
-                "context": ["I", "went", "to", "the"],
-                "word": "store",
-                "description": "Common noun after 'I went to the'"
+                "sentence": ["I", "went", "to", "the", "store", "to", "buy", "food"],
+                "word_idx": 4,
+                "description": "Common noun 'store' in normal context"
             },
             {
-                "context": ["The", "book", "is", "on", "the"],
-                "word": "table",
-                "description": "Common noun after 'The book is on the'"
+                "sentence": ["The", "book", "is", "on", "the", "table", "in", "the", "room"],
+                "word_idx": 5,
+                "description": "Common noun 'table' in normal context"
             },
             {
-                "context": ["She", "likes", "to"],
-                "word": "read",
-                "description": "Common verb after 'She likes to'"
+                "sentence": ["The", "book", "is", "on", "the", "understanding", "of", "physics"],
+                "word_idx": 5,
+                "description": "Incongruent word 'understanding' in spatial context"
             },
             {
-                "context": ["The", "weather", "is"],
-                "word": "nice",
-                "description": "Common adjective after 'The weather is'"
+                "sentence": ["She", "likes", "to", "read", "books", "in", "the", "library"],
+                "word_idx": 3,
+                "description": "Common verb 'read' in normal context"
+            },
+            {
+                "sentence": ["She", "likes", "to", "read", "encyclopedia", "in", "the", "library"],
+                "word_idx": 4,
+                "description": "Experimental case of 'encyclopedia' in normal context"
             }
         ]
         
@@ -400,12 +467,91 @@ if __name__ == "__main__":
         print("=" * 50)
         
         for case in test_cases:
-            difficulty = transition_function._compute_integration_difficulty(case["context"], case["word"])
+            # Initialize the sentence for this test case
+            transition_function.reset(case["sentence"])
+            
+            # Get context and word
+            word_idx = case["word_idx"]
+            context = case["sentence"][:word_idx]
+            word = case["sentence"][word_idx]
+            
+            # Calculate difficulty
+            difficulty = transition_function._compute_integration_difficulty(context, word)
+            
+            # Print results
             print(f"\nTest Case: {case['description']}")
-            print(f"Context: {' '.join(case['context'])}")
-            print(f"Word: {case['word']}")
+            print(f"Full sentence: {' '.join(case['sentence'])}")
+            print(f"Left context: {' '.join(context)}")
+            print(f"Word: {word}")
+            print(f"Right context: {' '.join(case['sentence'][word_idx + 1:])}")
             print(f"Integration Difficulty: {difficulty:.4f}")
             print("-" * 50)
     
-    # Run the test
-    test_integration_difficulty() 
+    def test_word_predictability():
+        """Test the word predictability calculation with different contexts"""
+        transition_function = TransitionFunction()
+        
+        # Test cases
+        test_cases = [
+            {
+                "sentence": ["The", "cat", "likes", "to", "sleep", "on", "the", "mat"],
+                "word_idx": 2,
+                "description": "Predicting 'likes' after 'The cat'"
+            },
+            {
+                "sentence": ["She", "went", "to", "the", "store", "to", "buy", "food"],
+                "word_idx": 4,
+                "description": "Predicting 'store' after 'She went to the'"
+            },
+            {
+                "sentence": ["The", "book", "is", "interesting", "and", "fun", "to", "read"],
+                "word_idx": 3,
+                "description": "Predicting 'interesting' after 'The book is'"
+            },
+            {
+                "sentence": ["I", "like", "to", "read", "books", "in", "the", "library"],
+                "word_idx": 3,
+                "description": "Predicting 'read' after 'I like to'"
+            }
+        ]
+        
+        print("\nTesting Word Predictability Calculation:")
+        print("=" * 70)
+        
+        for case in test_cases:
+            # Initialize the sentence
+            transition_function.reset(case["sentence"])
+            
+            # Get context and target word
+            word_idx = case["word_idx"]
+            context = case["sentence"][:word_idx]
+            target_word = case["sentence"][word_idx]
+            
+            # Get preview letters (first 3)
+            preview_letters = target_word[:3].lower()
+            
+            # Calculate predictability
+            predictability, top_predictions = transition_function._compute_word_predictability(
+                context, 
+                target_word
+            )
+            
+            # Print results
+            print(f"\nTest Case: {case['description']}")
+            print(f"Full sentence: {' '.join(case['sentence'])}")
+            print(f"Context: {' '.join(context)}")
+            print(f"Target word: {target_word}")
+            print(f"Preview letters: {preview_letters}")
+            print(f"Word length: {len(target_word)}")
+            print(f"Predictability: {predictability:.4f}")
+            print("\nTop 5 predictions (with preview filter):")
+            for word, prob in top_predictions:
+                print(f"  {word}: {prob:.4f}")
+            print("-" * 70)
+    
+    # Run both tests
+    print("\nRunning integration difficulty test...")
+    test_integration_difficulty()
+    
+    print("\nRunning word predictability test...")
+    test_word_predictability() 
