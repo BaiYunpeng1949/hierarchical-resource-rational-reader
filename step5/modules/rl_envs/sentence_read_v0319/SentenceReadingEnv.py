@@ -17,7 +17,7 @@ from . import Constants
 class SentenceReadingEnv(Env):
     def __init__(self):
         """
-        Create on 13 March 2025.
+        Create on 19 March 2025.
         This is the environment for the RL-based intermediate level -- sentence-level control agent: 
             it controls, word skippings, word revisits, and when to stop reading in a given sentence
         
@@ -90,7 +90,7 @@ class SentenceReadingEnv(Env):
             self._config = yaml.load(f, Loader=yaml.FullLoader)
         self._mode = self._config["rl"]["mode"]
         
-        print(f"Sentence Reading Environment V0312 -- Deploying in {self._mode} mode with neural comprehension tracking")
+        print(f"Sentence Reading Environment V0319 -- Deploying in {self._mode} mode with neural comprehension tracking")
 
         # Initialize components
         self.sentences_manager = SentencesManager()

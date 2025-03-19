@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from transformers import AutoModel, AutoTokenizer
+from transformers import AutoModel, AutoTokenizer, AutoModelForMaskedLM
 from . import Constants
 
 
@@ -19,23 +19,20 @@ class TransitionFunction():
         # Load language model and tokenizer
         self.model_name = Constants.LANGUAGE_MODEL_NAME  # or any other suitable model
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        
+        # Use AutoModel for embeddings and AutoModelForMaskedLM for masked predictions
         self.language_model = AutoModel.from_pretrained(self.model_name)
+        self.masked_lm_model = AutoModelForMaskedLM.from_pretrained(self.model_name)
+        
         self.hidden_size = self.language_model.config.hidden_size  # Usually 768 for bert-base-uncased
         self.batch_size = 1 
         self.num_gru_layers = 2  # Number of GRU layers
         
         # Comprehension tracking parameters
-        self._context_size = Constants.CONTEXT_SIZE  # NOTE: this is where the STM takes effect, but might just use prepositions instead of simple words, do this later when necessary.
+        self._context_size = Constants.CONTEXT_SIZE  # NOTE: this is where the STM takes effect
         self._integration_threshold = 0.7
         
         # Neural components for comprehension tracking
-        # Input: each word's embedding
-        # Hidden state: maintains cumulative understanding of all words read so far
-        # Each layer captures different levels of meaning:
-        # - Layer 1: local word relationships and immediate context
-        # - Layer 2: higher-level sentence meaning and global context
-        # Objective: to track the cumulative understanding of the sentence as we read, 
-        #   Represents deep understanding of sentence structure. Maintains memory of how words relate to each other
         self.cumulative_comprehension_tracker = nn.GRU(
             input_size=self.hidden_size,    
             hidden_size=self.hidden_size,
@@ -43,16 +40,7 @@ class TransitionFunction():
             batch_first=True
         )
         
-        self._at_that_moment_comprehension_for_each_word_log: Dict[int, torch.Tensor] = {}
-        # Comment out the neural network approach
-        """
-        self.uncertainty_estimator = nn.Sequential(
-            nn.Linear(self.hidden_size * 2, self.hidden_size),
-            nn.ReLU(),
-            nn.Linear(self.hidden_size, 1),
-            nn.Sigmoid()
-        )
-        """
+        self._at_that_moment_comprehension_for_each_word_log = {}
 
     def reset(self, sentence_words: list[str]) -> list[dict]:
         """Initialize comprehension state for new sentence"""
@@ -70,13 +58,10 @@ class TransitionFunction():
         )
         
         # Store full comprehension potential for each word
-        # NOTE definition: full_comprehension_states[i] is the full comprehension potential of the i-th word
-        #   which is the cumulative understanding of the sentence considering all previous words
         self.all_words_full_comprehension_states = [None] * len(sentence_words)
         self.word_states = [None] * len(sentence_words)
         
         # Calculate full comprehension potential for each word in sequence
-        # This represents each word's contextual understanding considering all previous words
         temp_comprehension_state = torch.zeros_like(self.cumulative_comprehension_state)
         
         for word_idx in range(len(sentence_words)):
@@ -86,7 +71,7 @@ class TransitionFunction():
             # Process through GRU with accumulated context
             output, hidden = self.cumulative_comprehension_tracker(
                 word_embedding_expanded,
-                temp_comprehension_state  # Use accumulated state for context
+                temp_comprehension_state
             )
             
             # Store this word's full comprehension (with context)
@@ -99,31 +84,96 @@ class TransitionFunction():
 
     def _get_word_embeddings(self, words: list[str]) -> torch.Tensor:
         """Get contextual embeddings for each word by averaging over subword tokens"""
-        # Tokenize with offset mapping to track which tokens belong to which word
         encoding = self.tokenizer(words, return_tensors="pt", padding=True, return_offsets_mapping=True)
         
         with torch.no_grad():
             outputs = self.language_model(**{k: v for k, v in encoding.items() if k in ['input_ids', 'attention_mask']})
             
-        # Get the hidden states
-        hidden_states = outputs.last_hidden_state  # Shape: [batch_size, sequence_length, hidden_size]
-        
-        # Initialize tensor to store word-level embeddings
+        hidden_states = outputs.last_hidden_state
         word_embeddings = torch.zeros(1, len(words), self.hidden_size)
         
-        # Get word IDs using the encoding object
-        word_ids = encoding.word_ids(0)  # 0 is the batch index
+        word_ids = encoding.word_ids(0)
         
-        # Average embeddings for subwords belonging to the same word
         for word_idx in range(len(words)):
-            # Find all token positions for this word
             token_positions = [i for i, wid in enumerate(word_ids) if wid == word_idx]
             if token_positions:
-                # Average embeddings of subwords
                 word_embeddings[0, word_idx] = hidden_states[0, token_positions].mean(dim=0)
                 
         return word_embeddings
+
+    def _compute_integration_difficulty(self, context: list[str], word: str) -> float:
+        """
+        Compute how difficult it is to integrate a word into its context.
+        Uses a masked language model to predict the word given its context.
         
+        Args:
+            context: List of words before the target word
+            word: The target word to evaluate
+            
+        Returns:
+            float: Integration difficulty score in [0,1]
+            Higher values mean the word is harder to integrate with its context
+        """
+        # Prepare the input with [MASK] token and special tokens
+        masked_text = "[CLS] " + " ".join(context) + " [MASK] [SEP]"
+        
+        # Tokenize the input
+        inputs = self.tokenizer(masked_text, return_tensors="pt", padding=True, truncation=True)
+        
+        # Find the position of the [MASK] token
+        mask_token_id = self.tokenizer.mask_token_id
+        mask_position = (inputs["input_ids"][0] == mask_token_id).nonzero().item()
+        
+        # Get model predictions
+        with torch.no_grad():
+            outputs = self.masked_lm_model(**inputs)
+            predictions = outputs.logits[0, mask_position]  # Get predictions for masked position
+            
+        # Get the token ID for the actual word
+        word_tokens = self.tokenizer(word, return_tensors="pt", padding=True, add_special_tokens=False)
+        word_token_id = word_tokens["input_ids"][0, 0]  # Get first token ID
+        
+        # Filter out special tokens and punctuation
+        valid_token_ids = []
+        for i in range(len(self.tokenizer)):
+            token = self.tokenizer.decode([i])
+            # Skip special tokens and single punctuation marks
+            if (token not in self.tokenizer.all_special_tokens and 
+                not (len(token) == 1 and token in '.,!?;:') and
+                not token.startswith('##')):  # Skip subword tokens
+                valid_token_ids.append(i)
+        
+        # Apply mask to filter out invalid tokens
+        mask = torch.zeros_like(predictions)
+        mask[valid_token_ids] = 1
+        filtered_predictions = predictions * mask
+        
+        # Get the probability of the actual word
+        word_prob = torch.softmax(filtered_predictions, dim=0)[word_token_id].item()
+        
+        # Convert probability to difficulty score
+        # Higher probability = easier to integrate = lower difficulty
+        difficulty = 1.0 - word_prob
+        
+        # Add debug print
+        print(f"\nDebug - Integration Difficulty Calculation:")
+        print(f"Context: {' '.join(context)}")
+        print(f"Word: {word}")
+        print(f"Masked text: {masked_text}")
+        print(f"Mask position: {mask_position}")
+        print(f"Word token ID: {word_token_id}")
+        print(f"Word probability: {word_prob:.4f}")
+        print(f"Final difficulty: {difficulty:.4f}")
+        
+        # Get top 5 predictions for debugging (filtered)
+        top_5_probs, top_5_indices = torch.topk(torch.softmax(filtered_predictions, dim=0), 5)
+        top_5_words = [self.tokenizer.decode([idx]) for idx in top_5_indices]
+        print("\nTop 5 predicted words:")
+        for word, prob in zip(top_5_words, top_5_probs):
+            print(f"{word}: {prob:.4f}")
+        
+        return difficulty
+
     def update_state_read_next_word(self, states: list[dict], current_word_idx: int, sentence_length: int) -> tuple[list[dict], int, bool]:
         """Update comprehension state when reading next word."""
         if current_word_idx >= sentence_length - 1:
@@ -135,20 +185,15 @@ class TransitionFunction():
         word_embedding = self.word_embeddings[:, current_word_idx].detach()
         full_comprehension = self.all_words_full_comprehension_states[current_word_idx]
         
-        # Get context state (comprehension without current word)
-        context_state = self._get_context_state(end_word_idx=current_word_idx)
+        # Get context words for integration difficulty calculation
+        context_words = self.sentence_words[max(0, current_word_idx - self._context_size):current_word_idx]
+        current_word = self.sentence_words[current_word_idx]
         
         # Compute integration difficulty
-        integration_difficulty = self._compute_integration_difficulty(
-            full_comprehension[-1].unsqueeze(0),
-            context_state.unsqueeze(1)
-        )
+        integration_difficulty = self._compute_integration_difficulty(context_words, current_word)
         
         # Apply integration difficulty to the word embedding before processing
-        # This means difficult words have less impact on the comprehension state
-        # Ensure integration_difficulty is a scalar
-        difficulty_scalar = float(integration_difficulty.item())
-        diminished_word_embedding = word_embedding * (1 - difficulty_scalar)
+        diminished_word_embedding = word_embedding * (1 - integration_difficulty)
         
         # Update cumulative comprehension state with diminished word
         diminished_word_expanded = diminished_word_embedding.unsqueeze(1)
@@ -161,8 +206,8 @@ class TransitionFunction():
         # Store state with actual comprehension after processing
         states[current_word_idx] = {
             'embedding': word_embedding.detach(),
-            'comprehension': hidden.detach(),  # Store actual comprehension after processing
-            'difficulty': torch.tensor(difficulty_scalar)
+            'comprehension': hidden.detach(),
+            'difficulty': torch.tensor(integration_difficulty)
         }
 
         # Store the actual comprehension for this word
@@ -183,14 +228,8 @@ class TransitionFunction():
         predicted_word_embedding = self._predict_skipped_word_embedding(skipped_word_idx, predictability)
         uncertainty = self._compute_uncertainty(actual_word_embedding, predicted_word_embedding)
 
-        # TODO debug delete later
-        print(f"The uncertainty is: {uncertainty.item()}")
-
         # Apply uncertainty to the word embedding
         diminished_word_embedding = predicted_word_embedding * (1 - uncertainty.item())
-
-        # TODO: debug delete later
-        print(f"The diminished word embedding for word skipping is: {diminished_word_embedding}")
 
         # Update cumulative comprehension state with diminished word
         output, hidden = self.cumulative_comprehension_tracker(
@@ -209,25 +248,20 @@ class TransitionFunction():
         # Store the actual comprehension for this word
         self._at_that_moment_comprehension_for_each_word_log[skipped_word_idx] = hidden.detach()
         
-        ######################################################################
         # Handle next word (similar to read_next_word)
         current_word_idx = next_word_idx
         word_embedding = self.word_embeddings[:, current_word_idx].detach()
         full_comprehension = self.all_words_full_comprehension_states[current_word_idx]
         
+        # Get context words for integration difficulty calculation
+        context_words = self.sentence_words[max(0, current_word_idx - self._context_size):current_word_idx]
+        current_word = self.sentence_words[current_word_idx]
+        
         # Compute integration difficulty
-        context_state = self._get_context_state(end_word_idx=current_word_idx)
-        integration_difficulty = self._compute_integration_difficulty(
-            full_comprehension[-1].unsqueeze(0),
-            context_state.unsqueeze(1)
-        )
-
-        # TODO debug delete later
-        print(f"The integration difficulty is: {integration_difficulty.item()}")
+        integration_difficulty = self._compute_integration_difficulty(context_words, current_word)
         
         # Apply integration difficulty to the word embedding before processing
-        # This means difficult words have less impact on the comprehension state
-        diminished_word_embedding = word_embedding * (1 - integration_difficulty.item())
+        diminished_word_embedding = word_embedding * (1 - integration_difficulty)
         
         # Update cumulative comprehension state with diminished word
         diminished_word_expanded = diminished_word_embedding.unsqueeze(1)
@@ -240,8 +274,8 @@ class TransitionFunction():
         # Store state with actual comprehension after processing
         states[current_word_idx] = {
             'embedding': word_embedding.detach(),
-            'comprehension': hidden.detach(),  # Store actual comprehension after processing
-            'difficulty': integration_difficulty.detach()
+            'comprehension': hidden.detach(),
+            'difficulty': torch.tensor(integration_difficulty)
         }
 
         # Store the actual comprehension for this word
@@ -290,118 +324,21 @@ class TransitionFunction():
                 self._at_that_moment_comprehension_for_each_word_log[i] = None
         
         return states, current_word_idx, True
-        
-    def _get_context_state(self, end_word_idx: int) -> torch.Tensor:
-        """
-        Get contextual state from previous words (mean of previous words embeddings)
-        end_word_idx: the index of the last word to include in the context
-        Raw word embeddings averaged together, Represents surface-level context from nearby words, 
-        No processing through GRU/comprehension
-        NOTE: need to verify whether the integration needs comprehension here later.
-        """
-        context_start_word_idx = max(0, end_word_idx - self._context_size)
-        
-        # Handle empty context case (first word)
-        if end_word_idx == 0:
-            return torch.zeros_like(self.word_embeddings[:, 0])
-            
-        context_embeddings = self.word_embeddings[:, context_start_word_idx:end_word_idx]
-        mean_context_embedding = context_embeddings.mean(dim=1)
 
-        return mean_context_embedding
-        
-    def _compute_integration_difficulty(self, current: torch.Tensor, context: torch.Tensor) -> torch.Tensor:
-        """
-        Compute difficulty of integrating new information by measuring how much the word changes our understanding
-        
-        Args:
-            current: The current word's comprehension state (with this word)
-            context: The context state (without this word)
-            
-        Returns:
-            Normalized difficulty score in [0,1] where:
-            0 = easy to integrate (word fits naturally with context)
-            1 = hard to integrate (word significantly changes understanding)
-        """
-        # For first word or empty context, return medium difficulty
-        if torch.all(context == 0):
-            return torch.tensor([[0.5]])
-            
-        # Compute how much the word changes our understanding
-        # Larger change = harder to integrate
-        raw_distance = torch.norm(current - context, dim=-1)
-        
-        # Normalize using sigmoid with scaling factor
-        # The scaling factor (0.5) controls how sensitive the difficulty is to change
-        # Larger values make it more sensitive to small changes
-        # Smaller values make it less sensitive to small changes
-        normalized_difficulty = torch.sigmoid(raw_distance * 0.5)
-        
-        return normalized_difficulty.unsqueeze(-1)  # Ensure correct shape
-        
     def _predict_skipped_word_embedding(self, skipped_word_idx: int, predictability: float) -> torch.Tensor:
-        """
-        TODO: Enhanced word prediction with parafoveal preview -> realize this later, remove the predictability
-        Future improvements:
-        1. Parafoveal Information:
-            - First n letters of skipped word
-            - Estimated word length
-            - Word shape (ascenders/descenders)
-        
-        2. Implementation Plan:
-            a) Create preview representation:
-               - Encode available letters using BERT subword tokens
-               - Encode length as positional feature
-               - Encode word shape features
-            
-            b) Enhanced prediction:
-               - Combine context prediction with preview info
-               - Weight by preview clarity/confidence
-               - Consider frequency effects for words matching preview
-        
-        Example:
-        If skipping "house" with preview "ho__e" (length=5):
-        - Context suggests: home, horse, house
-        - Preview "ho__e" filters candidates
-        - Length=5 further constrains
-        - Frequency effects favor "house"
-        """
-        # Current implementation (context-based only)
+        """Predict embedding for skipped word based on context."""
         context_window = self.word_embeddings[:, max(0, skipped_word_idx-self._context_size):skipped_word_idx]
         
         # Get weights for context window according to distance from skipped word
         weights = torch.softmax(torch.arange(context_window.size(1), dtype=torch.float), dim=0)
-        weights = weights.unsqueeze(0).unsqueeze(-1)    # Reshape to [1, context_size, 1]
+        weights = weights.unsqueeze(0).unsqueeze(-1)
         
-        # Predict the next word's embedding only based on context distance weights
+        # Predict the next word's embedding based on context distance weights
         predicted_embedding = (context_window * weights).sum(dim=1)
         return predicted_embedding
-        
-    def _apply_memory_decay(self, states: list[dict], current_idx: int):
-        """Apply decay to previous states based on distance"""
-        # for i in range(current_idx):
-        #     if states[i] is not None:
-        #         distance = current_idx - i
-        #         decay = 0.9 ** distance
-        #         states[i]['comprehension'] *= decay
-        #         states[i]['difficulty'] = min(1.0, states[i]['difficulty'] + (1 - decay))
-        pass    # NOTE: do not decay memory first, see whether needed for realisitic regressions.
 
     def _compute_uncertainty(self, actual_state: torch.Tensor, predicted_state: torch.Tensor) -> torch.Tensor:
-        """
-        Compute uncertainty by comparing predicted state with actual word embedding.
-        This better reflects prediction accuracy than comparing with context.
-        
-        Args:
-            actual_state: The actual word embedding we're trying to predict
-            predicted_state: Our prediction based on context
-            
-        Returns:
-            Uncertainty score in [0,1] where:
-            0 = perfect prediction
-            1 = completely different from actual
-        """
-        # Add small epsilon for numerical stability
+        """Compute uncertainty by comparing predicted state with actual word embedding."""
         eps = 1e-8
         
         # Check for zero vectors
@@ -409,7 +346,6 @@ class TransitionFunction():
         predicted_zero = torch.all(predicted_state == 0)
         
         if actual_zero or predicted_zero:
-            # If either vector is zero, return maximum uncertainty
             return torch.ones_like(actual_state[:, :1])
             
         # Normalize vectors for cosine similarity with numerical stability
@@ -423,4 +359,53 @@ class TransitionFunction():
         # Uncertainty conversion to [0, 1]
         uncertainty = (1 - similarity) / 2
 
-        return uncertainty.unsqueeze(-1)  # Match original shape
+        return uncertainty.unsqueeze(-1)
+
+
+if __name__ == "__main__":
+    def test_integration_difficulty():
+        """Test the integration difficulty calculation with different contexts"""
+        transition_function = TransitionFunction()
+        
+        # Test cases with different contexts
+        test_cases = [
+            {
+                "context": ["The", "cat", "is"],
+                "word": "sleeping",
+                "description": "Simple verb after 'The cat is'"
+            },
+            {
+                "context": ["I", "went", "to", "the"],
+                "word": "store",
+                "description": "Common noun after 'I went to the'"
+            },
+            {
+                "context": ["The", "book", "is", "on", "the"],
+                "word": "table",
+                "description": "Common noun after 'The book is on the'"
+            },
+            {
+                "context": ["She", "likes", "to"],
+                "word": "read",
+                "description": "Common verb after 'She likes to'"
+            },
+            {
+                "context": ["The", "weather", "is"],
+                "word": "nice",
+                "description": "Common adjective after 'The weather is'"
+            }
+        ]
+        
+        print("\nTesting Integration Difficulty Calculation:")
+        print("=" * 50)
+        
+        for case in test_cases:
+            difficulty = transition_function._compute_integration_difficulty(case["context"], case["word"])
+            print(f"\nTest Case: {case['description']}")
+            print(f"Context: {' '.join(case['context'])}")
+            print(f"Word: {case['word']}")
+            print(f"Integration Difficulty: {difficulty:.4f}")
+            print("-" * 50)
+    
+    # Run the test
+    test_integration_difficulty() 
