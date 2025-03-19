@@ -24,7 +24,9 @@ def compute_integration_difficulty(tokenizer, model, context: list[str], word: s
         tuple[float, float, float]: (surprisal, difficulty, word_probability)
         - surprisal: -log P(word | context), measures unexpectedness
         - difficulty: Sigmoid-scaled surprisal, normalized to [0,1]
-        - word_probability: P(word | context), measures expectedness [0,1]
+        - word_integration_probability: P(word | context), measures expectedness [0,1]
+
+    NOTE: check when doing the predictability whether needs to control the size of the context (STM size around 4)
     """
     # Prepare input by replacing the target word with [MASK]
     masked_sentence = full_sentence.copy()

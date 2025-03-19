@@ -153,19 +153,19 @@ class TransitionFunction():
         difficulty = torch.sigmoid(alpha * surprisal).item()
         
         # Add debug print
-        print(f"\nDebug - Integration Difficulty Calculation:")
-        print(f"Left context: {' '.join(context)}")
-        print(f"Word: {word}")
-        print(f"Right context: {' '.join(full_sentence[current_word_idx + 1:])}")
-        print(f"Masked text: {masked_text}")
-        print(f"Word probability: {word_prob.item():.4f}")
-        print(f"Surprisal (-log prob): {surprisal.item():.4f}")
-        print(f"Final difficulty (sigmoid): {difficulty:.4f}")
+        # print(f"\nDebug - Integration Difficulty Calculation:")
+        # print(f"Left context: {' '.join(context)}")
+        # print(f"Word: {word}")
+        # print(f"Right context: {' '.join(full_sentence[current_word_idx + 1:])}")
+        # print(f"Masked text: {masked_text}")
+        # print(f"Word probability: {word_prob.item():.4f}")
+        # print(f"Surprisal (-log prob): {surprisal.item():.4f}")
+        # print(f"Final difficulty (sigmoid): {difficulty:.4f}")
         
         # Get top 5 predictions for debugging
         top_5_probs, top_5_indices = torch.topk(probs, 5)
         top_5_words = [self.tokenizer.decode([idx]) for idx in top_5_indices]
-        print("\nTop 5 predicted words:")
+        # print("\nTop 5 predicted words:")
         for word, prob in zip(top_5_words, top_5_probs):
             print(f"{word}: {prob:.4f}")
         
@@ -537,6 +537,413 @@ class TransitionFunction():
         
         return predictability, predicted_word, filtered_predictions[:5]  # Return top 5 filtered predictions
 
+    def _compute_semantic_difference(self, original_sentence: list[str], perceived_sentence: list[str]) -> dict:
+        """
+        Compute semantic difference between original and perceived sentences using BERT embeddings.
+        Now considers word importance, meaning changes, and semantic relationships.
+        
+        Args:
+            original_sentence: List of words in the original sentence
+            perceived_sentence: List of words in the perceived sentence
+            
+        Returns:
+            dict: Dictionary containing various semantic difference metrics
+        """
+        # Convert sentences to text
+        original_text = " ".join(original_sentence)
+        perceived_text = " ".join(perceived_sentence)
+        
+        # Get embeddings for both sentences
+        original_encoding = self.tokenizer(original_text, return_tensors="pt", padding=True, truncation=True)
+        perceived_encoding = self.tokenizer(perceived_text, return_tensors="pt", padding=True, truncation=True)
+        
+        with torch.no_grad():
+            original_outputs = self.language_model(**original_encoding)
+            perceived_outputs = self.language_model(**perceived_encoding)
+        
+        # Get [CLS] token embeddings (sentence-level representation)
+        original_embedding = original_outputs.last_hidden_state[0, 0]  # [CLS] token
+        perceived_embedding = perceived_outputs.last_hidden_state[0, 0]  # [CLS] token
+        
+        # Compute cosine similarity between embeddings
+        similarity = torch.nn.functional.cosine_similarity(
+            original_embedding.unsqueeze(0),
+            perceived_embedding.unsqueeze(0)
+        ).item()
+        
+        # Define word importance weights (nouns and verbs are more important)
+        word_importance = {
+            'noun': 1.0,
+            'verb': 1.0,
+            'adjective': 0.8,
+            'adverb': 0.7,
+            'article': 0.3,
+            'preposition': 0.4,
+            'pronoun': 0.5,
+            'conjunction': 0.3
+        }
+        
+        # Compute word-level differences with importance weights
+        word_differences = []
+        total_importance = 0
+        weighted_similarity = 0
+        
+        for i, (orig_word, perc_word) in enumerate(zip(original_sentence, perceived_sentence)):
+            if orig_word.lower() != perc_word.lower():
+                # Get word embeddings
+                orig_encoding = self.tokenizer(orig_word, return_tensors="pt", padding=True, add_special_tokens=False)
+                perc_encoding = self.tokenizer(perc_word, return_tensors="pt", padding=True, add_special_tokens=False)
+                
+                with torch.no_grad():
+                    orig_outputs = self.language_model(**orig_encoding)
+                    perc_outputs = self.language_model(**perc_encoding)
+                
+                # Get word embeddings (average over subword tokens)
+                orig_embedding = orig_outputs.last_hidden_state[0].mean(dim=0)
+                perc_embedding = perc_outputs.last_hidden_state[0].mean(dim=0)
+                
+                # Compute word-level similarity
+                word_similarity = torch.nn.functional.cosine_similarity(
+                    orig_embedding.unsqueeze(0),
+                    perc_embedding.unsqueeze(0)
+                ).item()
+                
+                # Determine word type and importance
+                word_type = 'noun' if i in [1, 5] else 'verb' if i == 2 else 'article' if i in [0, 4] else 'preposition' if i == 3 else 'other'
+                importance = word_importance.get(word_type, 0.5)
+                
+                # Update weighted metrics
+                total_importance += importance
+                weighted_similarity += word_similarity * importance
+                
+                word_differences.append({
+                    "position": i,
+                    "original": orig_word,
+                    "perceived": perc_word,
+                    "similarity": word_similarity,
+                    "importance": importance,
+                    "type": word_type
+                })
+        
+        # Compute weighted semantic preservation
+        if total_importance > 0:
+            weighted_semantic_preservation = weighted_similarity / total_importance
+        else:
+            weighted_semantic_preservation = 0.0
+        
+        # Analyze meaning changes
+        meaning_changes = []
+        for diff in word_differences:
+            if diff['type'] == 'noun' and diff['similarity'] < 0.5:
+                meaning_changes.append("Major object/subject change")
+            elif diff['type'] == 'verb' and diff['similarity'] < 0.5:
+                meaning_changes.append("Major action change")
+            elif diff['type'] == 'article' and diff['original'] != diff['perceived']:
+                meaning_changes.append("Specificity change")
+        
+        # Compute final semantic preservation score
+        # Consider both sentence-level similarity and weighted word-level similarity
+        final_semantic_preservation = (similarity + weighted_semantic_preservation) / 2
+        
+        return {
+            "sentence_similarity": similarity,
+            "semantic_preservation": final_semantic_preservation,
+            "weighted_semantic_preservation": weighted_semantic_preservation,
+            "word_differences": word_differences,
+            "num_differences": len(word_differences),
+            "meaning_changes": meaning_changes,
+            "total_importance": total_importance
+        }
+
+    def _compute_sentence_comprehension(self, states: list[dict]) -> dict:
+        """
+        Compute sentence-level comprehension by aggregating word-level comprehension states.
+        Uses multiple aggregation methods to provide different perspectives on comprehension.
+        
+        Args:
+            states: List of word states, each containing 'embedding', 'comprehension', and 'difficulty'
+            
+        Returns:
+            dict: Dictionary containing various sentence-level comprehension metrics
+        """
+        # Extract comprehension states and difficulties
+        comprehension_states = [state['comprehension'] for state in states]
+        difficulties = [state['difficulty'].item() for state in states]
+        
+        # Convert to tensor for computation
+        comprehension_tensor = torch.stack(comprehension_states)
+        difficulties_tensor = torch.tensor(difficulties)
+        
+        # 1. Simple average of comprehension states
+        simple_avg = comprehension_tensor.mean(dim=0)
+        
+        # 2. Weighted average based on integration difficulty (inverse of difficulty)
+        weights = 1 - difficulties_tensor
+        weights = weights / weights.sum()  # Normalize weights
+        weighted_avg = (comprehension_tensor * weights.unsqueeze(-1)).sum(dim=0)
+        
+        # 3. Compute comprehension confidence (how confident we are in our understanding)
+        comprehension_confidence = 1 - torch.mean(difficulties_tensor)
+        
+        # 4. Compute comprehension stability (how consistent the comprehension is across words)
+        comprehension_stability = 1 - torch.std(difficulties_tensor)
+        
+        # 5. Compute semantic coherence (how well the words fit together)
+        word_embeddings = torch.stack([state['embedding'] for state in states])
+        semantic_coherence = torch.mean(torch.nn.functional.cosine_similarity(
+            word_embeddings[:-1],
+            word_embeddings[1:],
+            dim=-1
+        ))
+        
+        return {
+            "simple_average": simple_avg,
+            "weighted_average": weighted_avg,
+            "comprehension_confidence": comprehension_confidence.item(),
+            "comprehension_stability": comprehension_stability.item(),
+            "semantic_coherence": semantic_coherence.item(),
+            "average_difficulty": torch.mean(difficulties_tensor).item(),
+            "max_difficulty": torch.max(difficulties_tensor).item(),
+            "min_difficulty": torch.min(difficulties_tensor).item()
+        }
+
+    def _compute_cloze_comprehension(self, states: list[dict], original_sentence: list[str]) -> dict:
+        """
+        Evaluate sentence comprehension using cloze-test style word recovery.
+        For each word, test if the model can recover it from its comprehension state.
+        
+        Args:
+            states: List of word states containing comprehension information
+            original_sentence: List of original words
+            
+        Returns:
+            dict: Dictionary containing cloze-test comprehension metrics
+        """
+        word_recovery_scores = []
+        word_importance_weights = []
+        word_analyses = []  # Store analyses for all words
+        
+        # Define word importance weights
+        word_importance = {
+            'noun': 1.0,
+            'verb': 1.0,
+            'adjective': 0.8,
+            'adverb': 0.7,
+            'article': 0.3,
+            'preposition': 0.4,
+            'pronoun': 0.5,
+            'conjunction': 0.3
+        }
+        
+        for i, (state, orig_word) in enumerate(zip(states, original_sentence)):
+            # Get comprehension state for this word
+            comprehension_state = state['comprehension']
+            
+            # Create masked input with [MASK] at current position
+            masked_sentence = original_sentence.copy()
+            masked_sentence[i] = "[MASK]"
+            masked_text = " ".join(masked_sentence)
+            
+            # Get model predictions for masked position
+            inputs = self.tokenizer(masked_text, return_tensors="pt", padding=True, truncation=True)
+            mask_token_id = self.tokenizer.mask_token_id
+            mask_position = (inputs["input_ids"][0] == mask_token_id).nonzero().item()
+            
+            with torch.no_grad():
+                outputs = self.masked_lm_model(**inputs)
+                logits = outputs.logits[0, mask_position]
+                probs = torch.softmax(logits, dim=0)
+            
+            # Get probability of original word
+            word_tokens = self.tokenizer(orig_word, return_tensors="pt", padding=True, add_special_tokens=False)
+            word_token_id = word_tokens["input_ids"][0, 0]
+            word_prob = probs[word_token_id].item()
+            
+            # Determine word type and importance
+            word_type = 'noun' if i in [1, 5] else 'verb' if i == 2 else 'article' if i in [0, 4] else 'preposition' if i == 3 else 'other'
+            importance = word_importance.get(word_type, 0.5)
+            
+            # Store recovery score and importance
+            word_recovery_scores.append(word_prob)
+            word_importance_weights.append(importance)
+            
+            # Get top 5 predictions for analysis
+            top_5_probs, top_5_indices = torch.topk(probs, 5)
+            top_5_words = [self.tokenizer.decode([idx]) for idx in top_5_indices]
+            
+            # Store detailed word analysis
+            word_analyses.append({
+                "position": i,
+                "word": orig_word,
+                "recovery_probability": word_prob,
+                "importance": importance,
+                "type": word_type,
+                "top_predictions": list(zip(top_5_words, top_5_probs.tolist()))
+            })
+        
+        # Compute weighted average recovery score
+        total_importance = sum(word_importance_weights)
+        if total_importance > 0:
+            weighted_recovery = sum(score * weight for score, weight in zip(word_recovery_scores, word_importance_weights)) / total_importance
+        else:
+            weighted_recovery = 0.0
+        
+        # Compute per-word-type recovery scores
+        type_recovery = {}
+        for word_type in word_importance.keys():
+            type_scores = [score for score, analysis in zip(word_recovery_scores, word_analyses) if analysis['type'] == word_type]
+            if type_scores:
+                type_recovery[word_type] = sum(type_scores) / len(type_scores)
+        
+        # Analyze comprehension quality
+        comprehension_quality = {
+            "noun_recovery": type_recovery.get('noun', 0.0),
+            "verb_recovery": type_recovery.get('verb', 0.0),
+            "content_word_recovery": (type_recovery.get('noun', 0.0) + type_recovery.get('verb', 0.0)) / 2,
+            "function_word_recovery": (type_recovery.get('article', 0.0) + type_recovery.get('preposition', 0.0)) / 2,
+            "overall_recovery": weighted_recovery
+        }
+        
+        return {
+            "word_recovery_scores": word_recovery_scores,
+            "weighted_recovery": weighted_recovery,
+            "average_recovery": sum(word_recovery_scores) / len(word_recovery_scores),
+            "type_recovery": type_recovery,
+            "word_analyses": word_analyses,
+            "total_importance": total_importance,
+            "comprehension_quality": comprehension_quality
+        }
+
+    def test_semantic_difference(self):
+        """Test the semantic difference evaluation with example sentences."""
+        # Test case 1: "the cat sits on a mat" vs "the cah sit on the mad"
+        test_case1 = {
+            "original": ["the", "cat", "sits", "on", "a", "mat"],
+            # "perceived": ["the", "cah", "sit", "on", "the", "mad"],
+            "perceived": ["the", "cah", "sit"],
+            "description": "Case 1: Minor spelling errors and tense change"
+        }
+        
+        # Test case 2: "he likes eating apples" vs "he liked eating apple"
+        test_case2 = {
+            "original": ["he", "likes", "eating", "apples"],
+            "perceived": ["he", "liked", "eating", "apple"],
+            "description": "Case 2: Tense change and plural/singular difference"
+        }
+        
+        print("\nTesting Semantic Difference Evaluation:")
+        print("=" * 70)
+        
+        for case in [test_case1, test_case2]:
+            print(f"\n{case['description']}")
+            print(f"Original: {' '.join(case['original'])}")
+            print(f"Perceived: {' '.join(case['perceived'])}")
+            
+            # Compute semantic differences
+            differences = self._compute_semantic_difference(case['original'], case['perceived'])
+            
+            # Print results
+            print(f"\nSemantic Analysis:")
+            print(f"Sentence Similarity: {differences['sentence_similarity']:.4f}")
+            print(f"Semantic Preservation: {differences['semantic_preservation']:.4f}")
+            print(f"Number of word differences: {differences['num_differences']}")
+            
+            print("\nWord-level differences:")
+            for diff in differences['word_differences']:
+                print(f"Position {diff['position']}:")
+                print(f"  Original: {diff['original']}")
+                print(f"  Perceived: {diff['perceived']}")
+                print(f"  Word Similarity: {diff['similarity']:.4f}")
+            
+            print("-" * 70)
+
+    def test_sentence_comprehension(self):
+        """Test sentence-level comprehension evaluation with example sentences."""
+        # Test case 1: Simple sentence with minor errors
+        test_case1 = {
+            "sentence": ["the", "cat", "sits", "on", "a", "mat"],
+            "perceived": ["the", "cah", "sit", "on", "the", "mad"],
+            "description": "Case 1: Simple sentence with spelling errors"
+        }
+        
+        # Test case 2: More complex sentence with tense changes
+        test_case2 = {
+            "sentence": ["he", "likes", "eating", "apples"],
+            "perceived": ["he", "liked", "eating", "apple"],
+            "description": "Case 2: Complex sentence with tense changes"
+        }
+        
+        print("\nTesting Sentence-Level Comprehension Evaluation:")
+        print("=" * 70)
+        
+        for case in [test_case1, test_case2]:
+            print(f"\n{case['description']}")
+            print(f"Original: {' '.join(case['sentence'])}")
+            print(f"Perceived: {' '.join(case['perceived'])}")
+            
+            # Initialize the sentence
+            self.reset(case['sentence'])
+            
+            # Process each word to get states
+            states = [None] * len(case['sentence'])
+            for i in range(len(case['sentence'])):
+                context = case['sentence'][:i]
+                word = case['sentence'][i]
+                
+                # Compute integration difficulty
+                difficulty = self._compute_integration_difficulty(context, word)
+                
+                # Get word embedding
+                word_embedding = self.word_embeddings[:, i].detach()
+                
+                # Update comprehension state
+                word_embedding_expanded = word_embedding.unsqueeze(1)
+                output, hidden = self.cumulative_comprehension_tracker(
+                    word_embedding_expanded,
+                    self.cumulative_comprehension_state
+                )
+                self.cumulative_comprehension_state = hidden
+                
+                # Store state with actual difficulty
+                states[i] = {
+                    'embedding': word_embedding,
+                    'comprehension': hidden.detach(),
+                    'difficulty': torch.tensor(difficulty)
+                }
+            
+            # Compute sentence-level comprehension
+            comprehension = self._compute_sentence_comprehension(states)
+            
+            # Compute cloze-test comprehension
+            cloze_comprehension = self._compute_cloze_comprehension(states, case['sentence'])
+            
+            # Print results
+            print("\nComprehension Analysis:")
+            print(f"Comprehension Confidence: {comprehension['comprehension_confidence']:.4f}")
+            print(f"Comprehension Stability: {comprehension['comprehension_stability']:.4f}")
+            print(f"Semantic Coherence: {comprehension['semantic_coherence']:.4f}")
+            print(f"Average Difficulty: {comprehension['average_difficulty']:.4f}")
+            
+            print("\nCloze-Test Comprehension:")
+            print(f"Weighted Recovery Score: {cloze_comprehension['weighted_recovery']:.4f}")
+            print(f"Average Recovery Score: {cloze_comprehension['average_recovery']:.4f}")
+            
+            print("\nPer-Word-Type Recovery:")
+            for word_type, score in cloze_comprehension['type_recovery'].items():
+                print(f"{word_type}: {score:.4f}")
+            
+            print("\nWord-Level Recovery Analysis:")
+            for analysis in cloze_comprehension['word_analyses']:
+                print(f"\nPosition {analysis['position']}:")
+                print(f"Word: {analysis['word']}")
+                print(f"Type: {analysis['type']}")
+                print(f"Recovery Probability: {analysis['recovery_probability']:.4f}")
+                print("Top 5 Predictions:")
+                for word, prob in analysis['top_predictions']:
+                    print(f"  {word}: {prob:.4f}")
+            
+            print("-" * 70)
+
 
 if __name__ == "__main__":
     def test_length_tolerance():
@@ -720,12 +1127,14 @@ if __name__ == "__main__":
                 print(f"  {word}: {prob:.4f}")
             print("-" * 70)
     
+    def test_all():
+        """Run all tests including the new semantic difference and comprehension tests."""
+        print("\nRunning semantic difference test...")
+        transition_function = TransitionFunction()
+        transition_function.test_semantic_difference()
+        
+        print("\nRunning sentence comprehension test...")
+        transition_function.test_sentence_comprehension()
+    
     # Run all tests
-    print("\nRunning length tolerance test...")
-    test_length_tolerance()
-    
-    print("\nRunning integration difficulty test...")
-    test_integration_difficulty()
-    
-    print("\nRunning word predictability test...")
-    test_word_predictability() 
+    test_all() 
