@@ -1,4 +1,4 @@
-# Sentence Reading Environment (v0312)
+# Sentence Reading Environment (v0319)
 
 This environment implements a cognitively-inspired model of sentence reading behavior, using neural language models to track comprehension and simulate human-like reading patterns.
 
@@ -8,6 +8,91 @@ The environment uses a three-component architecture:
 1. **Language Model (BERT)**: Converts words into contextual embeddings
 2. **GRU Network**: Tracks cumulative comprehension as we read
 3. **Uncertainty Estimation**: Guides reading behavior decisions
+
+## Data Processing Pipeline
+
+### 1. Integration Difficulty Computation
+- **Method**: Uses BERT's masked language modeling with bidirectional context
+- **Computation**:
+  - Masks target word in full sentence context
+  - Computes surprisal: -log P(word | context_left, context_right)
+  - Converts surprisal to difficulty score using sigmoid function
+- **Rationale**:
+  - Bidirectional context captures both preceding and following information
+  - Surprisal measures how unexpected a word is in its context
+  - Sigmoid scaling provides normalized difficulty scores [0,1]
+- **Output Format**:
+  ```json
+  {
+    "word": "example",
+    "surprisal": 2.5,
+    "integration_difficulty": 0.7
+  }
+  ```
+
+### 2. Word Prediction System
+- **Preview Mechanism**:
+  - Uses first 2 letters for clear preview
+  - Implements noisy preview matching for subsequent letters
+  - Similar-looking letters are considered interchangeable
+- **Length Estimation**:
+  - Blurry length estimation based on word length
+  - Tolerance increases with word length
+  - Short words (≤4): ±1 letter
+  - Medium words (≤6): ±2 letters
+  - Long words (≤8): ±3 letters
+  - Very long words (>8): ±(length/3) letters
+- **Similar Letter Groups**:
+  - Round letters: a/e/o
+  - Vertical lines: i/l/1
+  - Ascending/descending: h/b, p/q
+  - Common confusions: u/n, c/e, v/w, r/n
+- **Noise in Preview**:
+  - First 2 letters: Exact match required
+  - Next 3 letters: Increasing noise threshold (30% per position)
+  - Random acceptance based on position
+- **Output Format**:
+  ```json
+  {
+    "word": "example",
+    "next_word_predicted": "word",
+    "predictability": 0.8,
+    "prediction_metadata": {
+      "preview_letters": 2,
+      "clear_preview": "ex",
+      "target_length": 7,
+      "length_tolerance": {
+        "min": 5,
+        "max": 9
+      }
+    },
+    "prediction_candidates": [
+      {"word": "word", "probability": 0.8},
+      {"word": "words", "probability": 0.1},
+      {"word": "world", "probability": 0.05},
+      {"word": "work", "probability": 0.03},
+      {"word": "would", "probability": 0.02}
+    ]
+  }
+  ```
+
+### 3. Processing Pipeline
+1. **Initial Processing**:
+   - Load raw sentence dataset
+   - Compute integration difficulty scores
+   - Save intermediate results
+
+2. **Prediction Processing**:
+   - Load dataset with integration scores
+   - Compute word predictions with preview
+   - Add prediction metadata and candidates
+   - Save final processed dataset
+
+3. **Quality Control**:
+   - Filter out special tokens and duplicates
+   - Handle subword tokenization
+   - Normalize probabilities
+   - Provide fallback for no predictions
 
 ## Key Mechanisms
 
@@ -119,27 +204,27 @@ The environment uses a three-component architecture:
 ## Future Improvements
 
 1. **Parafoveal Preview**:
-   - First n letters of upcoming words
-   - Word length and shape features
-   - Integration with predictability
+   - Adjustable preview length (currently fixed at 2)
+   - More sophisticated letter similarity groups
+   - Integration with word frequency effects
 
 2. **Enhanced Prediction**:
-   - Combine context with preview information
-   - Word frequency effects
-   - More sophisticated uncertainty estimation
+   - Dynamic noise thresholds based on word length
+   - Better handling of compound words
+   - Improved candidate filtering
 
 3. **Cognitive Alignment**:
-   - Better modeling of working memory constraints
-   - More realistic regression patterns
-   - Integration with eye-tracking data
+   - Individual differences in preview accuracy
+   - Word frequency effects on prediction
+   - More realistic length estimation
 
 ## Limitations
 
-- Simplified word skipping mechanism
-- Basic uncertainty estimation
-- Limited working memory modeling
-- No explicit syntax processing
-- Unidirectional GRU (could be enhanced with bidirectional processing)
+- Fixed preview length (2 letters)
+- Simplified letter similarity groups
+- Basic noise threshold model
+- Limited handling of compound words
+- No word frequency effects
 
 ## References
 
@@ -147,4 +232,6 @@ The implementation draws from cognitive theories of reading comprehension, inclu
 - Predictive processing in reading
 - Integration difficulty measures
 - Working memory constraints
-- Eye movement control in reading 
+- Eye movement control in reading
+- Parafoveal preview effects
+- Word length estimation in reading 
