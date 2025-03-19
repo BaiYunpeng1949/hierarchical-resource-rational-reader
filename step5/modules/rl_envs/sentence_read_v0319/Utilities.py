@@ -261,8 +261,202 @@ def process_dataset_with_integration_difficulty(input_path: str, output_path: st
     
     print("Done! Dataset processed and saved with integration difficulty scores.")
 
+def compute_word_prediction(tokenizer, model, context: list[str], target_word: str, preview_letters: int = 2) -> tuple[str, float, list[tuple[str, float]]]:
+    """
+    Compute word prediction given context and preview information.
+    Returns the predicted word, its probability, and top candidates.
+    
+    Args:
+        tokenizer: BERT tokenizer
+        model: BERT masked language model
+        context: List of words before target word
+        target_word: The actual word to predict
+        preview_letters: Number of clear letters visible in preview (default 2)
+        
+    Returns:
+        tuple[str, float, list[tuple[str, float]]]: (predicted_word, probability, top_candidates)
+    """
+    # Create input with [MASK] token after context
+    input_text = " ".join(context + ["[MASK]"])
+    
+    # Tokenize input
+    inputs = tokenizer(input_text, return_tensors="pt", padding=True, truncation=True)
+    
+    # Find position of [MASK] token
+    mask_token_id = tokenizer.mask_token_id
+    mask_position = (inputs.input_ids[0] == mask_token_id).nonzero().item()
+    
+    # Get model predictions for masked position
+    with torch.no_grad():
+        outputs = model(**inputs)
+        logits = outputs.logits[0, mask_position]  # Shape: [vocab_size]
+        
+    # Get probabilities for all words
+    probs = torch.softmax(logits, dim=0)
+    
+    # Get preview information with noise
+    clear_preview = target_word[:preview_letters].lower()  # First 2 letters are clear
+    target_length = len(target_word)
+    
+    # Define similar-looking letters for noisy preview
+    similar_letters = {
+        'a': 'aeo', 'e': 'eao', 'o': 'oae',  # Round letters
+        'i': 'il1', 'l': 'li1', '1': 'li1',  # Vertical lines
+        'n': 'nm', 'm': 'mn',                 # n/m confusion
+        'h': 'hb', 'b': 'bh',                 # Ascending letters
+        'p': 'pq', 'q': 'qp',                 # Descending letters
+        'u': 'un', 'n': 'nu',                 # u/n confusion
+        'c': 'ce', 'e': 'ec',                 # c/e confusion
+        'v': 'vw', 'w': 'wv',                 # v/w confusion
+        'r': 'rn', 'n': 'nr',                 # r/n confusion
+    }
+    
+    # Get top predictions initially
+    top_k = 1000
+    top_probs, top_indices = torch.topk(probs, top_k)
+    
+    # Get candidates and handle subword tokens
+    filtered_predictions = []
+    total_filtered_prob = 0.0
+    seen_words = set()  # To avoid duplicates from subword tokens
+    
+    for token_id, prob in zip(top_indices, top_probs):
+        # Decode single token
+        word = tokenizer.decode([token_id]).strip().lower()
+        
+        # Skip if we've seen this word or if it's a special token
+        if word in seen_words or word.startswith('[') or not word:
+            continue
+            
+        seen_words.add(word)
+        word_len = len(word)
+        
+        # Check length constraints with blurry length estimation
+        min_length = max(1, target_length - 2)
+        max_length = target_length + 2
+        if not (min_length <= word_len <= max_length):
+            continue
+
+        # Check clear preview (first 2 letters must match exactly)
+        if not word.startswith(clear_preview):
+            continue
+
+        # For letters beyond preview_letters, use noisy matching
+        matches_noisy_preview = True
+        for i in range(preview_letters, min(len(target_word), len(word), preview_letters + 3)):
+            target_char = target_word[i].lower()
+            word_char = word[i].lower()
+            
+            # The further the letter, the more noise we allow
+            noise_threshold = (i - preview_letters + 1) * 0.3  # Increases noise with distance
+            
+            # Check if chars are similar or randomly accept with increasing probability
+            chars_similar = (word_char in similar_letters.get(target_char, target_char))
+            random_accept = torch.rand(1).item() < noise_threshold
+            
+            if not (chars_similar or random_accept):
+                matches_noisy_preview = False
+                break
+
+        if matches_noisy_preview:
+            filtered_predictions.append((word, prob.item()))
+            total_filtered_prob += prob.item()
+    
+    # Sort filtered predictions by probability
+    filtered_predictions.sort(key=lambda x: x[1], reverse=True)
+    
+    # Normalize probabilities
+    if filtered_predictions:
+        # Normalize probabilities for sampling
+        filtered_predictions = [(w, p/total_filtered_prob) for w, p in filtered_predictions]
+        
+        # Get top 5 predictions
+        top_predictions = filtered_predictions[:5]
+        
+        # Get most likely word and its probability
+        predicted_word, predictability = top_predictions[0]
+    else:
+        # Fallback if no predictions
+        predicted_word = "[UNKNOWN]"
+        predictability = 0.0
+        top_predictions = []
+    
+    return predicted_word, predictability, top_predictions
+
+def process_dataset_with_predictions(input_path: str, output_path: str):
+    """
+    Process the dataset to add word prediction information for each word.
+    Builds on top of the integration difficulty data.
+    
+    Args:
+        input_path: Path to input JSON dataset (with integration difficulty)
+        output_path: Path to save processed dataset
+    """
+    print("Loading dataset...")
+    with open(input_path, 'r') as f:
+        dataset = json.load(f)
+        
+    print("Loading language model and tokenizer...")
+    model_name = Constants.LANGUAGE_MODEL_NAME
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForMaskedLM.from_pretrained(model_name)
+    
+    # Set preview letters (currently using 2)
+    preview_letters = 2
+    
+    print("Processing sentences...")
+    for sentence_id, sentence_data in tqdm(dataset.items()):
+        words = sentence_data["words"]
+        sentence = [word_data["word"] for word_data in words]
+        
+        # Process each word in the sentence
+        for i, word_data in enumerate(words):
+            # Get context (all words before current word)
+            context = sentence[:i]
+            target_word = word_data["word"]
+            
+            # Get preview information
+            clear_preview = target_word[:preview_letters].lower()
+            target_length = len(target_word)
+            
+            # Get length tolerance range
+            min_length = max(1, target_length - 2)
+            max_length = target_length + 2
+            
+            # Compute word prediction
+            predicted_word, predictability, top_predictions = compute_word_prediction(
+                tokenizer,
+                model,
+                context,
+                target_word,
+                preview_letters
+            )
+            
+            # Add prediction information to word data
+            word_data["next_word_predicted"] = predicted_word
+            word_data["predictability"] = predictability
+            word_data["prediction_metadata"] = {
+                "preview_letters": preview_letters,
+                "clear_preview": clear_preview,
+                "target_length": target_length,
+                "length_tolerance": {
+                    "min": min_length,
+                    "max": max_length
+                }
+            }
+            word_data["prediction_candidates"] = [
+                {"word": word, "probability": prob}
+                for word, prob in top_predictions
+            ]
+    
+    print("Saving processed dataset...")
+    with open(output_path, 'w') as f:
+        json.dump(dataset, f, indent=2)
+    
+    print("Done! Dataset processed and saved with word prediction information.")
+
 if __name__ == "__main__":
     # Process the dataset
-    input_path = os.path.join(os.path.dirname(__file__), "assets", "sentences_dataset.json")
-    output_path = os.path.join(os.path.dirname(__file__), "assets", "sentences_dataset_with_integration.json")
-    process_dataset_with_integration_difficulty(input_path, output_path) 
+    input_path = os.path.join(os.path.dirname(__file__), "assets", "sentences_dataset_with_integration.json")
+    output_path = os.path.join(os.path.dirname(__file__), "assets", "sentences_dataset_with_predictions.json")
+    process_dataset_with_predictions(input_path, output_path) 

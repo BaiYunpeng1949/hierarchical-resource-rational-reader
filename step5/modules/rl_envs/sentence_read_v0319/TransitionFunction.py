@@ -358,73 +358,202 @@ class TransitionFunction():
 
         return uncertainty.unsqueeze(-1)
 
-    def _compute_word_predictability(self, context: list[str], target_word: str, preview_letters: int = 3) -> tuple[float, list[tuple[str, float]]]:
+    def _get_length_tolerance(self, word_length: int) -> tuple[int, int]:
+        """
+        Get the acceptable length range for a word based on its true length.
+        Longer words have more uncertainty in length estimation.
+        
+        Args:
+            word_length: True length of the word
+            
+        Returns:
+            tuple[int, int]: (min_length, max_length) acceptable range
+        """
+        if word_length <= 2:
+            # Very short words (1-2 letters) - exact length
+            return word_length, word_length
+        elif word_length <= 4:
+            # Short words (3-4 letters) - ±1 letter
+            return max(1, word_length - 1), word_length + 1
+        elif word_length <= 6:
+            # Medium words (5-6 letters) - ±2 letters
+            return max(1, word_length - 2), word_length + 2
+        elif word_length <= 8:
+            # Longer words (7-8 letters) - ±3 letters
+            return max(1, word_length - 3), word_length + 3
+        else:
+            # Very long words (9+ letters) - ±4 letters or more
+            noise_range = word_length // 3  # More noise for longer words
+            return max(1, word_length - noise_range), word_length + noise_range
+
+    def _compute_word_predictability(self, context: list[str], target_word: str, preview_letters: int = 2) -> tuple[float, str, list[tuple[str, float]]]:
         """
         Compute predictability of a word given its context and parafoveal preview information.
+        Uses BERT's masked language modeling to predict the next word.
+        Returns subjective prediction (sampled from likely candidates) rather than target word probability.
         
         Args:
             context: List of words before the target word
             target_word: The actual word to predict
-            preview_letters: Number of letters visible in parafoveal preview (default 3)
+            preview_letters: Number of clear letters visible in parafoveal preview (default 2)
             
         Returns:
-            tuple[float, list[tuple[str, float]]]: (predictability of target word, list of top predictions with probabilities)
+            tuple[float, str, list[tuple[str, float]]]: (predictability, predicted_word, top_predictions)
+            - predictability: Probability of the predicted word (not target word)
+            - predicted_word: The word we predict (may not be target word)
+            - top_predictions: List of (word, prob) tuples for top candidates
         """
-        # Prepare input text with context
-        input_text = "[CLS] " + " ".join(context) + " [SEP]"
+        # Create input with [MASK] token after context
+        input_text = " ".join(context + ["[MASK]"])
         
         # Tokenize input
         inputs = self.tokenizer(input_text, return_tensors="pt", padding=True, truncation=True)
         
-        # Get model predictions for next word
+        # Find position of [MASK] token
+        mask_token_id = self.tokenizer.mask_token_id
+        mask_position = (inputs.input_ids[0] == mask_token_id).nonzero().item()
+        
+        # Get model predictions for masked position
         with torch.no_grad():
             outputs = self.masked_lm_model(**inputs)
-            logits = outputs.logits[0, -2]  # Take predictions at the last real token
+            logits = outputs.logits[0, mask_position]  # Shape: [vocab_size]
             
         # Get probabilities for all words
         probs = torch.softmax(logits, dim=0)
         
-        # Get preview information
-        preview = target_word[:preview_letters].lower()
+        # Get preview information with noise
+        clear_preview = target_word[:preview_letters].lower()  # First 2 letters are clear
         target_length = len(target_word)
-        length_tolerance = 2  # Allow words within ±2 length of target
+        min_length, max_length = self._get_length_tolerance(target_length)
+
+        # Define similar-looking letters for noisy preview
+        similar_letters = {
+            'a': 'aeo', 'e': 'eao', 'o': 'oae',  # Round letters
+            'i': 'il1', 'l': 'li1', '1': 'li1',  # Vertical lines
+            'n': 'nm', 'm': 'mn',                 # n/m confusion
+            'h': 'hb', 'b': 'bh',                 # Ascending letters
+            'p': 'pq', 'q': 'qp',                 # Descending letters
+            'u': 'un', 'n': 'nu',                 # u/n confusion
+            'c': 'ce', 'e': 'ec',                 # c/e confusion
+            'v': 'vw', 'w': 'wv',                 # v/w confusion
+            'r': 'rn', 'n': 'nr',                 # r/n confusion
+        }
         
-        # Get top 100 predictions initially
-        top_k = 100
+        # Get top predictions initially (increased from 100 to 1000 for better coverage)
+        top_k = 1000
         top_probs, top_indices = torch.topk(probs, top_k)
-        candidates = [self.tokenizer.decode([idx]).strip() for idx in top_indices]
         
-        # Filter candidates by preview and length
+        # Get candidates and handle subword tokens
         filtered_predictions = []
         total_filtered_prob = 0.0
+        seen_words = set()  # To avoid duplicates from subword tokens
         
-        for word, prob in zip(candidates, top_probs):
-            word = word.lower().strip()
-            # Check if word starts with preview and is within length tolerance
-            if (word.startswith(preview) and 
-                abs(len(word) - target_length) <= length_tolerance):
+        for token_id, prob in zip(top_indices, top_probs):
+            # Decode single token
+            word = self.tokenizer.decode([token_id]).strip().lower()
+            
+            # Skip if we've seen this word or if it's a special token
+            if word in seen_words or word.startswith('[') or not word:
+                continue
+                
+            seen_words.add(word)
+            word_len = len(word)
+            
+            # Check length constraints with blurry length estimation
+            if not (min_length <= word_len <= max_length):
+                continue
+
+            # Check clear preview (first 2 letters must match exactly)
+            if not word.startswith(clear_preview):
+                continue
+
+            # For letters beyond preview_letters, use noisy matching
+            matches_noisy_preview = True
+            for i in range(preview_letters, min(len(target_word), len(word), preview_letters + 3)):
+                target_char = target_word[i].lower()
+                word_char = word[i].lower()
+                
+                # The further the letter, the more noise we allow
+                noise_threshold = (i - preview_letters + 1) * 0.3  # Increases noise with distance
+                
+                # Check if chars are similar or randomly accept with increasing probability
+                chars_similar = (word_char in similar_letters.get(target_char, target_char))
+                random_accept = torch.rand(1).item() < noise_threshold
+                
+                if not (chars_similar or random_accept):
+                    matches_noisy_preview = False
+                    break
+
+            if matches_noisy_preview:
                 filtered_predictions.append((word, prob.item()))
                 total_filtered_prob += prob.item()
         
         # Sort filtered predictions by probability
         filtered_predictions.sort(key=lambda x: x[1], reverse=True)
         
-        # Get target word probability
-        target_prob = 0.0
-        for word, prob in filtered_predictions:
-            if word.lower() == target_word.lower():
-                target_prob = prob
-                break
-        
-        # Normalize probabilities if we have any filtered predictions
+        # Normalize probabilities
         if filtered_predictions:
+            # Normalize probabilities for sampling
             filtered_predictions = [(w, p/total_filtered_prob) for w, p in filtered_predictions]
-            target_prob = target_prob/total_filtered_prob if target_prob > 0 else 0.0
+            
+            # Sample predicted word from filtered candidates using their probabilities
+            words, probs = zip(*filtered_predictions)
+            probs = torch.tensor(probs)
+            
+            # Sample from top 5 predictions (or all if less than 5)
+            top_n = min(5, len(filtered_predictions))
+            if top_n > 0:
+                # Get top N predictions and renormalize their probabilities
+                top_words = words[:top_n]
+                top_probs = probs[:top_n]
+                top_probs = top_probs / top_probs.sum()  # Renormalize
+                
+                # Add more randomness to sampling
+                noise = torch.rand_like(top_probs) * 0.2  # 20% random noise
+                noisy_probs = top_probs + noise
+                noisy_probs = noisy_probs / noisy_probs.sum()  # Renormalize
+                
+                # Sample predicted word using the noisy probabilities
+                predicted_idx = torch.multinomial(noisy_probs, 1).item()
+                predicted_word = top_words[predicted_idx]
+                predictability = top_probs[predicted_idx].item()
+            else:
+                # Fallback if no predictions
+                predicted_word = ""
+                predictability = 0.0
+        else:
+            predicted_word = ""
+            predictability = 0.0
+            
+        # Debug information
+        print("\nDebug - Word Prediction Details:")
+        print(f"Input text: {input_text}")
+        print(f"Clear preview (first {preview_letters}): {clear_preview}")
+        print(f"Length constraint: {min_length}-{max_length} (true length: {target_length})")
+        print(f"Total filtered candidates: {len(filtered_predictions)}")
+        print(f"Predicted word: {predicted_word} (prob: {predictability:.4f})")
+        print(f"Target word: {target_word}")
+        print(f"Sum of filtered probabilities: {total_filtered_prob:.4f}")
         
-        return target_prob, filtered_predictions[:5]  # Return top 5 filtered predictions
+        return predictability, predicted_word, filtered_predictions[:5]  # Return top 5 filtered predictions
 
 
 if __name__ == "__main__":
+    def test_length_tolerance():
+        """Test the blurry length estimation"""
+        transition_function = TransitionFunction()
+        
+        test_lengths = [2, 4, 6, 8, 10, 15]
+        print("\nTesting Length Tolerance Estimation:")
+        print("=" * 50)
+        
+        for length in test_lengths:
+            min_len, max_len = transition_function._get_length_tolerance(length)
+            print(f"Word length: {length}")
+            print(f"Acceptable range: {min_len}-{max_len}")
+            print(f"Tolerance: ±{max_len - length}")
+            print("-" * 50)
+    
     def test_integration_difficulty():
         """Test the integration difficulty calculation with different contexts"""
         transition_function = TransitionFunction()
@@ -490,28 +619,68 @@ if __name__ == "__main__":
     def test_word_predictability():
         """Test the word predictability calculation with different contexts"""
         transition_function = TransitionFunction()
+        preview_letters = 3  # Define preview_letters here
         
-        # Test cases
+        # Test cases with various scenarios
         test_cases = [
+            # Common predictable cases
             {
                 "sentence": ["The", "cat", "likes", "to", "sleep", "on", "the", "mat"],
                 "word_idx": 2,
-                "description": "Predicting 'likes' after 'The cat'"
+                "description": "Common verb 'likes' after 'The cat'"
             },
             {
                 "sentence": ["She", "went", "to", "the", "store", "to", "buy", "food"],
                 "word_idx": 4,
-                "description": "Predicting 'store' after 'She went to the'"
+                "description": "Predictable noun 'store' after retail context"
             },
+            # Weather-related predictions
             {
-                "sentence": ["The", "book", "is", "interesting", "and", "fun", "to", "read"],
+                "sentence": ["The", "weather", "is", "sunny", "and", "warm", "today"],
                 "word_idx": 3,
-                "description": "Predicting 'interesting' after 'The book is'"
+                "description": "Highly predictable adjective 'sunny' after weather context"
             },
+            # Action sequences
             {
-                "sentence": ["I", "like", "to", "read", "books", "in", "the", "library"],
-                "word_idx": 3,
-                "description": "Predicting 'read' after 'I like to'"
+                "sentence": ["He", "picked", "up", "the", "phone", "and", "dialed"],
+                "word_idx": 4,
+                "description": "Very predictable object 'phone' after action"
+            },
+            # Domain-specific contexts
+            {
+                "sentence": ["The", "scientist", "conducted", "an", "experiment", "in", "the", "lab"],
+                "word_idx": 4,
+                "description": "Domain-specific word 'experiment' in scientific context"
+            },
+            # Cooking context
+            {
+                "sentence": ["The", "chef", "carefully", "chopped", "the", "onions", "for", "the", "soup"],
+                "word_idx": 5,
+                "description": "Cooking-related word 'onions' in kitchen context"
+            },
+            # Short words with clear preview
+            {
+                "sentence": ["I", "am", "at", "the", "bus", "stop"],
+                "word_idx": 4,
+                "description": "Short word 'bus' with clear preview"
+            },
+            # Long words with uncertain length
+            {
+                "sentence": ["The", "extraordinary", "performance", "impressed", "everyone"],
+                "word_idx": 1,
+                "description": "Long word 'extraordinary' with uncertain length"
+            },
+            # Multiple plausible continuations
+            {
+                "sentence": ["The", "student", "opened", "the", "book", "and", "started", "to", "read"],
+                "word_idx": 6,
+                "description": "Word 'started' with multiple plausible continuations"
+            },
+            # Surprising but grammatical
+            {
+                "sentence": ["The", "old", "car", "suddenly", "transformed", "into", "a", "robot"],
+                "word_idx": 4,
+                "description": "Surprising but grammatical 'transformed'"
             }
         ]
         
@@ -528,12 +697,13 @@ if __name__ == "__main__":
             target_word = case["sentence"][word_idx]
             
             # Get preview letters (first 3)
-            preview_letters = target_word[:3].lower()
+            preview = target_word[:preview_letters].lower()
             
             # Calculate predictability
-            predictability, top_predictions = transition_function._compute_word_predictability(
+            predictability, predicted_word, top_predictions = transition_function._compute_word_predictability(
                 context, 
-                target_word
+                target_word,
+                preview_letters
             )
             
             # Print results
@@ -541,7 +711,8 @@ if __name__ == "__main__":
             print(f"Full sentence: {' '.join(case['sentence'])}")
             print(f"Context: {' '.join(context)}")
             print(f"Target word: {target_word}")
-            print(f"Preview letters: {preview_letters}")
+            print(f"Predicted word: {predicted_word}")
+            print(f"Preview letters: {preview}")
             print(f"Word length: {len(target_word)}")
             print(f"Predictability: {predictability:.4f}")
             print("\nTop 5 predictions (with preview filter):")
@@ -549,7 +720,10 @@ if __name__ == "__main__":
                 print(f"  {word}: {prob:.4f}")
             print("-" * 70)
     
-    # Run both tests
+    # Run all tests
+    print("\nRunning length tolerance test...")
+    test_length_tolerance()
+    
     print("\nRunning integration difficulty test...")
     test_integration_difficulty()
     
