@@ -147,7 +147,7 @@ The environment uses a three-component architecture:
   - Raw context (averaged word embeddings)
 - **Rationale**:
   - Measures how much new information changes existing understanding
-  - Aligns with cognitive theories of surprisal and prediction error
+  - Aligns with cognitive theories of surprisal and prediction error -- There’s a large body of psycholinguistics/computational linguistics research showing that language-model surprisal correlates quite well with human reading difficulty metrics (eye-tracking data, self-paced reading times, etc.). Psycholinguistic Basis: A large body of research shows that reading times, fixation durations, and neural signals (EEG N400 amplitude) often correlate well with LM-based surprisal.
   - Example: "The man bit the dog" - semantically related but difficult to integrate
 
 ### 3. Word Skipping Mechanism
