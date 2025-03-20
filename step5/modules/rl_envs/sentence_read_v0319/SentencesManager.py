@@ -43,16 +43,35 @@ class SentencesManager():
         words_metadata = sentence_data["words"]
         
         # Format sentence information
+
+        # Get word predictabilities from the dataset: get the largest
+        word_predictabilities = []
+        predicted_words = []
+        for word in words_metadata:
+            # Get highest probability from prediction candidates
+            max_prob = 0
+            max_prob_word = ""
+            for candidate in word["prediction_candidates"]:
+                if candidate["probability"] > max_prob:
+                    max_prob = candidate["probability"]
+                    max_prob_word = candidate["word"]
+            word_predictabilities.append(max_prob)
+            predicted_words.append(max_prob_word)
+
         sentence_info = {
             "words": [word["word"] for word in words_metadata],
+            "sentence_len": len(words_metadata),
             "clean_words": [word["word_clean"] for word in words_metadata],
             "word_indices": [word["word_id"] for word in words_metadata],
             "word_lengths": [len(word["word"]) for word in words_metadata],
-            "word_difficulties": [word["difficulty"] for word in words_metadata],
-            "word_frequencies": [word["frequency"] for word in words_metadata],
-            "word_log_frequencies": [word["log_frequency"] for word in words_metadata],
-            "word_contextual_predictabilities": [word["predictability"] for word in words_metadata],
-            "word_logit_contextual_predictabilities": [word["logit_predictability"] for word in words_metadata],
+            # "word_difficulties": [word["difficulty"] for word in words_metadata],
+            # "word_frequencies": [word["frequency"] for word in words_metadata],
+            # "word_log_frequencies": [word["log_frequency"] for word in words_metadata],
+            # "word_contextual_predictabilities": [word["predictability"] for word in words_metadata],
+            # "word_logit_contextual_predictabilities": [word["logit_predictability"] for word in words_metadata],
+            "words_ranked_word_integration_probabilities": [word["ranked_word_integration_probability"] for word in words_metadata],
+            "words_predictabilities": word_predictabilities,
+            "predicted_words": predicted_words
         }
         
         return sentence_info

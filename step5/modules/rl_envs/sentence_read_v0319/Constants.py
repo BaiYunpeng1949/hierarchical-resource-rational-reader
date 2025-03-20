@@ -1,6 +1,6 @@
 # Sentences dataset
 # Sentence length
-MAX_SENTENCE_LENGTH = 50
+MAX_SENTENCE_LENGTH = 70
 
 # Word frequency
 ONE_MILLION = 1000000        # Word frequencies are word occurances per million
