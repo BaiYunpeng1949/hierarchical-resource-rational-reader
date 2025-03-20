@@ -178,7 +178,7 @@ class SentenceReadingEnv(Env):
     @staticmethod
     def normalise(x, x_min, x_max, a, b):
     # Normalise x (which is assumed to be in range [x_min, x_max]) to range [a, b]
-    return (b - a) * ((x - x_min) / (x_max - x_min)) + a
+        return (b - a) * ((x - x_min) / (x_max - x_min)) + a
     
     def _get_obs(self):
         """Get observation with simplified scalar signals"""
@@ -224,6 +224,104 @@ class SentenceReadingEnv(Env):
 
 
 if __name__ == "__main__":
+    def print_state(env, action_name):
+        """Helper function to print current state"""
+        print(f"\nAction: {action_name}")
+        print(f"Current word index: {env._current_word_index}")
+        print(f"Previous word index: {env._previous_word_index}")
+        print(f"Word beliefs: {env._word_beliefs}")
+        print(f"Reading sequence: {env._reading_sequence}")
+        print(f"Skipped words: {env._skipped_words_indexes}")
+        print(f"Regressed words: {env._regressed_words_indexes}")
+        print(f"Observation: {env._get_obs()}")
 
-    pass
+    def test_normal_reading():
+        """Test normal word-by-word reading"""
+        print("\n=== Testing Normal Reading ===")
+        env = SentenceReadingEnv()
+        obs, _ = env.reset(sentence_idx=0)  # Use first sentence for testing
+        print(f"Initial observation: {obs}")
+        
+        # Read first few words
+        for i in range(3):
+            obs, reward, term, trunc, _ = env.step(env._READ_ACTION)
+            print_state(env, "READ")
+            print(f"Reward: {reward}")
+            print(f"Terminated: {term}")
+            print(f"Truncated: {trunc}")
+
+    def test_skipping():
+        """Test word skipping behavior"""
+        print("\n=== Testing Word Skipping ===")
+        env = SentenceReadingEnv()
+        obs, _ = env.reset(sentence_idx=0)
+        
+        # Read first word
+        obs, reward, term, trunc, _ = env.step(env._READ_ACTION)
+        print_state(env, "READ")
+        
+        # Skip next word
+        obs, reward, term, trunc, _ = env.step(env._SKIP_ACTION)
+        print_state(env, "SKIP")
+        print(f"Reward: {reward}")
+
+    def test_regression():
+        """Test regression behavior"""
+        print("\n=== Testing Regression ===")
+        env = SentenceReadingEnv()
+        obs, _ = env.reset(sentence_idx=0)
+        
+        # Read first two words
+        for _ in range(2):
+            obs, reward, term, trunc, _ = env.step(env._READ_ACTION)
+            print_state(env, "READ")
+        
+        # Regress to previous word
+        obs, reward, term, trunc, _ = env.step(env._REGRESS_ACTION)
+        print_state(env, "REGRESS")
+        print(f"Reward: {reward}")
+
+    def test_termination():
+        """Test environment termination"""
+        print("\n=== Testing Termination ===")
+        env = SentenceReadingEnv()
+        obs, _ = env.reset(sentence_idx=0)
+        
+        # Read all words
+        while not env._terminate:
+            obs, reward, term, trunc, _ = env.step(env._READ_ACTION)
+            print_state(env, "READ")
+            if term:
+                print(f"Terminated with reward: {reward}")
+                break
+        
+        # Try to stop
+        obs, reward, term, trunc, _ = env.step(env._STOP_ACTION)
+        print_state(env, "STOP")
+        print(f"Final reward: {reward}")
+        print(f"Terminated: {term}")
+
+    def test_episode_length():
+        """Test episode length limit"""
+        print("\n=== Testing Episode Length ===")
+        env = SentenceReadingEnv()
+        obs, _ = env.reset(sentence_idx=0)
+        
+        # Run until truncation
+        step = 0
+        while not env._truncated:
+            obs, reward, term, trunc, _ = env.step(env._READ_ACTION)
+            step += 1
+            if step % 10 == 0:
+                print(f"Step {step}: Current word index = {env._current_word_index}")
+        
+        print(f"Episode truncated after {step} steps")
+        print(f"Final observation: {obs}")
+
+    # Run all tests
+    test_normal_reading()
+    test_skipping()
+    test_regression()
+    test_termination()
+    test_episode_length()
         

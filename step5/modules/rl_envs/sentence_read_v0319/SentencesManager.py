@@ -10,7 +10,7 @@ class SentencesManager():
 
     def __init__(self):
         # Read all the sentences from the assets/sentences_dataset.json
-        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'sentences_dataset.json'), 'r') as f:
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'sentences_dataset_processed.json'), 'r') as f:
             self._sentences_dataset = json.load(f)
             
         # Store dataset statistics
