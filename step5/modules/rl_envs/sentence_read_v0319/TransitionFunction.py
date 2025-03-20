@@ -1,8 +1,17 @@
 import torch
 import torch.nn as nn
-from transformers import AutoModel, AutoTokenizer, AutoModelForMaskedLM
+from transformers import AutoTokenizer, AutoModelForCausalLM
 from . import Constants
+import numpy as np
+from typing import List, Dict, Tuple, Optional, Union
+import json
+import os
+from tqdm import tqdm
 
+# Suppress non-critical warnings
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)  # Suppress resume_download warning
+warnings.filterwarnings("ignore", message="Some weights of the model checkpoint.*")  # Suppress unused weights warning
 
 class TransitionFunction():
     """
@@ -16,15 +25,32 @@ class TransitionFunction():
     """
 
     def __init__(self):
-        # Load language model and tokenizer
-        self.model_name = Constants.LANGUAGE_MODEL_NAME  # or any other suitable model
+        """Initialize the transition function with language model and tokenizer."""
+        self.model_name = Constants.LANGUAGE_MODEL_NAME
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        self.model = AutoModelForCausalLM.from_pretrained(self.model_name)  # Changed to CausalLM for GPT-style
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model.to(self.device)
+        self.model.eval()
         
-        # Use AutoModel for embeddings and AutoModelForMaskedLM for masked predictions
+        # Initialize word importance weights
+        self.word_importance = {
+            'noun': 1.0,
+            'verb': 1.0,
+            'adjective': 0.8,
+            'adverb': 0.7,
+            'article': 0.3,
+            'preposition': 0.4,
+            'pronoun': 0.5,
+            'conjunction': 0.3
+        }
+        
+        # Get hidden size from model config
+        self.hidden_size = self.model.config.hidden_size  # Usually 768 for GPT-2
+        
+        # Load language model and tokenizer
         self.language_model = AutoModel.from_pretrained(self.model_name)
-        self.masked_lm_model = AutoModelForMaskedLM.from_pretrained(self.model_name)
         
-        self.hidden_size = self.language_model.config.hidden_size  # Usually 768 for bert-base-uncased
         self.batch_size = 1 
         self.num_gru_layers = 2  # Number of GRU layers
         
@@ -133,7 +159,7 @@ class TransitionFunction():
         
         # Get model predictions at mask position
         with torch.no_grad():
-            outputs = self.masked_lm_model(**inputs)
+            outputs = self.model(**inputs)
             logits = outputs.logits[0, mask_position]  # Shape: [vocab_size]
             
         # Get the token ID for the actual word
@@ -151,16 +177,6 @@ class TransitionFunction():
         # Convert surprisal to integration difficulty using sigmoid
         alpha = 0.5  # Scaling factor as suggested
         difficulty = torch.sigmoid(alpha * surprisal).item()
-        
-        # Add debug print
-        # print(f"\nDebug - Integration Difficulty Calculation:")
-        # print(f"Left context: {' '.join(context)}")
-        # print(f"Word: {word}")
-        # print(f"Right context: {' '.join(full_sentence[current_word_idx + 1:])}")
-        # print(f"Masked text: {masked_text}")
-        # print(f"Word probability: {word_prob.item():.4f}")
-        # print(f"Surprisal (-log prob): {surprisal.item():.4f}")
-        # print(f"Final difficulty (sigmoid): {difficulty:.4f}")
         
         # Get top 5 predictions for debugging
         top_5_probs, top_5_indices = torch.topk(probs, 5)
@@ -415,7 +431,7 @@ class TransitionFunction():
         
         # Get model predictions for masked position
         with torch.no_grad():
-            outputs = self.masked_lm_model(**inputs)
+            outputs = self.model(**inputs)
             logits = outputs.logits[0, mask_position]  # Shape: [vocab_size]
             
         # Get probabilities for all words
@@ -537,123 +553,86 @@ class TransitionFunction():
         
         return predictability, predicted_word, filtered_predictions[:5]  # Return top 5 filtered predictions
 
-    def _compute_semantic_difference(self, original_sentence: list[str], perceived_sentence: list[str]) -> dict:
-        """
-        Compute semantic difference between original and perceived sentences using BERT embeddings.
-        Now considers word importance, meaning changes, and semantic relationships.
-        
-        Args:
-            original_sentence: List of words in the original sentence
-            perceived_sentence: List of words in the perceived sentence
-            
-        Returns:
-            dict: Dictionary containing various semantic difference metrics
-        """
-        # Convert sentences to text
-        original_text = " ".join(original_sentence)
-        perceived_text = " ".join(perceived_sentence)
-        
+    def _compute_semantic_difference(self, original_sentence: List[str], perceived_sentence: List[str]) -> Dict:
+        """Compute semantic difference between original and perceived sentences using GPT embeddings."""
         # Get embeddings for both sentences
-        original_encoding = self.tokenizer(original_text, return_tensors="pt", padding=True, truncation=True)
-        perceived_encoding = self.tokenizer(perceived_text, return_tensors="pt", padding=True, truncation=True)
+        original_embeddings = []
+        perceived_embeddings = []
         
-        with torch.no_grad():
-            original_outputs = self.language_model(**original_encoding)
-            perceived_outputs = self.language_model(**perceived_encoding)
+        for orig_word, perc_word in zip(original_sentence, perceived_sentence):
+            orig_emb = self._get_word_embedding(orig_word)
+            perc_emb = self._get_word_embedding(perc_word)
+            original_embeddings.append(orig_emb)
+            perceived_embeddings.append(perc_emb)
         
-        # Get [CLS] token embeddings (sentence-level representation)
-        original_embedding = original_outputs.last_hidden_state[0, 0]  # [CLS] token
-        perceived_embedding = perceived_outputs.last_hidden_state[0, 0]  # [CLS] token
+        # Stack embeddings
+        original_embeddings = torch.cat(original_embeddings, dim=0)
+        perceived_embeddings = torch.cat(perceived_embeddings, dim=0)
         
-        # Compute cosine similarity between embeddings
-        similarity = torch.nn.functional.cosine_similarity(
-            original_embedding.unsqueeze(0),
-            perceived_embedding.unsqueeze(0)
+        # Compute sentence-level similarity
+        sentence_similarity = torch.cosine_similarity(
+            original_embeddings.mean(dim=0).unsqueeze(0),
+            perceived_embeddings.mean(dim=0).unsqueeze(0)
         ).item()
-        
-        # Define word importance weights (nouns and verbs are more important)
-        word_importance = {
-            'noun': 1.0,
-            'verb': 1.0,
-            'adjective': 0.8,
-            'adverb': 0.7,
-            'article': 0.3,
-            'preposition': 0.4,
-            'pronoun': 0.5,
-            'conjunction': 0.3
-        }
         
         # Compute word-level differences with importance weights
         word_differences = []
         total_importance = 0
         weighted_similarity = 0
         
-        for i, (orig_word, perc_word) in enumerate(zip(original_sentence, perceived_sentence)):
-            if orig_word.lower() != perc_word.lower():
-                # Get word embeddings
-                orig_encoding = self.tokenizer(orig_word, return_tensors="pt", padding=True, add_special_tokens=False)
-                perc_encoding = self.tokenizer(perc_word, return_tensors="pt", padding=True, add_special_tokens=False)
-                
-                with torch.no_grad():
-                    orig_outputs = self.language_model(**orig_encoding)
-                    perc_outputs = self.language_model(**perc_encoding)
-                
-                # Get word embeddings (average over subword tokens)
-                orig_embedding = orig_outputs.last_hidden_state[0].mean(dim=0)
-                perc_embedding = perc_outputs.last_hidden_state[0].mean(dim=0)
-                
-                # Compute word-level similarity
-                word_similarity = torch.nn.functional.cosine_similarity(
-                    orig_embedding.unsqueeze(0),
-                    perc_embedding.unsqueeze(0)
-                ).item()
-                
-                # Determine word type and importance
-                word_type = 'noun' if i in [1, 5] else 'verb' if i == 2 else 'article' if i in [0, 4] else 'preposition' if i == 3 else 'other'
-                importance = word_importance.get(word_type, 0.5)
-                
-                # Update weighted metrics
-                total_importance += importance
-                weighted_similarity += word_similarity * importance
-                
-                word_differences.append({
-                    "position": i,
-                    "original": orig_word,
-                    "perceived": perc_word,
-                    "similarity": word_similarity,
-                    "importance": importance,
-                    "type": word_type
-                })
+        for i, (orig_emb, perc_emb) in enumerate(zip(original_embeddings, perceived_embeddings)):
+            # Compute word-level similarity
+            word_similarity = torch.cosine_similarity(
+                orig_emb.unsqueeze(0),
+                perc_emb.unsqueeze(0)
+            ).item()
+            
+            # Determine word type and importance
+            word_type = 'noun' if i in [1, 5] else 'verb' if i == 2 else 'article' if i in [0, 4] else 'preposition' if i == 3 else 'other'
+            importance = self.word_importance.get(word_type, 0.5)
+            
+            # Update weighted metrics
+            weighted_similarity += word_similarity * importance
+            total_importance += importance
+            
+            # Store word difference
+            word_differences.append({
+                "position": i,
+                "original_word": original_sentence[i],
+                "perceived_word": perceived_sentence[i],
+                "similarity": word_similarity,
+                "importance": importance,
+                "type": word_type
+            })
         
-        # Compute weighted semantic preservation
+        # Compute weighted average similarity
         if total_importance > 0:
-            weighted_semantic_preservation = weighted_similarity / total_importance
-        else:
-            weighted_semantic_preservation = 0.0
+            weighted_similarity /= total_importance
         
-        # Analyze meaning changes
-        meaning_changes = []
-        for diff in word_differences:
-            if diff['type'] == 'noun' and diff['similarity'] < 0.5:
-                meaning_changes.append("Major object/subject change")
-            elif diff['type'] == 'verb' and diff['similarity'] < 0.5:
-                meaning_changes.append("Major action change")
-            elif diff['type'] == 'article' and diff['original'] != diff['perceived']:
-                meaning_changes.append("Specificity change")
-        
-        # Compute final semantic preservation score
-        # Consider both sentence-level similarity and weighted word-level similarity
-        final_semantic_preservation = (similarity + weighted_semantic_preservation) / 2
+        # Compute semantic preservation score (combine sentence and word-level metrics)
+        semantic_preservation = (sentence_similarity + weighted_similarity) / 2
         
         return {
-            "sentence_similarity": similarity,
-            "semantic_preservation": final_semantic_preservation,
-            "weighted_semantic_preservation": weighted_semantic_preservation,
+            "sentence_similarity": sentence_similarity,
+            "weighted_similarity": weighted_similarity,
+            "semantic_preservation": semantic_preservation,
             "word_differences": word_differences,
-            "num_differences": len(word_differences),
-            "meaning_changes": meaning_changes,
             "total_importance": total_importance
         }
+
+    def _get_word_embedding(self, word: str) -> torch.Tensor:
+        """Get the embedding for a single word using the GPT model."""
+        # Tokenize the word
+        inputs = self.tokenizer(word, return_tensors="pt", padding=True, add_special_tokens=False)
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
+        
+        # Get model outputs
+        with torch.no_grad():
+            outputs = self.model(**inputs)
+            # Use the last hidden state's mean as the word embedding
+            word_embedding = outputs.hidden_states[-1].mean(dim=1)
+        
+        return word_embedding
 
     def _compute_sentence_comprehension(self, states: list[dict]) -> dict:
         """
@@ -723,18 +702,6 @@ class TransitionFunction():
         word_importance_weights = []
         word_analyses = []  # Store analyses for all words
         
-        # Define word importance weights
-        word_importance = {
-            'noun': 1.0,
-            'verb': 1.0,
-            'adjective': 0.8,
-            'adverb': 0.7,
-            'article': 0.3,
-            'preposition': 0.4,
-            'pronoun': 0.5,
-            'conjunction': 0.3
-        }
-        
         for i, (state, orig_word) in enumerate(zip(states, original_sentence)):
             # Get comprehension state for this word
             comprehension_state = state['comprehension']
@@ -750,7 +717,7 @@ class TransitionFunction():
             mask_position = (inputs["input_ids"][0] == mask_token_id).nonzero().item()
             
             with torch.no_grad():
-                outputs = self.masked_lm_model(**inputs)
+                outputs = self.model(**inputs)
                 logits = outputs.logits[0, mask_position]
                 probs = torch.softmax(logits, dim=0)
             
@@ -761,7 +728,7 @@ class TransitionFunction():
             
             # Determine word type and importance
             word_type = 'noun' if i in [1, 5] else 'verb' if i == 2 else 'article' if i in [0, 4] else 'preposition' if i == 3 else 'other'
-            importance = word_importance.get(word_type, 0.5)
+            importance = self.word_importance.get(word_type, 0.5)
             
             # Store recovery score and importance
             word_recovery_scores.append(word_prob)
@@ -790,7 +757,7 @@ class TransitionFunction():
         
         # Compute per-word-type recovery scores
         type_recovery = {}
-        for word_type in word_importance.keys():
+        for word_type in self.word_importance.keys():
             type_scores = [score for score, analysis in zip(word_recovery_scores, word_analyses) if analysis['type'] == word_type]
             if type_scores:
                 type_recovery[word_type] = sum(type_scores) / len(type_scores)
@@ -846,13 +813,13 @@ class TransitionFunction():
             print(f"\nSemantic Analysis:")
             print(f"Sentence Similarity: {differences['sentence_similarity']:.4f}")
             print(f"Semantic Preservation: {differences['semantic_preservation']:.4f}")
-            print(f"Number of word differences: {differences['num_differences']}")
+            print(f"Number of word differences: {len(differences['word_differences'])}")
             
             print("\nWord-level differences:")
             for diff in differences['word_differences']:
                 print(f"Position {diff['position']}:")
-                print(f"  Original: {diff['original']}")
-                print(f"  Perceived: {diff['perceived']}")
+                print(f"  Original: {diff['original_word']}")
+                print(f"  Perceived: {diff['perceived_word']}")
                 print(f"  Word Similarity: {diff['similarity']:.4f}")
             
             print("-" * 70)

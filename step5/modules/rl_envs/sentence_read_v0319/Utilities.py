@@ -7,7 +7,7 @@ import os
 from tqdm import tqdm
 
 
-def compute_integration_difficulty(tokenizer, model, context: list[str], word: str, full_sentence: list[str], current_word_idx: int) -> tuple[float, float, float]:
+def compute_integration_difficulty(tokenizer, model, context: list[str], word: str, full_sentence: list[str], current_word_idx: int) -> tuple[float, float, float, float]:
     """
     Compute integration difficulty for a word given its context using surprisal.
     Returns surprisal, normalized difficulty score, and the word's probability in context.
@@ -21,10 +21,11 @@ def compute_integration_difficulty(tokenizer, model, context: list[str], word: s
         current_word_idx: Position of the target word in the sentence
         
     Returns:
-        tuple[float, float, float]: (surprisal, difficulty, word_probability)
+        tuple[float, float, float, float]: (surprisal, difficulty, word_probability, ranked_word_integration_probability)
         - surprisal: -log P(word | context), measures unexpectedness
         - difficulty: Sigmoid-scaled surprisal, normalized to [0,1]
         - word_integration_probability: P(word | context), measures expectedness [0,1]
+        - ranked_word_integration_probability: Rank-based normalized probability [0,1]
 
     NOTE: check when doing the predictability whether needs to control the size of the context (STM size around 4)
     """
@@ -63,7 +64,32 @@ def compute_integration_difficulty(tokenizer, model, context: list[str], word: s
     alpha = 0.5  # Scaling factor
     difficulty = torch.sigmoid(alpha * torch.tensor(surprisal)).item()
     
-    return surprisal, difficulty, word_probability.item()
+    # Get top 100 predictions and their probabilities
+    top_k = 100
+    top_probs, top_indices = torch.topk(probs, top_k)
+    
+    # Find the rank of the actual word
+    word_rank = None
+    for rank, (token_id, prob) in enumerate(zip(top_indices, top_probs)):
+        if token_id == word_token_id:
+            word_rank = rank + 1  # 1-based ranking
+            break
+    
+    # Compute ranked word integration probability based on rank
+    if word_rank is None:
+        ranked_word_integration_probability = 0.2  # Default value for words not in top 100
+    elif word_rank <= 3:
+        ranked_word_integration_probability = 1.0
+    elif word_rank <= 10:
+        ranked_word_integration_probability = 0.8
+    elif word_rank <= 20:
+        ranked_word_integration_probability = 0.6
+    elif word_rank <= 50:
+        ranked_word_integration_probability = 0.4
+    else:
+        ranked_word_integration_probability = 0.2
+    
+    return surprisal, difficulty, word_probability.item(), ranked_word_integration_probability
 
 def process_dataset_with_integration_difficulty(input_path: str, output_path: str):
     """
@@ -93,7 +119,7 @@ def process_dataset_with_integration_difficulty(input_path: str, output_path: st
             context = sentence[:i]
             
             # Compute integration difficulty
-            surprisal, difficulty, word_integration_probability_given_sentence_as_context = compute_integration_difficulty(
+            surprisal, difficulty, word_integration_probability_given_sentence_as_context, ranked_word_integration_probability = compute_integration_difficulty(
                 tokenizer, 
                 model, 
                 context, 
@@ -106,6 +132,7 @@ def process_dataset_with_integration_difficulty(input_path: str, output_path: st
             word_data["word_integration_probability"] = word_integration_probability_given_sentence_as_context
             word_data["surprisal"] = surprisal
             word_data["integration_difficulty"] = difficulty
+            word_data["ranked_word_integration_probability"] = ranked_word_integration_probability
     
     print("Saving processed dataset...")
     with open(output_path, 'w') as f:
@@ -340,7 +367,7 @@ def process_dataset(input_path: str, output_path: str):
             target_word = word_data["word"]
             
             # Step 1: Compute integration difficulty
-            surprisal, difficulty, word_integration_probability_given_sentence_as_context = compute_integration_difficulty(
+            surprisal, difficulty, word_integration_probability_given_sentence_as_context, ranked_word_integration_probability = compute_integration_difficulty(
                 tokenizer, 
                 model, 
                 context, 
@@ -353,6 +380,7 @@ def process_dataset(input_path: str, output_path: str):
             word_data["word_integration_probability"] = word_integration_probability_given_sentence_as_context  # P(word | context)
             word_data["surprisal"] = surprisal
             word_data["integration_difficulty"] = difficulty
+            word_data["ranked_word_integration_probability"] = ranked_word_integration_probability
             
             
             # Step 2: Get preview information
