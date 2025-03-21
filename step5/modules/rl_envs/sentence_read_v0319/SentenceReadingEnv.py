@@ -82,6 +82,13 @@ class SentenceReadingEnv(Env):
         # Get new sentence
         self._sentence_info = self.sentences_manager.reset(sentence_idx)
         self._sentence_len = len(self._sentence_info['words'])
+
+        # # TODO debug delete later
+        # print(f"sentence_info: {self._sentence_info}")
+        # print(f"--------------------------------")
+        # print(f"the words ranked word integration probabilities: {self._sentence_info['words_ranked_word_integration_probabilities']}")
+        # print(f"--------------------------------")
+        # print(f"the words predictabilities: {self._sentence_info['words_predictabilities']}")
         
         # Initialize word beliefs from pre-computed data
         self._word_beliefs = [-1] * self._sentence_len
@@ -95,6 +102,9 @@ class SentenceReadingEnv(Env):
         self._skipped_words_indexes = []    # only check the first-pass skipped words
         self._regressed_words_indexes = []
         self._reading_sequence = []
+
+        # # TODO: predefine a action sequence to test the environment
+        # self._action_sequence = [1, 1, 2, 1, 1, 2, 1, 1, 0, 1, 3]
         
         return self._get_obs(), {}
     
@@ -102,6 +112,10 @@ class SentenceReadingEnv(Env):
         """Take action and update states"""
         self._steps += 1
         reward = 0
+
+        # # TODO debug delete later -- TODO manipulate the actions to see whether they work properly
+        # action = self._action_sequence[self._steps-1]
+
 
         if action == self._REGRESS_ACTION:
             self._current_word_index, action_validity = (
@@ -129,12 +143,8 @@ class SentenceReadingEnv(Env):
                 # Use pre-computed ranked integration probability as belief
                 skipped_word_index = self._current_word_index - 1
                 self._previous_word_index = skipped_word_index
-                self._word_beliefs[skipped_word_index] = (
-                    self._sentence_info['words_predictabilities'][skipped_word_index]
-                )
-                self._word_beliefs[self._current_word_index] = (
-                    self._sentence_info['words_ranked_word_integration_probabilities'][self._current_word_index]
-                )
+                self._word_beliefs[skipped_word_index] = self._sentence_info['words_predictabilities'][skipped_word_index]
+                self._word_beliefs[self._current_word_index] = self._sentence_info['words_ranked_word_integration_probabilities'][self._current_word_index]
                 
                 # Check if the skipped word is the first-pass skipped word
                 if skipped_word_index not in self._reading_sequence:
@@ -154,6 +164,7 @@ class SentenceReadingEnv(Env):
                 # Sample from prediction candidates with highest probabilit
                 self._reading_sequence.append(self._current_word_index)
                 self._previous_word_index = self._current_word_index - 1
+                self._word_beliefs[self._current_word_index] = self._sentence_info['words_ranked_word_integration_probabilities'][self._current_word_index]
             reward = self.reward_function.compute_read_reward()
 
         elif action == self._STOP_ACTION:
@@ -197,6 +208,10 @@ class SentenceReadingEnv(Env):
         
         # Get the on-going comprehension scalar
         on_going_comprehension_scalar = np.clip(math.prod(valid_words_beliefs), 0, 1)
+
+        # # TODO debug delete later
+        # print(f"valid_words_beliefs: {self._word_beliefs}")
+        # print(f"on_going_comprehension_scalar: {on_going_comprehension_scalar}")
 
         stateful_obs = np.array([
             current_position,
