@@ -115,6 +115,9 @@ class SentenceReadingEnv(Env):
         self._steps += 1
         reward = 0
 
+        # TODO: now the agent does not skip at all, try to use a sigmoid function to smooth edges; then leave some tolerance 
+        # for not regressing; but let me try it later
+
         # # TODO debug delete later -- TODO manipulate the actions to see whether they work properly
         # action = self._action_sequence[self._steps-1]
 
