@@ -1,0 +1,18 @@
+Word Skipping Analysis:
+Total unique words analyzed: 6588
+Mean skip probability: 0.417
+Std skip probability: 0.270
+Correlation with length: -0.571
+Correlation with log frequency: 0.484
+Correlation with predictability: 0.215
+
+Word Regression Analysis:
+Mean regression probability: 0.130
+Std regression probability: 0.133
+Correlation with difficulty: 0.207
+
+Distribution Statistics:
+Word Lengths: min=0, max=25, mean=4.8
+Log Frequencies: min=-1.70, max=4.60, mean=2.11
+Difficulties: min=0.58, max=1.15, mean=0.81
+Predictabilities: min=0.00, max=0.99, mean=0.05

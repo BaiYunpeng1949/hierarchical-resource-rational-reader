@@ -1,0 +1,199 @@
+DETAILED WORD READING EFFECTS ANALYSES
+====================================
+
+STATISTICAL MEASURES EXPLAINED:
+------------------------------
+- Pearson r: Measures the strength and direction of the linear relationship between two variables.
+  Values range from -1 to +1, where:
+  • -1 indicates perfect negative correlation
+  • 0 indicates no correlation
+  • +1 indicates perfect positive correlation
+
+- R-squared: The coefficient of determination, indicates how much variance in the dependent
+  variable is explained by the independent variable (percentage when multiplied by 100).
+  Values range from 0 to 1, where higher values indicate better fit.
+
+- Adjusted R-squared: Similar to R-squared but adjusted for the number of predictors.
+  More suitable for comparing models with different numbers of predictors.
+
+- Slope: The change in Y for a one-unit change in X. Positive values indicate that Y
+  increases as X increases; negative values indicate that Y decreases as X increases.
+
+- F-statistic: Tests whether the model as a whole is statistically significant.
+  Larger values suggest stronger evidence against the null hypothesis.
+
+- P-values: The probability of obtaining test results at least as extreme as the observed
+  results, assuming the null hypothesis is true. Values < 0.05 are typically
+  considered statistically significant.
+
+
+ANALYSIS RESULTS BY EFFECT TYPE
+============================
+
+WORD SKIPPING EFFECTS
+--------------------
+
+Word Length Effect on Word Skipping
+----------------------------------------
+Number of observations: 6588
+
+Correlation Analysis:
+Pearson r: -0.571 (Strong)
+Correlation p-value: 0.000000 ***
+
+Regression Analysis:
+R-squared: 0.326 (32.6% of variance explained)
+Adjusted R-squared: 0.325
+Slope: -0.059 (Negative relationship)
+Intercept: 0.700 (Predicted Skip Probability when Word Length = 0)
+Slope p-value: 0.000000 ***
+F-statistic: 3178.987
+F-test p-value: 0.000000 ***
+
+Key Findings:
+------------
+1. Relationship strength: Strong correlation between variables (statistically significant)
+2. Effect size: 32.6% of the variation in Skip Probability
+   can be explained by Word Length
+3. Direction: As Word Length increases, Skip Probability tends to decrease
+
+==================================================
+
+Log Frequency Effect on Word Skipping
+----------------------------------------
+Number of observations: 6588
+
+Correlation Analysis:
+Pearson r: 0.484 (Moderate)
+Correlation p-value: 0.000000 ***
+
+Regression Analysis:
+R-squared: 0.234 (23.4% of variance explained)
+Adjusted R-squared: 0.234
+Slope: 0.082 (Positive relationship)
+Intercept: 0.244 (Predicted Skip Probability when Log Frequency = 0)
+Slope p-value: 0.000000 ***
+F-statistic: 2016.395
+F-test p-value: 0.000000 ***
+
+Key Findings:
+------------
+1. Relationship strength: Moderate correlation between variables (statistically significant)
+2. Effect size: 23.4% of the variation in Skip Probability
+   can be explained by Log Frequency
+3. Direction: As Log Frequency increases, Skip Probability tends to increase
+
+==================================================
+
+Predictability Effect on Word Skipping
+----------------------------------------
+Number of observations: 6588
+
+Correlation Analysis:
+Pearson r: 0.215 (Weak)
+Correlation p-value: 0.000000 ***
+
+Regression Analysis:
+R-squared: 0.046 (4.6% of variance explained)
+Adjusted R-squared: 0.046
+Slope: 0.380 (Positive relationship)
+Intercept: 0.400 (Predicted Skip Probability when Predictability = 0)
+Slope p-value: 0.000000 ***
+F-statistic: 318.414
+F-test p-value: 0.000000 ***
+
+Key Findings:
+------------
+1. Relationship strength: Weak correlation between variables (statistically significant)
+2. Effect size: 4.6% of the variation in Skip Probability
+   can be explained by Predictability
+3. Direction: As Predictability increases, Skip Probability tends to increase
+
+==================================================
+
+Logit Predictability Effect on Word Skipping
+----------------------------------------
+Number of observations: 6588
+
+Correlation Analysis:
+Pearson r: 0.383 (Moderate)
+Correlation p-value: 0.000000 ***
+
+Regression Analysis:
+R-squared: 0.147 (14.7% of variance explained)
+Adjusted R-squared: 0.147
+Slope: 0.070 (Positive relationship)
+Intercept: 0.645 (Predicted Skip Probability when Logit Predictability = 0)
+Slope p-value: 0.000000 ***
+F-statistic: 1131.824
+F-test p-value: 0.000000 ***
+
+Key Findings:
+------------
+1. Relationship strength: Moderate correlation between variables (statistically significant)
+2. Effect size: 14.7% of the variation in Skip Probability
+   can be explained by Logit Predictability
+3. Direction: As Logit Predictability increases, Skip Probability tends to increase
+
+==================================================
+
+WORD REGRESSION EFFECTS
+----------------------
+
+Word Difficulty Effect on Word Regression
+----------------------------------------
+Number of observations: 6588
+
+Correlation Analysis:
+Pearson r: 0.207 (Weak)
+Correlation p-value: 0.000000 ***
+
+Regression Analysis:
+R-squared: 0.043 (4.3% of variance explained)
+Adjusted R-squared: 0.043
+Slope: 0.191 (Positive relationship)
+Intercept: -0.024 (Predicted Regression Probability when Word Difficulty = 0)
+Slope p-value: 0.000000 ***
+F-statistic: 294.253
+F-test p-value: 0.000000 ***
+
+Key Findings:
+------------
+1. Relationship strength: Weak correlation between variables (statistically significant)
+2. Effect size: 4.3% of the variation in Regression Probability
+   can be explained by Word Difficulty
+3. Direction: As Word Difficulty increases, Regression Probability tends to increase
+
+==================================================
+
+Skip Probability Effect on Word Regression
+----------------------------------------
+Number of observations: 6588
+
+Correlation Analysis:
+Pearson r: 0.069 (Weak)
+Correlation p-value: 0.000000 ***
+
+Regression Analysis:
+R-squared: 0.005 (0.5% of variance explained)
+Adjusted R-squared: 0.005
+Slope: 0.034 (Positive relationship)
+Intercept: 0.116 (Predicted Regression Probability when Skip Probability = 0)
+Slope p-value: 0.000000 ***
+F-statistic: 31.542
+F-test p-value: 0.000000 ***
+
+Key Findings:
+------------
+1. Relationship strength: Weak correlation between variables (statistically significant)
+2. Effect size: 0.5% of the variation in Regression Probability
+   can be explained by Skip Probability
+3. Direction: As Skip Probability increases, Regression Probability tends to increase
+
+==================================================
+
+Significance levels:
+*** p < 0.001 (Strong evidence)
+** p < 0.01 (Very good evidence)
+* p < 0.05 (Good evidence)
+n.s. = not significant (p ≥ 0.05, Insufficient evidence)

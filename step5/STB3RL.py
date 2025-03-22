@@ -949,47 +949,47 @@ class RL:
             # Get episode logs after episode is done
             episode_logs = self._env.get_episode_logs()
             
-        #     # Add episode index to logs
-        #     episode_logs['episode'] = episode
-        #     episode_logs['score'] = score
+            # Add episode index to logs
+            episode_logs['episode'] = episode
+            episode_logs['score'] = score
             
-        #     # Collect statistics
-        #     all_skipping_rates.append(episode_logs['skipping_rate'])
-        #     all_regression_rates.append(episode_logs['regression_rate'])
-        #     all_sentence_lengths.append(episode_logs['sentence_length'])
+            # Collect statistics
+            all_skipping_rates.append(episode_logs['skipping_rate'])
+            all_regression_rates.append(episode_logs['regression_rate'])
+            all_sentence_lengths.append(episode_logs['sentence_length'])
             
-        #     # Collect word predictabilities and skipping decisions
-        #     if 'word_predictabilities' in episode_logs:
-        #         all_word_predictabilities.extend(episode_logs['word_predictabilities'])
-        #         all_skipping_decisions.extend(episode_logs['skipping_decisions'])
+            # Collect word predictabilities and skipping decisions
+            if 'word_predictabilities' in episode_logs:
+                all_word_predictabilities.extend(episode_logs['word_predictabilities'])
+                all_skipping_decisions.extend(episode_logs['skipping_decisions'])
             
-        #     # Collect regression and appraisal data
-        #     if 'regressed_words' in episode_logs:
-        #         all_regressed_words.extend(episode_logs['regressed_words'])
-        #     if 'final_appraisals' in episode_logs:
-        #         all_word_appraisals.extend(episode_logs['final_appraisals'])
+            # Collect regression and appraisal data
+            if 'regressed_words' in episode_logs:
+                all_regressed_words.extend(episode_logs['regressed_words'])
+            if 'final_appraisals' in episode_logs:
+                all_word_appraisals.extend(episode_logs['final_appraisals'])
             
-        #     # Store episode logs
-        #     logs_across_episodes.append(episode_logs)
+            # Store episode logs
+            logs_across_episodes.append(episode_logs)
 
             print(
                 f'Episode:{episode}     Score:{score}\n'
-                # f'Sentence Length: {episode_logs["sentence_length"]}\n'
-                # f'Skipping Rate: {episode_logs["skipping_rate"]:.2f}%\n'
-                # f'Regression Rate: {episode_logs["regression_rate"]:.2f}%\n'
-                # f'{"-" * 50}\n'
+                f'Sentence Length: {episode_logs["sentence_length"]}\n'
+                f'Skipping Rate: {episode_logs["skipping_rate"]:.2f}%\n'
+                f'Regression Rate: {episode_logs["regression_rate"]:.2f}%\n'
+                f'{"-" * 50}\n'
             )
 
-        # # Calculate overall statistics
-        # avg_skipping_rate = np.mean(all_skipping_rates)
-        # avg_regression_rate = np.mean(all_regression_rates)
-        # avg_sentence_length = np.mean(all_sentence_lengths)
+        # Calculate overall statistics
+        avg_skipping_rate = np.mean(all_skipping_rates)
+        avg_regression_rate = np.mean(all_regression_rates)
+        avg_sentence_length = np.mean(all_sentence_lengths)
         
-        # print(f"\nOverall Statistics ({self._num_episodes} episodes):")
-        # print(f"Average Sentence Length: {avg_sentence_length:.2f}")
-        # print(f"Average Skipping Rate: {avg_skipping_rate:.2f}%")
-        # print(f"Average Regression Rate: {avg_regression_rate:.2f}%")
-        # print(f'Time elapsed for running the DEBUG/TEST: {time.time() - start_time} seconds')
+        print(f"\nOverall Statistics ({self._num_episodes} episodes):")
+        print(f"Average Sentence Length: {avg_sentence_length:.2f}")
+        print(f"Average Skipping Rate: {avg_skipping_rate:.2f}%")
+        print(f"Average Regression Rate: {avg_regression_rate:.2f}%")
+        print(f'Time elapsed for running the DEBUG/TEST: {time.time() - start_time} seconds')
 
         # Save logs if in test mode
         if self._mode == _MODES['test']:
@@ -998,38 +998,38 @@ class RL:
             rl_model_name = self._config_rl['train']['checkpoints_folder_name'] + '_' + self._config_rl['test']['loaded_model_name']
             log_dir = os.path.join(root_path, "data", "sim_results", "sentence_reading", rl_model_name)
             
-            # # Save logs to JSON
-            # plot_sentence_reading_figures.save_json_file(logs_across_episodes, log_dir)
+            # Save logs to JSON
+            plot_sentence_reading_figures.save_json_file(logs_across_episodes, log_dir)
 
-            # # Create and save summary plots
-            # plot_sentence_reading_figures.plot_reading_behavior_summary(
-            #     log_dir=log_dir,
-            #     skipping_rates=all_skipping_rates,
-            #     regression_rates=all_regression_rates,
-            #     sentence_lengths=all_sentence_lengths
-            # )
+            # Create and save summary plots
+            plot_sentence_reading_figures.plot_reading_behavior_summary(
+                log_dir=log_dir,
+                skipping_rates=all_skipping_rates,
+                regression_rates=all_regression_rates,
+                sentence_lengths=all_sentence_lengths
+            )
 
-            # # Create and save skipping vs predictability plot if we have the data
-            # if all_word_predictabilities and all_skipping_decisions:
-            #     plot_sentence_reading_figures.plot_skipping_vs_predictability(
-            #         log_dir=log_dir,
-            #         word_predictabilities=all_word_predictabilities,
-            #         skipping_decisions=all_skipping_decisions
-            #     )
+            # Create and save skipping vs predictability plot if we have the data
+            if all_word_predictabilities and all_skipping_decisions:
+                plot_sentence_reading_figures.plot_skipping_vs_predictability(
+                    log_dir=log_dir,
+                    word_predictabilities=all_word_predictabilities,
+                    skipping_decisions=all_skipping_decisions
+                )
             
-            # # Create and save regression vs appraisals plot if we have the data
-            # if all_regressed_words and all_word_appraisals:
-            #     plot_sentence_reading_figures.plot_regression_vs_appraisals(
-            #         log_dir=log_dir,
-            #         regressed_words=all_regressed_words,
-            #         word_appraisals=all_word_appraisals
-            #     )
+            # Create and save regression vs appraisals plot if we have the data
+            if all_regressed_words and all_word_appraisals:
+                plot_sentence_reading_figures.plot_regression_vs_appraisals(
+                    log_dir=log_dir,
+                    regressed_words=all_regressed_words,
+                    word_appraisals=all_word_appraisals
+                )
             
-            # # Create and save comprehensive reading behavior metrics
-            # plot_sentence_reading_figures.plot_reading_behavior_metrics(
-            #     log_dir=log_dir,
-            #     logs_across_episodes=logs_across_episodes
-            # )
+            # Create and save comprehensive reading behavior metrics
+            plot_sentence_reading_figures.plot_reading_behavior_metrics(
+                log_dir=log_dir,
+                logs_across_episodes=logs_across_episodes
+            )
 
     def _supervisory_controller_test(self):     # TODO: get a plot of regression rate vs. appraisal level weights. vs. time constraints.
         """

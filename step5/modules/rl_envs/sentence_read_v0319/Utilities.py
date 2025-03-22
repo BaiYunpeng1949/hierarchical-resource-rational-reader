@@ -166,7 +166,7 @@ def compute_word_prediction(tokenizer, model, context: list[str], target_word: s
     mask_position = (inputs.input_ids[0] == mask_token_id).nonzero().item()
     
     # Get model predictions for masked position
-    with torch.no_grad():
+        with torch.no_grad():
         outputs = model(**inputs)
         logits = outputs.logits[0, mask_position]  # Shape: [vocab_size]
         
