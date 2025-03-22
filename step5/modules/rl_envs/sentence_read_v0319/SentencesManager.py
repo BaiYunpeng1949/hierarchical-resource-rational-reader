@@ -38,6 +38,7 @@ class SentencesManager():
         else:
             random_idx = random.randint(0, self._num_sentences - 1)
             sentence_data = self._sentences_dataset[str(random_idx)]
+            sentence_idx = random_idx
             
         # Extract word-level information
         words_metadata = sentence_data["words"]
@@ -59,19 +60,22 @@ class SentencesManager():
             predicted_words.append(max_prob_word)
 
         sentence_info = {
-            "words": [word["word"] for word in words_metadata],
+            "sentence_id": sentence_idx,
+            "participant_id": "SIM",
+            "sentence_content": sentence_data["sentence_content"],
             "sentence_len": len(words_metadata),
-            "clean_words": [word["word_clean"] for word in words_metadata],
-            "word_indices": [word["word_id"] for word in words_metadata],
-            "word_lengths": [len(word["word"]) for word in words_metadata],
-            # "word_difficulties": [word["difficulty"] for word in words_metadata],
-            # "word_frequencies": [word["frequency"] for word in words_metadata],
-            # "word_log_frequencies": [word["log_frequency"] for word in words_metadata],
-            # "word_contextual_predictabilities": [word["predictability"] for word in words_metadata],
-            # "word_logit_contextual_predictabilities": [word["logit_predictability"] for word in words_metadata],
-            "words_ranked_word_integration_probabilities": [word["ranked_word_integration_probability"] for word in words_metadata],
-            "words_predictabilities": word_predictabilities,
-            "predicted_words": predicted_words
+            "words": [word["word"] for word in words_metadata],
+            "word_cleans": [word["word_clean"] for word in words_metadata],
+            "word_ids": [word["word_id"] for word in words_metadata],
+            "word_lengths_for_analysis": [len(word["word"]) for word in words_metadata],
+            "word_frequencies_per_million_for_analysis": [word["frequency"] for word in words_metadata],
+            "word_log_frequencies_per_million_for_analysis": [word["log_frequency"] for word in words_metadata],
+            "word_difficulties_for_analysis": [word["difficulty"] for word in words_metadata],
+            "word_predictabilities_for_analysis": [word["predictability"] for word in words_metadata],
+            "word_logit_predictabilities_for_analysis": [word["logit_predictability"] for word in words_metadata],
+            "words_ranked_word_integration_probabilities_for_running_model": [word["ranked_word_integration_probability"] for word in words_metadata],
+            "words_predictabilities_for_running_model": word_predictabilities,
+            "predicted_words_for_running_model": predicted_words
         }
         
         return sentence_info

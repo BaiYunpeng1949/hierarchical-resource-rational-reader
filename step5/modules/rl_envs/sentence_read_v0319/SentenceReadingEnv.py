@@ -59,6 +59,7 @@ class SentenceReadingEnv(Env):
         self.ep_len = 2 * Constants.MAX_SENTENCE_LENGTH
         self._terminate = None
         self._truncated = None
+        self._episode_id = None
 
         # Action space
         self._REGRESS_ACTION = 0
@@ -71,14 +72,15 @@ class SentenceReadingEnv(Env):
         self._num_stateful_obs = 6
         self.observation_space = Box(low=0, high=1, shape=(self._num_stateful_obs,))
         
-    def reset(self, seed=42, sentence_idx=None):
+    def reset(self, seed=42, sentence_idx=None, episode_id=None):
         """Reset environment and initialize states"""
         super().reset(seed=seed)
 
         self._steps = 0
         self._terminate = False
         self._truncated = False
-        
+        self._episode_id = episode_id
+
         # Get new sentence
         self._sentence_info = self.sentences_manager.reset(sentence_idx)
         self._sentence_len = len(self._sentence_info['words'])
@@ -143,8 +145,8 @@ class SentenceReadingEnv(Env):
                 # Use pre-computed ranked integration probability as belief
                 skipped_word_index = self._current_word_index - 1
                 self._previous_word_index = skipped_word_index
-                self._word_beliefs[skipped_word_index] = self._sentence_info['words_predictabilities'][skipped_word_index]
-                self._word_beliefs[self._current_word_index] = self._sentence_info['words_ranked_word_integration_probabilities'][self._current_word_index]
+                self._word_beliefs[skipped_word_index] = self._sentence_info['words_predictabilities_for_running_model'][skipped_word_index]
+                self._word_beliefs[self._current_word_index] = self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'][self._current_word_index]
                 
                 # Check if the skipped word is the first-pass skipped word
                 if skipped_word_index not in self._reading_sequence:
@@ -164,7 +166,7 @@ class SentenceReadingEnv(Env):
                 # Sample from prediction candidates with highest probabilit
                 self._reading_sequence.append(self._current_word_index)
                 self._previous_word_index = self._current_word_index - 1
-                self._word_beliefs[self._current_word_index] = self._sentence_info['words_ranked_word_integration_probabilities'][self._current_word_index]
+                self._word_beliefs[self._current_word_index] = self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'][self._current_word_index]
             reward = self.reward_function.compute_read_reward()
 
         elif action == self._STOP_ACTION:
@@ -183,8 +185,14 @@ class SentenceReadingEnv(Env):
         if self._steps >= self.ep_len:
             self._terminate = True
             self._truncated = True
+
+        # TODO debug delete later
+        if self._terminate: 
+            info = self.get_episode_log()
+        else:
+            info = {}
         
-        return self._get_obs(), reward, self._terminate, self._truncated, {}
+        return self._get_obs(), reward, self._terminate, self._truncated, info
     
     @staticmethod
     def normalise(x, x_min, x_max, a, b):
@@ -204,7 +212,7 @@ class SentenceReadingEnv(Env):
         # Get the previous word's belief
         norm_previous_word_belief = np.clip(self._word_beliefs[self._previous_word_index], 0, 1) if self._previous_word_index is not None and 0 <= self._previous_word_index < self._sentence_len else 1
         norm_current_word_belief = np.clip(self._word_beliefs[self._current_word_index], 0, 1) if self._current_word_index is not None and 0 <= self._current_word_index < self._sentence_len else 1
-        norm_next_word_predictability = np.clip(self._sentence_info['words_predictabilities'][self._current_word_index + 1], 0, 1) if self._current_word_index + 1 is not None and 0 <= self._current_word_index + 1 < self._sentence_len else 1
+        norm_next_word_predictability = np.clip(self._sentence_info['words_predictabilities_for_running_model'][self._current_word_index + 1], 0, 1) if self._current_word_index + 1 is not None and 0 <= self._current_word_index + 1 < self._sentence_len else 1
         
         # Get the on-going comprehension scalar
         on_going_comprehension_scalar = np.clip(math.prod(valid_words_beliefs), 0, 1)
@@ -226,16 +234,39 @@ class SentenceReadingEnv(Env):
 
         return stateful_obs
         
-    def get_episode_logs(self):
+    def get_episode_log(self) -> dict:
         """Get logs for the episode"""
-        return {
-            'sentence_length': self._sentence_len,
-            'reading_sequence': self._reading_sequence,
-            'skipped_words': self._skipped_words_indexes,
-            'regressed_words': self._regressed_words_indexes,
-            'word_beliefs': self._word_beliefs,
-            'final_comprehension': math.prod(self._word_beliefs) if self._word_beliefs else 0.0
+        words_data_list = []
+        for word_idx in range(self._sentence_len):
+            word_data = {
+                "word": self._sentence_info['words'][word_idx],
+                "word_clean": self._sentence_info['word_cleans'][word_idx],
+                "word_id": self._sentence_info['word_ids'][word_idx],
+                "length": self._sentence_info['word_lengths_for_analysis'][word_idx],
+                "frequency_per_million": self._sentence_info['word_frequencies_per_million_for_analysis'][word_idx],
+                "log_frequency": self._sentence_info['word_log_frequencies_per_million_for_analysis'][word_idx],
+                "difficulty": self._sentence_info['word_difficulties_for_analysis'][word_idx],
+                "predictability": self._sentence_info['word_predictabilities_for_analysis'][word_idx],
+                "logit_predictability": self._sentence_info['word_logit_predictabilities_for_analysis'][word_idx],
+                "is_first_pass_skip": word_idx in self._skipped_words_indexes,
+                "is_regression_target": word_idx in self._regressed_words_indexes,
+                "FFD": [],
+                "GD": [],
+                "TRT": [],
+                "nFixations": [],
+            }
+            words_data_list.append(word_data)
+        
+        episode_log = {
+            "episode_id": self._episode_id,
+            'sentence_id': self._sentence_info['sentence_id'],
+            'participant_id': self._sentence_info['participant_id'],
+            'sentence_content': self._sentence_info['sentence_content'],
+            'sentence_len': self._sentence_len,
+            "words": words_data_list
         }
+
+        return episode_log
 
 
 if __name__ == "__main__":
