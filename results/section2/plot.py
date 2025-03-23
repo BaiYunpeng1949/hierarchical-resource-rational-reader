@@ -103,6 +103,17 @@ def main():
         output_dir
     )
     
+    # 3. Skip prob vs logit predictability
+    plot_regression_with_confidence(
+        human_data['logit_predictability'],
+        human_data['skip_probability'],
+        sim_data['logit_predictability'],
+        sim_data['skip_probability'],
+        'Logit Predictability',
+        'Skip Probability',
+        output_dir
+    )
+    
     # Plot regression probability relationships
     # 1. Regression prob vs difficulty
     plot_regression_with_confidence(

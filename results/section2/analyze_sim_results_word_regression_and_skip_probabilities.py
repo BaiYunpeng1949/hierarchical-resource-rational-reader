@@ -102,6 +102,8 @@ def collect_word_statistics():
                 'frequency': stats['frequency'] / n,
                 'log_frequency': stats['log_frequency'] / n,
                 'difficulty': stats['difficulty'] / n,
+                'predictability': stats['predictability'] / n,
+                'logit_predictability': stats['logit_predictability'] / n,
                 'skip_probability': stats['skip_count'] / n,
                 'regression_probability': stats['regression_count'] / n,
                 'total_occurrences': n
@@ -129,6 +131,8 @@ def collect_word_statistics():
             'frequency': row['frequency'],
             'log_frequency': row['log_frequency'],
             'difficulty': row['difficulty'],
+            'predictability': row['predictability'],
+            'logit_predictability': row['logit_predictability'],
             'skip_probability': row['skip_probability'],
             'regression_probability': row['regression_probability'],
             'total_occurrences': row['total_occurrences'],
