@@ -140,7 +140,7 @@ def process_dataset_with_integration_difficulty(input_path: str, output_path: st
     
     print("Done! Dataset processed and saved with integration difficulty scores.")
 
-def compute_word_prediction(tokenizer, model, context: list[str], target_word: str, preview_letters: int = 2) -> tuple[str, float, list[tuple[str, float]]]:
+def compute_word_prediction(tokenizer, model, context: list[str], target_word: str, preview_letters: int = 2, integration_ranks: dict = None) -> tuple[str, float, list[tuple[str, float, float]]]:
     """
     Compute word prediction given context and preview information.
     Returns the predicted word, its probability, and top candidates.
@@ -151,9 +151,11 @@ def compute_word_prediction(tokenizer, model, context: list[str], target_word: s
         context: List of words before target word
         target_word: The actual word to predict
         preview_letters: Number of clear letters visible in preview (default 2)
+        integration_ranks: Dictionary mapping words to their ranks in integration difficulty computation
         
     Returns:
-        tuple[str, float, list[tuple[str, float]]]: (predicted_word, probability, top_candidates)
+        tuple[str, float, list[tuple[str, float, float]]]: (predicted_word, probability, top_candidates)
+        where top_candidates is a list of (word, probability, ranked_word_integration_probability)
     """
     # Create input with [MASK] token after context
     input_text = " ".join(context + ["[MASK]"])
@@ -166,7 +168,7 @@ def compute_word_prediction(tokenizer, model, context: list[str], target_word: s
     mask_position = (inputs.input_ids[0] == mask_token_id).nonzero().item()
     
     # Get model predictions for masked position
-        with torch.no_grad():
+    with torch.no_grad():
         outputs = model(**inputs)
         logits = outputs.logits[0, mask_position]  # Shape: [vocab_size]
         
@@ -238,7 +240,22 @@ def compute_word_prediction(tokenizer, model, context: list[str], target_word: s
                 break
 
         if matches_noisy_preview:
-            filtered_predictions.append((word, prob.item()))
+            # Get the word's rank from integration difficulty computation
+            word_rank = integration_ranks.get(word, 100) if integration_ranks else 100
+            
+            # Compute ranked_word_integration_probability based on rank
+            if word_rank <= 3:
+                ranked_prob = 1.0
+            elif word_rank <= 10:
+                ranked_prob = 0.8
+            elif word_rank <= 20:
+                ranked_prob = 0.6
+            elif word_rank <= 50:
+                ranked_prob = 0.4
+            else:
+                ranked_prob = 0.2
+                
+            filtered_predictions.append((word, prob.item(), ranked_prob))
             total_filtered_prob += prob.item()
     
     # Sort filtered predictions by probability
@@ -247,13 +264,13 @@ def compute_word_prediction(tokenizer, model, context: list[str], target_word: s
     # Normalize probabilities
     if filtered_predictions:
         # Normalize probabilities for sampling
-        filtered_predictions = [(w, p/total_filtered_prob) for w, p in filtered_predictions]
+        filtered_predictions = [(w, p/total_filtered_prob, r) for w, p, r in filtered_predictions]
         
         # Get top 5 predictions
         top_predictions = filtered_predictions[:5]
         
         # Get most likely word and its probability
-        predicted_word, predictability = top_predictions[0]
+        predicted_word, predictability, _ = top_predictions[0]
     else:
         # Fallback if no predictions
         predicted_word = "[UNKNOWN]"
@@ -302,13 +319,35 @@ def process_dataset_with_predictions(input_path: str, output_path: str):
             min_length = max(1, target_length - 2)
             max_length = target_length + 2
             
-            # Compute word prediction
+            # Get top 100 predictions for integration difficulty ranking
+            masked_sentence = sentence.copy()
+            masked_sentence[i] = "[MASK]"
+            masked_text = "[CLS] " + " ".join(masked_sentence) + " [SEP]"
+            inputs = tokenizer(masked_text, return_tensors="pt", padding=True, truncation=True)
+            mask_position = (inputs["input_ids"][0] == tokenizer.mask_token_id).nonzero().item()
+            
+            with torch.no_grad():
+                outputs = model(**inputs)
+                logits = outputs.logits[0, mask_position]
+                probs = torch.softmax(logits, dim=0)
+                top_k = 100
+                top_probs, top_indices = torch.topk(probs, top_k)
+            
+            # Create dictionary mapping words to their ranks
+            integration_ranks = {}
+            for rank, (token_id, _) in enumerate(zip(top_indices, top_probs)):
+                word = tokenizer.decode([token_id]).strip().lower()
+                if word and not word.startswith('['):
+                    integration_ranks[word] = rank + 1
+            
+            # Step 2: Compute word prediction with integration ranks
             predicted_word, predictability, top_predictions = compute_word_prediction(
                 tokenizer,
                 model,
                 context,
                 target_word,
-                preview_letters
+                preview_letters,
+                integration_ranks
             )
             
             # Add prediction information to word data
@@ -324,8 +363,12 @@ def process_dataset_with_predictions(input_path: str, output_path: str):
                 }
             }
             word_data["prediction_candidates"] = [
-                {"word": word, "probability": prob}
-                for word, prob in top_predictions
+                {
+                    "word": word,
+                    "probability": prob,
+                    "ranked_word_integration_probability": rank_prob
+                }
+                for word, prob, rank_prob in top_predictions
             ]
     
     print("Saving processed dataset...")
@@ -382,6 +425,26 @@ def process_dataset(input_path: str, output_path: str):
             word_data["integration_difficulty"] = difficulty
             word_data["ranked_word_integration_probability"] = ranked_word_integration_probability
             
+            # Get top 100 predictions for integration difficulty ranking
+            masked_sentence = sentence.copy()
+            masked_sentence[i] = "[MASK]"
+            masked_text = "[CLS] " + " ".join(masked_sentence) + " [SEP]"
+            inputs = tokenizer(masked_text, return_tensors="pt", padding=True, truncation=True)
+            mask_position = (inputs["input_ids"][0] == tokenizer.mask_token_id).nonzero().item()
+            
+            with torch.no_grad():
+                outputs = model(**inputs)
+                logits = outputs.logits[0, mask_position]
+                probs = torch.softmax(logits, dim=0)
+                top_k = 100
+                top_probs, top_indices = torch.topk(probs, top_k)
+            
+            # Create dictionary mapping words to their ranks
+            integration_ranks = {}
+            for rank, (token_id, _) in enumerate(zip(top_indices, top_probs)):
+                word = tokenizer.decode([token_id]).strip().lower()
+                if word and not word.startswith('['):
+                    integration_ranks[word] = rank + 1
             
             # Step 2: Get preview information
             clear_preview = target_word[:preview_letters].lower()
@@ -391,13 +454,14 @@ def process_dataset(input_path: str, output_path: str):
             min_length = max(1, target_length - 2)
             max_length = target_length + 2
             
-            # Step 3: Compute word prediction
+            # Step 3: Compute word prediction with integration ranks
             predicted_word, predictability, top_predictions = compute_word_prediction(
                 tokenizer,
                 model,
                 context,
                 target_word,
-                preview_letters
+                preview_letters,
+                integration_ranks
             )
             
             # Add prediction information
@@ -413,8 +477,12 @@ def process_dataset(input_path: str, output_path: str):
                 }
             }
             word_data["prediction_candidates"] = [
-                {"word": word, "probability": prob}
-                for word, prob in top_predictions
+                {
+                    "word": word,
+                    "probability": prob,
+                    "ranked_word_integration_probability": rank_prob
+                }
+                for word, prob, rank_prob in top_predictions
             ]
     
     print("Saving processed dataset...")

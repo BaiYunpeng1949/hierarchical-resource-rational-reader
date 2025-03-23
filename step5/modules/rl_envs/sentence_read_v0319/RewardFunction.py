@@ -40,8 +40,9 @@ class RewardFunction():
         """
         # Penalize for not finishing the sentence reading task
         if num_words_read < sentence_len:
-            linear_penalty = -100 * (sentence_len - num_words_read) / sentence_len - 10
-            return linear_penalty 
+            # linear_penalty = -100 * (sentence_len - num_words_read) / sentence_len - 10
+            # return linear_penalty 
+            return -100
         else:
             overall_comprehension_scalar = 1
             for b in words_beliefs:

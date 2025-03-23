@@ -48,17 +48,22 @@ class SentencesManager():
         # Get word predictabilities from the dataset: get the largest
         word_predictabilities = []
         predicted_words = []
+        predicted_words_ranked_integration_probabilities = []
         for word in words_metadata:
             # Get highest probability from prediction candidates
             max_prob = 0
             max_prob_word = ""
+            max_prob_word_ranked_integration_prob = 1e-4
             for candidate in word["prediction_candidates"]:
                 if candidate["probability"] > max_prob:
                     max_prob = candidate["probability"]
                     max_prob_word = candidate["word"]
+                    max_prob_word_ranked_integration_prob = candidate["ranked_word_integration_probability"]
             word_predictabilities.append(max_prob)
             predicted_words.append(max_prob_word)
-
+            predicted_words_ranked_integration_probabilities.append(max_prob_word_ranked_integration_prob)
+        
+        # Get the sentence information
         sentence_info = {
             "sentence_id": sentence_idx,
             "participant_id": "SIM",
@@ -75,7 +80,8 @@ class SentencesManager():
             "word_logit_predictabilities_for_analysis": [word["logit_predictability"] for word in words_metadata],
             "words_ranked_word_integration_probabilities_for_running_model": [word["ranked_word_integration_probability"] for word in words_metadata],
             "words_predictabilities_for_running_model": word_predictabilities,
-            "predicted_words_for_running_model": predicted_words
+            "predicted_words_for_running_model": predicted_words,
+            "predicted_words_ranked_integration_probabilities_for_running_model": predicted_words_ranked_integration_probabilities
         }
         
         return sentence_info

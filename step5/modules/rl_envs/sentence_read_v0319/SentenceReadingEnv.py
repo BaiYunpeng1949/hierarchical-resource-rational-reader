@@ -87,11 +87,14 @@ class SentenceReadingEnv(Env):
 
         # # TODO debug delete later
         # print(f"sentence_info: {self._sentence_info}")
+        # print()
+        # print(f"the words ranked word integration probabilities: {self._sentence_info['words_ranked_word_integration_probabilities_for_running_model']}")
+        # print()
+        # print(f"the words predictabilities: {self._sentence_info['words_predictabilities_for_running_model']}")
+        # print()
+        # print(f"the predicted words ranked integration probabilities: {self._sentence_info['predicted_words_ranked_integration_probabilities_for_running_model']}")
         # print(f"--------------------------------")
-        # print(f"the words ranked word integration probabilities: {self._sentence_info['words_ranked_word_integration_probabilities']}")
-        # print(f"--------------------------------")
-        # print(f"the words predictabilities: {self._sentence_info['words_predictabilities']}")
-        
+
         # Initialize word beliefs from pre-computed data
         self._word_beliefs = [-1] * self._sentence_len
         self._read_words = []
@@ -148,7 +151,8 @@ class SentenceReadingEnv(Env):
                 # Use pre-computed ranked integration probability as belief
                 skipped_word_index = self._current_word_index - 1
                 self._previous_word_index = skipped_word_index
-                self._word_beliefs[skipped_word_index] = self._sentence_info['words_predictabilities_for_running_model'][skipped_word_index]
+                # self._word_beliefs[skipped_word_index] = self._sentence_info['words_predictabilities_for_running_model'][skipped_word_index]
+                self._word_beliefs[skipped_word_index] = self._sentence_info['predicted_words_ranked_integration_probabilities_for_running_model'][skipped_word_index]
                 self._word_beliefs[self._current_word_index] = self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'][self._current_word_index]
                 
                 # Check if the skipped word is the first-pass skipped word
@@ -189,7 +193,6 @@ class SentenceReadingEnv(Env):
             self._terminate = True
             self._truncated = True
 
-        # TODO debug delete later
         if self._terminate: 
             info = self.get_episode_log()
         else:
