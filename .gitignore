@@ -234,3 +234,5 @@ sysinfo.txt
 /data/human_data/read_under_time_pressure
 /step5/data/sim_results/word_activation/
 /step5/data/sim_results/sentence_reading/
+/results/section2/_raw_simulated_results/_archived
+/results/section2/processed_simulated_results/_archived
