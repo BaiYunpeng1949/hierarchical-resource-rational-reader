@@ -812,7 +812,7 @@ class RL:
             # Create the log directory
             root_path = os.path.dirname(os.path.abspath(__file__))
             rl_model_name = self._config_rl['train']['checkpoints_folder_name'] + '_' + self._config_rl['test']['loaded_model_name']
-            log_dir = os.path.join(root_path, "data", "sim_results", "sentence_reading", rl_model_name)
+            log_dir = os.path.join(root_path, "data", "sim_results", "sentence_reading", rl_model_name, f"{self._num_episodes}ep")
 
             # Create the directory if it does not exist
             if not os.path.exists(log_dir):
