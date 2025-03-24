@@ -56,15 +56,5 @@ class RewardFunction():
                 overall_comprehension_scalar = 0.0
             
             final_reward = 100 * self._coefficeint_comprehension * overall_comprehension_scalar
-            
-            # # TODO debug delete later
-            # print(f"Reward function: overall_comprehension_scalar: {overall_comprehension_scalar}")
-            # print(f"Reward function: overall_comprehension_log: {overall_comprehension_log}")
-            # print(f"Reward function: final_reward: {final_reward}")
-            # # overall_comprehension_scalar = 1
-            # # for b in words_beliefs:
-            # #     overall_comprehension_scalar *= b   
-            # #     # NOTE: maybe need to use a sigmoid function to smooth edges; then leave some tolerance 
-            # #     # for not regressing; but let me try it later
                 
             return final_reward

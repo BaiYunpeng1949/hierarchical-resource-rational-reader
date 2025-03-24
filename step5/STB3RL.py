@@ -789,7 +789,7 @@ class RL:
                 if self._mode == _MODES['debug']:
                     action = self._env.action_space.sample()
                 elif self._mode == _MODES['test']:
-                    action, _states = self._model.predict(obs, deterministic=True)
+                    action, _states = self._model.predict(obs, deterministic=False)
                 else:
                     raise ValueError(f'Invalid mode {self._mode}.')
 
