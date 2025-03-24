@@ -71,6 +71,7 @@ class SentenceReadingEnv(Env):
         # Observation space - simplified to scalar signals
         self._num_stateful_obs = 6
         self.observation_space = Box(low=0, high=1, shape=(self._num_stateful_obs,))
+        self._noisy_obs_sigma = Constants.NOISY_OBS_SIGMA
         
     def reset(self, seed=42, sentence_idx=None, episode_id=None):
         """Reset environment and initialize states"""
@@ -220,6 +221,13 @@ class SentenceReadingEnv(Env):
         norm_current_word_belief = np.clip(self._word_beliefs[self._current_word_index], 0, 1) if self._current_word_index is not None and 0 <= self._current_word_index < self._sentence_len else 1
         norm_next_word_predictability = np.clip(self._sentence_info['words_predictabilities_for_running_model'][self._current_word_index + 1], 0, 1) if self._current_word_index + 1 is not None and 0 <= self._current_word_index + 1 < self._sentence_len else 1
         
+
+        # Apply noisy observation for a more robust model -- compensation for the limited data
+        # NOTE: the noisy observation is applied to the normalized values
+        observed_previous_word_belief = np.clip(norm_previous_word_belief + np.random.normal(0, self._noisy_obs_sigma), 0, 1)
+        observed_current_word_belief = np.clip(norm_current_word_belief + np.random.normal(0, self._noisy_obs_sigma), 0, 1) 
+        observed_next_word_predictability = np.clip(norm_next_word_predictability + np.random.normal(0, self._noisy_obs_sigma), 0, 1)
+
         # Get the on-going comprehension scalar
         # on_going_comprehension_scalar = np.clip(math.prod(valid_words_beliefs), 0, 1)
         on_going_comprehension_log_scalar = 0.0
@@ -243,9 +251,9 @@ class SentenceReadingEnv(Env):
         stateful_obs = np.array([
             current_position,
             remaining_words,
-            norm_previous_word_belief,
-            norm_current_word_belief,
-            norm_next_word_predictability,
+            observed_previous_word_belief,
+            observed_current_word_belief,
+            observed_next_word_predictability,
             on_going_comprehension_log_scalar
         ])
 

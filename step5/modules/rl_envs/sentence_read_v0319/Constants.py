@@ -10,3 +10,5 @@ LANGUAGE_MODEL_NAME = "bert-base-uncased"
 
 # Contexts related
 CONTEXT_SIZE = 5
+
+NOISY_OBS_SIGMA = 0.1
