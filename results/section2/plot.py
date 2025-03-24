@@ -4,67 +4,93 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import stats
 import os
+from matplotlib.lines import Line2D
 
-def plot_regression_with_confidence(x_human, y_human, x_sim, y_sim, x_name, y_name, output_dir):
-    """Plot regression lines with confidence bands for both human and simulated data"""
+def plot_comparison(x_human, y_human, x_sim, y_sim, x_name, y_name, output_dir, output_filename):
+    """Plot regression lines and connected points with confidence bands for both human and simulated data"""
     try:
         # Check if all x values are identical for either dataset
         if len(np.unique(x_human)) <= 1 or len(np.unique(x_sim)) <= 1:
             print(f"Skipping plot for {y_name} vs {x_name} (all x values are identical)")
             return
             
-        # Create figure
-        plt.figure(figsize=(10, 6))
+        # Function to calculate regression stats and equation
+        def get_regression_stats(x, y):
+            coeffs = np.polyfit(x, y, deg=1)
+            poly = np.poly1d(coeffs)
+            y_pred = poly(x)
+            r_squared = np.corrcoef(y, y_pred)[0,1]**2
+            
+            eq_str = f'y = {coeffs[1]:.2f} + {coeffs[0]:.2f}x'
+            return r_squared, eq_str
+
+        # Calculate regression stats for both datasets
+        human_r2, human_eq = get_regression_stats(x_human, y_human)
+        sim_r2, sim_eq = get_regression_stats(x_sim, y_sim)
+        
+        # Plot 1: Regression lines with confidence bands
+        plt.figure(figsize=(8, 6))
         
         # Plot human data
-        slope_h, intercept_h, r_value_h, p_value_h, std_err_h = stats.linregress(x_human, y_human)
-        x_line_h = np.linspace(min(x_human), max(x_human), 100)
-        y_line_h = slope_h * x_line_h + intercept_h
-        
-        # Calculate confidence interval for human data
-        confidence = 0.95
-        n_h = len(x_human)
-        mean_x_h = np.mean(x_human)
-        std_x_h = np.std(x_human)
-        std_err_pred_h = std_err_h * np.sqrt(1/n_h + (x_line_h - mean_x_h)**2 / (n_h * std_x_h**2))
-        
-        # Plot human confidence band
-        plt.fill_between(x_line_h, 
-                        y_line_h - stats.t.ppf((1 + confidence) / 2, n_h-2) * std_err_pred_h,
-                        y_line_h + stats.t.ppf((1 + confidence) / 2, n_h-2) * std_err_pred_h,
-                        alpha=0.2, color='blue')
-        
+        human_plot = sns.regplot(x=x_human, y=y_human,
+                    scatter=True, color='blue', 
+                    label=f'Human (R²={human_r2:.2f}):\n{human_eq}',
+                    scatter_kws={'alpha': 0.1},
+                    line_kws={'linestyle': 'dashed', 'linewidth': 2})
+
         # Plot simulated data
-        slope_s, intercept_s, r_value_s, p_value_s, std_err_s = stats.linregress(x_sim, y_sim)
-        x_line_s = np.linspace(min(x_sim), max(x_sim), 100)
-        y_line_s = slope_s * x_line_s + intercept_s
+        sim_plot = sns.regplot(x=x_sim, y=y_sim,
+                    scatter=True, color='red', 
+                    label=f'Simulation (R²={sim_r2:.2f}):\n{sim_eq}',
+                    scatter_kws={'alpha': 0.1},
+                    line_kws={'linestyle': 'dashed', 'linewidth': 2})
+
+        plt.xlabel(x_name, fontsize=12)
+        plt.ylabel(y_name, fontsize=12)
+        plt.title(f'{y_name} vs {x_name}', fontsize=14)
         
-        # Calculate confidence interval for simulated data
-        n_s = len(x_sim)
-        mean_x_s = np.mean(x_sim)
-        std_x_s = np.std(x_sim)
-        std_err_pred_s = std_err_s * np.sqrt(1/n_s + (x_line_s - mean_x_s)**2 / (n_s * std_x_s**2))
-        
-        # Plot simulated confidence band
-        plt.fill_between(x_line_s, 
-                        y_line_s - stats.t.ppf((1 + confidence) / 2, n_s-2) * std_err_pred_s,
-                        y_line_s + stats.t.ppf((1 + confidence) / 2, n_s-2) * std_err_pred_s,
-                        alpha=0.2, color='red')
-        
-        # Plot regression lines
-        plt.plot(x_line_h, y_line_h, 'b-', label=f'Human (R² = {r_value_h**2:.3f})')
-        plt.plot(x_line_s, y_line_s, 'r-', label=f'Simulated (R² = {r_value_s**2:.3f})')
-        
-        # Customize plot
-        plt.xlabel(x_name)
-        plt.ylabel(y_name)
-        plt.title(f'{y_name} vs {x_name}')
+        # Create custom legend handles with dashed lines
+        legend_elements = [
+            Line2D([0], [0], color='blue', linestyle='dashed', linewidth=2,
+                   label=f'Human (R²={human_r2:.2f}):\n{human_eq}'),
+            Line2D([0], [0], color='red', linestyle='dashed', linewidth=2,
+                   label=f'Simulation (R²={sim_r2:.2f}):\n{sim_eq}')
+        ]
+        plt.legend(handles=legend_elements, fontsize=10)
         plt.grid(True, alpha=0.3)
-        plt.legend()
         
-        # Save plot
-        plt.savefig(os.path.join(output_dir, f'comparison_{y_name.lower()}_vs_{x_name.lower()}.png'))
+        # Save regression plot
+        regression_path = os.path.join(output_dir, f"{output_filename}_regression.png")
+        plt.savefig(regression_path)
         plt.close()
+
+        # Plot 2: Connected points
+        plt.figure(figsize=(8, 6))
+        
+        # Sort data for connected lines
+        human_sorted = sorted(zip(x_human, y_human))
+        sim_sorted = sorted(zip(x_sim, y_sim))
+        
+        # Plot human data points connected
+        plt.plot([x for x, _ in human_sorted], [y for _, y in human_sorted], 
+                'o-', color='blue', label="Human Data", alpha=0.4)
+
+        # Plot simulation data points connected
+        plt.plot([x for x, _ in sim_sorted], [y for _, y in sim_sorted], 
+                'o-', color='red', label="Simulated Data", alpha=0.4)
+
+        plt.xlabel(x_name, fontsize=12)
+        plt.ylabel(y_name, fontsize=12)
+        plt.title(f'{y_name} vs {x_name} (Connected Points)', fontsize=14)
+        plt.legend(fontsize=10)
+        plt.grid(True, alpha=0.3)
+        
+        # Save connected points plot
+        connected_path = os.path.join(output_dir, f"{output_filename}_connected.png")
+        plt.savefig(connected_path)
+        plt.close()
+        
+        print(f"Comparison plots saved at {regression_path} and {connected_path}")
         
     except Exception as e:
         print(f"Error plotting {y_name} vs {x_name}: {str(e)}")
@@ -82,62 +108,67 @@ def main():
     
     # Plot skip probability relationships
     # 1. Skip prob vs word length
-    plot_regression_with_confidence(
+    plot_comparison(
         human_data['length'], 
         human_data['skip_probability'],
         sim_data['length'],
         sim_data['skip_probability'],
         'Word Length',
         'Skip Probability',
-        output_dir
+        output_dir,
+        'skip_probability_vs_length'
     )
     
     # 2. Skip prob vs log frequency
-    plot_regression_with_confidence(
+    plot_comparison(
         human_data['log_frequency'],
         human_data['skip_probability'],
         sim_data['log_frequency'],
         sim_data['skip_probability'],
         'Log Word Frequency',
         'Skip Probability',
-        output_dir
+        output_dir,
+        'skip_probability_vs_log_frequency'
     )
     
     # 3. Skip prob vs logit predictability
-    plot_regression_with_confidence(
+    plot_comparison(
         human_data['logit_predictability'],
         human_data['skip_probability'],
         sim_data['logit_predictability'],
         sim_data['skip_probability'],
         'Logit Predictability',
         'Skip Probability',
-        output_dir
+        output_dir,
+        'skip_probability_vs_logit_predictability'
     )
     
     # Plot regression probability relationships
     # 1. Regression prob vs difficulty
-    plot_regression_with_confidence(
+    plot_comparison(
         human_data['difficulty'],
         human_data['regression_probability'],
         sim_data['difficulty'],
         sim_data['regression_probability'],
         'Word Difficulty',
         'Regression Probability',
-        output_dir
+        output_dir,
+        'regression_probability_vs_difficulty'
     )
     
     # 2. Regression prob vs skip prob
-    plot_regression_with_confidence(
+    plot_comparison(
         human_data['skip_probability'],
         human_data['regression_probability'],
         sim_data['skip_probability'],
         sim_data['regression_probability'],
         'Skip Probability',
         'Regression Probability',
-        output_dir
+        output_dir,
+        'regression_probability_vs_skip_probability'
     )
     
-    print(f"Plots have been saved to {output_dir}")
+    print(f"All plots have been saved to {output_dir}")
 
 if __name__ == "__main__":
     main()
