@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-
+import math
 
 class RewardFunction():
     """
@@ -44,10 +44,27 @@ class RewardFunction():
             # return linear_penalty 
             return -100
         else:
-            overall_comprehension_scalar = 1
-            for b in words_beliefs:
-                overall_comprehension_scalar *= b   
-                # NOTE: maybe need to use a sigmoid function to smooth edges; then leave some tolerance 
-                # for not regressing; but let me try it later
+
+            overall_comprehension_log = 0.0
+
+            if len(words_beliefs) > 0:
+                for b in words_beliefs:
+                    overall_comprehension_log += math.log(max(b, 1e-9))
+                # geometric mean
+                overall_comprehension_scalar = math.exp(overall_comprehension_log / len(words_beliefs))
+            else:
+                overall_comprehension_scalar = 0.0
+            
+            final_reward = 100 * self._coefficeint_comprehension * overall_comprehension_scalar
+            
+            # # TODO debug delete later
+            # print(f"Reward function: overall_comprehension_scalar: {overall_comprehension_scalar}")
+            # print(f"Reward function: overall_comprehension_log: {overall_comprehension_log}")
+            # print(f"Reward function: final_reward: {final_reward}")
+            # # overall_comprehension_scalar = 1
+            # # for b in words_beliefs:
+            # #     overall_comprehension_scalar *= b   
+            # #     # NOTE: maybe need to use a sigmoid function to smooth edges; then leave some tolerance 
+            # #     # for not regressing; but let me try it later
                 
-            return 100 * self._coefficeint_comprehension * overall_comprehension_scalar
+            return final_reward

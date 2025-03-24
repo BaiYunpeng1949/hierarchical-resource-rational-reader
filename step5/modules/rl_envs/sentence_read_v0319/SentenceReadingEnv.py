@@ -121,7 +121,7 @@ class SentenceReadingEnv(Env):
         # TODO: now the agent does not skip at all, try to use a sigmoid function to smooth edges; then leave some tolerance 
         # for not regressing; but let me try it later
 
-        # # TODO debug delete later -- TODO manipulate the actions to see whether they work properly
+        # # TODO debug delete later -- manipulate the actions to see whether they work properly
         # action = self._action_sequence[self._steps-1]
 
 
@@ -221,11 +221,24 @@ class SentenceReadingEnv(Env):
         norm_next_word_predictability = np.clip(self._sentence_info['words_predictabilities_for_running_model'][self._current_word_index + 1], 0, 1) if self._current_word_index + 1 is not None and 0 <= self._current_word_index + 1 < self._sentence_len else 1
         
         # Get the on-going comprehension scalar
-        on_going_comprehension_scalar = np.clip(math.prod(valid_words_beliefs), 0, 1)
+        # on_going_comprehension_scalar = np.clip(math.prod(valid_words_beliefs), 0, 1)
+        on_going_comprehension_log_scalar = 0.0
+        if len(valid_words_beliefs) > 0:
+            overall_comprehension_log = 0.0
+            for b in valid_words_beliefs:
+                overall_comprehension_log += math.log(max(b, 1e-9))
+            # geometric mean
+            on_going_comprehension_log_scalar = math.exp(overall_comprehension_log / len(valid_words_beliefs))
+        else:
+            on_going_comprehension_log_scalar = 0.0
+        
+        on_going_comprehension_log_scalar = np.clip(on_going_comprehension_log_scalar, 0, 1)
 
         # # TODO debug delete later
         # print(f"valid_words_beliefs: {self._word_beliefs}")
         # print(f"on_going_comprehension_scalar: {on_going_comprehension_scalar}")
+        # print(f"on_going_comprehension_scalar_log: {on_going_comprehension_scalar_log}")
+
 
         stateful_obs = np.array([
             current_position,
@@ -233,7 +246,7 @@ class SentenceReadingEnv(Env):
             norm_previous_word_belief,
             norm_current_word_belief,
             norm_next_word_predictability,
-            on_going_comprehension_scalar
+            on_going_comprehension_log_scalar
         ])
 
         assert stateful_obs.shape == (self._num_stateful_obs,)
