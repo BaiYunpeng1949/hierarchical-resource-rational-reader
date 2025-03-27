@@ -455,7 +455,7 @@ def process_dataset(input_path: str, output_path: str):
             max_length = target_length + 2
             
             # Step 3: Compute word prediction with integration ranks
-            predicted_word, predictability, top_predictions = compute_word_prediction(
+            predicted_word, _, top_predictions = compute_word_prediction(
                 tokenizer,
                 model,
                 context,
@@ -464,9 +464,8 @@ def process_dataset(input_path: str, output_path: str):
                 integration_ranks
             )
             
-            # Add prediction information
+            # Add prediction information, using original predictability values
             word_data["next_word_predicted"] = predicted_word
-            word_data["predictability"] = predictability
             word_data["prediction_metadata"] = {
                 "preview_letters": preview_letters,
                 "clear_preview": clear_preview,

@@ -223,10 +223,16 @@ class SentenceReadingEnv(Env):
         
 
         # Apply noisy observation for a more robust model -- compensation for the limited data
-        # NOTE: the noisy observation is applied to the normalized values
+        # NOTE: the noisy observation is applied to the normalized values. 
+        # NOTE: if it is too small, no effect to model's stochasticity, if too large, the agent finds it hard to learn reasonable policy (no regression or skipping)
         observed_previous_word_belief = np.clip(norm_previous_word_belief + np.random.normal(0, self._noisy_obs_sigma), 0, 1)
         observed_current_word_belief = np.clip(norm_current_word_belief + np.random.normal(0, self._noisy_obs_sigma), 0, 1) 
         observed_next_word_predictability = np.clip(norm_next_word_predictability + np.random.normal(0, self._noisy_obs_sigma), 0, 1)
+
+        # # TODO debug delete later
+        # print(f"observed_previous_word_belief: {observed_previous_word_belief}, normalized: {norm_previous_word_belief}")
+        # print(f"observed_current_word_belief: {observed_current_word_belief}, normalized: {norm_current_word_belief}")
+        # print(f"observed_next_word_predictability: {observed_next_word_predictability}, normalized: {norm_next_word_predictability}")
 
         # Get the on-going comprehension scalar
         # on_going_comprehension_scalar = np.clip(math.prod(valid_words_beliefs), 0, 1)
@@ -275,6 +281,7 @@ class SentenceReadingEnv(Env):
                 "difficulty": self._sentence_info['word_difficulties_for_analysis'][word_idx],
                 "predictability": self._sentence_info['word_predictabilities_for_analysis'][word_idx],
                 "logit_predictability": self._sentence_info['word_logit_predictabilities_for_analysis'][word_idx],
+                "belief_in_next_word_predictability": self._sentence_info['words_predictabilities_for_running_model'][word_idx],
                 "is_first_pass_skip": word_idx in self._skipped_words_indexes,
                 "is_regression_target": word_idx in self._regressed_words_indexes,
                 "FFD": [],

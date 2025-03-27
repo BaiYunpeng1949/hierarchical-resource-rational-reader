@@ -5,7 +5,7 @@ rl:
 
   train:
     total_timesteps: 200000000
-    checkpoints_folder_name: 0324_sentence_read_v0319_02
+    checkpoints_folder_name: 0324_sentence_read_v0319_01
     num_workers: 20   # Smaller than the server's number of processes: 16 - should not be the maximum capacity of the processors, otherwise the local memory will overflow.
     num_steps: 10000   # Don't change this parameter -- previously 5000
     batch_size: 1000  # We recommend using a `batch_size` that is a factor of `n_steps * n_envs` -- previously 500
@@ -24,7 +24,7 @@ rl:
 
   test:
     num_episodes: 1000
-    loaded_model_name: 'rl_model_continual_120000000_steps'
+    loaded_model_name: 'rl_model_200000000_steps'
     continual_logs_name: 'PPO_79'
     dataset_for_testing: 'simulate'   # OPTIONS: 'test', 'train', 'simulate'
     grid_params:

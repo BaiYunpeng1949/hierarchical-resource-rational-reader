@@ -32,6 +32,7 @@ def collect_word_statistics():
         'difficulty': 0,
         "predictability": 0,
         "logit_predictability": 0,
+        "belief_in_next_word_predictability": 0,
         'original_word': '',  # Original word with punctuation
         'word_clean': '',  # Cleaned word
         'sentence': '',  # Full sentence
@@ -78,6 +79,7 @@ def collect_word_statistics():
                     word_stats[word_key]['difficulty'] += word_info.get('difficulty', 0)
                     word_stats[word_key]['predictability'] += word_info.get('predictability', 0)
                     word_stats[word_key]['logit_predictability'] += word_info.get('logit_predictability', 0)
+                    word_stats[word_key]['belief_in_next_word_predictability'] += word_info.get('belief_in_next_word_predictability', 0)
                     word_stats[word_key]['original_word'] = original_word
                     word_stats[word_key]['word_clean'] = clean_word_text
                     word_stats[word_key]['sentence'] = sentence_text
@@ -102,8 +104,9 @@ def collect_word_statistics():
                 'frequency': stats['frequency'] / n,
                 'log_frequency': stats['log_frequency'] / n,
                 'difficulty': stats['difficulty'] / n,
-                'predictability': stats['predictability'] / n,
+                'predictability': stats['predictability'],
                 'logit_predictability': stats['logit_predictability'] / n,
+                'belief_in_next_word_predictability': stats['belief_in_next_word_predictability'] / n,
                 'skip_probability': stats['skip_count'] / n,
                 'regression_probability': stats['regression_count'] / n,
                 'total_occurrences': n
@@ -133,6 +136,7 @@ def collect_word_statistics():
             'difficulty': row['difficulty'],
             'predictability': row['predictability'],
             'logit_predictability': row['logit_predictability'],
+            'belief_in_next_word_predictability': row['belief_in_next_word_predictability'],
             'skip_probability': row['skip_probability'],
             'regression_probability': row['regression_probability'],
             'total_occurrences': row['total_occurrences'],
@@ -229,7 +233,28 @@ def analyze_and_plot_relationships(df, output_dir):
                 dpi=300, bbox_inches='tight')
     plt.close()
     
-    # 3. Word Difficulty Effect on Regression
+    # 3. Belief in Next Word Predictability Effect on Skipping
+    plt.figure()
+    sns.scatterplot(data=df, x='belief_in_next_word_predictability', y='skip_probability', 
+                    size='total_occurrences', sizes=(20, 200),
+                    alpha=0.3, legend='brief')
+    sns.regplot(data=df, x='belief_in_next_word_predictability', y='skip_probability', 
+                scatter=False,
+                line_kws={'linewidth': 2, 'color': 'red'},
+                ci=95)
+    
+    corr = df['belief_in_next_word_predictability'].corr(df['skip_probability'])
+    plt.text(0.05, 0.95, f'r = {corr:.3f}', 
+             transform=plt.gca().transAxes, fontsize=12)
+    
+    plt.title('Belief in Next Word Predictability Effect on Skipping Probability (Simulated)')
+    plt.xlabel('Belief in Next Word Predictability')
+    plt.ylabel('Skipping Probability')
+    plt.savefig(os.path.join(output_dir, 'belief_predictability_skip_effect.png'), 
+                dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    # 4. Word Difficulty Effect on Regression
     plt.figure()
     sns.scatterplot(data=df, x='difficulty', y='regression_probability', 
                     size='total_occurrences', sizes=(20, 200),
