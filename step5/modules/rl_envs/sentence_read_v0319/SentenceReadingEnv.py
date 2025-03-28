@@ -137,9 +137,10 @@ class SentenceReadingEnv(Env):
                 self._regressed_words_indexes.append(self._current_word_index)
                 self._reading_sequence.append(self._current_word_index)
                 # NOTE: plan 1 -- Reset belief to 1 for regressed word -- results: too many regressions
-                # self._word_beliefs[self._current_word_index] = 1.0
-                # NOTE: plan 2 -- a small increment for regressed word
-                self._word_beliefs[self._current_word_index] = np.clip(self._word_beliefs[self._current_word_index] * 1.5, 0, 1)
+                self._word_beliefs[self._current_word_index] = 1.0
+                # NOTE: plan 2 -- a small increment for regressed word -- results: no skipping and regressions at all
+                # self._word_beliefs[self._current_word_index] = np.clip(self._word_beliefs[self._current_word_index] * 1.5, 0, 1)
+                
                 self._previous_word_index = self._current_word_index - 1
             reward = self.reward_function.compute_regress_reward()
         
