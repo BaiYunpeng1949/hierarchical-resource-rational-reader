@@ -61,10 +61,14 @@ class RewardFunction():
             else:
                 overall_comprehension_scalar = 0.0
             
-            # Apply sigmoid saturation to comprehension
-            saturated_comprehension = self._sigmoid(overall_comprehension_scalar)
+            # NOTE: satisfication reward: saturation for the comprehension performance
+            # # Apply sigmoid saturation to comprehension
+            # saturated_comprehension = self._sigmoid(overall_comprehension_scalar)
             
-            # Scale the final reward (100 is the max reward)
-            final_reward = 100 * self._coefficeint_comprehension * saturated_comprehension
+            # # Scale the final reward (100 is the max reward)
+            # final_reward = 100 * self._coefficeint_comprehension * saturated_comprehension
+
+            # NOTE: linear reward: linear scaling for the comprehension performance
+            final_reward = 100 * self._coefficeint_comprehension * overall_comprehension_scalar
                 
             return final_reward

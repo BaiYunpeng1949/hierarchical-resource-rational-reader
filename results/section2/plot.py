@@ -7,7 +7,7 @@ import os
 from matplotlib.lines import Line2D
 
 def plot_comparison(x_human, y_human, x_sim, y_sim, x_name, y_name, output_dir, output_filename):
-    """Plot regression lines and connected points with confidence bands for both human and simulated data"""
+    """Plot regression lines with confidence bands for both human and simulated data, including binned regression lines"""
     try:
         # Check if all x values are identical for either dataset
         if len(np.unique(x_human)) <= 1 or len(np.unique(x_sim)) <= 1:
@@ -22,13 +22,35 @@ def plot_comparison(x_human, y_human, x_sim, y_sim, x_name, y_name, output_dir, 
             r_squared = np.corrcoef(y, y_pred)[0,1]**2
             
             eq_str = f'y = {coeffs[1]:.2f} + {coeffs[0]:.2f}x'
-            return r_squared, eq_str
+            return r_squared, eq_str, coeffs
 
-        # Calculate regression stats for both datasets
-        human_r2, human_eq = get_regression_stats(x_human, y_human)
-        sim_r2, sim_eq = get_regression_stats(x_sim, y_sim)
+        # Function to bin data and compute means
+        def bin_data(x, y, n_bins=12):
+            # Create bins based on x range
+            bins = np.linspace(min(x), max(x), n_bins + 1)
+            bin_means_x = []
+            bin_means_y = []
+            
+            for i in range(len(bins) - 1):
+                mask = (x >= bins[i]) & (x < bins[i + 1])
+                if np.any(mask):
+                    bin_means_x.append((bins[i] + bins[i + 1]) / 2)
+                    bin_means_y.append(np.mean(y[mask]))
+            
+            return np.array(bin_means_x), np.array(bin_means_y)
+
+        # Calculate regression stats for both raw and binned data
+        # Raw data stats
+        human_r2, human_eq, human_coeffs = get_regression_stats(x_human, y_human)
+        sim_r2, sim_eq, sim_coeffs = get_regression_stats(x_sim, y_sim)
         
-        # Plot 1: Regression lines with confidence bands
+        # Bin data and calculate stats
+        human_bin_x, human_bin_y = bin_data(x_human, y_human)
+        sim_bin_x, sim_bin_y = bin_data(x_sim, y_sim)
+        human_bin_r2, human_bin_eq, human_bin_coeffs = get_regression_stats(human_bin_x, human_bin_y)
+        sim_bin_r2, sim_bin_eq, sim_bin_coeffs = get_regression_stats(sim_bin_x, sim_bin_y)
+        
+        # Plot 1: Original regression plots with confidence bands
         plt.figure(figsize=(8, 6))
         
         # Plot human data
@@ -59,38 +81,87 @@ def plot_comparison(x_human, y_human, x_sim, y_sim, x_name, y_name, output_dir, 
         plt.legend(handles=legend_elements, fontsize=10)
         plt.grid(True, alpha=0.3)
         
-        # Save regression plot
+        # Save original regression plot
         regression_path = os.path.join(output_dir, f"{output_filename}_regression.png")
         plt.savefig(regression_path)
         plt.close()
 
-        # Plot 2: Connected points
-        plt.figure(figsize=(8, 6))
+        # Plot 2: Binned regression plots with raw data
+        plt.figure(figsize=(10, 6))
         
-        # Sort data for connected lines
-        human_sorted = sorted(zip(x_human, y_human))
-        sim_sorted = sorted(zip(x_sim, y_sim))
+        # Plot raw data points with low alpha
+        plt.scatter(x_human, y_human, color='blue', alpha=0.1, label='Human (raw)')
+        plt.scatter(x_sim, y_sim, color='red', alpha=0.1, label='Simulation (raw)')
         
-        # Plot human data points connected
-        plt.plot([x for x, _ in human_sorted], [y for _, y in human_sorted], 
-                'o-', color='blue', label="Human Data", alpha=0.4)
-
-        # Plot simulation data points connected
-        plt.plot([x for x, _ in sim_sorted], [y for _, y in sim_sorted], 
-                'o-', color='red', label="Simulated Data", alpha=0.4)
-
+        # Plot raw data regression lines
+        x_range = np.linspace(min(min(x_human), min(x_sim)), max(max(x_human), max(x_sim)), 100)
+        plt.plot(x_range, np.polyval(human_coeffs, x_range), '--', color='blue', 
+                label=f'Human (raw, R²={human_r2:.2f}):\n{human_eq}')
+        plt.plot(x_range, np.polyval(sim_coeffs, x_range), '--', color='red',
+                label=f'Simulation (raw, R²={sim_r2:.2f}):\n{sim_eq}')
+        
+        # Plot binned data points with confidence bands
+        sns.regplot(x=human_bin_x, y=human_bin_y, color='blue', 
+                   scatter=True, scatter_kws={'s': 50}, 
+                   label=f'Human (binned fit, R²={human_bin_r2:.2f}):\n{human_bin_eq}')
+        sns.regplot(x=sim_bin_x, y=sim_bin_y, color='red', 
+                   scatter=True, scatter_kws={'s': 50},
+                   label=f'Simulation (binned fit, R²={sim_bin_r2:.2f}):\n{sim_bin_eq}')
+        
         plt.xlabel(x_name, fontsize=12)
         plt.ylabel(y_name, fontsize=12)
-        plt.title(f'{y_name} vs {x_name} (Connected Points)', fontsize=14)
-        plt.legend(fontsize=10)
+        plt.title(f'{y_name} vs {x_name} (Binned)', fontsize=14)
+        
+        # Create custom legend handles
+        legend_elements = [
+            Line2D([0], [0], color='blue', linestyle='--', linewidth=2,
+                   label=f'Human (raw, R²={human_r2:.2f}):\n{human_eq}'),
+            Line2D([0], [0], color='red', linestyle='--', linewidth=2,
+                   label=f'Simulation (raw, R²={sim_r2:.2f}):\n{sim_eq}'),
+            Line2D([0], [0], color='blue', linestyle='-', linewidth=2,
+                   label=f'Human (binned fit, R²={human_bin_r2:.2f}):\n{human_bin_eq}'),
+            Line2D([0], [0], color='red', linestyle='-', linewidth=2,
+                   label=f'Simulation (binned fit, R²={sim_bin_r2:.2f}):\n{sim_bin_eq}')
+        ]
+        plt.legend(handles=legend_elements, fontsize=10)
         plt.grid(True, alpha=0.3)
         
-        # Save connected points plot
-        connected_path = os.path.join(output_dir, f"{output_filename}_connected.png")
-        plt.savefig(connected_path)
+        # Save binned regression plot with raw data
+        binned_path = os.path.join(output_dir, f"{output_filename}_binned_regression.png")
+        plt.savefig(binned_path)
+        plt.close()
+
+        # Plot 3: Only binned data with confidence bands
+        plt.figure(figsize=(8, 6))
+        
+        # Plot binned data points with confidence bands
+        sns.regplot(x=human_bin_x, y=human_bin_y, color='blue', 
+                   scatter=True, scatter_kws={'s': 50}, 
+                   label=f'Human (R²={human_bin_r2:.2f}):\n{human_bin_eq}')
+        sns.regplot(x=sim_bin_x, y=sim_bin_y, color='red', 
+                   scatter=True, scatter_kws={'s': 50},
+                   label=f'Simulation (R²={sim_bin_r2:.2f}):\n{sim_bin_eq}')
+        
+        plt.xlabel(x_name, fontsize=12)
+        plt.ylabel(y_name, fontsize=12)
+        plt.title(f'{y_name} vs {x_name} (Binned Only)', fontsize=14)
+        
+        # Create custom legend handles
+        legend_elements = [
+            Line2D([0], [0], color='blue', linestyle='-', linewidth=2,
+                   label=f'Human (R²={human_bin_r2:.2f}):\n{human_bin_eq}'),
+            Line2D([0], [0], color='red', linestyle='-', linewidth=2,
+                   label=f'Simulation (R²={sim_bin_r2:.2f}):\n{sim_bin_eq}')
+        ]
+        plt.legend(handles=legend_elements, fontsize=10)
+        plt.grid(True, alpha=0.3)
+        
+        # Save binned-only regression plot
+        binned_only_path = os.path.join(output_dir, f"{output_filename}_binned_only_regression.png")
+        plt.savefig(binned_only_path)
         plt.close()
         
-        print(f"Comparison plots saved at {regression_path} and {connected_path}")
+        print(f"Comparison plots saved at {regression_path}, {binned_path}, and {binned_only_path}")
         
     except Exception as e:
         print(f"Error plotting {y_name} vs {x_name}: {str(e)}")
