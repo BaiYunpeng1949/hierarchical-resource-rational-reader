@@ -144,7 +144,8 @@ def plot_comparison(x_human, y_human, x_sim, y_sim, x_name, y_name, output_dir, 
         
         plt.xlabel(x_name, fontsize=12)
         plt.ylabel(y_name, fontsize=12)
-        plt.title(f'{y_name} vs {x_name} (Binned Only)', fontsize=14)
+        # plt.title(f'{y_name} vs {x_name} (Binned Only)', fontsize=14)
+        plt.title(f'{y_name} vs {x_name}', fontsize=14)
         
         # Create custom legend handles
         legend_elements = [
