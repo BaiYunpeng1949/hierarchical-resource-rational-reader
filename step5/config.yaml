@@ -1,11 +1,11 @@
 simulator_name: 'step5'
 
 rl:
-  mode: test   # Options: train, continual_train, test, debug, simulate (run modules), and grid_test.
+  mode: train   # Options: train, continual_train, test, debug, simulate (run modules), and grid_test.
 
   train:
     total_timesteps: 200000000
-    checkpoints_folder_name: 0330_sentence_read_v0319_higher_regression_cost_01
+    checkpoints_folder_name: 0330_sentence_read_v0319_higher_integration_values_01
     num_workers: 20   # Smaller than the server's number of processes: 16 - should not be the maximum capacity of the processors, otherwise the local memory will overflow.
     num_steps: 10000   # Don't change this parameter -- previously 5000
     batch_size: 1000  # We recommend using a `batch_size` that is a factor of `n_steps * n_envs` -- previously 500
