@@ -156,17 +156,17 @@ class SentenceReadingEnv(Env):
                 self._previous_word_index = skipped_word_index
                 # self._word_beliefs[skipped_word_index] = self._sentence_info['words_predictabilities_for_running_model'][skipped_word_index]
                 
-                # # NOTE 1: option 1, directly use the original integration values, result: the regression probability is too high
-                # self._word_beliefs[skipped_word_index] = self._sentence_info['predicted_words_ranked_integration_probabilities_for_running_model'][skipped_word_index]
-                # self._word_beliefs[self._current_word_index] = self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'][self._current_word_index]
+                # NOTE 1: option 1, directly use the original integration values, result: the regression probability is too high
+                self._word_beliefs[skipped_word_index] = self._sentence_info['predicted_words_ranked_integration_probabilities_for_running_model'][skipped_word_index]
+                self._word_beliefs[self._current_word_index] = self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'][self._current_word_index]
                 
-                # NOTE 2: option 2, use the higher integration values, see whether could reduce the regression probability
-                predicted_word_integration_value = self._sentence_info['predicted_words_ranked_integration_probabilities_for_running_model'][skipped_word_index]
-                enhanced_predicted_word_integration_value = np.clip(predicted_word_integration_value * 2, 0, 1)
-                self._word_beliefs[skipped_word_index] = enhanced_predicted_word_integration_value
-                read_word_integration_value = self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'][self._current_word_index]
-                enhanced_read_word_integration_value = np.clip(read_word_integration_value * 2, 0, 1)
-                self._word_beliefs[self._current_word_index] = enhanced_read_word_integration_value
+                # # NOTE 2: option 2, use the higher integration values, see whether could reduce the regression probability
+                # predicted_word_integration_value = self._sentence_info['predicted_words_ranked_integration_probabilities_for_running_model'][skipped_word_index]
+                # enhanced_predicted_word_integration_value = np.clip(predicted_word_integration_value * 2, 0, 1)
+                # self._word_beliefs[skipped_word_index] = enhanced_predicted_word_integration_value
+                # read_word_integration_value = self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'][self._current_word_index]
+                # enhanced_read_word_integration_value = np.clip(read_word_integration_value * 2, 0, 1)
+                # self._word_beliefs[self._current_word_index] = enhanced_read_word_integration_value
 
                 # Check if the skipped word is the first-pass skipped word
                 if skipped_word_index not in self._reading_sequence:
@@ -188,11 +188,11 @@ class SentenceReadingEnv(Env):
                 self._previous_word_index = self._current_word_index - 1
 
                 # NOTE 1: option 1, directly use the original integration values, result: the regression probability is too high
-                # self._word_beliefs[self._current_word_index] = self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'][self._current_word_index]
-                # NOTE 2: option 2, use the higher integration values, see whether could reduce the regression probability
-                read_word_integration_value = self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'][self._current_word_index]
-                enhanced_read_word_integration_value = np.clip(read_word_integration_value * 2, 0, 1)
-                self._word_beliefs[self._current_word_index] = enhanced_read_word_integration_value
+                self._word_beliefs[self._current_word_index] = self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'][self._current_word_index]
+                # # NOTE 2: option 2, use the higher integration values, see whether could reduce the regression probability
+                # read_word_integration_value = self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'][self._current_word_index]
+                # enhanced_read_word_integration_value = np.clip(read_word_integration_value * 2, 0, 1)
+                # self._word_beliefs[self._current_word_index] = enhanced_read_word_integration_value
 
             reward = self.reward_function.compute_read_reward()
 
