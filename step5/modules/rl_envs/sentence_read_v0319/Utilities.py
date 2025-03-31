@@ -81,13 +81,13 @@ def compute_integration_difficulty(tokenizer, model, context: list[str], word: s
     elif word_rank <= 3:
         ranked_word_integration_probability = 1.0
     elif word_rank <= 10:
-        ranked_word_integration_probability = 0.8
+        ranked_word_integration_probability = 1.0
     elif word_rank <= 20:
-        ranked_word_integration_probability = 0.6
+        ranked_word_integration_probability = 1.0
     elif word_rank <= 50:
-        ranked_word_integration_probability = 0.4
+        ranked_word_integration_probability = 0.8
     else:
-        ranked_word_integration_probability = 0.2
+        ranked_word_integration_probability = 0.4
     
     return surprisal, difficulty, word_probability.item(), ranked_word_integration_probability
 
@@ -247,13 +247,13 @@ def compute_word_prediction(tokenizer, model, context: list[str], target_word: s
             if word_rank <= 3:
                 ranked_prob = 1.0
             elif word_rank <= 10:
-                ranked_prob = 0.8
+                ranked_prob = 1.0
             elif word_rank <= 20:
-                ranked_prob = 0.6
+                ranked_prob = 1.0
             elif word_rank <= 50:
-                ranked_prob = 0.4
+                ranked_prob = 0.8
             else:
-                ranked_prob = 0.2
+                ranked_prob = 0.4
                 
             filtered_predictions.append((word, prob.item(), ranked_prob))
             total_filtered_prob += prob.item()
