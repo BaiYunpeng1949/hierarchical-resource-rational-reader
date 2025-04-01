@@ -28,7 +28,8 @@ class RewardFunction():
         """
         Compute the reward for the regress action
         """
-        return -0.1 * self._coefficient_eye_movement_cost  # NOTE: do this for decreasing the regression probability
+        # return -0.1 * self._coefficient_eye_movement_cost  # NOTE: do this for increasing the regression probability, till ppo_87, no regression leared
+        return 0
 
     def compute_read_reward(self):
         """
