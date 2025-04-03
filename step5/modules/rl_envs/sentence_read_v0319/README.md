@@ -235,3 +235,16 @@ The implementation draws from cognitive theories of reading comprehension, inclu
 - Eye movement control in reading
 - Parafoveal preview effects
 - Word length estimation in reading 
+
+## Experiment Logs
+PPO87 (f63f13e) has the best skipping probability (best alignment to human data), but no regressions leared. A hacky version if without regressions.
+PPO88 (97d66b8) now learns regressions, but the skippings are worse. But a usable version.
+PPO89 (24095d5) not better regressions, but the skippings are even worse compared to ppo88.
+
+## Analysis
+So now our explanation to the skipping totally works. But for regression, we need a better problem framing.
+
+## Improvement method:
+- [High priority] Change the regression's benefit (either give more rewards, or cognitively, gain more information).
+- [Low priority] Change the regression mechanism. Not simply regress the previous word because its integration value is not high.
+- [Medium priority] For generalizability: use the normalized rank rather than bins to represent words integration values.
