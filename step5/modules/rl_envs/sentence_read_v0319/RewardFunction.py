@@ -30,7 +30,7 @@ class RewardFunction():
         """
         # return -0.1 * self._coefficient_eye_movement_cost * 0.2 # NOTE: do this for increasing the regression probability, till ppo_87, no regression leared
         # return 0
-        return -0.1 * self._coefficient_eye_movement_cost * 2
+        return -0.1 * self._coefficient_eye_movement_cost * 5
 
     def compute_read_reward(self):
         """
