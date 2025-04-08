@@ -140,7 +140,10 @@ class SentenceReadingEnv(Env):
                 self._word_beliefs[self._current_word_index] = 1.0
                 self._word_beliefs[self._current_word_index+1] = 1.0    # Simple reinforcment, directly set to 1.0
 
+                # Lower the cost of regression: jump to thye last and automatically jump back. Objective: see whether the agent would try regressions more often
+                self._current_word_index += 1
                 self._previous_word_index = self._current_word_index - 1
+
             reward = self.reward_function.compute_regress_reward()
         
         elif action == self._SKIP_ACTION:
