@@ -4,10 +4,10 @@ Total unique words analyzed: 6358
 
 Skipping Statistics:
 Mean skip probability: 0.403
-Correlation with length: -0.101
-Correlation with log frequency: 0.177
+Correlation with length: -0.088
+Correlation with log frequency: 0.175
 
 Regression Statistics:
 Mean regression probability: 0.000
-Correlation with difficulty: 0.017
+Correlation with difficulty: nan
 
