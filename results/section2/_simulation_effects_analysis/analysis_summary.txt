@@ -3,11 +3,11 @@ SIMULATED DATA ANALYSIS:
 Total unique words analyzed: 6358
 
 Skipping Statistics:
-Mean skip probability: 0.403
-Correlation with length: -0.103
-Correlation with log frequency: 0.186
+Mean skip probability: 0.461
+Correlation with length: -0.073
+Correlation with log frequency: 0.086
 
 Regression Statistics:
-Mean regression probability: 0.000
-Correlation with difficulty: nan
+Mean regression probability: 0.202
+Correlation with difficulty: 0.207
 
