@@ -24,13 +24,15 @@ class RewardFunction():
         """
         return 1 / (1 + math.exp(-self._sigmoid_scale * (x - self._sigmoid_shift)))
 
-    def compute_regress_reward(self):
+    def compute_regress_reward(self, w_regression_cost: float):
         """
         Compute the reward for the regress action
         """
         # return -0.1 * self._coefficient_eye_movement_cost * 0.2 # NOTE: do this for increasing the regression probability, till ppo_87, no regression leared
         # return 0
-        return -0.1 * self._coefficient_eye_movement_cost * 5
+        factor_range = [1, 5]       # 1 for too much regression, 5 for no regression
+        factor = np.interp(w_regression_cost, [0, 1], factor_range)
+        return -0.1 * self._coefficient_eye_movement_cost * factor
 
     def compute_read_reward(self):
         """
