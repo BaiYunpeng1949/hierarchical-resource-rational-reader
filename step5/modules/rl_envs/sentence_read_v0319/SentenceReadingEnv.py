@@ -104,7 +104,7 @@ class SentenceReadingEnv(Env):
 
         # Initialize a random regression cost
         # self._w_regression_cost = random.uniform(0, 1)
-        self._w_regression_cost = 0.0
+        self._w_regression_cost = 0.2
         return self._get_obs(), {}
     
     def step(self, action):
