@@ -103,11 +103,11 @@ class SentenceReadingEnv(Env):
         self._reading_sequence = []
 
         # Initialize a random regression cost
-        # self._w_regression_cost = random.uniform(0, 1)
-        self._w_regression_cost = 1.0
+        self._w_regression_cost = random.uniform(0, 1)
+        # self._w_regression_cost = 1.0
 
-        # TODO debug delete later
-        print(f"w_regression_cost: {self._w_regression_cost}")
+        # # TODO debug delete later
+        # print(f"w_regression_cost: {self._w_regression_cost}")
 
         return self._get_obs(), {}
     
