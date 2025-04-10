@@ -30,7 +30,7 @@ class RewardFunction():
         """
         # return -0.1 * self._coefficient_eye_movement_cost * 0.2 # NOTE: do this for increasing the regression probability, till ppo_87, no regression leared
         # return 0
-        factor_range = [1, 8]       # increase the range from 1 to 5 --> 1 to 10
+        factor_range = [0, 8]       # increase the range from 1 to 5 --> 1 to 10
         factor = np.interp(w_regression_cost, [0, 1], factor_range)
         return -0.1 * self._coefficient_eye_movement_cost * factor
 
