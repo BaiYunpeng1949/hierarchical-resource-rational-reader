@@ -147,7 +147,7 @@ The environment uses a three-component architecture:
   - Raw context (averaged word embeddings)
 - **Rationale**:
   - Measures how much new information changes existing understanding
-  - Aligns with cognitive theories of surprisal and prediction error -- There’s a large body of psycholinguistics/computational linguistics research showing that language-model surprisal correlates quite well with human reading difficulty metrics (eye-tracking data, self-paced reading times, etc.). Psycholinguistic Basis: A large body of research shows that reading times, fixation durations, and neural signals (EEG N400 amplitude) often correlate well with LM-based surprisal.
+  - Aligns with cognitive theories of surprisal and prediction error -- There's a large body of psycholinguistics/computational linguistics research showing that language-model surprisal correlates quite well with human reading difficulty metrics (eye-tracking data, self-paced reading times, etc.). Psycholinguistic Basis: A large body of research shows that reading times, fixation durations, and neural signals (EEG N400 amplitude) often correlate well with LM-based surprisal.
   - Example: "The man bit the dog" - semantically related but difficult to integrate
 
 ### 3. Word Skipping Mechanism
@@ -225,6 +225,46 @@ The environment uses a three-component architecture:
 - Basic noise threshold model
 - Limited handling of compound words
 - No word frequency effects
+
+## Reproducing Results
+
+To reproduce the current results:
+
+1. Navigate to the step5 directory:
+   ```bash
+   cd step5/
+   ```
+
+2. Configure the `config.yaml`:
+   - Set appropriate model paths
+   - Set to "test" model in rl-mode
+
+3. Run the main script:
+   ```bash
+   python main.py
+   ```
+
+4. Copy simulation results:
+   - Source: `/step5/data/sim_results/sentence_reading/model_path_name/raw_simulated_results.json`
+   - Destination: `results/section2/_raw_simulated_results`
+
+5. Run analysis script:
+   ```bash
+   python analyze_sim_results_word_regression_and_skip_probabilities.py
+   ```
+
+6. Copy processed results:
+   - Source: `/_simulated_effects_analysis/all_words_regression_and_skip_probabilities.csv`
+   - Destination: `/processed_simulated_results`
+
+7. Generate plots:
+   ```bash
+   python plot.py
+   ```
+
+8. Find generated figures in `/figures`
+
+**Note**: These results are from an unoptimized parameter set. The results are preserved in a separate, unpulled branch for reproducibility.
 
 ## References
 
