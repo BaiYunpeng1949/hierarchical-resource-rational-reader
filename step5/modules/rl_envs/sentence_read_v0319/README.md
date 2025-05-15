@@ -288,3 +288,27 @@ So now our explanation to the skipping totally works. But for regression, we nee
 - [High priority] Change the regression's benefit (either give more rewards, or cognitively, gain more information).
 - [Low priority] Change the regression mechanism. Not simply regress the previous word because its integration value is not high.
 - [Medium priority] For generalizability: use the normalized rank rather than bins to represent words integration values.
+
+
+
+# Technical Details -- POMDP formulation
+- State (S): 
+  - (Ext): the reading word position (word index in sentence), sentence content, parafoveal previewed letters, (time) 
+  - (Int): words intergrations, context (a few words before the fixation), next word (hold a belief)
+- Action (A):
+  - (Ext): eye movement within the sentence (word index), (time)
+  - (Int): last word integration value (appraisal)
+- Obervation (O):
+  - (Ext): the reading word position, (time)
+  - (Int): belief - highest prediction of the next word, last word integration, current word integration, overall on-going comprehension.
+- Transition Function (T):
+  - (Ext): static (fixations always apply to the desired place)
+  - (Int): next word prediction (belief): t(s_int'|a, s_int_and_ext) (context and previewing)
+- Reward Function (R): r(t) = U + c(t)
+
+# Reproduction
+python main.py
+copy paste /step5/data/sim_results/sentence_reading/0410_sentence_read_v0319_more_plausible_regression_mechanism_v9_rl_model_150000000_steps/1000ep/raw_simulated_results.json to /home/baiy4/reader-agent-zuco/results/section2/_raw_simulated_results
+python analyze_sim_results_word_regression_and_skip_probabilities.py
+copy paste results/section2/_simulation_effects_analysis/all_words_regression_and_skip_probabilities.csv to results/section2/processed_simulated_results
+python plot.py
