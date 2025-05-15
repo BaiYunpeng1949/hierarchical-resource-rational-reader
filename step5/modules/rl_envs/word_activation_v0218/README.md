@@ -40,3 +40,25 @@ This environment simulates human-like word recognition behavior using a Bayesian
 2. Support for non-ASCII characters
 3. Dynamic lexicon updates
 4. More sophisticated letter sampling strategies
+
+
+# Technical Details -- POMDP formulation
+- State (S): 
+  - (Ext): fixation position in the word, sampled letters, word length, word to recognize (related to U), (time) 
+  - (Int): activated words in the lexical memory (holds a belief)
+- Action (A):
+  - (Ext): eye movement within the word (letter index)
+  - (Int): continue or terminate and activate
+- Obervation (O):
+  - (Ext): fixation position in the word, sampled letters, word length, (time)
+  - (Int): belief - probability distribution over all activated words
+- Transition Function (T):
+  - (Ext): static (fixations always apply to the desired place)
+  - (Int): Bayesian Inference (including the approximated likelihood function p(w|sampled letters so far)) that generates beliefs over parallelly activated words
+- Reward Function (R): r(t) = U + c(t)
+
+
+# Run the code:
+python main.py
+copy paste csv files from prior_effects and word_length_effect into results/section1/simulated_results
+python plot.py

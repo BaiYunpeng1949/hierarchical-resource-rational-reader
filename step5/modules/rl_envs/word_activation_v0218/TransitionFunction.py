@@ -161,36 +161,6 @@ class TransitionFunction():
 
         return words_norm_posteriors_dict
     
-    def calculate_fixation_duration_in_ms_nonlinear(self, t0=250, lamda=1.0, entropy_diff=0.0):
-        """
-        Calculate the fixation duration in milliseconds with gamma-distributed noise
-        NOTE Based on EMMA's assumption and Reichle et al., 1998
-        """
-        # Calculate mean duration
-        # mean_duration = t0 * (1 + np.exp(-lamda * entropy_diff))
-        entropy_change_magnitude = np.abs(entropy_diff)
-        mean_duration = t0 * (1 + lamda * entropy_change_magnitude)
-        
-        # Set standard deviation to 1/3 of mean (following EMMA)
-        std_dev = mean_duration / 3
-        
-        # Calculate gamma distribution parameters
-        # For gamma dist: mean = k*theta, var = k*theta^2
-        # where k is shape, theta is scale
-        theta = (std_dev ** 2) / mean_duration  # scale
-        k = mean_duration / theta               # shape
-        
-        # Sample from gamma distribution
-        duration = np.random.gamma(k, theta)
-        
-        return duration
-
-    def calculate_saccade_duration_in_ms_emma(self, delta_visual_angle_in_degree=2.0):
-        """
-        Calculate the saccade duration in milliseconds (T_exec in EMMA)
-        """
-        return 50 + 20 + delta_visual_angle_in_degree * 2
-
     def activate_a_word(self, normalized_belief_distribution_dict, deterministic=True):    
         """
         Activate a word from the belief distribution, choose the highest for simplicity

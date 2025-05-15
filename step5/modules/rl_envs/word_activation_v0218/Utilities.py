@@ -137,9 +137,3 @@ class ApproximateWordGenerator:
         
         # Return exactly top_k
         return generated_words_list[:top_k]
-    
-    def generate_a_random_word(self, word_length=8):
-        """
-        Generate a random word of a given length.
-        """
-        return "".join(random.choices(self.alphabet, k=word_length))
