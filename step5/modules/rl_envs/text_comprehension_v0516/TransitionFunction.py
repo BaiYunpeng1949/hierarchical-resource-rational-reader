@@ -1,0 +1,39 @@
+import os
+import yaml
+from . import Constants
+
+class TransitionFunction():
+    """
+    Transition Function for text comprehension
+    """
+
+    def __init__(self):
+        pass
+    
+    def update_state_read_next_sentence(self, current_sentence_index, sentence_appraisal_scores_distribution, num_sentences):
+        # Initialize with -1s for all possible sentences
+        read_sentence_appraisal_scores_distribution = [-1] * Constants.MAX_NUM_SENTENCES
+        
+        if current_sentence_index < num_sentences - 1:
+            # Copy the appraisal scores up to current sentence index
+            for i in range(current_sentence_index + 1):
+                read_sentence_appraisal_scores_distribution[i] = sentence_appraisal_scores_distribution[i]
+            return read_sentence_appraisal_scores_distribution, True
+        else:
+            # Copy all appraisal scores
+            for i in range(num_sentences):
+                read_sentence_appraisal_scores_distribution[i] = sentence_appraisal_scores_distribution[i]
+            return read_sentence_appraisal_scores_distribution, False
+
+    def update_state_regress_to_sentence(self, revised_sentence_index, furtherest_read_sentence_index, read_sentence_appraisal_scores_distribution):
+        try:
+            assert revised_sentence_index < Constants.MAX_NUM_SENTENCES
+        except:
+            print(f"revised_sentence_index: {revised_sentence_index}, furtherest_read_sentence_index: {furtherest_read_sentence_index}, read_sentence_appraisal_scores_distribution: {read_sentence_appraisal_scores_distribution}")
+            raise ValueError(f"revised_sentence_index is out of range (>= Constants.MAX_NUM_SENTENCES = {Constants.MAX_NUM_SENTENCES})")
+        
+        if revised_sentence_index <= furtherest_read_sentence_index:
+            read_sentence_appraisal_scores_distribution[revised_sentence_index] = 1.0        # A simple set to 1.0 for the revised sentence
+            return read_sentence_appraisal_scores_distribution, True
+        else:
+            return read_sentence_appraisal_scores_distribution, False
