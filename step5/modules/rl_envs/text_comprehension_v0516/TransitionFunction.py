@@ -37,3 +37,22 @@ class TransitionFunction():
             return read_sentence_appraisal_scores_distribution, True
         else:
             return read_sentence_appraisal_scores_distribution, False
+    
+    def optimize_select_sentence_to_regress_to(self, current_sentence_index, read_sentence_appraisal_scores_distribution):
+        """
+        Optimize the sentence to regress to. This is a simple greedy algorithm that selects the sentence with the lowest appraisal score.
+        """
+        # Get the valid sentences appraisal scores
+        valid_sentences_appraisals = [a for a in read_sentence_appraisal_scores_distribution if a != -1]
+
+        if len(valid_sentences_appraisals) == 0:
+            return current_sentence_index
+        
+        # Select the sentence with the lowest appraisal score
+        revised_sentence_index = valid_sentences_appraisals.index(min(valid_sentences_appraisals))
+
+        # Guarantee there is a valid sentence to regress to
+        assert revised_sentence_index != -1, "No valid sentence to regress to"
+
+        return revised_sentence_index
+        

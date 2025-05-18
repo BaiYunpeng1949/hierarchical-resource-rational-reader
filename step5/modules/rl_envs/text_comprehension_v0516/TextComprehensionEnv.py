@@ -36,6 +36,7 @@ class TextComprehensionEnv(Env):
         1. Graph-based gist
         2. Fluid schema
         3. Reading flow interruption costs (apply from the memory perspective)
+
         """
         # Load configuration
         root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -68,9 +69,10 @@ class TextComprehensionEnv(Env):
 
         # Action space
         # 0 to MAX_NUM_SENTENCES, corresponding to valid sentence indexes for revisiting; max_num_sentences + 1 is the read next sentence action, max_num_sentences + 2 is the stop action
-        self._READ_NEXT_SENTENCE_ACTION = Constants.MAX_NUM_SENTENCES
-        self._STOP_ACTION = Constants.MAX_NUM_SENTENCES + 1
-        self.action_space = Discrete(Constants.MAX_NUM_SENTENCES + 2)      
+        self._REGRESS_PREVIOUS_SENTENCE_ACTION = 0
+        self._READ_NEXT_SENTENCE_ACTION = 1
+        self._STOP_ACTION = 2
+        self.action_space = Discrete(3)      
         
         # Observation space - simplified to scalar signals
         self._num_stateful_obs = Constants.MAX_NUM_SENTENCES + 2 + 1     # Distribution of the appraisal scores over the sentences, current sentence index, and the time awareness 
@@ -87,11 +89,15 @@ class TextComprehensionEnv(Env):
 
         # Get new sentence
         self._sampled_text_metadata = self.text_manager.reset()
+        text_id = self._sampled_text_metadata["text_id"]
         self._num_sentences = self._sampled_text_metadata["num_sentences"]
         self._sentence_appraisal_scores_distribution = self._sampled_text_metadata["sentence_appraisal_scores_distribution"]
         self._already_read_sentences_appraisal_scores_distribution = [-1] * self._num_sentences
         self._current_sentence_index = -1
         self._num_sentences_read = 0
+
+        # # TODO debug delete later
+        # print(f"Text ID: {text_id}")
         
         return self._get_obs(), {}
     
@@ -99,6 +105,9 @@ class TextComprehensionEnv(Env):
         """Take action and update states"""
         self._steps += 1
         reward = 0
+
+        # # TODO debug delete later
+        # print(f"Agent's action is: {action}")
 
         # Read the next sentence
         if action == self._READ_NEXT_SENTENCE_ACTION:
@@ -113,14 +122,17 @@ class TextComprehensionEnv(Env):
             reward = self.reward_function.compute_read_next_sentence_reward()
         
         # Regress to a previously read sentence
-        if action < self._READ_NEXT_SENTENCE_ACTION:
-            revised_sentence_index = action       # TODO should then switch back to the current sentence reading index, an automatic transition back
+        if action == self._REGRESS_PREVIOUS_SENTENCE_ACTION:
+            revised_sentence_index = self.transition_function.optimize_select_sentence_to_regress_to(
+                current_sentence_index=self._current_sentence_index,
+                read_sentence_appraisal_scores_distribution=self._already_read_sentences_appraisal_scores_distribution
+            )
             self._already_read_sentences_appraisal_scores_distribution, action_validity = self.transition_function.update_state_regress_to_sentence(
                 revised_sentence_index=revised_sentence_index,
                 furtherest_read_sentence_index=self._current_sentence_index,
                 read_sentence_appraisal_scores_distribution=self._already_read_sentences_appraisal_scores_distribution
             )
-            self._current_sentence_index = self._current_sentence_index     # Just a placeholder here
+            self._current_sentence_index = self._current_sentence_index     # Just a placeholder here       
             reward = self.reward_function.compute_regress_to_sentence_reward()
 
         # Stop reading
@@ -178,6 +190,9 @@ class TextComprehensionEnv(Env):
         stateful_obs = np.concatenate([padded_appraisals, [norm_current_position], [remaining_episode_length_awareness], [on_going_comprehension_log_scalar]])
 
         assert stateful_obs.shape[0] == self._num_stateful_obs, f"expected {self._num_stateful_obs} but got {stateful_obs.shape[0]}"
+
+        # # TODO debug delete later
+        # print(f"Stateful observation is: {stateful_obs}")
 
         return stateful_obs
         

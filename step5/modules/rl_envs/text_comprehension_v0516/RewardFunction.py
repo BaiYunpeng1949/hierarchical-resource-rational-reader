@@ -29,17 +29,20 @@ class RewardFunction():
         Compute reward for terminating reading.
         Uses sigmoid saturation to encourage more human-like reading behavior.
         """
+        # Identify valid scores first
+        valid_scores = [a for a in sentence_appraisal_scores_distribution if 0 <= a <= 1]
+
         # Penalize for not finishing the sentence reading task
         if num_sentences_read < num_sentences:
             return -100
         else:
             # Compute geometric mean of word beliefs
             overall_comprehension_log = 0.0
-            if len(sentence_appraisal_scores_distribution) > 0:
-                for a in sentence_appraisal_scores_distribution:
+            if len(valid_scores) > 0:
+                for a in valid_scores:
                     overall_comprehension_log += math.log(max(a, 1e-9))
                 # geometric mean
-                overall_comprehension_scalar = math.exp(overall_comprehension_log / len(sentence_appraisal_scores_distribution))
+                overall_comprehension_scalar = math.exp(overall_comprehension_log / len(valid_scores))
             else:
                 overall_comprehension_scalar = 0.0
 
