@@ -17,7 +17,7 @@ class TransitionFunction():
         if current_sentence_index < num_sentences - 1:
             # Copy the appraisal scores up to current sentence index
             # Move one sentence forward
-            # current_sentence_index += 1
+            current_sentence_index += 1
             # Get all appraisals
             for i in range(current_sentence_index + 1):
                 read_sentence_appraisal_scores_distribution[i] = sentence_appraisal_scores_distribution[i]

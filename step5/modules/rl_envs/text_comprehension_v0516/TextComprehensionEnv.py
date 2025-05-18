@@ -54,7 +54,8 @@ class TextComprehensionEnv(Env):
         # Variables
         self._sampled_text = None   # TODO to be extended later
         self._num_sentences = None
-        self._num_sentences_read = 0
+        self._num_sentences_read = None
+        self._num_remaining_sentence = None
         self._sentence_appraisal_scores_distribution = None
         # Internal states
         self._already_read_sentences_appraisal_scores_distribution = None
@@ -75,7 +76,7 @@ class TextComprehensionEnv(Env):
         self.action_space = Discrete(3)      
         
         # Observation space - simplified to scalar signals
-        self._num_stateful_obs = Constants.MAX_NUM_SENTENCES + 2 + 1     # Distribution of the appraisal scores over the sentences, current sentence index, and the time awareness 
+        self._num_stateful_obs = Constants.MAX_NUM_SENTENCES + 3 + 1     # Distribution of the appraisal scores over the sentences, current sentence index, and the time awareness 
         self.observation_space = Box(low=-1, high=1, shape=(self._num_stateful_obs,))
 
         
@@ -91,13 +92,14 @@ class TextComprehensionEnv(Env):
         self._sampled_text_metadata = self.text_manager.reset()
         text_id = self._sampled_text_metadata["text_id"]
         self._num_sentences = self._sampled_text_metadata["num_sentences"]
+        self._num_remaining_sentence = self._num_sentences
         self._sentence_appraisal_scores_distribution = self._sampled_text_metadata["sentence_appraisal_scores_distribution"]
         self._already_read_sentences_appraisal_scores_distribution = [-1] * self._num_sentences
         self._current_sentence_index = -1
         self._num_sentences_read = 0
 
-        # TODO debug delete later
-        print(f"Text ID sampled: {text_id}")
+        # # TODO debug delete later
+        # print(f"Text ID sampled: {text_id}")
         
         return self._get_obs(), {}
     
@@ -106,8 +108,8 @@ class TextComprehensionEnv(Env):
         self._steps += 1
         reward = 0
 
-        # TODO debug delete later
-        print(f"Agent's action is: {action}")
+        # # TODO debug delete later
+        # print(f"Agent's action is: {action}")
 
         # Read the next sentence
         if action == self._READ_NEXT_SENTENCE_ACTION:
@@ -119,6 +121,7 @@ class TextComprehensionEnv(Env):
             if action_validity:
                 self._current_sentence_index = self._current_sentence_index + 1
                 self._num_sentences_read += 1
+                self._num_remaining_sentence -= 1
             reward = self.reward_function.compute_read_next_sentence_reward()
         
         # Regress to a previously read sentence
@@ -165,6 +168,9 @@ class TextComprehensionEnv(Env):
         # Remaining episode length awareness
         remaining_episode_length_awareness = self.normalise(self.ep_len - self._steps, 0, self.ep_len, 0, 1)
 
+        # Normalised number of remaining sentences
+        norm_num_remaining_sentence = self.normalise(self._num_remaining_sentence, 0, self._num_sentences, 0, 1)
+
         # Get current sentence position (normalized)
         norm_current_position = self.normalise(self._current_sentence_index, 0, Constants.MAX_NUM_SENTENCES - 1, 0, 1)
         
@@ -187,12 +193,12 @@ class TextComprehensionEnv(Env):
         
         on_going_comprehension_log_scalar = np.clip(on_going_comprehension_log_scalar, 0, 1)
 
-        stateful_obs = np.concatenate([padded_appraisals, [norm_current_position], [remaining_episode_length_awareness], [on_going_comprehension_log_scalar]])
+        stateful_obs = np.concatenate([padded_appraisals, [norm_current_position], [remaining_episode_length_awareness], [norm_num_remaining_sentence], [on_going_comprehension_log_scalar]])
 
         assert stateful_obs.shape[0] == self._num_stateful_obs, f"expected {self._num_stateful_obs} but got {stateful_obs.shape[0]}"
 
-        # TODO debug delete later
-        print(f"Stateful observation is: {stateful_obs}")
+        # # TODO debug delete later
+        # print(f"Stateful observation is: {stateful_obs}")
 
         return stateful_obs
         
