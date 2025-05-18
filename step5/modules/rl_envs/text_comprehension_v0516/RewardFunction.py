@@ -15,8 +15,7 @@ class RewardFunction():
         """
         Compute the reward for the regress action
         """
-        # return -0.1 * self._coefficient_eye_movement_cost * 0.2 # NOTE: do this for increasing the regression probability, till ppo_87, no regression leared
-        return 0
+        return -0.1 * self._coefficient_sentence_selection
 
     def compute_read_next_sentence_reward(self):
         """
@@ -46,5 +45,7 @@ class RewardFunction():
 
             # NOTE: linear reward: linear scaling for the comprehension performance
             final_reward = 100 * self._coefficeint_comprehension * overall_comprehension_scalar
+
+            print(f"The final reward is: {final_reward}")
                 
             return final_reward

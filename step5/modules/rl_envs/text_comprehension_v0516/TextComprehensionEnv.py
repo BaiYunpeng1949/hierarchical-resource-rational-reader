@@ -128,14 +128,14 @@ class TextComprehensionEnv(Env):
             self._terminate = True
             self._truncated = False
             reward = self.reward_function.compute_terminate_reward(self._num_sentences, self._num_sentences_read, self._sentence_appraisal_scores_distribution)
-            return self._get_obs(), reward, self._terminate, self._truncated, {}
-        
+
         # Check termination
         if self._steps >= self.ep_len:
             self._terminate = True
             self._truncated = True
 
         if self._terminate: 
+            reward = self.reward_function.compute_terminate_reward(self._num_sentences, self._num_sentences_read, self._sentence_appraisal_scores_distribution)
             info = self.get_episode_log()
         else:
             info = {}
