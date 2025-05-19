@@ -36,6 +36,7 @@ class RewardFunction():
         if num_sentences_read < num_sentences:
             return -100
         else:
+
             # Compute geometric mean of word beliefs
             overall_comprehension_log = 0.0
             if len(valid_scores) > 0:
@@ -47,7 +48,7 @@ class RewardFunction():
                 overall_comprehension_scalar = 0.0
 
             # NOTE: linear reward: linear scaling for the comprehension performance
-            final_reward = 500 * self._coefficeint_comprehension * overall_comprehension_scalar
+            final_reward = 100 * self._coefficeint_comprehension * overall_comprehension_scalar
 
             # # TODO debug delete later
             # print(f"The final reward is: {final_reward}")

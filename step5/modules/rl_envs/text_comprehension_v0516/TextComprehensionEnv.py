@@ -98,8 +98,8 @@ class TextComprehensionEnv(Env):
         self._current_sentence_index = -1
         self._num_sentences_read = 0
 
-        # TODO debug delete later
-        print(f"Text ID sampled: {text_id}")
+        # # TODO debug delete later
+        # print(f"Text ID sampled: {text_id}")
         
         return self._get_obs(), {}
     
@@ -108,8 +108,8 @@ class TextComprehensionEnv(Env):
         self._steps += 1
         reward = 0
 
-        # TODO debug delete later
-        print(f"Agent's action is: {action}")
+        # # TODO debug delete later
+        # print(f"Agent's action is: {action}")
 
         # Read the next sentence
         if action == self._READ_NEXT_SENTENCE_ACTION:
@@ -142,7 +142,7 @@ class TextComprehensionEnv(Env):
         if action == self._STOP_ACTION:
             self._terminate = True
             self._truncated = False
-            reward = self.reward_function.compute_terminate_reward(self._num_sentences, self._num_sentences_read, self._sentence_appraisal_scores_distribution)
+            reward = self.reward_function.compute_terminate_reward(self._num_sentences, self._num_sentences_read, self._already_read_sentences_appraisal_scores_distribution)
 
         # Check termination
         if self._steps >= self.ep_len:
@@ -150,7 +150,7 @@ class TextComprehensionEnv(Env):
             self._truncated = True
 
         if self._terminate: 
-            reward = self.reward_function.compute_terminate_reward(self._num_sentences, self._num_sentences_read, self._sentence_appraisal_scores_distribution)
+            reward = self.reward_function.compute_terminate_reward(self._num_sentences, self._num_sentences_read, self._already_read_sentences_appraisal_scores_distribution)
             info = self.get_episode_log()
         else:
             info = {}
@@ -197,8 +197,8 @@ class TextComprehensionEnv(Env):
 
         assert stateful_obs.shape[0] == self._num_stateful_obs, f"expected {self._num_stateful_obs} but got {stateful_obs.shape[0]}"
 
-        # TODO debug delete later
-        print(f"Stateful observation is: {stateful_obs}")
+        # # TODO debug delete later
+        # print(f"Stateful observation is: {stateful_obs}")
 
         return stateful_obs
         
