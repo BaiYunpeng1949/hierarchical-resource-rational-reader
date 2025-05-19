@@ -98,8 +98,8 @@ class TextComprehensionEnv(Env):
         self._current_sentence_index = -1
         self._num_sentences_read = 0
 
-        # # TODO debug delete later
-        # print(f"Text ID sampled: {text_id}")
+        # TODO debug delete later
+        print(f"Text ID sampled: {text_id}")
         
         return self._get_obs(), {}
     
@@ -108,8 +108,8 @@ class TextComprehensionEnv(Env):
         self._steps += 1
         reward = 0
 
-        # # TODO debug delete later
-        # print(f"Agent's action is: {action}")
+        # TODO debug delete later
+        print(f"Agent's action is: {action}")
 
         # Read the next sentence
         if action == self._READ_NEXT_SENTENCE_ACTION:
