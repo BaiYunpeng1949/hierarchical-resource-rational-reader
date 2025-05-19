@@ -57,6 +57,7 @@ class TextComprehensionEnv(Env):
         self._num_sentences_read = None
         self._num_remaining_sentence = None
         self._sentence_appraisal_scores_distribution = None
+        self._regress_sentence_index = None
         # Internal states
         self._already_read_sentences_appraisal_scores_distribution = None
         # External states
@@ -70,10 +71,12 @@ class TextComprehensionEnv(Env):
 
         # Action space
         # 0 to MAX_NUM_SENTENCES, corresponding to valid sentence indexes for revisiting; max_num_sentences + 1 is the read next sentence action, max_num_sentences + 2 is the stop action
-        self._REGRESS_PREVIOUS_SENTENCE_ACTION = 0
-        self._READ_NEXT_SENTENCE_ACTION = 1
-        self._STOP_ACTION = 2
-        self.action_space = Discrete(3)      
+        # self._REGRESS_PREVIOUS_SENTENCE_ACTION = 0
+        # self._READ_NEXT_SENTENCE_ACTION = 1
+        # self._STOP_ACTION = 2
+        # self.action_space = Discrete(3)      
+        self._regress_proceed_division = 0.5
+        self.action_space = Box(low=0, high=1, shape=(2,))      # First action decides keeps reading or not; second acction decides where to regress to
         
         # Observation space - simplified to scalar signals
         self._num_stateful_obs = Constants.MAX_NUM_SENTENCES + 3 + 1     # Distribution of the appraisal scores over the sentences, current sentence index, and the time awareness 
@@ -97,9 +100,10 @@ class TextComprehensionEnv(Env):
         self._already_read_sentences_appraisal_scores_distribution = [-1] * self._num_sentences
         self._current_sentence_index = -1
         self._num_sentences_read = 0
+        self._regress_sentence_index = -1    # -1 means no regress# NOTE: if the agent does not learn, include this into the observation space
 
-        # TODO debug delete later
-        print(f"Text ID sampled: {text_id}")
+        # # TODO debug delete later
+        # print(f"Text ID sampled: {text_id}")
         
         return self._get_obs(), {}
     
@@ -108,11 +112,14 @@ class TextComprehensionEnv(Env):
         self._steps += 1
         reward = 0
 
-        # TODO debug delete later
-        print(f"Agent's action is: {action}")
+        read_or_regress_action = action[0]
+        raw_regress_sentence_value = action[1]
 
-        # Read the next sentence
-        if action == self._READ_NEXT_SENTENCE_ACTION:
+        # # TODO debug delete later
+        # print(f"Agent's action is: {action}")
+
+        if read_or_regress_action < self._regress_proceed_division:
+            # Continue to read the next sentence
             self._already_read_sentences_appraisal_scores_distribution, action_validity = self.transition_function.update_state_read_next_sentence(
                 current_sentence_index=self._current_sentence_index,
                 sentence_appraisal_scores_distribution=self._sentence_appraisal_scores_distribution,
@@ -123,26 +130,49 @@ class TextComprehensionEnv(Env):
                 self._num_sentences_read += 1
                 self._num_remaining_sentence -= 1
             reward = self.reward_function.compute_read_next_sentence_reward()
-        
-        # Regress to a previously read sentence
-        if action == self._REGRESS_PREVIOUS_SENTENCE_ACTION:
-            revised_sentence_index = self.transition_function.optimize_select_sentence_to_regress_to(
-                current_sentence_index=self._current_sentence_index,
-                read_sentence_appraisal_scores_distribution=self._already_read_sentences_appraisal_scores_distribution
-            )
+        else:
+            # Regress to a previously read sentence
+            revised_sentence_index = self._get_regress_sentence_index(raw_regress_sentence_value)
             self._already_read_sentences_appraisal_scores_distribution, action_validity = self.transition_function.update_state_regress_to_sentence(
                 revised_sentence_index=revised_sentence_index,
                 furtherest_read_sentence_index=self._current_sentence_index,
                 read_sentence_appraisal_scores_distribution=self._already_read_sentences_appraisal_scores_distribution
             )
-            self._current_sentence_index = self._current_sentence_index     # Just a placeholder here       
+            self._current_sentence_index = self._current_sentence_index     # Just a placeholder here -- automatically jumps back to the latest sentence that read. NOTE: make this complex later    
             reward = self.reward_function.compute_regress_to_sentence_reward()
 
-        # Stop reading
-        if action == self._STOP_ACTION:
-            self._terminate = True
-            self._truncated = False
-            reward = self.reward_function.compute_terminate_reward(self._num_sentences, self._num_sentences_read, self._already_read_sentences_appraisal_scores_distribution)
+        # # Read the next sentence
+        # if action == self._READ_NEXT_SENTENCE_ACTION:
+        #     self._already_read_sentences_appraisal_scores_distribution, action_validity = self.transition_function.update_state_read_next_sentence(
+        #         current_sentence_index=self._current_sentence_index,
+        #         sentence_appraisal_scores_distribution=self._sentence_appraisal_scores_distribution,
+        #         num_sentences=self._num_sentences
+        #     )
+        #     if action_validity:
+        #         self._current_sentence_index = self._current_sentence_index + 1
+        #         self._num_sentences_read += 1
+        #         self._num_remaining_sentence -= 1
+        #     reward = self.reward_function.compute_read_next_sentence_reward()
+        
+        # # Regress to a previously read sentence
+        # if action == self._REGRESS_PREVIOUS_SENTENCE_ACTION:
+        #     revised_sentence_index = self.transition_function.optimize_select_sentence_to_regress_to(
+        #         current_sentence_index=self._current_sentence_index,
+        #         read_sentence_appraisal_scores_distribution=self._already_read_sentences_appraisal_scores_distribution
+        #     )
+        #     self._already_read_sentences_appraisal_scores_distribution, action_validity = self.transition_function.update_state_regress_to_sentence(
+        #         revised_sentence_index=revised_sentence_index,
+        #         furtherest_read_sentence_index=self._current_sentence_index,
+        #         read_sentence_appraisal_scores_distribution=self._already_read_sentences_appraisal_scores_distribution
+        #     )
+        #     self._current_sentence_index = self._current_sentence_index     # Just a placeholder here       
+        #     reward = self.reward_function.compute_regress_to_sentence_reward()
+
+        # # Stop reading
+        # if action == self._STOP_ACTION:
+        #     self._terminate = True
+        #     self._truncated = False
+        #     reward = self.reward_function.compute_terminate_reward(self._num_sentences, self._num_sentences_read, self._already_read_sentences_appraisal_scores_distribution)
 
         # Check termination
         if self._steps >= self.ep_len:
@@ -161,6 +191,10 @@ class TextComprehensionEnv(Env):
     def normalise(x, x_min, x_max, a, b):
     # Normalise x (which is assumed to be in range [x_min, x_max]) to range [a, b]
         return (b - a) * ((x - x_min) / (x_max - x_min)) + a
+    
+    def _get_regress_sentence_index(self, raw_regress_sentence_value):
+        regress_sentence_index = int(self.normalise(raw_regress_sentence_value, 0, 1, 0, self._num_sentences - 1))
+        return regress_sentence_index
     
     def _get_obs(self):
         """Get observation with simplified scalar signals"""
