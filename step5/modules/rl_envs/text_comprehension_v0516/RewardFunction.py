@@ -8,7 +8,7 @@ class RewardFunction():
     """
 
     def __init__(self):
-        self._coefficient_sentence_selection = 1
+        self._coefficient_sentence_selection = 10
         self._coefficeint_comprehension = 1
 
     def compute_regress_to_sentence_reward(self):
@@ -50,7 +50,7 @@ class RewardFunction():
             # NOTE: linear reward: linear scaling for the comprehension performance
             final_reward = 100 * self._coefficeint_comprehension * overall_comprehension_scalar
 
-            # TODO debug delete later
-            print(f"The final reward is: {final_reward}")
+            # # TODO debug delete later
+            # print(f"The final reward is: {final_reward}")
                 
             return final_reward

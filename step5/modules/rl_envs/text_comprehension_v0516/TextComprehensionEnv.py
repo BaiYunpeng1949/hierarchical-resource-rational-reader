@@ -65,7 +65,7 @@ class TextComprehensionEnv(Env):
 
         # Environment parameters
         self._steps = None
-        self.ep_len = 1.5 * Constants.MAX_NUM_SENTENCES
+        self.ep_len = 3 * Constants.MAX_NUM_SENTENCES           # Enough steps for the agent to stop reading actively
         self._terminate = None
         self._truncated = None
 
@@ -76,7 +76,8 @@ class TextComprehensionEnv(Env):
         # self._STOP_ACTION = 2
         # self.action_space = Discrete(3)      
         self._regress_proceed_division = 0.5
-        self.action_space = Box(low=0, high=1, shape=(2,))      # First action decides keeps reading or not; second acction decides where to regress to
+        self._stop_division = 0.5
+        self.action_space = Box(low=0, high=1, shape=(3,))      # First action decides keeps reading or not; second acction decides where to regress to; third action decides whether to stop
         
         # Observation space - simplified to scalar signals
         self._num_stateful_obs = Constants.MAX_NUM_SENTENCES + 3 + 1     # Distribution of the appraisal scores over the sentences, current sentence index, and the time awareness 
@@ -102,8 +103,8 @@ class TextComprehensionEnv(Env):
         self._num_sentences_read = 0
         self._regress_sentence_index = -1    # -1 means no regress# NOTE: if the agent does not learn, include this into the observation space
 
-        # TODO debug delete later
-        print(f"Text ID sampled: {text_id}")
+        # # TODO debug delete later
+        # print(f"Text ID sampled: {text_id}")
         
         return self._get_obs(), {}
     
@@ -114,32 +115,38 @@ class TextComprehensionEnv(Env):
 
         read_or_regress_action = action[0]
         raw_regress_sentence_value = action[1]
+        continue_or_stop_action = action[2]
 
-        # TODO debug delete later
-        print(f"Agent's action is: {action}")
+        # # TODO debug delete later
+        # print(f"Agent's action is: {action}")
 
-        if read_or_regress_action < self._regress_proceed_division:
-            # Continue to read the next sentence
-            self._already_read_sentences_appraisal_scores_distribution, action_validity = self.transition_function.update_state_read_next_sentence(
-                current_sentence_index=self._current_sentence_index,
-                sentence_appraisal_scores_distribution=self._sentence_appraisal_scores_distribution,
-                num_sentences=self._num_sentences
-            )
-            if action_validity:
-                self._current_sentence_index = self._current_sentence_index + 1
-                self._num_sentences_read += 1
-                self._num_remaining_sentence -= 1
-            reward = self.reward_function.compute_read_next_sentence_reward()
+        if continue_or_stop_action <= self._stop_division:
+            if read_or_regress_action > self._regress_proceed_division:
+                # Continue to read the next sentence
+                self._already_read_sentences_appraisal_scores_distribution, action_validity = self.transition_function.update_state_read_next_sentence(
+                    current_sentence_index=self._current_sentence_index,
+                    sentence_appraisal_scores_distribution=self._sentence_appraisal_scores_distribution,
+                    num_sentences=self._num_sentences
+                )
+                if action_validity:
+                    self._current_sentence_index = self._current_sentence_index + 1
+                    self._num_sentences_read += 1
+                    self._num_remaining_sentence -= 1
+                reward = self.reward_function.compute_read_next_sentence_reward()
+            else:
+                # Regress to a previously read sentence
+                revised_sentence_index = self._get_regress_sentence_index(raw_regress_sentence_value)
+                self._already_read_sentences_appraisal_scores_distribution, action_validity = self.transition_function.update_state_regress_to_sentence(
+                    revised_sentence_index=revised_sentence_index,
+                    furtherest_read_sentence_index=self._current_sentence_index,
+                    read_sentence_appraisal_scores_distribution=self._already_read_sentences_appraisal_scores_distribution
+                )
+                self._current_sentence_index = self._current_sentence_index     # Just a placeholder here -- automatically jumps back to the latest sentence that read. NOTE: make this complex later    
+                reward = self.reward_function.compute_regress_to_sentence_reward()
         else:
-            # Regress to a previously read sentence
-            revised_sentence_index = self._get_regress_sentence_index(raw_regress_sentence_value)
-            self._already_read_sentences_appraisal_scores_distribution, action_validity = self.transition_function.update_state_regress_to_sentence(
-                revised_sentence_index=revised_sentence_index,
-                furtherest_read_sentence_index=self._current_sentence_index,
-                read_sentence_appraisal_scores_distribution=self._already_read_sentences_appraisal_scores_distribution
-            )
-            self._current_sentence_index = self._current_sentence_index     # Just a placeholder here -- automatically jumps back to the latest sentence that read. NOTE: make this complex later    
-            reward = self.reward_function.compute_regress_to_sentence_reward()
+            # Stop reading
+            self._terminate = True
+            self._truncated = False
 
         # Check termination
         if self._steps >= self.ep_len:
@@ -170,7 +177,8 @@ class TextComprehensionEnv(Env):
         remaining_episode_length_awareness = self.normalise(self.ep_len - self._steps, 0, self.ep_len, 0, 1)
 
         # Normalised number of remaining sentences
-        norm_num_remaining_sentence = self.normalise(self._num_remaining_sentence, 0, self._num_sentences, 0, 1)
+        # norm_num_remaining_sentence = self.normalise(self._num_remaining_sentence, 0, self._num_sentences, 0, 1)
+        norm_remaining_sentence = 1 if self._num_remaining_sentence > 0 else 0      # A noisier but more realistic signal denoting the reading progress
 
         # Get current sentence position (normalized)
         norm_current_position = self.normalise(self._current_sentence_index, 0, Constants.MAX_NUM_SENTENCES - 1, 0, 1)
@@ -194,12 +202,12 @@ class TextComprehensionEnv(Env):
         
         on_going_comprehension_log_scalar = np.clip(on_going_comprehension_log_scalar, 0, 1)
 
-        stateful_obs = np.concatenate([padded_appraisals, [norm_current_position], [remaining_episode_length_awareness], [norm_num_remaining_sentence], [on_going_comprehension_log_scalar]])
+        stateful_obs = np.concatenate([padded_appraisals, [norm_current_position], [remaining_episode_length_awareness], [norm_remaining_sentence], [on_going_comprehension_log_scalar]])
 
         assert stateful_obs.shape[0] == self._num_stateful_obs, f"expected {self._num_stateful_obs} but got {stateful_obs.shape[0]}"
 
-        # TODO debug delete later
-        print(f"Stateful observation is: {stateful_obs}")
+        # # TODO debug delete later
+        # print(f"Stateful observation is: {stateful_obs}")
 
         return stateful_obs
         
