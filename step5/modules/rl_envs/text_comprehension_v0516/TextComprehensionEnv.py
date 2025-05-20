@@ -102,8 +102,8 @@ class TextComprehensionEnv(Env):
         self._num_sentences_read = 0
         self._regress_sentence_index = -1    # -1 means no regress# NOTE: if the agent does not learn, include this into the observation space
 
-        # # TODO debug delete later
-        # print(f"Text ID sampled: {text_id}")
+        # TODO debug delete later
+        print(f"Text ID sampled: {text_id}")
         
         return self._get_obs(), {}
     
@@ -115,8 +115,8 @@ class TextComprehensionEnv(Env):
         read_or_regress_action = action[0]
         raw_regress_sentence_value = action[1]
 
-        # # TODO debug delete later
-        # print(f"Agent's action is: {action}")
+        # TODO debug delete later
+        print(f"Agent's action is: {action}")
 
         if read_or_regress_action < self._regress_proceed_division:
             # Continue to read the next sentence
@@ -140,39 +140,6 @@ class TextComprehensionEnv(Env):
             )
             self._current_sentence_index = self._current_sentence_index     # Just a placeholder here -- automatically jumps back to the latest sentence that read. NOTE: make this complex later    
             reward = self.reward_function.compute_regress_to_sentence_reward()
-
-        # # Read the next sentence
-        # if action == self._READ_NEXT_SENTENCE_ACTION:
-        #     self._already_read_sentences_appraisal_scores_distribution, action_validity = self.transition_function.update_state_read_next_sentence(
-        #         current_sentence_index=self._current_sentence_index,
-        #         sentence_appraisal_scores_distribution=self._sentence_appraisal_scores_distribution,
-        #         num_sentences=self._num_sentences
-        #     )
-        #     if action_validity:
-        #         self._current_sentence_index = self._current_sentence_index + 1
-        #         self._num_sentences_read += 1
-        #         self._num_remaining_sentence -= 1
-        #     reward = self.reward_function.compute_read_next_sentence_reward()
-        
-        # # Regress to a previously read sentence
-        # if action == self._REGRESS_PREVIOUS_SENTENCE_ACTION:
-        #     revised_sentence_index = self.transition_function.optimize_select_sentence_to_regress_to(
-        #         current_sentence_index=self._current_sentence_index,
-        #         read_sentence_appraisal_scores_distribution=self._already_read_sentences_appraisal_scores_distribution
-        #     )
-        #     self._already_read_sentences_appraisal_scores_distribution, action_validity = self.transition_function.update_state_regress_to_sentence(
-        #         revised_sentence_index=revised_sentence_index,
-        #         furtherest_read_sentence_index=self._current_sentence_index,
-        #         read_sentence_appraisal_scores_distribution=self._already_read_sentences_appraisal_scores_distribution
-        #     )
-        #     self._current_sentence_index = self._current_sentence_index     # Just a placeholder here       
-        #     reward = self.reward_function.compute_regress_to_sentence_reward()
-
-        # # Stop reading
-        # if action == self._STOP_ACTION:
-        #     self._terminate = True
-        #     self._truncated = False
-        #     reward = self.reward_function.compute_terminate_reward(self._num_sentences, self._num_sentences_read, self._already_read_sentences_appraisal_scores_distribution)
 
         # Check termination
         if self._steps >= self.ep_len:
@@ -231,8 +198,8 @@ class TextComprehensionEnv(Env):
 
         assert stateful_obs.shape[0] == self._num_stateful_obs, f"expected {self._num_stateful_obs} but got {stateful_obs.shape[0]}"
 
-        # # TODO debug delete later
-        # print(f"Stateful observation is: {stateful_obs}")
+        # TODO debug delete later
+        print(f"Stateful observation is: {stateful_obs}")
 
         return stateful_obs
         

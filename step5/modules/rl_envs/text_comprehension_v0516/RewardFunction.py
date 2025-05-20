@@ -50,7 +50,7 @@ class RewardFunction():
             # NOTE: linear reward: linear scaling for the comprehension performance
             final_reward = 100 * self._coefficeint_comprehension * overall_comprehension_scalar
 
-            # # TODO debug delete later
-            # print(f"The final reward is: {final_reward}")
+            # TODO debug delete later
+            print(f"The final reward is: {final_reward}")
                 
             return final_reward

@@ -1,7 +1,7 @@
 simulator_name: 'step5'
 
 rl:
-  mode: train   # Options: train, continual_train, test, debug, simulate (run modules), and grid_test.
+  mode: test   # Options: train, continual_train, test, debug, simulate (run modules), and grid_test.
 
   train:
     total_timesteps: 100000000
@@ -23,8 +23,8 @@ rl:
     save_freq: 10000000  # Save a checkpoint every 0.50 million steps
 
   test:
-    num_episodes: 1000
-    loaded_model_name: 'rl_model_20000000_steps'
+    num_episodes: 5
+    loaded_model_name: 'rl_model_100000000_steps'
     continual_logs_name: 'PPO_89'
     dataset_for_testing: 'simulate'   # OPTIONS: 'test', 'train', 'simulate'
     grid_params:
