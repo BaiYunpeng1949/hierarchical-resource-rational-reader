@@ -51,3 +51,26 @@ Estimated results:
 
 Reference paper: Are Good Texts Always Better? Interactions of Text Coherence, Background Knowledge, and Levels of Understanding in Learning from Text
 
+Results
+
+    1. Proportional recall: (human data vs. simulated results) -- All using GPT to parse propositions, and then integrate to texts, then parse to propositions.
+
+                                    High Knowledge              Low Knowledge
+        High Coherence              0.484 / 0.963               0.381 / 0.552
+
+        Low Coherence               0.417 / 0.815               0.291 / 0.529
+    
+    2. Surface-Level Similarity
+
+                                    High Knowledge              Low Knowledge
+        High Coherence              0.944                       0.849 
+
+        Low Coherence               0.925                       0.905
+
+    3. Semantic Similairy (Ref: https://www.editpad.org/tool/text-similarity-checker, python has env compatibility issues)
+
+                                    High Knowledge              Low Knowledge
+        High Coherence              0.738                       0.592
+
+        Low Coherence               0.762                       0.677
+
