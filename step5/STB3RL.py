@@ -566,6 +566,9 @@ class RL:
                 obs, reward, done, truncated, info = self._env.step(action)
                 score += reward
             
+            # Add the episode log to the logs across episodes
+            logs_across_episodes.append(self._env.get_episode_log())
+            
             print(
                 f'Episode:{episode}     Score:{score}\n'
                 f'{"-" * 50}\n'
@@ -573,17 +576,30 @@ class RL:
 
         # Save logs if in test mode
         if self._mode == _MODES['test']:
-            # Create the log directory
+            # # Create the log directory
+            # root_path = os.path.dirname(os.path.abspath(__file__))
+            # rl_model_name = self._config_rl['train']['checkpoints_folder_name'] + '_' + self._config_rl['test']['loaded_model_name']
+            # log_dir = os.path.join(root_path, "data", "sim_results", "sentence_reading", rl_model_name, f"{self._num_episodes}ep")
+            
+            # # Create the directory if it does not exist
+            # if not os.path.exists(log_dir):
+            #     os.makedirs(log_dir)
+
+            # # Save the logs to a json file
+            # with open(os.path.join(log_dir, "raw_simulated_results.json"), "w") as f:
+            #     json.dump(logs_across_episodes, f, indent=4)
+
+            # Create a temporary directory for the episode logs under the env files for convenience because this study does not have human data as comparisons
             root_path = os.path.dirname(os.path.abspath(__file__))
             rl_model_name = self._config_rl['train']['checkpoints_folder_name'] + '_' + self._config_rl['test']['loaded_model_name']
-            log_dir = os.path.join(root_path, "data", "sim_results", "sentence_reading", rl_model_name, f"{self._num_episodes}ep")
+            save_data_dir = os.path.join("modules", "rl_envs", "text_comprehension_v0516", "temp_sim_data", rl_model_name, f"{self._num_episodes}ep")
 
             # Create the directory if it does not exist
-            if not os.path.exists(log_dir):
-                os.makedirs(log_dir)
+            if not os.path.exists(save_data_dir):
+                os.makedirs(save_data_dir)
 
             # Save the logs to a json file
-            with open(os.path.join(log_dir, "raw_simulated_results.json"), "w") as f:
+            with open(os.path.join(save_data_dir, "raw_sim_results.json"), "w") as f:
                 json.dump(logs_across_episodes, f, indent=4)
 
 

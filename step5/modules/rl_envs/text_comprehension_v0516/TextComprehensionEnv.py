@@ -43,6 +43,7 @@ class TextComprehensionEnv(Env):
         with open(os.path.join(root_dir, "config.yaml")) as f:
             self._config = yaml.load(f, Loader=yaml.FullLoader)
         self._mode = self._config["rl"]["mode"]
+        self.num_episodes = self._config["rl"]["test"]["num_episodes"]
         
         print(f"Text Comprehension Environment V0516 -- Deploying in {self._mode} mode")
 
@@ -61,13 +62,15 @@ class TextComprehensionEnv(Env):
         # Internal states
         self._already_read_sentences_appraisal_scores_distribution = None
         # External states
-        self._current_sentence_index = None
+        self._current_sentence_index = None     # Actually the reading progress, because the revisited sentence index is not trakced here
+        self._actual_reading_sentence_index = None  # Tracking the revisited sentence index
 
         # Environment parameters
         self._steps = None
         self.ep_len = 3 * Constants.MAX_NUM_SENTENCES           # Enough steps for the agent to stop reading actively
         self._terminate = None
         self._truncated = None
+        self._step_wise_log = None
 
         # Action space
         # 0 to MAX_NUM_SENTENCES, corresponding to valid sentence indexes for revisiting; max_num_sentences + 1 is the read next sentence action, max_num_sentences + 2 is the stop action
@@ -83,10 +86,14 @@ class TextComprehensionEnv(Env):
         self._num_stateful_obs = Constants.MAX_NUM_SENTENCES + 3 + 1     # Distribution of the appraisal scores over the sentences, current sentence index, and the time awareness 
         self.observation_space = Box(low=-1, high=1, shape=(self._num_stateful_obs,))
 
+        #########################################################
+        self.episode_id = 0        # Initialize here because need to accumulate across episodes
         
     def reset(self, seed=42):
         """Reset environment and initialize states"""
         super().reset(seed=seed)
+
+        self.episode_id += 1
 
         self._steps = 0
         self._terminate = False
@@ -102,6 +109,8 @@ class TextComprehensionEnv(Env):
         self._current_sentence_index = -1
         self._num_sentences_read = 0
         self._regress_sentence_index = -1    # -1 means no regress# NOTE: if the agent does not learn, include this into the observation space
+
+        self._step_wise_log = []
 
         # # TODO debug delete later
         # print(f"Text ID sampled: {text_id}")
@@ -130,12 +139,14 @@ class TextComprehensionEnv(Env):
                 )
                 if action_validity:
                     self._current_sentence_index = self._current_sentence_index + 1
+                    self._actual_reading_sentence_index = self._current_sentence_index
                     self._num_sentences_read += 1
                     self._num_remaining_sentence -= 1
                 reward = self.reward_function.compute_read_next_sentence_reward()
             else:
                 # Regress to a previously read sentence
                 revised_sentence_index = self._get_regress_sentence_index(raw_regress_sentence_value)
+                self._actual_reading_sentence_index = revised_sentence_index
                 self._already_read_sentences_appraisal_scores_distribution, action_validity = self.transition_function.update_state_regress_to_sentence(
                     revised_sentence_index=revised_sentence_index,
                     furtherest_read_sentence_index=self._current_sentence_index,
@@ -180,7 +191,7 @@ class TextComprehensionEnv(Env):
         # norm_num_remaining_sentence = self.normalise(self._num_remaining_sentence, 0, self._num_sentences, 0, 1)
         norm_remaining_sentence = 1 if self._num_remaining_sentence > 0 else 0      # A noisier but more realistic signal denoting the reading progress
 
-        # Get current sentence position (normalized)
+        # Get current sentence position (normalized)    NOTE: maybe add the revised sentence index ot the agent as an observation, not always the current sentence index
         norm_current_position = self.normalise(self._current_sentence_index, 0, Constants.MAX_NUM_SENTENCES - 1, 0, 1)
         
         # Get the valid sentences appraisal scores
@@ -200,7 +211,7 @@ class TextComprehensionEnv(Env):
         else:
             on_going_comprehension_log_scalar = 0.0
         
-        on_going_comprehension_log_scalar = np.clip(on_going_comprehension_log_scalar, 0, 1)
+        on_going_comprehension_log_scalar = np.clip(on_going_comprehension_log_scalar, 0, 1)    # TODO: double-check, this observation is not correct, might be useless
 
         stateful_obs = np.concatenate([padded_appraisals, [norm_current_position], [remaining_episode_length_awareness], [norm_remaining_sentence], [on_going_comprehension_log_scalar]])
 
@@ -208,27 +219,32 @@ class TextComprehensionEnv(Env):
 
         # # TODO debug delete later
         # print(f"Stateful observation is: {stateful_obs}")
+        
+        ################## Update step-wise log here because some values are computed here ##################
+        self._step_wise_log.append({
+            "step": self._steps,
+            "current_sentence_index": self._current_sentence_index,
+            "actual_reading_sentence_index": self._actual_reading_sentence_index,
+            "remaining_episode_length_awareness": remaining_episode_length_awareness,
+            "already_read_sentences_appraisal_scores_distribution": self._already_read_sentences_appraisal_scores_distribution.copy(),
+            "on_going_comprehension_log_scalar": on_going_comprehension_log_scalar,
+            "terminate": self._terminate,
+        })
 
         return stateful_obs
         
     def get_episode_log(self) -> dict:
         """Get logs for the episode"""
-        sentence_data_list = []
-        for sentence_id in range(self._num_sentences):
-            sentence_data = {
-                # "sentence_content": self._sampled_text.sentences[sentence_id],
-                # "sentence_len": self._sampled_text.sentences[sentence_id].num_words,
-            }
-            sentence_data_list.append(sentence_data)
-        
         episode_log = {
-            # "episode_id": self._episode_id,
-            # 'sentence_id': self._sentence_info['sentence_id'],
-            # 'participant_id': self._sentence_info['participant_id'],
-            # 'sentence_content': self._sentence_info['sentence_content'],
-            # 'sentence_len': self._sentence_len,
-            # "words": words_data_list
+            "episode_id": self.episode_id,
+            "total_episodes": self.num_episodes,
+            "num_sentences": self._num_sentences,
+            "init_sentence_appraisal_scores_distribution": self._sentence_appraisal_scores_distribution,
+            "step_wise_log": self._step_wise_log,
         }
+
+        # # TODO debug delete later
+        # print(f"Episode log is: {episode_log}")
 
         return episode_log
 
