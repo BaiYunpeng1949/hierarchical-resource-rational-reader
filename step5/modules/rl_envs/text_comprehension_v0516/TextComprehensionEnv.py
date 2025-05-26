@@ -211,7 +211,7 @@ class TextComprehensionEnv(Env):
         else:
             on_going_comprehension_log_scalar = 0.0
         
-        on_going_comprehension_log_scalar = np.clip(on_going_comprehension_log_scalar, 0, 1)    # TODO: double-check, this observation is not correct, might be useless
+        on_going_comprehension_log_scalar = np.clip(on_going_comprehension_log_scalar, 0, 1)
 
         stateful_obs = np.concatenate([padded_appraisals, [norm_current_position], [remaining_episode_length_awareness], [norm_remaining_sentence], [on_going_comprehension_log_scalar]])
 
