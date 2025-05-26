@@ -74,3 +74,42 @@ Results
 
         Low Coherence               0.762                       0.677
 
+
+## Updated Modeling Method V0526
+
+1. Objective:
+    a. Make the simulation results better align with the human data.
+    b. More rigorous implementation of the Kintsch's model.
+
+2. Technical details:
+    a. Original version [Kintsch, 1978]: 
+
+    Operation	                            Brain Activity (Model-wise)                                     Notes
+    Parsing	                                Build semantic propositions	                                    From syntactic structure to GIVE(JOHN, BOOK)
+    Coherence checking	                    Try connecting to STM	                                        Based on argument overlap
+    Inference	                            Fill coherence gaps	                                            Based on world knowledge
+    Search	                                LTM retrieval	                                                Fallback if STM fails
+    Selection	                            Keep important info in STM	                                    Size-limited (s propositions)
+    Graph building	                        Create structured memory trace	                                Nodes = propositions, edges = overlap
+    Forgetting / pruning	                Drop unconnected or irrelevant propositions	                    Or store in LTM if processed enough
+
+
+    b. My simplified version [Bai, 2025]: 
+        Parsing: sentences -> propositions -> one sentence / clause into one cycle, contains n propositions;
+        STM selection (with capacity s): up to s propositions are selected to enter the STM buffer, depends on: (1) overlap with STM (local coherence), or prior propositions, or LTM? (2) If not (coherent), try infer or LTM search (global coherence); 
+        Track processing frequency: Each time a proposition is retained across cycles, its “activation count” increases.;
+        LTM Storage: (1) Propositions that are frequently processed (high activation) are more likely to be stored in LTM. (2) Less-relevant, unintegrated propositions are pruned or left out.
+    
+    NOTE: for the simiplicity, I will not consider the local inference in the STM and global search and retrieval in the LTM.
+
+3. Implementation:
+    a. parse text into sentences;
+    b. parse sentence into propositions; 
+    c. hold a STM buffer to store the most relevant propositions;
+    d. count each propositions' activation;
+    e. select the most activated ones into the LTM in the end as gists;
+    f. (optional) forge the propositions into the LTM as some new propositions;
+    g. (alternative) directly use the remaining propositions in the LTM for calculating the proportaional recall; --> then text coherence's difference mainly comes from b and c, knowledge level's comes from b; 
+    h. reconstruct the text based on the gist;
+    i. regenerate into propositions to calculate the proportional recall.
+

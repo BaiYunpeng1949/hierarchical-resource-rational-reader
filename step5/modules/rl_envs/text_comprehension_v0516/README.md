@@ -10,6 +10,8 @@ Warning: to make the above-mentioned effect clear, maybe need to make the agent'
 1. apply stm limit or not [Kintsch's];
 2. apply memory gist or not [Kintsch's];
 3. stm size s [Kintsch's].
+4. prior knowledge classification [Are Good Texts Alawys Better?] (currently by LLM's inputted prompts).
+5. (low prority) propositions' integration and inference (currently we do not differentiate this, all done by LLM itself).
 
 ##Reproduction
 Procedure: 
