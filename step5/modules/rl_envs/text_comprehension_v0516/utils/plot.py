@@ -42,32 +42,65 @@ def plot_appraisal_heatmap(json_file_path, episode_id=1):
             if sent_idx < num_sentences:  # Ensure we don't exceed the number of sentences
                 appraisal_matrix[sent_idx, step_idx] = score
     
-    # Create the heatmap
-    plt.figure(figsize=(15, 8))
+    # Create the figure with two subplots
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 10), 
+                                  gridspec_kw={'height_ratios': [4, 1]})
     
     # Create custom colormap: white for -1 (unread), blue to red for scores
     cmap = sns.diverging_palette(240, 10, as_cmap=True)
     
-    # Plot the heatmap with more prominent grid
-    ax = sns.heatmap(appraisal_matrix, 
-                    cmap=cmap,
-                    vmin=-1, 
-                    vmax=1,
-                    center=0,
-                    cbar_kws={'label': 'Appraisal Score'},
-                    xticklabels=range(len(step_logs)),
-                    yticklabels=range(num_sentences),
-                    linewidths=1,  # Make grid lines more visible
-                    linecolor='black')  # Black grid lines
+    # Plot the main heatmap
+    sns.heatmap(appraisal_matrix, 
+                cmap=cmap,
+                vmin=-1, 
+                vmax=1,
+                center=0,
+                cbar_kws={'label': 'Appraisal Score'},
+                xticklabels=range(len(step_logs)),
+                yticklabels=range(num_sentences),
+                linewidths=1,
+                linecolor='black',
+                ax=ax1)
     
-    # Make grid lines more prominent
-    ax.set_xticks(np.arange(len(step_logs)) + 0.5, minor=False)
-    ax.set_yticks(np.arange(num_sentences) + 0.5, minor=False)
-    ax.grid(True, which='major', color='black', linewidth=1)
+    # Make grid lines more prominent for main heatmap
+    ax1.set_xticks(np.arange(len(step_logs)) + 0.5, minor=False)
+    ax1.set_yticks(np.arange(num_sentences) + 0.5, minor=False)
+    ax1.grid(True, which='major', color='black', linewidth=1)
+    ax1.set_title(f'Sentence Appraisal Levels Over Time (Episode {episode_id})')
+    ax1.set_xlabel('')
+    ax1.set_ylabel('Sentence Index')
     
-    plt.title(f'Sentence Appraisal Levels Over Time (Episode {episode_id})')
-    plt.xlabel('Reading Step')
-    plt.ylabel('Sentence Index')
+    # Extract ongoing comprehension scores and create a single-row matrix
+    comprehension_scores = []
+    for step in step_logs:
+        score = step['on_going_comprehension_log_scalar']
+        if isinstance(score, list):
+            score = score[0]  # Take the first value if it's a list
+        comprehension_scores.append(score)
+    
+    comprehension_matrix = np.array(comprehension_scores).reshape(1, -1)
+    
+    # Plot the comprehension heatmap
+    sns.heatmap(comprehension_matrix,
+                cmap='YlOrRd',  # Yellow to Orange to Red colormap
+                vmin=0,
+                vmax=1,
+                cbar_kws={'label': 'Comprehension Score'},
+                xticklabels=range(len(step_logs)),
+                yticklabels=['Comprehension'],
+                linewidths=0,  # Remove all grid lines
+                linecolor='black',
+                ax=ax2)
+    
+    # Add only vertical grid lines for comprehension heatmap
+    ax2.set_xticks(np.arange(len(step_logs)) + 0.5, minor=False)
+    ax2.set_yticks([0.5], minor=False)
+    ax2.grid(True, which='major', axis='x', color='black', linewidth=1)  # Only vertical lines
+    ax2.set_xlabel('Reading Step')
+    ax2.set_ylabel('')
+    
+    # Adjust layout to prevent overlap
+    plt.tight_layout()
     
     # Save the figure
     plt.savefig('appraisal_heatmap.png', dpi=300, bbox_inches='tight')
