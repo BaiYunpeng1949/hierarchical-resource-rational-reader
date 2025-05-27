@@ -39,7 +39,7 @@ class LLMAgent:
         self._max_num_requests = 10
         self._retry_delay = 20
     
-    def _get_response(self, role, prompt):
+    def get_micro_structural_propositions(self, role, prompt):
         
         if self.use_aalto_openai_api:
             messages=[
@@ -75,7 +75,25 @@ class LLMAgent:
                 frequency_penalty=0,
                 presence_penalty=0
             )
-        return completion.choices[0].message.content
+
+        # --- Raw response from the LLM ---
+        response = completion.choices[0].message.content
+
+        # --- Clean and split response into proposition groups ---
+        # Assume one line per group (optional) and split each line by commas
+        raw_lines = response.split("\n")
+        proposition_groups = []
+
+        for line in raw_lines:
+            # Remove any brackets or extra characters, just sanitize
+            cleaned = line.strip().rstrip(",")  # remove trailing comma
+            if not cleaned:
+                continue
+            group = [p.strip() for p in cleaned.split(",") if p.strip()]
+            if group:
+                proposition_groups.append(group)
+
+        return proposition_groups
 
 def update_base_url(request: httpx.Request) -> None:
         if request.url.path == "/chat/completions":
@@ -87,21 +105,23 @@ if __name__ == "__main__":
     #########################################################
     # Configure the propositions and the question
     #########################################################
-    propositions = [
-        "The text is about love.",
-        "The text is about hate.",
-        "The text is about life.",
-    ]           # TODO debug check later   
-    question = "What is the main theme of the text?" # TODO debug check later
+    sentence = "The heart is the hardest working organ in the body."
 
     #########################################################
     # Test the LLM agent
     #########################################################
     llm_agent = LLMAgent(model_name="gpt-4o", api_key="")
     # llm_agent._demo_get_response("what is love?")
-    llm_agent._get_response(
-        role="You are a cognitive agent holding a lot of micro-structural propositions about a text. Now you need to answer some questions about the text only based on the propositions you have.",
+    response = llm_agent.get_response(
+        role="You are a reader with **high prior knowledge** about **heart disease**. ",
+        # role="You are a reader with **low prior knowledge** about **heart disease**. ",
         prompt=(
-            f"The propositions are: {propositions}. \n\n Please answer the question: {question}."
+            f"Now please parse the given sentence into micro-structural propositions that matches Kintsch's model of text comprehension. \n\n The sentence is: {sentence}.\n\n"
+            f"The propositions should be in the following format: \n\n"
+            f"A(B, C), or nested A(B, C(D, E))."
+            f"Please output the propositions only, no other text, separated by comma."
         )
     )
+
+    # TODO debug check later
+    print(response)
