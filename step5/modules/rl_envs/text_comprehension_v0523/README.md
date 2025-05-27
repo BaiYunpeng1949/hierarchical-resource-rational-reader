@@ -14,7 +14,7 @@ Evaluations:
 
     1. Proportional recall
         Calculation of Proportional Recall:
-            1. The text was propositionalized using van Dijk & Kintsch’s (1983) framework, breaking it into:
+            1. The text was propositionalized using van Dijk & Kintsch's (1983) framework, breaking it into:
                 a. Micropropositions (detailed sentence-level content)
                 b. Macropropositions (global or paragraph-level main ideas)
             2. Participants' recalls were scored for the presence of any part of a proposition.
@@ -26,19 +26,19 @@ Evaluations:
     3. Bridging Inference Questions [out of scope]
         Require connecting information across multiple sentences in the text.
         Example:
-            “Which disease causes scarring of the heart valves?”
+            "Which disease causes scarring of the heart valves?"
             You need to infer from different text segments that link rheumatic fever with valve scarring.
     
     4. Elaborative inference questions [out of scope]
         Require integrating textual information with prior knowledge.
         Example:
-            “Explain why arrhythmia would be a threat to life.”
+            "Explain why arrhythmia would be a threat to life."
             Not directly stated; requires applying knowledge of heart function.
     
     5. Problem-Solving Questions [out of scope]
         Require applying multiple pieces of information to novel scenarios.
         Example:
-            “What treatment would help a 28-year-old experiencing heart failure from a muscle disease?”
+            "What treatment would help a 28-year-old experiencing heart failure from a muscle disease?"
             Involves diagnosing from text info and reasoning about treatments.
 
 **A basic testing method**: use the LLM to first construct a memory text, then redistill the propositions out of this memory text. Compare.
@@ -97,7 +97,7 @@ Results
     b. My simplified version [Bai, 2025]: 
         Parsing: sentences -> propositions -> one sentence / clause into one cycle, contains n propositions;
         STM selection (with capacity s): up to s propositions are selected to enter the STM buffer, depends on: (1) overlap with STM (local coherence), or prior propositions, or LTM? (2) If not (coherent), try infer or LTM search (global coherence); 
-        Track processing frequency: Each time a proposition is retained across cycles, its “activation count” increases.;
+        Track processing frequency: Each time a proposition is retained across cycles, its "activation count" increases.;
         LTM Storage: (1) Propositions that are frequently processed (high activation) are more likely to be stored in LTM. (2) Less-relevant, unintegrated propositions are pruned or left out.
     
     NOTE: for the simiplicity, I will not consider the local inference in the STM and global search and retrieval in the LTM.
@@ -112,4 +112,128 @@ Results
     g. (alternative) directly use the remaining propositions in the LTM for calculating the proportaional recall; --> then text coherence's difference mainly comes from b and c, knowledge level's comes from b; 
     h. reconstruct the text based on the gist;
     i. regenerate into propositions to calculate the proportional recall.
+
+4. Execution
+    a. parse text into sentences
+    b. parse sentences into propositions (including grouped ones) using either SpaCy (relible, reproducible, but low quality and low adaptivity) and ChatGPT (laborious but of high quality).
+    c. [Simple approach] rate all propositions' coherence and importance score all together, do not differentiate high or low knowledge background. Later, parameterize knowledge threshold: for high knowledge reader, a lower threshold for activating these content into the LTM. For low knowledge reader, a higher threshold for the activation.
+    d. [Medium approach] use high- and low-knowledge reader to rate propositions differently.
+    e. [Sophisticated approach] use cycles to dynamically update the stm and propositions, get rid of some in the cycles; rate propositions more easily if the reader is of high-knowledge, and vice versa. Use the number of involving processing to include in the LTM.
+    f. [Extremely sophisticated approach] explicitly add inference and LTM search / retrieval to the [Sophisticated approach].
+    g. [Reliable approach] use STM as a sliding window buffer, each cycle counts, only the most relevant and important information could be staying. I will rank these propositions later then deciding which one could go to the LTM for calculating the proportional recall. We could calculate the p_reproduction_or_store_in_ltm = (1 - p)^k, where k is the chance of being stored into the LTM. We define this as an empirically tunable parameter to account for knowledge level's effect.
+
+5. Tunable parameters
+    a. STM buffer size: s, default as 4, could be 2-7 or over 10.
+    b. [Optional] Chances of being stored in the LTM k. Have k_high and k_low. Should be an integer. Or just a simple threshold value of ranking.
+    c. [High Priority] Compute all the propositions' coherence with each other, and select the average highest ones to store in the ltm. But there will be two 
+
+
+Results
+
+    1. Proportional recall: (human data vs. simulated results)  -- to be parameter inferenced: --high_threshold and --low_threshold
+
+                                    High Knowledge              Low Knowledge
+        High Coherence              0.484 / 0.461               0.381 / 0.425
+
+        Low Coherence               0.417 / 0.339               0.291 / 0.241
+
+** Reproduction **
+
+## Workflow and File Generation
+
+### File Structure
+```
+text_comprehension_v0523/
+├── assets/
+│   ├── example_texts_v0526_chatgpt_generated.json      # Input texts with coherence levels
+│   ├── organized_example_propositions_v0527.json        # Organized propositions with coherence scores
+│   └── proportional_recall_results/                     # Results directory
+│       └── recall_results_YYYYMMDD_HHMMSS.txt          # Generated recall results
+└── utils/
+    ├── organize_propositions.py                        # Organizes propositions and calculates coherence
+    └── calculate_proportional_recall.py                # Calculates proportional recall metrics
+```
+
+### Workflow Steps
+
+1. **Generate Example Texts** (if needed)
+   - Input: Manually created or generated texts
+   - Output: `example_texts_v0526_chatgpt_generated.json`
+   - Structure: List of texts with `text_title` and `coherence` levels
+
+2. **Organize Propositions**
+   ```bash
+   conda activate text_comprehension
+   python organize_propositions.py
+   ```
+   - Input: `example_texts_v0526_chatgpt_generated.json`
+   - Output: `organized_example_propositions_v0527.json`
+   - Function: Extracts propositions and calculates coherence scores
+   - Tunable Parameters:
+     - `window_size`: Size of sliding window for local coherence (default: 5)
+     - Input/Output file paths can be modified in the script
+
+3. **Calculate Proportional Recall**
+   ```bash
+   python calculate_proportional_recall.py [--high_threshold HIGH] [--low_threshold LOW]
+   ```
+   - Input: `organized_example_propositions_v0527.json`
+   - Output: `proportional_recall_results/recall_results_*.txt`
+   - Tunable Parameters:
+     - `--high_threshold`: Global coherence threshold for high knowledge (default: 0.85)
+     - `--low_threshold`: Global coherence threshold for low knowledge (default: 0.70)
+     - `--input_file`: Path to input JSON file (default: ../assets/organized_example_propositions_v0527.json)
+
+### Tunable Parameters Summary
+
+1. **Proposition Organization** (`organize_propositions.py`)
+   - `window_size`: Controls local coherence calculation window
+     - Default: 5 (based on short-term memory capacity)
+     - Range: 2-7 recommended
+     - Effect: Larger windows capture more context but may dilute local coherence
+
+2. **Proportional Recall** (`calculate_proportional_recall.py`)
+   - `high_threshold`: Global coherence threshold for high knowledge
+     - Default: 0.85
+     - Range: 0.70-0.95 recommended
+     - Effect: Higher values make high knowledge criteria more strict
+   
+   - `low_threshold`: Global coherence threshold for low knowledge
+     - Default: 0.70
+     - Range: 0.50-0.80 recommended
+     - Effect: Higher values make low knowledge criteria more strict
+
+### Plot
+1. Fill the data from /home/baiy4/reader-agent-zuco/step5/modules/rl_envs/text_comprehension_v0523/assets/proportional_recall_results to plot.py
+    '''bash
+    python plot.py
+    '''
+
+### Example Usage
+
+1. Basic run with default parameters:
+   ```bash
+   python calculate_proportional_recall.py
+   ```
+
+2. Custom thresholds:
+   ```bash
+   python calculate_proportional_recall.py --high_threshold 0.90 --low_threshold 0.75
+   ```
+
+3. Custom input file:
+   ```bash
+   python calculate_proportional_recall.py --input_file ../assets/custom_propositions.json
+   ```
+
+### Results Interpretation
+
+The output file in `proportional_recall_results/` contains:
+- Timestamp of generation
+- Used threshold values
+- Proportional recall results for:
+  - Fully Coherent texts (high and low knowledge)
+  - Minimally Coherent texts (high and low knowledge)
+
+Results are formatted as percentages and can be compared with human data from the reference paper.
 

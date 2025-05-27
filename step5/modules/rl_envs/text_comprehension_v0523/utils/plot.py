@@ -3,8 +3,8 @@ import numpy as np
 
 # Data from the table
 # Format: [human_high_knowledge, sim_high_knowledge, human_low_knowledge, sim_low_knowledge]
-high_coherence = [0.484, 0.963, 0.381, 0.552]  # [human_high, sim_high, human_low, sim_low]
-low_coherence = [0.417, 0.815, 0.291, 0.529]   # [human_high, sim_high, human_low, sim_low]
+high_coherence = [0.484, 0.461, 0.381, 0.425]  # [human_high, sim_high, human_low, sim_low]
+low_coherence = [0.417, 0.339, 0.291, 0.241]   # [human_high, sim_high, human_low, sim_low]
 
 # Set up the plot
 plt.figure(figsize=(12, 6))

@@ -675,19 +675,7 @@
                 ]
                 
             }
-        ],
-        "high_knowledge": {
-            "propositions": "",
-            "gist": "",
-            "recall_text": "",
-            "recall_propositions": ""
-        },
-        "low_knowledge": {
-            "propositions": "",
-            "gist": "",
-            "recall_text": "",
-            "recall_propositions": ""
-        }
+        ]
     },
     {
         "text_title": "Heart Disease",
