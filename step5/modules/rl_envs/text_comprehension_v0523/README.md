@@ -205,9 +205,9 @@ text_comprehension_v0523/
 
 ### Plot
 1. Fill the data from /home/baiy4/reader-agent-zuco/step5/modules/rl_envs/text_comprehension_v0523/assets/proportional_recall_results to plot.py
-    '''bash
+    ```bash
     python plot.py
-    '''
+    ```
 
 ### Example Usage
 

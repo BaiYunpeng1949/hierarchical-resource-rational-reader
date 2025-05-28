@@ -43,7 +43,7 @@ def plot_appraisal_heatmap(json_file_path, episode_id=1):
                 appraisal_matrix[sent_idx, step_idx] = score
     
     # Create the figure with two subplots
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 10), 
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), 
                                   gridspec_kw={'height_ratios': [4, 1]})
     
     # Create custom colormap: white for -1 (unread), blue to red for scores
@@ -60,12 +60,13 @@ def plot_appraisal_heatmap(json_file_path, episode_id=1):
                 yticklabels=range(num_sentences),
                 linewidths=1,
                 linecolor='black',
+                square=False,  # Don't force square cells
                 ax=ax1)
     
     # Make grid lines more prominent for main heatmap
     ax1.set_xticks(np.arange(len(step_logs)) + 0.5, minor=False)
     ax1.set_yticks(np.arange(num_sentences) + 0.5, minor=False)
-    ax1.grid(True, which='major', color='black', linewidth=1)
+    ax1.grid(True, which='major', color='black', linewidth=1, linestyle='-')
     ax1.set_title(f'Sentence Appraisal Levels Over Time (Episode {episode_id})')
     ax1.set_xlabel('')
     ax1.set_ylabel('Sentence Index')
@@ -80,7 +81,7 @@ def plot_appraisal_heatmap(json_file_path, episode_id=1):
     
     comprehension_matrix = np.array(comprehension_scores).reshape(1, -1)
     
-    # Plot the comprehension heatmap
+    # Plot the comprehension heatmap with controlled rectangle size
     sns.heatmap(comprehension_matrix,
                 cmap='YlOrRd',  # Yellow to Orange to Red colormap
                 vmin=0,
@@ -88,14 +89,15 @@ def plot_appraisal_heatmap(json_file_path, episode_id=1):
                 cbar_kws={'label': 'Comprehension Score'},
                 xticklabels=range(len(step_logs)),
                 yticklabels=['Comprehension'],
-                linewidths=0,  # Remove all grid lines
+                linewidths=1,  # Add grid lines
                 linecolor='black',
+                square=False,  # Don't force square cells
                 ax=ax2)
     
     # Add only vertical grid lines for comprehension heatmap
     ax2.set_xticks(np.arange(len(step_logs)) + 0.5, minor=False)
     ax2.set_yticks([0.5], minor=False)
-    ax2.grid(True, which='major', axis='x', color='black', linewidth=1)  # Only vertical lines
+    ax2.grid(True, which='major', axis='x', color='black', linewidth=1, linestyle='-')  # Solid vertical lines
     ax2.set_xlabel('Reading Step')
     ax2.set_ylabel('')
     
