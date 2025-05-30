@@ -1,5 +1,6 @@
 import os
 import yaml
+import numpy as np
 from . import Constants
 
 class TransitionFunction():
@@ -58,4 +59,14 @@ class TransitionFunction():
         assert revised_sentence_index != -1, "No valid sentence to regress to"
 
         return revised_sentence_index
+    
+    def apply_time_independent_memory_decay(self, read_sentence_appraisal_scores_distribution, sentence_index_do_not_decay):
+        """
+        Apply the memory decay over time to the read sentence appraisal scores distribution.
+        """
+        # Apply the memory decay over time to the read sentence appraisal scores distribution
+        for i in range(len(read_sentence_appraisal_scores_distribution)):
+            if i != sentence_index_do_not_decay and read_sentence_appraisal_scores_distribution[i] != -1:
+                read_sentence_appraisal_scores_distribution[i] = np.clip(read_sentence_appraisal_scores_distribution[i] - Constants.MEMORY_DECAY_CONSTANT, 0, 1)
         
+        return read_sentence_appraisal_scores_distribution.copy()

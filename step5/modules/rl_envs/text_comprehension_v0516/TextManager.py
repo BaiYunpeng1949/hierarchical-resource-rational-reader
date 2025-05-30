@@ -2,6 +2,7 @@ import os
 import json
 import random
 from . import Constants
+# import Constants
 
 
 class TextManager():
@@ -18,8 +19,14 @@ class TextManager():
         # Generate random number of sentences
         num_sentences = random.randint(self.min_num_sentences, self.max_num_sentences)
         
-        # Generate random appraisal scores for each sentence, rounded to 1 decimal
-        sentence_appraisal_scores = [round(random.random(), 1) for _ in range(num_sentences)]
+        # Generate appraisal scores from Gaussian distribution centered at 0.6
+        # Using std dev of 0.2 to keep most values within reasonable range
+        sentence_appraisal_scores = []
+        for _ in range(num_sentences):
+            score = random.gauss(0.6, 0.2)
+            # Clamp values between 0 and 1
+            score = max(0.0, min(1.0, score))
+            sentence_appraisal_scores.append(round(score, 1))
         
         # Pad with -1 to maintain consistent length (20 sentences max)
         padded_scores = sentence_appraisal_scores + [-1] * (20 - num_sentences)
