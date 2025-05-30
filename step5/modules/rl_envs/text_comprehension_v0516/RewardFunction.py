@@ -8,7 +8,7 @@ class RewardFunction():
     """
 
     def __init__(self):
-        self._coefficient_sentence_selection = 10
+        self._coefficient_sentence_selection = 1
         self._coefficeint_comprehension = 1
 
     def compute_regress_to_sentence_reward(self):
