@@ -110,5 +110,6 @@ def plot_appraisal_heatmap(json_file_path, episode_id=1):
 
 if __name__ == "__main__":
     # Example usage
-    json_file_path = "/home/baiy4/reader-agent-zuco/step5/modules/rl_envs/text_comprehension_v0516/temp_sim_data/0520_text_comprehension_v0516_03_rl_model_100000000_steps/5ep/raw_sim_results.json"
+    # json_file_path = "/home/baiy4/reader-agent-zuco/step5/modules/rl_envs/text_comprehension_v0516/temp_sim_data/0520_text_comprehension_v0516_03_rl_model_100000000_steps/5ep/raw_sim_results.json"
+    json_file_path = "/home/baiy4/reader-agent-zuco/step5/modules/rl_envs/text_comprehension_v0516/temp_sim_data/0530_text_comprehension_v0516_04_rl_model_90000000_steps/5ep/raw_sim_results.json"
     plot_appraisal_heatmap(json_file_path, episode_id=1)
