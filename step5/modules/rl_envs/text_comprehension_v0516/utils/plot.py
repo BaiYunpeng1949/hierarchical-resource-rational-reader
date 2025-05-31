@@ -58,15 +58,18 @@ def plot_appraisal_heatmap(json_file_path, episode_id=1):
                 cbar_kws={'label': 'Appraisal Score'},
                 xticklabels=range(len(step_logs)),
                 yticklabels=range(num_sentences),
-                linewidths=1,
+                linewidths=1,  # Keep cell borders
                 linecolor='black',
                 square=False,  # Don't force square cells
                 ax=ax1)
     
-    # Make grid lines more prominent for main heatmap
+    # Set up ticks for main heatmap
     ax1.set_xticks(np.arange(len(step_logs)) + 0.5, minor=False)
     ax1.set_yticks(np.arange(num_sentences) + 0.5, minor=False)
-    ax1.grid(True, which='major', color='black', linewidth=1, linestyle='-')
+    # Remove grid lines
+    ax1.grid(False)
+    # Remove tick lines but keep labels
+    ax1.tick_params(axis='both', which='both', length=0)
     ax1.set_title(f'Sentence Appraisal Levels Over Time (Episode {episode_id})')
     ax1.set_xlabel('')
     ax1.set_ylabel('Sentence Index')
@@ -89,15 +92,18 @@ def plot_appraisal_heatmap(json_file_path, episode_id=1):
                 cbar_kws={'label': 'Comprehension Score'},
                 xticklabels=range(len(step_logs)),
                 yticklabels=['Comprehension'],
-                linewidths=1,  # Add grid lines
+                linewidths=1,  # Keep cell borders
                 linecolor='black',
                 square=False,  # Don't force square cells
                 ax=ax2)
     
-    # Add only vertical grid lines for comprehension heatmap
+    # Set up ticks for comprehension heatmap
     ax2.set_xticks(np.arange(len(step_logs)) + 0.5, minor=False)
     ax2.set_yticks([0.5], minor=False)
-    ax2.grid(True, which='major', axis='x', color='black', linewidth=1, linestyle='-')  # Solid vertical lines
+    # Remove grid lines
+    ax2.grid(False)
+    # Remove tick lines but keep labels
+    ax2.tick_params(axis='both', which='both', length=0)
     ax2.set_xlabel('Reading Step')
     ax2.set_ylabel('')
     
@@ -111,5 +117,6 @@ def plot_appraisal_heatmap(json_file_path, episode_id=1):
 if __name__ == "__main__":
     # Example usage
     # json_file_path = "/home/baiy4/reader-agent-zuco/step5/modules/rl_envs/text_comprehension_v0516/temp_sim_data/0520_text_comprehension_v0516_03_rl_model_100000000_steps/5ep/raw_sim_results.json"
-    json_file_path = "/home/baiy4/reader-agent-zuco/step5/modules/rl_envs/text_comprehension_v0516/temp_sim_data/0530_text_comprehension_v0516_04_rl_model_90000000_steps/5ep/raw_sim_results.json"
-    plot_appraisal_heatmap(json_file_path, episode_id=1)
+    # json_file_path = "/home/baiy4/reader-agent-zuco/step5/modules/rl_envs/text_comprehension_v0516/temp_sim_data/0530_text_comprehension_v0516_04_rl_model_90000000_steps/5ep/raw_sim_results.json"
+    json_file_path = "/home/baiy4/reader-agent-zuco/step5/modules/rl_envs/text_comprehension_v0516/temp_sim_data/0530_text_comprehension_v0516_05_rl_model_100000000_steps/5ep/raw_sim_results.json"
+    plot_appraisal_heatmap(json_file_path, episode_id=2)
