@@ -69,9 +69,12 @@ class SentenceReadingEnv(Env):
         self.action_space = Discrete(4)     
         
         # Observation space - simplified to scalar signals
-        self._num_stateful_obs = 6
+        self._num_stateful_obs = 6 + 1      # +1 for the regression cost
         self.observation_space = Box(low=0, high=1, shape=(self._num_stateful_obs,))
         self._noisy_obs_sigma = Constants.NOISY_OBS_SIGMA
+
+        # Free parameters
+        self._w_regression_cost = None
         
     def reset(self, seed=42, sentence_idx=None, episode_id=None):
         """Reset environment and initialize states"""
@@ -86,16 +89,6 @@ class SentenceReadingEnv(Env):
         self._sentence_info = self.sentences_manager.reset(sentence_idx)
         self._sentence_len = len(self._sentence_info['words'])
 
-        # # TODO debug delete later
-        # print(f"sentence_info: {self._sentence_info}")
-        # print()
-        # print(f"the words ranked word integration probabilities: {self._sentence_info['words_ranked_word_integration_probabilities_for_running_model']}")
-        # print()
-        # print(f"the words predictabilities: {self._sentence_info['words_predictabilities_for_running_model']}")
-        # print()
-        # print(f"the predicted words ranked integration probabilities: {self._sentence_info['predicted_words_ranked_integration_probabilities_for_running_model']}")
-        # print(f"--------------------------------")
-
         # Initialize word beliefs from pre-computed data
         self._word_beliefs = [-1] * self._sentence_len
         self._read_words = []
@@ -109,18 +102,19 @@ class SentenceReadingEnv(Env):
         self._regressed_words_indexes = []
         self._reading_sequence = []
 
-        # # TODO: predefine a action sequence to test the environment
-        # self._action_sequence = [1, 1, 2, 1, 1, 2, 1, 1, 0, 1, 3]
-        
+        # Initialize a random regression cost
+        # self._w_regression_cost = random.uniform(0, 1)
+        self._w_regression_cost = 1.0
+
+        # TODO debug delete later
+        print(f"w_regression_cost: {self._w_regression_cost}")
+
         return self._get_obs(), {}
     
     def step(self, action):
         """Take action and update states"""
         self._steps += 1
         reward = 0
-
-        # TODO: now the agent does not skip at all, try to use a sigmoid function to smooth edges; then leave some tolerance 
-        # for not regressing; but let me try it later
 
         # # TODO debug delete later -- manipulate the actions to see whether they work properly
         # action = self._action_sequence[self._steps-1]
@@ -136,12 +130,18 @@ class SentenceReadingEnv(Env):
                 self._regressed_words_indexes.append(self._current_word_index)
                 self._reading_sequence.append(self._current_word_index)
                 # NOTE: plan 1 -- Reset belief to 1 for regressed word -- results: too many regressions
-                self._word_beliefs[self._current_word_index] = 1.0
+                # self._word_beliefs[self._current_word_index] = 1.0
                 # NOTE: plan 2 -- a small increment for regressed word -- results: no regressions at all with original dataset
                 # self._word_beliefs[self._current_word_index] = np.clip(0.5*(self._word_beliefs[self._current_word_index]+1.0), 0, 1)
-                
+                # NOTE: plan 3 -- reinforce both the revisited word and the difficult word: source: https://docs.google.com/presentation/d/1JYPKUz5k5Ncp_WJHWshXA4j_h5Nnnd_D2RlHfh9Taoo/edit?slide=id.g349565993ea_0_0#slide=id.g349565993ea_0_0
+                self._word_beliefs[self._current_word_index] = 1.0
+                self._word_beliefs[self._current_word_index+1] = 1.0    # Simple reinforcment, directly set to 1.0
+
+                # Lower the cost of regression: jump to thye last and automatically jump back. Objective: see whether the agent would try regressions more often
+                self._current_word_index += 1
                 self._previous_word_index = self._current_word_index - 1
-            reward = self.reward_function.compute_regress_reward()
+
+            reward = self.reward_function.compute_regress_reward(w_regression_cost=self._w_regression_cost)
         
         elif action == self._SKIP_ACTION:
             self._current_word_index, action_validity = (
@@ -156,9 +156,22 @@ class SentenceReadingEnv(Env):
                 self._previous_word_index = skipped_word_index
                 # self._word_beliefs[skipped_word_index] = self._sentence_info['words_predictabilities_for_running_model'][skipped_word_index]
                 
-                # NOTE 1: option 1, directly use the original integration values, result: the regression probability is too high
-                self._word_beliefs[skipped_word_index] = self._sentence_info['predicted_words_ranked_integration_probabilities_for_running_model'][skipped_word_index]
-                self._word_beliefs[self._current_word_index] = self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'][self._current_word_index]
+                # If the skipped word has been read before, use the original integration values
+                if skipped_word_index in self._read_words:
+                    pass
+                else:
+                    # If the skipped word has not been read before, use the pre-processed integration values
+                    self._word_beliefs[skipped_word_index] = self._sentence_info['predicted_words_ranked_integration_probabilities_for_running_model'][skipped_word_index]
+                
+                # If the skip destination word has been read before, use the original integration values
+                if self._current_word_index in self._read_words:
+                    pass
+                else:
+                    self._word_beliefs[self._current_word_index] = self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'][self._current_word_index]
+                
+                # # NOTE 1: option 1, directly use the original integration values, result: the regression probability is too high
+                # self._word_beliefs[skipped_word_index] = self._sentence_info['predicted_words_ranked_integration_probabilities_for_running_model'][skipped_word_index]
+                # self._word_beliefs[self._current_word_index] = self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'][self._current_word_index]
                 
                 # # NOTE 2: option 2, use the higher integration values, see whether could reduce the regression probability
                 # predicted_word_integration_value = self._sentence_info['predicted_words_ranked_integration_probabilities_for_running_model'][skipped_word_index]
@@ -171,6 +184,7 @@ class SentenceReadingEnv(Env):
                 # Check if the skipped word is the first-pass skipped word
                 if skipped_word_index not in self._reading_sequence:
                     self._skipped_words_indexes.append(skipped_word_index)
+
                 self._reading_sequence.append(skipped_word_index)
                 self._reading_sequence.append(self._current_word_index)
             reward = self.reward_function.compute_skip_reward()
@@ -187,12 +201,18 @@ class SentenceReadingEnv(Env):
                 self._reading_sequence.append(self._current_word_index)
                 self._previous_word_index = self._current_word_index - 1
 
-                # NOTE 1: option 1, directly use the original integration values, result: the regression probability is too high
-                self._word_beliefs[self._current_word_index] = self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'][self._current_word_index]
+                # # NOTE 1: option 1, directly use the original integration values, result: the regression probability is too high
+                # self._word_beliefs[self._current_word_index] = self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'][self._current_word_index]
                 # # NOTE 2: option 2, use the higher integration values, see whether could reduce the regression probability
                 # read_word_integration_value = self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'][self._current_word_index]
                 # enhanced_read_word_integration_value = np.clip(read_word_integration_value * 2, 0, 1)
                 # self._word_beliefs[self._current_word_index] = enhanced_read_word_integration_value
+
+                # If the read word has been read before, use the original integration values
+                if self._current_word_index in self._read_words:
+                    pass
+                else:
+                    self._word_beliefs[self._current_word_index] = self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'][self._current_word_index]
 
             reward = self.reward_function.compute_read_reward()
 
@@ -247,12 +267,6 @@ class SentenceReadingEnv(Env):
         observed_previous_word_belief = np.clip(norm_previous_word_belief + np.random.normal(0, self._noisy_obs_sigma), 0, 1)
         observed_current_word_belief = np.clip(norm_current_word_belief + np.random.normal(0, self._noisy_obs_sigma), 0, 1) 
         observed_next_word_predictability = np.clip(norm_next_word_predictability + np.random.normal(0, self._noisy_obs_sigma), 0, 1)
-
-        # # TODO debug delete later
-        # print(f"observed_previous_word_belief: {observed_previous_word_belief}, normalized: {norm_previous_word_belief}")
-        # print(f"observed_current_word_belief: {observed_current_word_belief}, normalized: {norm_current_word_belief}")
-        # print(f"observed_next_word_predictability: {observed_next_word_predictability}, normalized: {norm_next_word_predictability}")
-
         # Get the on-going comprehension scalar
         # on_going_comprehension_scalar = np.clip(math.prod(valid_words_beliefs), 0, 1)
         on_going_comprehension_log_scalar = 0.0
@@ -267,10 +281,7 @@ class SentenceReadingEnv(Env):
         
         on_going_comprehension_log_scalar = np.clip(on_going_comprehension_log_scalar, 0, 1)
 
-        # # TODO debug delete later
-        # print(f"valid_words_beliefs: {self._word_beliefs}")
-        # print(f"on_going_comprehension_scalar: {on_going_comprehension_scalar}")
-        # print(f"on_going_comprehension_scalar_log: {on_going_comprehension_scalar_log}")
+        norm_w_regression_cost = self.normalise(self._w_regression_cost, 0, 1, 0, 1)
 
 
         stateful_obs = np.array([
@@ -279,7 +290,8 @@ class SentenceReadingEnv(Env):
             observed_previous_word_belief,
             observed_current_word_belief,
             observed_next_word_predictability,
-            on_going_comprehension_log_scalar
+            on_going_comprehension_log_scalar,
+            norm_w_regression_cost
         ])
 
         assert stateful_obs.shape == (self._num_stateful_obs,)
