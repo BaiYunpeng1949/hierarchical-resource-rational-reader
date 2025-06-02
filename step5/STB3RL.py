@@ -1016,273 +1016,15 @@ class RL:
 
                 obs, reward, done, truncated, info = self._env.step(action)
                 score += reward
-<<<<<<< HEAD
-
-            # Collect the step log only at the end of the episode
-            step_log = self._env._get_logs()
-
-            # Process the step log to make it JSON serializable
-            step_log_serializable = self._make_serializable(step_log)
-
-            # Store the serializable step log with the episode index as the key
-            logs[episode] = step_log_serializable
-
-            # Log
-            final_step_log = self._env._get_logs()
-            print(f"The final step log is: {final_step_log}")
-            print(f"The number of words in the sentence: {self._env.num_words_in_sentence}, "
-                  f"the allocated time constraint: {self._env._time_constraint_level_key}, "
-                  f"the episode length: {self._env.granted_time_constraints_in_steps}.")
-            print(f"The number of words read: {self._env.num_words_read_in_sentence}, "
-                  f"the number of words skipped: {self._env.num_words_skipped_in_sentence}, "
-                  f"the number of word-level saccades: {self._env.num_saccades_on_word_level}."
-                  f"The word skipping rate is: {self._env.num_words_skipped_in_sentence /self._env.num_words_read_in_sentence}.")
-            print(f"The predictability levels of the words: {self._env._predictability_states}.")
-            print(f"The time constraint weight: {self._env._time_constraint_weight}.")
-=======
             
             # Add the episode log to the logs across episodes
             logs_across_episodes.append(self._env.get_episode_log())
->>>>>>> text_comprehension/effects
             
             print(
                 f'Episode:{episode}     Score:{score} \n'
                 f'{"-" * 50}\n'
             )
 
-<<<<<<< HEAD
-        print(f'Time elapsed for running the DEBUG/TEST: {time.time() - start_time} seconds')
-
-        # Store the data
-        root_path = os.path.dirname(os.path.abspath(__file__))
-        rl_model_name = self._config_rl['train']['checkpoints_folder_name'] + '_' + self._config_rl['test']['loaded_model_name']
-        folder_path = os.path.join(root_path, "data", "sim_results", rl_model_name)
-
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
-
-        # Define the log file name
-        log_file_name = f'rl_word_level_controller_{self._num_episodes}ep.json'
-        log_file_dir = os.path.join(folder_path, log_file_name)
-
-        # Define the word skipping rate figure file name
-        word_skipping_rate_figure_file_name = f'word_skipping_rate_vs_time_constraints_{self._num_episodes}ep.png'
-        word_skipping_rate_figure_file_dir = os.path.join(folder_path, word_skipping_rate_figure_file_name)
-
-        # Define the word skip by appraisal figure file name
-        word_skip_by_appraisals_figure_file_name = f'word_skips_vs_appraisals_{self._num_episodes}ep.png'
-        word_skip_by_appraisals_figure_file_dir = os.path.join(folder_path, word_skip_by_appraisals_figure_file_name)
-
-        # Define the word skipping rate vs. time awareness weight figure file name
-        word_skipping_vs_time_awareness_figure_file_name = f'word_skipping_rate_vs_time_awareness_weight_{self._num_episodes}ep.png'
-        word_skipping_vs_time_awareness_figure_file_dir = os.path.join(folder_path, word_skipping_vs_time_awareness_figure_file_name)
-        
-        # Define the word skipping rate vs. time awareness weight figure file name
-        word_skipping_vs_time_constraint_figure_file_name = f'word_skipping_rate_vs_time_constraint_weight_{self._num_episodes}ep.png'
-        word_skipping_vs_time_constraint_figure_file_dir = os.path.join(folder_path, word_skipping_vs_time_constraint_figure_file_name)
-
-        # Save the logs to a JSON file
-        self._save_logs_to_file(logs=logs, filepath=log_file_dir)
-
-        # Call the updated plotting function
-        self._plot_word_skipping_rates(
-            log_file_path=log_file_dir, num_episodes=self._num_episodes,
-            word_skipping_rate_by_time_constraint_levels_figure_file_path=word_skipping_rate_figure_file_dir,
-            word_skip_by_appraisals_figure_file_dir=word_skip_by_appraisals_figure_file_dir,
-            word_skipping_vs_time_awareness_figure_file_path=word_skipping_vs_time_awareness_figure_file_dir,
-            word_skipping_vs_time_constraint_figure_file_path=word_skipping_vs_time_constraint_figure_file_dir,
-        )
-
-    @staticmethod
-    def _plot_word_skipping_rates(log_file_path, num_episodes, word_skipping_rate_by_time_constraint_levels_figure_file_path, 
-                                  word_skip_by_appraisals_figure_file_dir, word_skipping_vs_time_awareness_figure_file_path, 
-                                  word_skipping_vs_time_constraint_figure_file_path):
-
-        """
-        Reads the logs from the JSON file and plots:
-        - Word skipping rates vs. time constraints
-        - Word skipping vs. appraisal levels
-        - Word skipping rate vs. time awareness weight
-        - Predictabilities vs. time constraint weights (New Plot)
-        """
-
-        # Load the logs from the JSON file
-        with open(log_file_path, 'r') as f:
-            logs = json.load(f)
-
-        # Initialize data structures for time constraints
-        condition_30 = '30S'
-        condition_60 = '60S'
-        condition_90 = '90S'
-        time_constraint_levels = [condition_30, condition_60, condition_90]
-        word_skipping_rates_by_time_constraint = {condition_30: [], condition_60: [], condition_90: []}
-
-        # Initialize data for appraisal scatter plot
-        appraisals = []
-        y_positions = []  # This will store the corresponding y position for each condition
-        colors = []
-        colors_map = {condition_30: 'red', condition_60: 'green', condition_90: 'blue'}
-        y_map = {condition_30: 0, condition_60: 1, condition_90: 2}  # Map conditions to y-axis positions
-        predictabilities = []
-        time_constraint_weights = []
-
-        # Initialize data for time awareness weight plot
-        time_awareness_weights = []
-        skipping_rates = []
-
-        # Iterate over episodes in logs
-        for episode, episode_log in logs.items():
-            # Get time constraint and word skipping rate
-            time_constraint_level = episode_log.get('time_constraint_level')
-            word_skipping_rate = episode_log.get('word_skipping_percentage')
-            appraisal_states = episode_log.get('appraisal_states')
-            time_constraint_weight = episode_log.get('time_constraint_weight')
-            
-            # Only consider valid time constraints of 30S, 60S, 90S
-            if time_constraint_level in time_constraint_levels:
-                word_skipping_rates_by_time_constraint[time_constraint_level].append(word_skipping_rate)
-
-                # For appraisal-based plot
-                for word_idx, (appraisal_value, skip_decision) in appraisal_states.items():
-                    if skip_decision == 1:  # Only considering skipped words
-                        appraisals.append(appraisal_value)
-                        y_positions.append(y_map[time_constraint_level])  # Map the condition to the y position
-                        colors.append(colors_map[time_constraint_level])
-            else:
-                print(f"Time constraint level {time_constraint_level} is not one of the expected values.")
-            
-            # Get appraisal states
-            if time_constraint_weight is not None and word_skipping_rate is not None:
-                # Convert word_skipping_rate to a value between 0 and 1
-                skipping_rate = word_skipping_rate / 100.0
-                time_constraint_weights.append(time_constraint_weight)
-                skipping_rates.append(skipping_rate)
-            else:
-                print(f"Missing data in episode {episode} for time awareness CONSTRAINT plot.")
-
-        # -------------------------------------------------------------------------------------------
-        # Updated Plot: Appraisal Levels by Binned Time Constraint Weights
-
-        # Collect appraisal values and corresponding time constraint weights for skipped words
-        skipped_appraisals = []
-        skipped_time_constraint_weights = []
-
-        for episode, episode_log in logs.items():
-            time_constraint_weight = episode_log.get('time_constraint_weight')
-            appraisal_states = episode_log.get('appraisal_states')
-            if appraisal_states and time_constraint_weight is not None:
-                for word_idx, (appraisal_value, skip_decision) in appraisal_states.items():
-                    if skip_decision == 1:  # Only considering skipped words
-                        skipped_appraisals.append(appraisal_value)
-                        skipped_time_constraint_weights.append(time_constraint_weight)
-            else:
-                print(f"Missing data in episode {episode} for appraisal levels by time constraint weights.")
-
-        # Convert to numpy arrays
-        skipped_appraisals = np.array(skipped_appraisals)
-        skipped_time_constraint_weights = np.array(skipped_time_constraint_weights)
-
-        # Define bins for Time Constraint Weight
-        bins = np.linspace(0, 1, 11)  # 10 bins from 0 to 1
-        bin_labels = [f'{bins[i]:.1f}-{bins[i+1]:.1f}' for i in range(len(bins)-1)]
-
-        # Bin the Time Constraint Weight data
-        binned_indices = np.digitize(skipped_time_constraint_weights, bins) - 1  # Adjust indices to start from 0
-
-        # Group appraisal values by binned time constraint weights
-        appraisals_by_tcw_bin = [[] for _ in range(len(bins)-1)]
-
-        for idx, bin_idx in enumerate(binned_indices):
-            if 0 <= bin_idx < len(appraisals_by_tcw_bin):
-                appraisals_by_tcw_bin[bin_idx].append(skipped_appraisals[idx])
-            else:
-                print(f"Time constraint weight {skipped_time_constraint_weights[idx]} is out of bin range.")
-
-        # Remove bins with no data
-        appraisals_by_tcw_bin_filtered = []
-        bin_labels_filtered = []
-        for i, appraisals_in_bin in enumerate(appraisals_by_tcw_bin):
-            if appraisals_in_bin:
-                appraisals_by_tcw_bin_filtered.append(appraisals_in_bin)
-                bin_labels_filtered.append(bin_labels[i])
-
-        # Create the horizontal box plot
-        plt.figure(figsize=(8, 6))
-        box = plt.boxplot(
-            appraisals_by_tcw_bin_filtered,
-            vert=False,
-            patch_artist=True,
-            labels=bin_labels_filtered
-        )
-
-        # Customize the plot
-        plt.xlabel('Appraisal Value')
-        plt.ylabel('Time Constraint Weight Bins')
-        plt.title(f'Appraisal Levels by Time Constraint Weights ({num_episodes} Episodes)')
-        plt.grid(True)
-
-        # Save the figure
-        plt.savefig(word_skip_by_appraisals_figure_file_dir, bbox_inches='tight')
-        plt.close()
-        print(f"The appraisal levels by time constraint weights figure is saved in {word_skip_by_appraisals_figure_file_dir}")
-
-
-        # -------------------------------------------------------------------------------------------
-        # New Plot: Word Skipping Rate vs. Time Constraint Weight with Improved Visualization
-
-        # Convert data to numpy arrays
-        time_constraint_weights = np.array(time_constraint_weights)
-        skipping_rates = np.array(skipping_rates)
-
-        # Create a DataFrame
-        data_df = pd.DataFrame({
-            'Time Constraint Weight': time_constraint_weights,
-            'Word Skipping Rate': skipping_rates
-        })
-
-
-        # Define bins for Time Constraint Weight
-        bins = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-        labels = ['0.0-0.1', '0.1-0.2', '0.2-0.3', '0.3-0.4', '0.4-0.5', '0.5-0.6', '0.6-0.7', '0.7-0.8', '0.8-0.9', '0.9-1.0']
-
-        # Bin the Time Constraint Weight data
-        data_df['TCW Bin'] = pd.cut(data_df['Time Constraint Weight'], bins=bins, labels=labels, include_lowest=True)
-
-        # Calculate mean and standard deviation of Word Skipping Rate for each bin
-        grouped = data_df.groupby('TCW Bin')['Word Skipping Rate'].agg(['mean', 'std']).reset_index()
-
-        # Plot the bar chart
-        plt.figure(figsize=(8, 6))
-        bars = plt.bar(
-            grouped['TCW Bin'],
-            grouped['mean'],
-            yerr=grouped['std'],
-            align='center',
-            alpha=0.7,
-            capsize=10
-        )
-        plt.xlabel('Time Constraint Weight Bins')
-        plt.ylabel('Word Skipping Rate')
-        plt.title(f'Word Skipping Rate vs. Time Constraint Weight ({num_episodes} Episodes)')
-        plt.grid(True)
-
-        # Add annotations of mean (std) on the bars
-        for i, bar in enumerate(bars):
-            yval = bar.get_height()
-            plt.text(
-                bar.get_x() + bar.get_width() / 2.0,
-                yval + 0.01,
-                f'{grouped["mean"].iloc[i]:.2f}\n({grouped["std"].iloc[i]:.2f})',
-                ha='center',
-                va='bottom',
-                fontsize=10
-            )
-
-        # Save the new figure
-        plt.savefig(word_skipping_vs_time_constraint_figure_file_path, bbox_inches='tight')
-        plt.close()
-        print(f"The word skipping rate vs. time constraint weight figure is saved in {word_skipping_vs_time_constraint_figure_file_path}")
-=======
         # Save logs if in test mode
         if self._mode == _MODES['test']:
             # # Create the log directory
@@ -1310,7 +1052,6 @@ class RL:
             # Save the logs to a json file
             with open(os.path.join(save_data_dir, "raw_sim_results.json"), "w") as f:
                 json.dump(logs_across_episodes, f, indent=4)
->>>>>>> text_comprehension/effects
 
 
     def run(self):
@@ -1328,17 +1069,10 @@ class RL:
                 self._oculomotor_controller_test()
             elif isinstance(self._env, WordActivationRLEnv):
                 self._word_activation_test()
-<<<<<<< HEAD
-            elif isinstance(self._env, SupervisoryControllerEnv):
-                self._supervisory_controller_test()
-            elif isinstance(self._env, SentenceLevelControllerEnv):
-                self._sentence_level_controller_test()
-=======
             elif isinstance(self._env, SentenceReadingEnv):
                 self._sentence_reading_test()
             elif isinstance(self._env, TextComprehensionEnv):
                 self._text_comprehension_test()
->>>>>>> text_comprehension/effects
             else:
                 raise ValueError(f'Invalid environment {self._env}.')
         elif self._mode == _MODES['grid_test']:
