@@ -56,6 +56,10 @@ from modules.rl_envs.GeneralOculomotorControllerEnv_v1126 import GeneralOculomot
 from modules.rl_envs.OMCRLEnvV0128 import OculomotorControllerRLEnv
 # from modules.rl_envs.WordActivationEnvV0205 import WordActivationRLEnv
 from modules.rl_envs.word_activation_v0218.WordActivationEnvV0218 import WordActivationRLEnv
+# from modules.rl_envs.sentence_read_v0306.SentenceReadingEnvV0306 import SentenceReadingEnv
+from modules.rl_envs.sentence_read_v0319.SentenceReadingEnv import SentenceReadingEnv
+from modules.rl_envs.text_comprehension_v0516.TextComprehensionEnv import TextComprehensionEnv
+
 
 _MODES = {
     'train': 'train',
@@ -330,62 +334,14 @@ class RL:
             )
 
         # Get the environment class
-        env_class = WordActivationRLEnv # OculomotorControllerRLEnv # GeneralOculomotorControllerEnv           # GeneralOculomotorControllerEnv, SentenceLevelControllerEnv, SupervisoryControllerEnv
+        env_class = TextComprehensionEnv # SentenceReadingEnv # WordActivationRLEnv # OculomotorControllerRLEnv # GeneralOculomotorControllerEnv           # GeneralOculomotorControllerEnv, SentenceLevelControllerEnv, SupervisoryControllerEnv
 
         # Load the dataset (if needed)
         shared_dataset_metadata_of_stimuli = None
         shared_dataset_encoded_lexicon = None
 
         # Read the total dataset if training the general oculomotor controller model.
-        if env_class == OculomotorControllerRLEnv:   # GeneralOculomotorControllerEnv:
-            # Load the dataset
-            print('Loading the dataset...')
-            shared_dataset_metadata_of_stimuli, shared_dataset_encoded_lexicon, self._dataset_mode = aux.load_oculomotor_controller_dataset(config=self._config)
-            print('Dataset loaded.')
-
-            # # Serialize the dictionaries for putting on a shared-memory
-            # stimuli_metadata_bytes = pickle.dumps(shared_dataset_metadata_of_stimuli)
-            # encoded_lexicon_bytes = pickle.dumps(shared_dataset_encoded_lexicon)
-            # # Create shared memory for metadata
-            # self._metadata_shm = shared_memory.SharedMemory(create=True, size=len(stimuli_metadata_bytes))
-            # self._metadata_shm.buf[:len(stimuli_metadata_bytes)] = stimuli_metadata_bytes
-            # # Create shared memory for encoded lexicon
-            # self._lexicon_shm = shared_memory.SharedMemory(create=True, size=len(encoded_lexicon_bytes))
-            # self._lexicon_shm.buf[:len(encoded_lexicon_bytes)] = encoded_lexicon_bytes
-
-            # Create an instance of the environment for use in other methods
-            self._env = OculomotorControllerRLEnv(   # GeneralOculomotorControllerEnv(
-                shared_dataset_metadata_of_image_stimuli=shared_dataset_metadata_of_stimuli,
-                shared_dataset_encoded_lexicon=shared_dataset_encoded_lexicon
-            )
-            # self._env = GeneralOculomotorControllerEnv(
-            #     shared_metadata_name=self._metadata_shm.name,
-            #     metadata_size=len(stimuli_metadata_bytes),
-            #     shared_lexicon_name=self._lexicon_shm.name,
-            #     lexicon_size=len(encoded_lexicon_bytes)
-            # )
-
-            # Define the environment creation function
-            def make_env():
-                return OculomotorControllerRLEnv( # GeneralOculomotorControllerEnv(
-                    shared_dataset_metadata_of_image_stimuli=shared_dataset_metadata_of_stimuli,
-                    shared_dataset_encoded_lexicon=shared_dataset_encoded_lexicon
-                )
-                # return GeneralOculomotorControllerEnv(
-                #     shared_metadata_name=self._metadata_shm.name,
-                #     metadata_size=len(stimuli_metadata_bytes),
-                #     shared_lexicon_name=self._lexicon_shm.name,
-                #     lexicon_size=len(encoded_lexicon_bytes)
-                # )
-            
-            # Initialise parallel environments
-            self._parallel_envs = make_vec_env(
-                env_id=make_env,
-                n_envs=self._config_rl['train']["num_workers"],
-                seed=42,
-                vec_env_cls=SubprocVecEnv,
-            )
-        elif env_class == WordActivationRLEnv:
+        if env_class == WordActivationRLEnv:
             self._env = WordActivationRLEnv()
             def make_env():
                 env = WordActivationRLEnv()
@@ -399,24 +355,30 @@ class RL:
                 seed=42,
                 vec_env_cls=SubprocVecEnv,
             )
-        elif env_class == SentenceLevelControllerEnv:
-            # Get an env instance for further constructing parallel environments.
-            self._env = SentenceLevelControllerEnv()    # SentenceLevelControllerEnv()    # SupervisoryControllerEnv()  
-
-            # Initialise parallel environments      
+        elif env_class == SentenceReadingEnv:
+            self._env = SentenceReadingEnv()
+            def make_env():
+                env = SentenceReadingEnv()
+                # env = Monitor(env)
+                return env
+            # Initialise parallel environments
             self._parallel_envs = make_vec_env(
-                env_id=self._env.__class__,
+                env_id=make_env,
+                # env_id=self._env.__class__,
                 n_envs=self._config_rl['train']["num_workers"],
                 seed=42,
                 vec_env_cls=SubprocVecEnv,
             )
-        elif env_class == SupervisoryControllerEnv:
-            # Get an env instance for further constructing parallel environments.
-            self._env = SupervisoryControllerEnv()    # SentenceLevelControllerEnv()    # SupervisoryControllerEnv()  
-
-            # Initialise parallel environments      
+        elif env_class == TextComprehensionEnv:
+            self._env = TextComprehensionEnv()
+            def make_env():
+                env = TextComprehensionEnv()
+                # env = Monitor(env)
+                return env
+            # Initialise parallel environments
             self._parallel_envs = make_vec_env(
-                env_id=self._env.__class__,
+                env_id=make_env,
+                # env_id=self._env.__class__,
                 n_envs=self._config_rl['train']["num_workers"],
                 seed=42,
                 vec_env_cls=SubprocVecEnv,
@@ -437,20 +399,7 @@ class RL:
 
             # Configure the model - HRL - Ocular motor control
             # if isinstance(self._env, SampleFixationVersion1) or isinstance(self._env, SampleFixationVersion2):
-            if isinstance(self._env, GeneralOculomotorControllerEnv) or isinstance(self._env, OculomotorControllerRLEnv):
-                policy_kwargs = dict(
-                    features_extractor_class=CustomCombinedExtractor,       # Previous -- NumericFeatureExtractor, features_dim=128
-                    features_extractor_kwargs=dict(
-                        vision_features_dim=128,
-                        stateful_information_features_dim=128
-                    ),       # NumericFeatureExtractorMultiLayers, features_dim=32
-                    activation_fn=th.nn.LeakyReLU,
-                    net_arch=[512, 512],
-                    log_std_init=-1.0,
-                    normalize_images=False
-                )
-                policy = "MultiInputPolicy"     # Choose from CnnPolicy, MlpPolicy, MultiInputPolicy
-            elif isinstance(self._env, WordActivationRLEnv):
+            if isinstance(self._env, WordActivationRLEnv) or isinstance(self._env, SentenceReadingEnv) or isinstance(self._env, TextComprehensionEnv):
                 policy_kwargs = dict(
                     features_extractor_class=StatefulInformationExtractor,       
                     features_extractor_kwargs=dict(features_dim=128),
@@ -460,26 +409,6 @@ class RL:
                     normalize_images=False
                 )
                 policy = "MlpPolicy"     # Choose from CnnPolicy, MlpPolicy, MultiInputPolicy
-            elif isinstance(self._env, SupervisoryControllerEnv):
-                policy_kwargs = dict(
-                    features_extractor_class=StatefulInformationExtractor,
-                    features_extractor_kwargs=dict(features_dim=128),
-                    activation_fn=th.nn.LeakyReLU,
-                    net_arch=[512, 512],
-                    log_std_init=-1.0,
-                    normalize_images=False
-                )
-                policy = "MlpPolicy"  # Choose from CnnPolicy, MlpPolicy, MultiInputPolicy
-            elif isinstance(self._env, SentenceLevelControllerEnv):
-                policy_kwargs = dict(
-                    features_extractor_class=StatefulInformationExtractor,
-                    features_extractor_kwargs=dict(features_dim=32),
-                    activation_fn=th.nn.LeakyReLU,
-                    net_arch=[128, 128],
-                    log_std_init=-1.0,
-                    normalize_images=False
-                )
-                policy = "MlpPolicy"  # Choose from CnnPolicy, MlpPolicy, MultiInputPolicy
             else:
                 raise ValueError(f'Invalid environment {self._env}.')
 
@@ -563,23 +492,6 @@ class RL:
                 # log_interval=1,
             )
 
-        # try:
-        #     # Train the RL model and save the logs. The Algorithm and policy were given,
-        #     # but it can always be upgraded to a more flexible pipeline later.
-        #     self._model.learn(
-        #         total_timesteps=self._total_timesteps,
-        #         callback=checkpoint_callback,
-        #     )
-        # finally:
-        #     # Ensure environments are closed
-        #     self._parallel_envs.close()
-
-        #     # Clean up the shared memory
-        #     self._metadata_shm.close()
-        #     self._metadata_shm.unlink()
-        #     self._lexicon_shm.close()
-        #     self._lexicon_shm.unlink()
-
     @staticmethod
     def _encode_characters_in_word(word):
 
@@ -619,154 +531,13 @@ class RL:
 
         # Save the model as the rear guard.
         self._model.save(self._models_save_file_final)
+    
 
-    def _oculomotor_controller_test(self, grid_test_params=None):
+    def _text_comprehension_test(self):
         """
-        This method generates the RL env testing results with or without a pre-trained RL model in a manual way.
+        Test the text comprehension environment.
         """
-        if self._mode == _MODES['debug']:
-            print('\nThe MuJoCo env and tasks baseline: ')
-        elif self._mode == _MODES['test']:
-            print('\nThe pre-trained RL model testing: ')
-
-        # Start the timer
-        start_time = time.time()
-
-        logger = []
-
-        reward_col = "Reward"
-        # Create column names dynamically, e.g., ['A', 'B', 'C']
-        column_names = [chr(65 + i) for i in range(self._env.action_space.shape[0])] + [reward_col]  # 65 is the ASCII code for 'A'
-        # Initialize an empty DataFrame with these columns
-        df = pd.DataFrame(columns=column_names)
-
-        # Some aggregated metrics' lists
-        total_num_successful_word_recognitions = 0
-        total_num_failed_word_recognitions = 0
-        list_of_num_steps_for_word_recognition = []
-        list_of_target_words_lengths = []
-
-        for episode in range(1, self._num_episodes + 1):    # TODO check from here
-            if grid_test_params is not None:
-                obs, info = self._env.reset(ep_idx=episode, w_penalty=grid_test_params['w_penalty'])
-            else:
-                obs, info = self._env.reset()
-            done = False
-            score = 0
-
-            # Get the fixations from the reset to record the initial fixation
-            last_fixation = self._env.fixations_logger[-1]
-            # Create a log entry and append a copy of last_fixation to avoid reference issues
-            log_entry = (episode,) + copy.deepcopy(last_fixation)
-            logger.append(log_entry)
-
-            word_recognition_step = 0
-
-            while not done:
-                if self._mode == _MODES['debug']:
-                    action = self._env.action_space.sample()
-                elif self._mode == _MODES['test'] or self._mode == _MODES['grid_test']:
-                    action, _states = self._model.predict(obs, deterministic=True)
-                else:
-                    raise ValueError(f'Invalid mode {self._mode}.')
-                obs, reward, done, truncated, info = self._env.step(action)
-                score += reward
-
-                # Update the word recognition step
-                word_recognition_step += 1
-
-                # Flatten the list of tuples and prepend the episode number
-                last_fixation = self._env.fixations_logger[-1]
-
-                # Create a log entry and append a copy of last_fixation to avoid reference issues
-                log_entry = (episode,) + copy.deepcopy(last_fixation)
-                logger.append(log_entry)
-
-                # Record data - include action and reward in the row
-                action_list = list(action) if hasattr(action, '__iter__') and not isinstance(action, str) else [
-                    action]  # Ensure action is list-like and not a string
-                row_to_add = action_list + [reward]  # Append reward to the action values
-
-                # Convert row_to_add into a DataFrame with appropriate columns before concatenating
-                row_df = pd.DataFrame([row_to_add], columns=df.columns)
-                df = pd.concat([df, row_df], ignore_index=True)
-
-            if score > 0:
-                total_num_successful_word_recognitions += 1
-            else:
-                total_num_failed_word_recognitions += 1
-            
-            list_of_num_steps_for_word_recognition.append(word_recognition_step)
-
-            list_of_target_words_lengths.append(len(self._env.target_word))
-
-            print(
-                f'Episode:{episode}     Score:{score} \n'
-                f'{"-"*50}\n'
-            )
-
-        # Print the time elapsed
-        print(f"The recognition success percentage is: {round((total_num_successful_word_recognitions / self._num_episodes) * 100, 2)}%. "
-              f"Average number of steps for word recognition is: {np.mean(list_of_num_steps_for_word_recognition)}. "
-              f"Average target word length is: {np.mean(list_of_target_words_lengths)}.")
-        print(f'Time elapsed for running the DEBUG/TEST: {time.time() - start_time} seconds')
-
-        if self._mode == _MODES['test'] or self._mode == _MODES['grid_test']:
-            # Store the data
-            root_path = os.path.dirname(os.path.abspath(__file__))
-            rl_model_name = self._config_rl['train']['checkpoints_folder_name'] + '_' + self._config_rl['test']['loaded_model_name']
-            folder_path = os.path.join(root_path, "data", "sim_results", rl_model_name)
-
-            if not os.path.exists(folder_path):
-                os.makedirs(folder_path)
-
-            if grid_test_params is None:
-                log_file_name = f'{self._dataset_mode}_{self._num_episodes}ep_logger.csv'
-            else:
-                log_file_name = f'{self._dataset_mode}_{self._num_episodes}ep_w{grid_test_params["w_penalty"]}_logger.csv'
-
-            log_file_dir = os.path.join(folder_path, log_file_name)
-
-            cols = [
-                'episode',
-                'step',
-                'image idx',
-                'words',
-                'word num',
-                'target word',
-                'encoded target word',
-                'target word len',
-                'target word idx',
-                'norm fix x',
-                'norm fix y',
-                'fix x',
-                'fix y',
-                'letter sigma',
-                'seen target word letters',
-                'seen next word letters',
-                'internal word',
-                "word counters",
-                'inferred word',
-                'recognize flag',
-                'completeness',
-                'flag on target',
-                'flag updated',
-                'reward',
-                'done action',
-                "done",
-            ]
-
-            with open(log_file_dir, 'w', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(cols)
-                writer.writerows(logger)
-
-            print(f'\nThe log is saved in {log_file_dir}')
-
-    def _word_activation_test(self):
-        """
-        This method generates the RL env testing results w/ or w/o a pre-trained RL model in a manual way.
-        """
+        
         if self._mode == _MODES['debug']:
             print('\nThe MuJoCo env and tasks baseline: ')
         elif self._mode == _MODES['test']:
@@ -779,137 +550,9 @@ class RL:
         logs_across_episodes = []
 
         for episode in range(1, self._num_episodes + 1):
-
             obs, info = self._env.reset()
             done = False
             score = 0
-
-            # Initialize a list to store step logs for this episode
-            episode_logs = []
-
-            while not done:
-                if self._mode == _MODES['debug']:
-                    action = self._env.action_space.sample()
-                elif self._mode == _MODES['test']:
-                    action, _states = self._model.predict(obs, deterministic=True)
-                    # action, _states = self._model.predict(obs, deterministic=False)
-                else:
-                    raise ValueError(f'Invalid mode {self._mode}.')
-
-                obs, reward, done, truncated, info = self._env.step(action)
-                score += reward
-            
-            # Output results to check whether achieved the learning objectives. Store them to the json files.
-            #   1. optimal word sampling positions and sequences
-            #   2. word length's effect
-            #   3. word frequency's effect
-            #   4. word predictability's effect
-
-            # Get this only after the loop ends -- when the episode ends
-            individual_episode_logs = self._env.log_cumulative_version
-
-            # Insert the episode number as the value
-            individual_episode_logs['episode_idnex'] = episode - 1
-            
-            # Append the individual episode logs to the list of logs across episodes
-            logs_across_episodes.append(individual_episode_logs)
-
-            print(
-                f'Episode:{episode}     Score:{score} \n'
-                f'{"-" * 50}\n'
-            )
-        
-        #####################################  Store the data   ######################################
-        # Function to convert numpy arrays and other non-serializable types to lists or native Python types
-        def convert_ndarray(obj):
-            if isinstance(obj, np.ndarray):
-                return obj.tolist()  # Convert numpy arrays to lists
-            elif isinstance(obj, np.int64) or isinstance(obj, np.int32):
-                return int(obj)  # Convert NumPy integers to Python integers
-            elif isinstance(obj, np.float64) or isinstance(obj, np.float32):
-                return float(obj)  # Convert NumPy floats to Python floats
-            else:
-                raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
-
-        # Store the data to a json file
-        root_path = os.path.dirname(os.path.abspath(__file__))
-        data_log_path = os.path.join(root_path, "data", "sim_results", "word_activation", self._config_rl['train']['checkpoints_folder_name'], self._config_rl['test']['loaded_model_name'], f"{self._num_episodes}ep")
-        # Create the directory if it does not exist
-        if not os.path.exists(data_log_path):
-            os.makedirs(data_log_path)
-        file_name = os.path.join(data_log_path, f'logs.json')
-        # Write the logs to a JSON file
-        with open(file_name, 'w') as f:
-            json.dump(logs_across_episodes, f, default=convert_ndarray, indent=4)
-        print(f"The logs are saved in {data_log_path}")
-        ###############################################################################################
-
-        #####################################  Analyze the data   ######################################
-        with open(file_name, "r") as f:
-            json_data = f.read()
-        # plot_word_activation_figures.analyze_fixations(json_data=json_data, save_file_dir=data_log_path, controlled_word_length=10)
-        # plot_word_activation_figures.analyze_fixations(json_data=json_data, save_file_dir=data_log_path)
-        # Do the piror's effects -- freq and pred
-
-        prior_data_effect_log_save_path = os.path.join(data_log_path, "prior_effects")
-        word_binned_freq_effect_data_csv_file_path = os.path.join(prior_data_effect_log_save_path, "gaze_duration_vs_word_log_frequency_binned.csv")
-        word_log_freq_effect_data_csv_file_path = os.path.join(prior_data_effect_log_save_path, "gaze_duration_vs_word_log_frequency.csv")
-        word_logit_pred_effect_data_csv_file_path = os.path.join(prior_data_effect_log_save_path, "gaze_duration_vs_word_logit_predictability.csv")
-        word_binned_logit_pred_effect_data_csv_file_path = os.path.join(prior_data_effect_log_save_path, "gaze_duration_vs_word_logit_predictability_binned.csv")
-        if not os.path.exists(prior_data_effect_log_save_path):
-            os.makedirs(prior_data_effect_log_save_path)
-                # plot_word_activation_figures.analyze_priors_effect(json_data=json_data, save_file_dir=prior_data_effect_log_save_path)
-        plot_word_activation_figures.analyze_priors_effect_on_gaze_duration(
-            json_data=json_data, save_file_dir=prior_data_effect_log_save_path, 
-            csv_log_freq_file_path=word_log_freq_effect_data_csv_file_path, csv_logit_pred_file_path=word_logit_pred_effect_data_csv_file_path,
-            csv_binned_log_freq_file_path=word_binned_freq_effect_data_csv_file_path, csv_binned_logit_pred_file_path=word_binned_logit_pred_effect_data_csv_file_path
-        )
-
-        word_length_effect_data_log_save_path = os.path.join(data_log_path, "word_length_effect")
-        word_length_effect_data_csv_file_path = os.path.join(word_length_effect_data_log_save_path, "gaze_duration_vs_word_length.csv")
-        if not os.path.exists(word_length_effect_data_log_save_path):
-            os.makedirs(word_length_effect_data_log_save_path)
-        # plot_word_activation_figures.analyze_word_length_effect(json_data=json_data, save_file_dir=word_length_effect_data_log_save_path)
-        plot_word_activation_figures.analyze_word_length_gaze_duration(
-            json_data=json_data, save_file_dir=word_length_effect_data_log_save_path, csv_file_path=word_length_effect_data_csv_file_path
-        )
-
-        # prior_vs_word_length_data_log_save_path = os.path.join(data_log_path, "prior_vs_word_length")
-        # if not os.path.exists(prior_vs_word_length_data_log_save_path):
-        #     os.makedirs(prior_vs_word_length_data_log_save_path)
-        # plot_word_activation_figures.analyze_prior_vs_word_length(json_data=json_data, save_file_dir=prior_vs_word_length_data_log_save_path)
-
-        acc_data_log_save_path = os.path.join(data_log_path, "accuracy")
-        if not os.path.exists(acc_data_log_save_path):
-            os.makedirs(acc_data_log_save_path)
-        plot_word_activation_figures.analyze_accuracy(json_data=json_data, save_file_dir=acc_data_log_save_path)
-
-        print(f'Time elapsed for running the DEBUG/TEST: {time.time() - start_time} seconds')
-        ###############################################################################################
-
-    def _supervisory_controller_test(self):     # TODO: get a plot of regression rate vs. appraisal level weights. vs. time constraints.
-        """
-        This method generates the RL env testing results with or without a pre-trained RL model in a manual way.
-        """
-        if self._mode == _MODES['debug']:
-            print('\nDebugging mode: ')
-        elif self._mode == _MODES['test']:
-            print('\nThe pre-trained RL model testing: ')
-
-        # Start the timer
-        start_time = time.time()
-
-        # Initialize the logs dictionary
-        logs = {}
-
-        for episode in range(1, self._num_episodes + 1):
-
-            obs, info = self._env.reset()
-            done = False
-            score = 0
-
-            # Initialize a list to store step logs for this episode
-            episode_logs = []
 
             while not done:
                 if self._mode == _MODES['debug']:
@@ -1373,6 +1016,7 @@ class RL:
 
                 obs, reward, done, truncated, info = self._env.step(action)
                 score += reward
+<<<<<<< HEAD
 
             # Collect the step log only at the end of the episode
             step_log = self._env._get_logs()
@@ -1395,12 +1039,18 @@ class RL:
                   f"The word skipping rate is: {self._env.num_words_skipped_in_sentence /self._env.num_words_read_in_sentence}.")
             print(f"The predictability levels of the words: {self._env._predictability_states}.")
             print(f"The time constraint weight: {self._env._time_constraint_weight}.")
+=======
+            
+            # Add the episode log to the logs across episodes
+            logs_across_episodes.append(self._env.get_episode_log())
+>>>>>>> text_comprehension/effects
             
             print(
                 f'Episode:{episode}     Score:{score} \n'
                 f'{"-" * 50}\n'
             )
 
+<<<<<<< HEAD
         print(f'Time elapsed for running the DEBUG/TEST: {time.time() - start_time} seconds')
 
         # Store the data
@@ -1632,6 +1282,35 @@ class RL:
         plt.savefig(word_skipping_vs_time_constraint_figure_file_path, bbox_inches='tight')
         plt.close()
         print(f"The word skipping rate vs. time constraint weight figure is saved in {word_skipping_vs_time_constraint_figure_file_path}")
+=======
+        # Save logs if in test mode
+        if self._mode == _MODES['test']:
+            # # Create the log directory
+            # root_path = os.path.dirname(os.path.abspath(__file__))
+            # rl_model_name = self._config_rl['train']['checkpoints_folder_name'] + '_' + self._config_rl['test']['loaded_model_name']
+            # log_dir = os.path.join(root_path, "data", "sim_results", "sentence_reading", rl_model_name, f"{self._num_episodes}ep")
+            
+            # # Create the directory if it does not exist
+            # if not os.path.exists(log_dir):
+            #     os.makedirs(log_dir)
+
+            # # Save the logs to a json file
+            # with open(os.path.join(log_dir, "raw_simulated_results.json"), "w") as f:
+            #     json.dump(logs_across_episodes, f, indent=4)
+
+            # Create a temporary directory for the episode logs under the env files for convenience because this study does not have human data as comparisons
+            root_path = os.path.dirname(os.path.abspath(__file__))
+            rl_model_name = self._config_rl['train']['checkpoints_folder_name'] + '_' + self._config_rl['test']['loaded_model_name']
+            save_data_dir = os.path.join("modules", "rl_envs", "text_comprehension_v0516", "temp_sim_data", rl_model_name, f"{self._num_episodes}ep")
+
+            # Create the directory if it does not exist
+            if not os.path.exists(save_data_dir):
+                os.makedirs(save_data_dir)
+
+            # Save the logs to a json file
+            with open(os.path.join(save_data_dir, "raw_sim_results.json"), "w") as f:
+                json.dump(logs_across_episodes, f, indent=4)
+>>>>>>> text_comprehension/effects
 
 
     def run(self):
@@ -1649,10 +1328,17 @@ class RL:
                 self._oculomotor_controller_test()
             elif isinstance(self._env, WordActivationRLEnv):
                 self._word_activation_test()
+<<<<<<< HEAD
             elif isinstance(self._env, SupervisoryControllerEnv):
                 self._supervisory_controller_test()
             elif isinstance(self._env, SentenceLevelControllerEnv):
                 self._sentence_level_controller_test()
+=======
+            elif isinstance(self._env, SentenceReadingEnv):
+                self._sentence_reading_test()
+            elif isinstance(self._env, TextComprehensionEnv):
+                self._text_comprehension_test()
+>>>>>>> text_comprehension/effects
             else:
                 raise ValueError(f'Invalid environment {self._env}.')
         elif self._mode == _MODES['grid_test']:

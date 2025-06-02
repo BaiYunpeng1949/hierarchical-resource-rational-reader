@@ -1,0 +1,15 @@
+Proportional Recall Results
+Generated: 2025-05-27 22:21:25
+
+Thresholds:
+- High Knowledge Threshold: 0.84
+- Low Knowledge Threshold: 0.842
+
+Results:
+Fully Coherent texts:
+- High Knowledge (>=0.84): 46.11% of propositions
+- Low Knowledge (>=0.842): 42.51% of propositions
+
+Minimally Coherent texts:
+- High Knowledge (>=0.84): 33.93% of propositions
+- Low Knowledge (>=0.842): 24.11% of propositions

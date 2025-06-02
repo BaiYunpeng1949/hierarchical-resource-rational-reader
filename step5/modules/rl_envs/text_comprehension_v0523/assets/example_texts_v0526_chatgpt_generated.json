@@ -1,0 +1,1203 @@
+[
+    {
+        "text_title": "Heart Disease",
+        "coherence": "Fully Coherent",
+        "texts": "The heart is the hardest working organ in the body. We rely on it to supply blood regularly to the body every moment of every day. Any disorder that stops the heart from supplying blood to the body is a threat to life. Heart disease is such a disorder. It is very common. More people are killed every year in the U.S. by heart disease than by any other disease. There are many kinds of heart disease, some of which are present at birth and some of which are acquired later. 1. Congenital Heart Disease A congenital heart disease is a defect that a baby is born with. Most babies are born with perfect hearts. But one in every 200 babies is born with a bad heart. For example, hearts have flaps, called valves, that control the blood flow between its chambers. Sometimes a valve develops the wrong shape. It may be too tight, or fail to close properly, resulting in congenital heart disease. Sometimes a gap is left in the wall, or septum, between the two sides of the heart. This congenital heart disease is often called a 'septal defect.' When a baby's heart is badly shaped, it cannot work efficiently. It cannot pump enough blood through the lungs so that it receives enough oxygen. As a result, the baby becomes breathless. The blood also cannot get rid of carbon dioxide through the lungs. Therefore, the blood becomes purplish, which causes the baby's skin to look blue. Fortunately, it is now possible to save the lives of many 'blue babies.' 2. Acquired Heart Disease Some heart diseases are acquired after the baby is born. Rheumatic fever is an example of an acquired disease that may cause damage to the heart. This disease usually follows a sore throat caused by bacteria known as streptococci. This is often called 'strep throat.' When strep throat causes rheumatic fever, the tissues of the heart become inflamed. If the heart is badly affected, it fails very soon. Usually, however, it recovers, and the results of the damage are seen only years later. This is because the rheumatic fever leaves scars in the valves of the heart. Therefore, they cannot work properly. This puts a strain on the heart so that eventually it may fail. The effects of the rheumatic fever may take up to twenty or thirty years to appear. Coronary disease is another example of an acquired heart disease. This disease affects the coronary arteries. These are the blood vessels that extend across the heart and supply it with blood from the lungs. They are very important because they give the heart muscle the oxygen it needs to carry on working. In coronary disease the coronary arteries become blocked, causing parts of the heart muscle to die because of the lack of oxygen. When this happens, the patient has a heart attack, which can be fatal. The blockage of a coronary artery is usually caused by a clot of blood, called a 'thrombus.' When a clot forms in a coronary artery, this is called 'coronary thrombosis.' That is the correct name for a heart attack. In normal arteries, blood does not form clots. But in coronary disease, the walls of the arteries are not normal. They become lumpy, rough, and narrow. The lumps break off and form clots that stop the flow of blood to the heart. Other examples of acquired heart disease are arrhythmia, angina, and high blood pressure. Arrhythmia, which means 'lack of rhythm,' is an interruption of the heart's normal beat. Angina is a sharp pain in the chest which is very similar to that caused by a heart attack, or thrombosis. High blood pressure is one of the most common heart diseases. It places a heavy strain on the heart and other organs. Therefore, if it is not treated, high blood pressure may lead to heart attacks, kidney failure, or other serious problems. High blood pressure is a disease which has no symptoms. Thus, a person may not be aware of having it unless the blood pressure is measured. 3. Treatment and Prevention of Heart Disease Since the mid-1960's, medical science has made tremendous progress in the treatment and prevention of heart disease. Both new drugs and new surgical methods have been developed. Among the new drugs for treating heart disease are chemicals called 'beta blockers.' The beta-blockers lessen the after-effects of heart attacks; they can prevent second attacks; and they can lower the blood pressure of people who have high blood pressure. Other drugs dissolve the lumps which break off the walls of arteries so that they do not stop the flow of blood to the heart. Surgical techniques for treating heart disease range from repairing or replacing damaged parts, such as valves or arteries, to replacement of the entire heart. If a heart has been so damaged that it can no longer function, it can be replaced by a mechanical heart, or, more often, by a heart transplant. In transplant surgery, the healthy heart of someone who has died replaces the diseased heart of the patient. Mechanical devices can be implanted in people's bodies to keep their hearts functioning. The pacemaker is the most common of these devices. It does not heal the diseased heart, but it relieves the symptoms of an irregular heart beat and maintains the steady beat needed for normal living. When a heart cannot pump enough blood through the lungs because of poorly functioning valves, the valves can be replaced with artificial ones of plastic and metal. For patients with coronary disease, 'by-pass surgery' is often used to repair clogged or damaged arteries. Doctors use pieces of a patient's own veins, often from the leg, to replace the damaged portions of arteries. Preventive care is also getting better as scientists learn more and more about the causes of heart disease. They have shown that diet can be an important means of controlling heart disease. For example, a substance called cholesterol is known to cause a build-up of fatty substances in the blood vessels, which can cause blood clots to form in the arteries. Therefore, doctors stress the importance of a diet low in cholesterol. Similarly, salt is known to increase blood pressure, so doctors recommend a low-salt diet for patients with high blood pressure",
+        "text_into_sentences": [
+            {
+                "id": 1,
+                "texts": "The heart is the hardest working organ in the body.",
+                "propositions": [
+                    "IS(HEART, ORGAN)",
+                    "HARDWORKING(HEART, ORGAN)",
+                    "SUPERLATIVE(HARDWORKING, HEART)",
+                    "IN(HEART, BODY)"
+                ]
+            },
+            {
+                "id": 2,
+                "texts": "We rely on it to supply blood regularly to the body every moment of every day.",
+                "propositions":[
+                    "RELY(WE, SUPPLY(IT, BLOOD))",
+                    "MANNER(SUPPLY(IT, BLOOD), REGULARLY)",
+                    "TO(SUPPLY(IT, BLOOD), BODY)",
+                    "TIME(RELY(WE, SUPPLY(IT, BLOOD)), EVERY_MOMENT(EVERY_DAY))"
+                ]
+                
+            },
+            {
+                "id": 3,
+                "texts": "Any disorder that stops the heart from supplying blood to the body is a threat to life.",
+                "propositions": [
+                    "STOP(DISORDER, SUPPLY(HEART, BLOOD))",
+                    "TO(SUPPLY(HEART, BLOOD), BODY)",
+                    "IS(DISORDER(STOP(HEART_SUPPLY_BLOOD)), THREAT_TO(LIFE))"
+                ]
+                
+            },
+            {
+                "id": 4,
+                "texts": "Heart disease is such a disorder.",
+                "propositions": [
+                    "IS(HEART_DISEASE, DISORDER)"
+                ]
+            },
+            {
+                "id": 5,
+                "texts": "It is very common.",
+                "propositions": [
+                    "BE(IT, COMMON)"
+                ]
+            },
+            {
+                "id": 6,
+                "texts": "More people are killed every year in the U.S. by heart disease than by any other disease.",
+                "propositions": [
+                    "KILL(HEART_DISEASE, MORE_PEOPLE)",
+                    "TIME(KILL(HEART_DISEASE, MORE_PEOPLE), EVERY_YEAR)",
+                    "LOCATION(KILL(HEART_DISEASE, MORE_PEOPLE), U.S.)",
+                    "COMPARE(KILL(HEART_DISEASE, PEOPLE), KILL(OTHER_DISEASE, PEOPLE))"
+                ]
+            },
+            {
+                "id": 7,
+                "texts": "There are many kinds of heart disease, some of which are present at birth and some of which are acquired later.",
+                "propositions": [
+                    "EXIST(MANY_KINDS, HEART_DISEASE)",
+                    "SOME_PRESENT_AT_BIRTH(HEART_DISEASE)",
+                    "SOME_ACQUIRED_LATER(HEART_DISEASE)"
+                ]
+            },
+            {
+                "id": 8,
+                "texts": "1.",
+                "propositions": [
+                    "1(_, _)"
+                ]
+            },
+            {
+                "id": 9,
+                "texts": "Congenital Heart Disease A congenital heart disease is a defect that a baby is born with.",
+                "propositions": [
+                    "IS(CONGENITAL_HEART_DISEASE, DEFECT)",
+                    "BORN_WITH(BABY, CONGENITAL_HEART_DISEASE)"
+                ]
+            },
+            {
+                "id": 10,
+                "texts": "Most babies are born with perfect hearts.",
+                "propositions":[
+                    "BORN_WITH(MOST_BABIES, PERFECT_HEARTS)"
+                ]
+            },
+            {
+                "id": 11,
+                "texts": "But one in every 200 babies is born with a bad heart.",
+                "propositions": [
+                    "PROBABILITY(BORN_WITH(BABY, BAD_HEART), ONE_IN_200)"
+                ]                
+            },
+            {
+                "id": 12,
+                "texts": "For example, hearts have flaps, called valves, that control the blood flow between its chambers.",
+                "propositions": [
+                    "HAVE(HEART, FLAPS)",
+                    "IS_CALLED(FLAPS, VALVES)",
+                    "CONTROL(VALVES, BLOOD_FLOW)",
+                    "BETWEEN(BLOOD_FLOW, HEART_CHAMBERS)"
+                ]                
+            },
+            {
+                "id": 13,
+                "texts": "Sometimes a valve develops the wrong shape.",
+                "propositions": [
+                    "DEVELOP(VALVE, WRONG_SHAPE)"
+                ]                
+            },
+            {
+                "id": 14,
+                "texts": "It may be too tight, or fail to close properly, resulting in congenital heart disease.",
+                "propositions": [
+                    "TOO_TIGHT(VALVE)",
+                    "FAIL_TO_CLOSE(VALVE)",
+                    "RESULT_IN(FAILURE(VALVE), CONGENITAL_HEART_DISEASE)"
+                ]                
+            },
+            {
+                "id": 15,
+                "texts": "Sometimes a gap is left in the wall, or septum, between the two sides of the heart.",
+                "propositions": [
+                    "IS_LEFT(GAP, WALL)",
+                    "BETWEEN(GAP, HEART_SIDES)",
+                    "IS(WALL, SEPTUM)"
+                ]                
+            },
+            {
+                "id": 16,
+                "texts": "This congenital heart disease is often called a 'septal defect.'",
+                "propositions": [
+                    "IS(CONGENITAL_HEART_DISEASE, SEPTAL_DEFECT)",
+                    "IS_CALLED(SEPTAL_DEFECT, CONGENITAL_HEART_DISEASE)"
+                ]                
+            },
+            {
+                "id": 17,
+                "texts": "When a baby's heart is badly shaped, it cannot work efficiently.",
+                "propositions": [
+                    "BADLY_SHAPED(BABY_HEART)",
+                    "CANNOT(WORK_EFFICIENTLY, BABY_HEART)"
+                ]                
+            },
+            {
+                "id": 18,
+                "texts": "It cannot pump enough blood through the lungs so that it receives enough oxygen.",
+                "propositions": [
+                    "CANNOT(PUMP(BABY_HEART, BLOOD), LUNGS)",
+                    "NOT_RECEIVE(BLOOD, ENOUGH_OXYGEN)"
+                ]                
+            },
+            {
+                "id": 19,
+                "texts": "As a result, the baby becomes breathless.",
+                "propositions": [
+                    "CAUSE(BREATHLESSNESS, NOT_ENOUGH_OXYGEN)",
+                    "BECOME(BABY, BREATHLESS)"
+                ]
+            },
+            {
+                "id": 20,
+                "texts": "The blood also cannot get rid of carbon dioxide through the lungs.",
+                "propositions": [
+                    "CANNOT(EXPEL(BLOOD, CARBON_DIOXIDE), LUNGS)"
+                ]
+                
+            },
+            {
+                "id": 21,
+                "texts": "Therefore, the blood becomes purplish, which causes the baby's skin to look blue.",
+                "propositions": [
+                    "BECOME(BLOOD, PURPLISH)",
+                    "CAUSE(PURPLISH_BLOOD, LOOK_BLUE(BABY_SKIN))"
+                ]                
+            },
+            {
+                "id": 22,
+                "texts": "Fortunately, it is now possible to save the lives of many 'blue babies.'",
+                "propositions": [
+                    "POSSIBLE(SAVE(LIFE, BLUE_BABIES), NOW)"
+                ]                
+            },
+            {
+                "id": 23,
+                "texts": "2.",
+                "propositions": [
+                    "2(_, _)"
+                ]
+            },
+            {
+                "id": 24,
+                "texts": "Acquired Heart Disease Some heart diseases are acquired after the baby is born.",
+                "propositions": [
+                    "IS(ACQUIRED_HEART_DISEASE, HEART_DISEASE)",
+                    "ACQUIRED(AFTER(BABY, BIRTH), SOME_HEART_DISEASE)"
+                ]
+            },
+            {
+                "id": 25,
+                "texts": "Rheumatic fever is an example of an acquired disease that may cause damage to the heart.",
+                "propositions": [
+                    "IS(RHEUMATIC_FEVER, EXAMPLE(ACQUIRED_DISEASE))",
+                    "MAY_CAUSE(RHEUMATIC_FEVER, DAMAGE(HEART))"
+                ]                
+            },
+            {
+                "id": 26,
+                "texts": "This disease usually follows a sore throat caused by bacteria known as streptococci.",
+                "propositions": [
+                    "FOLLOW(DISEASE, SORE_THROAT)",
+                    "CAUSE(BACTERIA(STREPTOCOCCI), SORE_THROAT)"
+                ]
+                
+            },
+            {
+                "id": 27,
+                "texts": "This is often called 'strep throat.'",
+                "propositions": [
+                    "IS_CALLED(SORE_THROAT_CAUSED_BY_STREPTOCOCCI, STREP_THROAT)"
+                ]
+                
+            },
+            {
+                "id": 28,
+                "texts": "When strep throat causes rheumatic fever, the tissues of the heart become inflamed.",
+                "propositions": [
+                    "CAUSE(STREP_THROAT, RHEUMATIC_FEVER)",
+                    "BECOME_INFLAMED(TISSUES(HEART))"
+                ]
+                
+            },
+            {
+                "id": 29,
+                "texts": "If the heart is badly affected, it fails very soon.",
+                "propositions": [
+                    "BADLY_AFFECTED(HEART)",
+                    "FAIL(HEART, SOON)"
+                ]
+                
+            },
+            {
+                "id": 30,
+                "texts": "Usually, however, it recovers, and the results of the damage are seen only years later.",
+                "propositions": [
+                    "RECOVER(HEART)",
+                    "RESULT(DAMAGE, SEEN_LATER)"
+                ]
+                
+            },
+            {
+                "id": 31,
+                "texts": "This is because the rheumatic fever leaves scars in the valves of the heart.",
+                "propositions": [
+                    "LEAVE_SCARS(RHEUMATIC_FEVER, VALVES(HEART))"
+                ]
+                
+                
+            },
+            {
+                "id": 32,
+                "texts": "Therefore, they cannot work properly.",
+                "propositions": [
+                    "CANNOT(WORK_PROPERLY, VALVES)"
+                ]
+                
+            },
+            {
+                "id": 33,
+                "texts": "This puts a strain on the heart so that eventually it may fail.",
+                "propositions": [
+                    "PUTS_STRAIN(VALVE_FAILURE, HEART)",
+                    "MAY_FAIL(HEART, EVENTUALLY)"
+                ]
+                
+            },
+            {
+                "id": 34,
+                "texts": "The effects of the rheumatic fever may take up to twenty or thirty years to appear.",
+                "propositions": [
+                    "TAKE_TIME(EFFECTS(RHEUMATIC_FEVER), 20_TO_30_YEARS)"
+                ]
+                
+            },
+            {
+                "id": 35,
+                "texts": "Coronary disease is another example of an acquired heart disease.",
+                "propositions": [
+                    "IS(CORONARY_DISEASE, EXAMPLE(ACQUIRED_HEART_DISEASE))"
+                ]
+                
+            },
+            {
+                "id": 36,
+                "texts": "This disease affects the coronary arteries.",
+                "propositions": [
+                    "AFFECT(DISEASE, CORONARY_ARTERIES)"
+                ]
+                
+            },
+            {
+                "id": 37,
+                "texts": "These are the blood vessels that extend across the heart and supply it with blood from the lungs.",
+                "propositions": [
+                    "IS(CORONARY_ARTERIES, BLOOD_VESSELS)",
+                    "EXTEND_ACROSS(BLOOD_VESSELS, HEART)",
+                    "SUPPLY(BLOOD_VESSELS, HEART)",
+                    "SOURCE(BLOOD, LUNGS)"
+                ]
+                
+            },
+            {
+                "id": 38,
+                "texts": "They are very important because they give the heart muscle the oxygen it needs to carry on working.",
+                "propositions": [
+                    "IMPORTANT(CORONARY_ARTERIES)",
+                    "GIVE(CORONARY_ARTERIES, HEART_MUSCLE, OXYGEN)",
+                    "NEED(HEART_MUSCLE, OXYGEN)",
+                    "CARRY_ON(HEART_MUSCLE, WORKING)"
+                ]                
+                
+            },
+            {
+                "id": 39,
+                "texts": "In coronary disease the coronary arteries become blocked, causing parts of the heart muscle to die because of the lack of oxygen.",
+                "propositions": [
+                    "BECOME(BLOCKED, CORONARY_ARTERIES)",
+                    "CAUSE(BLOCKAGE, DIE(PARTS(HEART_MUSCLE)))",
+                    "CAUSE(DIE(HEART_MUSCLE), LACK(OXYGEN))"
+                ]
+                
+            },
+            {
+                "id": 40,
+                "texts": "When this happens, the patient has a heart attack, which can be fatal.",
+                "propositions": [
+                    "CAUSE(BLOCKAGE, HEART_ATTACK(PATIENT))",
+                    "IS_FATAL(HEART_ATTACK)"
+                ]
+                
+            },
+            {
+                "id": 41,
+                "texts": "The blockage of a coronary artery is usually caused by a clot of blood, called a 'thrombus.'",
+                "propositions": [
+                    "CAUSE(BLOCKAGE(CORONARY_ARTERY), BLOOD_CLOT)",
+                    "IS_CALLED(BLOOD_CLOT, THROMBUS)"
+                ]
+                
+            },
+            {
+                "id": 42,
+                "texts": "When a clot forms in a coronary artery, this is called 'coronary thrombosis.'",
+                "propositions": [
+                    "FORM(CLOT, CORONARY_ARTERY)",
+                    "IS_CALLED(CLOT_FORMATION, CORONARY_THROMBOSIS)"
+                ]
+                
+            },
+            {
+                "id": 43,
+                "texts": "That is the correct name for a heart attack.",
+                "propositions": [
+                    "IS(CORONARY_THROMBOSIS, HEART_ATTACK)"
+                ]
+                
+            },
+            {
+                "id": 44,
+                "texts": "In normal arteries, blood does not form clots.",
+                "propositions": [
+                    "NOT_FORM(BLOOD, CLOTS)",
+                    "IN(BLOOD, NORMAL_ARTERIES)"
+                ]
+                
+            },
+            {
+                "id": 45,
+                "texts": "But in coronary disease, the walls of the arteries are not normal.",
+                "propositions": [
+                    "IS_NOT_NORMAL(WALLS, ARTERIES)",
+                    "IN(CORONARY_DISEASE, WALLS_NOT_NORMAL)"
+                ]
+                
+            },
+            {
+                "id": 46,
+                "texts": "They become lumpy, rough, and narrow.",
+                "propositions": [
+                    "BECOME(ARTERY_WALLS, LUMPY)",
+                    "BECOME(ARTERY_WALLS, ROUGH)",
+                    "BECOME(ARTERY_WALLS, NARROW)"
+                ]
+                
+            },
+            {
+                "id": 47,
+                "texts": "The lumps break off and form clots that stop the flow of blood to the heart.",
+                "propositions": [
+                    "BREAK_OFF(LUMPS)",
+                    "FORM(LUMPS, CLOTS)",
+                    "STOP(CLOTS, FLOW(BLOOD, HEART))"
+                ]
+                
+            },
+            {
+                "id": 48,
+                "texts": "Other examples of acquired heart disease are arrhythmia, angina, and high blood pressure.",
+                "propositions": [
+                    "IS_EXAMPLE(ARRHYTHMIA, ACQUIRED_HEART_DISEASE)",
+                    "IS_EXAMPLE(ANGINA, ACQUIRED_HEART_DISEASE)",
+                    "IS_EXAMPLE(HIGH_BLOOD_PRESSURE, ACQUIRED_HEART_DISEASE)"
+                ]
+                
+            },
+            {
+                "id": 49,
+                "texts": "Arrhythmia, which means 'lack of rhythm,' is an interruption of the heart's normal beat.",
+                "propositions": 
+                [
+                    "MEAN(ARRHYTHMIA, LACK_OF_RHYTHM)",
+                    "IS(ARRHYTHMIA, INTERRUPTION(HEART_BEAT))"
+                ]
+                
+            },
+            {
+                "id": 50,
+                "texts": "Angina is a sharp pain in the chest which is very similar to that caused by a heart attack, or thrombosis.",
+                "propositions": [
+                    "IS(ANGINA, SHARP_PAIN(CHEST))",
+                    "SIMILAR_TO(ANGINA, PAIN(FROM(HEART_ATTACK_OR_THROMBOSIS)))"
+                ]
+                
+            },
+            {
+                "id": 51,
+                "texts": "High blood pressure is one of the most common heart diseases.",
+                "propositions": [
+                    "IS(HIGH_BLOOD_PRESSURE, HEART_DISEASE)",
+                    "IS_COMMON(HIGH_BLOOD_PRESSURE)"
+                ]
+                
+            },
+            {
+                "id": 52,
+                "texts": "It places a heavy strain on the heart and other organs.",
+                "propositions": [
+                    "PLACE_STRONG_STRAIN(HIGH_BLOOD_PRESSURE, HEART)",
+                    "PLACE_STRONG_STRAIN(HIGH_BLOOD_PRESSURE, ORGANS)"
+                ]
+                
+            },
+            {
+                "id": 53,
+                "texts": "Therefore, if it is not treated, high blood pressure may lead to heart attacks, kidney failure, or other serious problems.",
+                "propositions": [
+                    "NOT_TREATED(HIGH_BLOOD_PRESSURE)",
+                    "CAUSE(HIGH_BLOOD_PRESSURE, HEART_ATTACKS)",
+                    "CAUSE(HIGH_BLOOD_PRESSURE, KIDNEY_FAILURE)",
+                    "CAUSE(HIGH_BLOOD_PRESSURE, SERIOUS_PROBLEMS)"
+                ]                
+            },
+            {
+                "id": 54,
+                "texts": "High blood pressure is a disease which has no symptoms.",
+                "propositions": [
+                    "IS(HIGH_BLOOD_PRESSURE, DISEASE)",
+                    "HAS_NO_SYMPTOMS(HIGH_BLOOD_PRESSURE)"
+                ]
+                
+            },
+            {
+                "id": 55,
+                "texts": "Thus, a person may not be aware of having it unless the blood pressure is measured.",
+                "propositions": [
+                    "MAY_NOT_BE_AWARE(PERSON, HIGH_BLOOD_PRESSURE)",
+                    "UNLESS(MEASURED(BLOOD_PRESSURE))"
+                ]
+                
+            },
+            {
+                "id": 56,
+                "texts": "3.",
+                "propositions": [
+                    "3(_, _)"
+                ]
+            },
+            {
+                "id": 57,
+                "texts": "Treatment and Prevention of Heart Disease Since the mid-1960's, medical science has made tremendous progress in the treatment and prevention of heart disease.",
+                "propositions": [
+                    "MAKE_PROGRESS(MEDICAL_SCIENCE, TREATMENT(HEART_DISEASE))",
+                    "MAKE_PROGRESS(MEDICAL_SCIENCE, PREVENTION(HEART_DISEASE))",
+                    "TIME(MAKE_PROGRESS, SINCE(1960s))"
+                ]
+                
+            },
+            {
+                "id": 58,
+                "texts": "Both new drugs and new surgical methods have been developed.",
+                "propositions": [
+                    "DEVELOPED(NEW_DRUGS)",
+                    "DEVELOPED(NEW_SURGICAL_METHODS)"
+                ]
+                
+            },
+            {
+                "id": 59,
+                "texts": "Among the new drugs for treating heart disease are chemicals called 'beta blockers.'",
+                "propositions": [
+                    "INCLUDE(NEW_DRUGS, BETA_BLOCKERS)",
+                    "TREAT(BETA_BLOCKERS, HEART_DISEASE)",
+                    "IS_CALLED(CHEMICALS, BETA_BLOCKERS)"
+                ]
+                
+            },
+            {
+                "id": 60,
+                "texts": "The beta-blockers lessen the after-effects of heart attacks; they can prevent second attacks; and they can lower the blood pressure of people who have high blood pressure.",
+                "propositions": [
+                    "LESSEN(BETA_BLOCKERS, AFTER_EFFECTS(HEART_ATTACKS))",
+                    "PREVENT(BETA_BLOCKERS, SECOND_ATTACKS)",
+                    "LOWER(BETA_BLOCKERS, BLOOD_PRESSURE(PEOPLE_WITH_HIGH_BP))"
+                ]
+                
+            },
+            {
+                "id": 61,
+                "texts": "Other drugs dissolve the lumps which break off the walls of arteries so that they do not stop the flow of blood to the heart.",
+                "propositions": [
+                    "DISSOLVE(DRUGS, LUMPS)",
+                    "BREAK_OFF(LUMPS, ARTERY_WALLS)",
+                    "PREVENT(LUMPS, STOP(FLOW(BLOOD, HEART)))"
+                ]
+                
+            },
+            {
+                "id": 62,
+                "texts": "Surgical techniques for treating heart disease range from repairing or replacing damaged parts, such as valves or arteries, to replacement of the entire heart.",
+                "propositions": [
+                    "RANGE(SURGICAL_TECHNIQUES, REPAIR(DAMAGED_PARTS))",
+                    "RANGE(SURGICAL_TECHNIQUES, REPLACE(DAMAGED_PARTS))",
+                    "INCLUDE(DAMAGED_PARTS, VALVES)",
+                    "INCLUDE(DAMAGED_PARTS, ARTERIES)",
+                    "INCLUDE(SURGICAL_TECHNIQUES, REPLACEMENT(ENTIRE_HEART))"
+                ]
+                
+            },
+            {
+                "id": 63,
+                "texts": "If a heart has been so damaged that it can no longer function, it can be replaced by a mechanical heart, or, more often, by a heart transplant.",
+                "propositions": [
+                    "IF(DAMAGED(HEART), CANNOT(FUNCTION, HEART))",
+                    "REPLACE(HEART, MECHANICAL_HEART)",
+                    "REPLACE(HEART, HEART_TRANSPLANT)",
+                    "OFTEN(USE, HEART_TRANSPLANT)"
+                ]
+                
+            },
+            {
+                "id": 64,
+                "texts": "In transplant surgery, the healthy heart of someone who has died replaces the diseased heart of the patient.",
+                "propositions": [
+                    "REPLACE(HEALTHY_HEART(DONOR), DISEASED_HEART(PATIENT))",
+                    "INCLUDE(PROCESS, TRANSPLANT_SURGERY)"
+                ]
+                
+            },
+            {
+                "id": 65,
+                "texts": "Mechanical devices can be implanted in people's bodies to keep their hearts functioning.",
+                "propositions": [
+                    "IMPLANT(MECHANICAL_DEVICES, HUMAN_BODY)",
+                    "KEEP_FUNCTIONING(MECHANICAL_DEVICES, HEARTS)"
+                ]
+                
+            },
+            {
+                "id": 66,
+                "texts": "The pacemaker is the most common of these devices.",
+                "propositions": [
+                    "IS(PACEMAKER, MOST_COMMON(DEVICE))"
+                ]
+                
+            },
+            {
+                "id": 67,
+                "texts": "It does not heal the diseased heart, but it relieves the symptoms of an irregular heart beat and maintains the steady beat needed for normal living.",
+                "propositions": [
+                    "NOT(HEAL(PACEMAKER, DISEASED_HEART))",
+                    "RELIEVE(PACEMAKER, SYMPTOMS(IRREGULAR_HEARTBEAT))",
+                    "MAINTAIN(PACEMAKER, STEADY_BEAT)",
+                    "NEEDED(STEADY_BEAT, NORMAL_LIVING)"
+                ]
+                
+            },
+            {
+                "id": 68,
+                "texts": "When a heart cannot pump enough blood through the lungs because of poorly functioning valves, the valves can be replaced with artificial ones of plastic and metal.",
+                "propositions": [
+                    "CANNOT(PUMP(HEART, BLOOD), LUNGS)",
+                    "CAUSE(POORLY_FUNCTIONING(VALVES), INSUFFICIENT_PUMP)",
+                    "REPLACE(VALVES, ARTIFICIAL_ONES(PLASTIC_METAL))"
+                ]
+                
+            },
+            {
+                "id": 69,
+                "texts": "For patients with coronary disease, 'by-pass surgery' is often used to repair clogged or damaged arteries.",
+                "propositions": [
+                    "USE(BYPASS_SURGERY, REPAIR(ARTERIES))",
+                    "CONDITION(PATIENTS, CORONARY_DISEASE)",
+                    "OFTEN(USE, BYPASS_SURGERY)"
+                ]
+                
+            },
+            {
+                "id": 70,
+                "texts": "Doctors use pieces of a patient's own veins, often from the leg, to replace the damaged portions of arteries.",
+                "propositions": [
+                    "USE(DOCTORS, VEINS(PATIENT))",
+                    "FROM(VEINS, LEG)",
+                    "REPLACE(VEINS, DAMAGED_PARTS(ARTERIES))"
+                ]
+                
+            },
+            {
+                "id": 71,
+                "texts": "Preventive care is also getting better as scientists learn more and more about the causes of heart disease.",
+                "propositions": [
+                    "GETTING_BETTER(PREVENTIVE_CARE)",
+                    "LEARN(SCIENTISTS, CAUSES(HEART_DISEASE))"
+                ]
+                
+                
+            },
+            {
+                "id": 72,
+                "texts": "They have shown that diet can be an important means of controlling heart disease.",
+                "propositions": [
+                    "GETTING_BETTER(PREVENTIVE_CARE)",
+                    "LEARN(SCIENTISTS, CAUSES(HEART_DISEASE))"
+                ]
+                
+            },
+            {
+                "id": 73,
+                "texts": "For example, a substance called cholesterol is known to cause a build-up of fatty substances in the blood vessels, which can cause blood clots to form in the arteries.",
+                "propositions": [
+                    "SHOW(SCIENTISTS, IMPORTANCE(DIET))",
+                    "CONTROL(DIET, HEART_DISEASE)"
+                ]
+                
+            },
+            {
+                "id": 74,
+                "texts": "Therefore, doctors stress the importance of a diet low in cholesterol.",
+                "propositions": [
+                    "STRESS(DOCTORS, IMPORTANCE(LOW_CHOLESTEROL_DIET))"
+                ]
+                
+            },
+            {
+                "id": 75,
+                "texts": "Similarly, salt is known to increase blood pressure, so doctors recommend a low-salt diet for patients with high blood pressure",
+                "propositions": [
+                    "INCREASE(SALT, BLOOD_PRESSURE)",
+                    "RECOMMEND(DOCTORS, LOW_SALT_DIET(PATIENTS_WITH_HIGH_BP))"
+                ]
+                
+            }
+        ]
+    },
+    {
+        "text_title": "Heart Disease",
+        "coherence": "Minimally Coherent",
+        "texts": "The heart is the hardest-working organ in the body. We rely on a regular blood supply every moment of every day. Any disorder that stops the blood supply is a threat to life. Heart disease is very common. More people are killed every year in the U.S. by heart disease than by any other disease. A congenital disease is one that a person is born with. Most babies are born with perfect hearts. In about one in every 200 cases something goes wrong. Sometimes a valve develops the wrong shape. It may be too tight, or fail to close properly. Sometimes a gap is left in the septal wall between the two sides of the heart. This is often called a septal defect. When a baby's heart is badly formed, it cannot work efficiently. The blood does not receive enough oxygen. The baby becomes breathless. The blood cannot get rid of carbon dioxide through the lungs. It becomes purplish, and the baby's skin looks blue. It is now possible to save the lives of many blue babies. The disease called rheumatic fever may cause harm to the heart. The disease usually follows a sore throat caused by bacteria called streptococci. The tissues of the heart become inflamed. If it is badly affected, it fails. Usually it recovers, and the results of the damage are seen only years later. The valves of the heart are left with scars. They cannot work properly. This puts a strain on the heart. Eventually it may fail. The effects of the rheumatic fever may take up to twenty or thirty years to appear. The blood vessels that extend across the heart and supply it with blood are called the coronary arteries. They are very important. They give the heart the oxygen it needs to carry on working. If they become blocked, parts of the heart muscle will die. The patient has a heart attack, which can be fatal. The blockage of a coronary artery is usually caused by a thrombus, or blood clot. Coronary thrombosis happens when a clot forms in a coronary artery. That is the correct name for a heart attack. In normal arteries, blood does not form clots. In coronary disease, the walls of the blood vessels become lumpy, rough, and narrow. Arrhythmia is an interruption of the heart's normal beat. Angina is a sharp pain in the chest which is very similar to that caused by thrombosis. High blood pressure is very common. If untreated, high blood pressure may lead to heart attacks, kidney failure, or other serious problems. High blood pressure may have no symptoms. A person may not be aware of having it unless the blood pressure is measured. Among the new drugs for treating heart disease are a family of compounds called beta blocking drugs, or simply, beta blockers. They lessen the after-effects of heart attacks, can prevent second attacks, and can lower the blood pressure of people who have high blood pressure. Other drugs dissolve the lumps which break off the walls of veins and arteries. Heart transplants are used more often than mechanical hearts. In transplant surgery, the healthy heart of someone who has died replaces the heart of the patient. Mechanical devices can be implanted in people's bodies to keep their hearts functioning. The commonly used pacemaker does not heal the diseased heart, but it relieves the symptoms of an irregular heart and keeps a steady beat for normal living. When a heart cannot pump enough blood through the lungs because of poorly functioning valves, the valves can be replaced with artificial ones of plastic and metal. By-pass surgery is used to repair clogged or damaged blood vessels. Doctors use pieces of a patient's own veins, often from the leg, to replace the damaged portions of arteries. A substance called cholesterol is known to cause a build-up of fatty substances in the blood vessels, which can lead to heart disease, so doctors stress the importance of a diet low in fats. Salt is known to increase the blood pressure, so a low-salt diet is recommended.",
+        "high_knowledge": {
+            "propositions": "",
+            "gist": "",
+            "recall_text": "",
+            "recall_propositions": ""
+        },
+        "low_knowledge": {
+            "propositions": "",
+            "gist": "",
+            "recall_text": "",
+            "recall_propositions": ""
+        },
+        "text_into_sentences": [
+            {
+                "id": 1,
+                "texts": "The heart is the hardest-working organ in the body.",
+                "propositions": 
+                [
+                    "IS(HEART, ORGAN)",
+                    "HARDWORKING(HEART, ORGAN)",
+                    "SUPERLATIVE(HARDWORKING, HEART)",
+                    "IN(HEART, BODY)"
+                ]
+                
+            },
+            {
+                "id": 2,
+                "texts": "We rely on a regular blood supply every moment of every day.",
+                "propositions": [
+                    "RELY(WE, BLOOD_SUPPLY)",
+                    "MOD(BLOOD_SUPPLY, REGULAR)",
+                    "TIME(RELY(WE, BLOOD_SUPPLY), EVERY_MOMENT(EVERY_DAY))"
+                ]
+                
+            },
+            {
+                "id": 3,
+                "texts": "Any disorder that stops the blood supply is a threat to life.",
+                "propositions": [
+                    "STOP(DISORDER, BLOOD_SUPPLY)",
+                    "IS(DISORDER(STOP(BLOOD_SUPPLY)), THREAT_TO(LIFE))"
+                ]
+                
+            },
+            {
+                "id": 4,
+                "texts": "Heart disease is very common.",
+                "propositions": [
+                    "IS_COMMON(HEART_DISEASE)",
+                    "IS(HEART_DISEASE, DISEASE)"
+                ]
+                
+            },
+            {
+                "id": 5,
+                "texts": "More people are killed every year in the U.S. by heart disease than by any other disease.",
+                "propositions": [
+                    "KILL(HEART_DISEASE, MORE_PEOPLE)",
+                    "TIME(KILL(HEART_DISEASE, PEOPLE), EVERY_YEAR)",
+                    "LOCATION(KILL(HEART_DISEASE, PEOPLE), U.S.)",
+                    "COMPARE(KILL(HEART_DISEASE, PEOPLE), KILL(OTHER_DISEASES, PEOPLE))"
+                ]
+                
+            },
+            {
+                "id": 6,
+                "texts": "A congenital disease is one that a person is born with.",
+                "propositions": [
+                    "IS(CONGENITAL_DISEASE, DISEASE)",
+                    "BORN_WITH(PERSON, CONGENITAL_DISEASE)"
+                ]
+                
+            },
+            {
+                "id": 7,
+                "texts": "Most babies are born with perfect hearts.",
+                "propositions": [
+                    "BORN_WITH(MOST_BABIES, PERFECT_HEARTS)"
+                ]
+                
+            },
+            {
+                "id": 8,
+                "texts": "In about one in every 200 cases something goes wrong.",
+                "propositions": [
+                    "PROBABILITY(GOES_WRONG(SOMETHING), ONE_IN_200)"
+                ]
+                
+            },
+            {
+                "id": 9,
+                "texts": "Sometimes a valve develops the wrong shape.",
+                "propositions": [
+                    "DEVELOP(VALVE, WRONG_SHAPE)"
+                ]
+                
+            },
+            {
+                "id": 10,
+                "texts": "It may be too tight, or fail to close properly.",
+                "propositions": [
+                    "TOO_TIGHT(VALVE)",
+                    "FAIL_TO_CLOSE(VALVE)"
+                ]
+                
+            },
+            {
+                "id": 11,
+                "texts": "Sometimes a gap is left in the septal wall between the two sides of the heart.",
+                "propositions": [
+                    "IS_LEFT(GAP, SEPTAL_WALL)",
+                    "BETWEEN(SEPTAL_WALL, HEART_SIDES)"
+                ]
+                
+            },
+            {
+                "id": 12,
+                "texts": "This is often called a septal defect.",
+                "propositions": [
+                    "IS_CALLED(GAP, SEPTAL_DEFECT)"
+                ]
+                
+            },
+            {
+                "id": 13,
+                "texts": "When a baby's heart is badly formed, it cannot work efficiently.",
+                "propositions": [
+                    "BADLY_FORMED(BABY_HEART)",
+                    "CANNOT(WORK_EFFICIENTLY, BABY_HEART)"
+                ]
+                
+            },
+            {
+                "id": 14,
+                "texts": "The blood does not receive enough oxygen.",
+                "propositions": [
+                    "NOT_RECEIVE(BLOOD, ENOUGH_OXYGEN)"
+                ]
+                
+            },
+            {
+                "id": 15,
+                "texts": "The baby becomes breathless.",
+                "propositions": [
+                    "BECOME(BABY, BREATHLESS)"
+                ]
+                
+            },
+            {
+                "id": 16,
+                "texts": "The blood cannot get rid of carbon dioxide through the lungs.",
+                "propositions": [
+                    "CANNOT(EXPEL(BLOOD, CARBON_DIOXIDE))",
+                    "THROUGH(EXPEL, LUNGS)"
+                ]
+                
+            },
+            {
+                "id": 17,
+                "texts": "It becomes purplish, and the baby's skin looks blue.",
+                "propositions": [
+                    "BECOME(BLOOD, PURPLISH)",
+                    "LOOK(SKIN(BABY), BLUE)"
+                ]
+                
+            },
+            {
+                "id": 18,
+                "texts": "It is now possible to save the lives of many blue babies.",
+                "propositions": [
+                    "POSSIBLE(NOW, SAVE(LIVES, BLUE_BABIES))"
+                ]
+                
+            },
+            {
+                "id": 19,
+                "texts": "The disease called rheumatic fever may cause harm to the heart.",
+                "propositions": [
+                    "MAY_CAUSE(RHEUMATIC_FEVER, HARM(HEART))",
+                    "IS(DISEASE, RHEUMATIC_FEVER)"
+                ]
+                
+            },
+            {
+                "id": 20,
+                "texts": "The disease usually follows a sore throat caused by bacteria called streptococci.",
+                "propositions": [
+                    "FOLLOW(RHEUMATIC_FEVER, SORE_THROAT)",
+                    "CAUSE(STREPTOCOCCI, SORE_THROAT)",
+                    "IS_CALLED(BACTERIA, STREPTOCOCCI)"
+                ]
+                
+            },
+            {
+                "id": 21,
+                "texts": "The tissues of the heart become inflamed.",
+                "propositions": [
+                    "BECOME_INFLAMED(TISSUES(HEART))"
+                ]
+                
+            },
+            {
+                "id": 22,
+                "texts": "If it is badly affected, it fails.",
+                "propositions": [
+                    "BADLY_AFFECTED(HEART)",
+                    "FAIL(HEART)"
+                ]
+                
+            },
+            {
+                "id": 23,
+                "texts": "Usually it recovers, and the results of the damage are seen only years later.",
+                "propositions": [
+                    "RECOVER(HEART)",
+                    "SEEN_LATER(RESULTS(DAMAGE), YEARS)"
+                ]                
+                
+            },
+            {
+                "id": 24,
+                "texts": "The valves of the heart are left with scars.",
+                "propositions": [
+                    "LEFT_WITH(VALVES(HEART), SCARS)"
+                ]                
+                
+            },
+            {
+                "id": 25,
+                "texts": "They cannot work properly.",
+                "propositions": [
+                    "CANNOT(WORK_PROPERLY, VALVES)"
+                ]
+                
+            },
+            {
+                "id": 26,
+                "texts": "This puts a strain on the heart.",
+                "propositions": [
+                    "PUTS(STRAIN, HEART)"
+                ]
+                
+            },
+            {
+                "id": 27,
+                "texts": "Eventually it may fail.",
+                "propositions": [
+                    "MAY_FAIL(HEART, EVENTUALLY)"
+                ]
+                
+            },
+            {
+                "id": 28,
+                "texts": "The effects of the rheumatic fever may take up to twenty or thirty years to appear.",
+                "propositions": [
+                    "MAY_TAKE(EFFECTS(RHEUMATIC_FEVER), YEARS(20_TO_30))",
+                    "TO_APPEAR(EFFECTS(RHEUMATIC_FEVER))"
+                ]
+                
+            },
+            {
+                "id": 29,
+                "texts": "The blood vessels that extend across the heart and supply it with blood are called the coronary arteries.",
+                "propositions": [
+                    "EXTEND_ACROSS(BLOOD_VESSELS, HEART)",
+                    "SUPPLY(BLOOD_VESSELS, HEART, BLOOD)",
+                    "IS_CALLED(BLOOD_VESSELS, CORONARY_ARTERIES)"
+                ]
+                
+            },
+            {
+                "id": 30,
+                "texts": "They are very important.",
+                "propositions": [
+                    "IMPORTANT(CORONARY_ARTERIES)"
+                ]
+                
+            },
+            {
+                "id": 31,
+                "texts": "They give the heart the oxygen it needs to carry on working.",
+                "propositions": [
+                    "GIVE(CORONARY_ARTERIES, HEART, OXYGEN)",
+                    "NEED(HEART, OXYGEN)",
+                    "CARRY_ON(HEART, WORKING)"
+                ]
+                
+            },
+            {
+                "id": 32,
+                "texts": "If they become blocked, parts of the heart muscle will die.",
+                "propositions": [
+                    "BECOME(BLOCKED, CORONARY_ARTERIES)",
+                    "WILL_DIE(PARTS(HEART_MUSCLE))"
+                ]
+                
+            },
+            {
+                "id": 33,
+                "texts": "The patient has a heart attack, which can be fatal.",
+                "propositions": [
+                    "HAS(PATIENT, HEART_ATTACK)",
+                    "CAN_BE_FATAL(HEART_ATTACK)"
+                ]
+                
+            },
+            {
+                "id": 34,
+                "texts": "The blockage of a coronary artery is usually caused by a thrombus, or blood clot.",
+                "propositions": [
+                    "IS_CAUSED_BY(BLOCKAGE(CORONARY_ARTERY), THROMBUS)",
+                    "IS(THROMBUS, BLOOD_CLOT)"
+                ]
+                
+            },
+            {
+                "id": 35,
+                "texts": "Coronary thrombosis happens when a clot forms in a coronary artery.",
+                "propositions": [
+                    "HAPPEN(CORONARY_THROMBOSIS)",
+                    "FORM(CLOT, CORONARY_ARTERY)"
+                ]
+                
+            },
+            {
+                "id": 36,
+                "texts": "That is the correct name for a heart attack.",
+                "propositions": [
+                    "IS(CORONARY_THROMBOSIS, HEART_ATTACK)"
+                ]
+                
+            },
+            {
+                "id": 37,
+                "texts": "In normal arteries, blood does not form clots.",
+                "propositions": [
+                    "NOT(FORM(BLOOD, CLOTS))",
+                    "IN(BLOOD, NORMAL_ARTERIES)"
+                ]
+                
+            },
+            {
+                "id": 38,
+                "texts": "In coronary disease, the walls of the blood vessels become lumpy, rough, and narrow.",
+                "propositions": [
+                    "BECOME(WALLS(BLOOD_VESSELS), LUMPY)",
+                    "BECOME(WALLS(BLOOD_VESSELS), ROUGH)",
+                    "BECOME(WALLS(BLOOD_VESSELS), NARROW)",
+                    "IN(CORONARY_DISEASE, BLOOD_VESSELS)"
+                ]
+                
+            },
+            {
+                "id": 39,
+                "texts": "Arrhythmia is an interruption of the heart's normal beat.",
+                "propositions": [
+                    "IS(ARRHYTHMIA, INTERRUPTION(HEART_BEAT))"
+                ]
+                
+            },
+            {
+                "id": 40,
+                "texts": "Angina is a sharp pain in the chest which is very similar to that caused by thrombosis.",
+                "propositions": [
+                    "IS(ANGINA, SHARP_PAIN(CHEST))",
+                    "SIMILAR_TO(ANGINA, PAIN_CAUSED_BY(THROMBOSIS))"
+                ]
+                
+            },
+            {
+                "id": 41,
+                "texts": "High blood pressure is very common.",
+                "propositions": [
+                    "IS_COMMON(HIGH_BLOOD_PRESSURE)"
+                ]
+                
+            },
+            {
+                "id": 42,
+                "texts": "If untreated, high blood pressure may lead to heart attacks, kidney failure, or other serious problems.",
+                "propositions": [
+                    "UNTREATED(HIGH_BLOOD_PRESSURE)",
+                    "MAY_LEAD(HIGH_BLOOD_PRESSURE, HEART_ATTACKS)",
+                    "MAY_LEAD(HIGH_BLOOD_PRESSURE, KIDNEY_FAILURE)",
+                    "MAY_LEAD(HIGH_BLOOD_PRESSURE, SERIOUS_PROBLEMS)"
+                ]
+                
+            },
+            {
+                "id": 43,
+                "texts": "High blood pressure may have no symptoms.",
+                "propositions": [
+                    "MAY_HAVE_NO_SYMPTOMS(HIGH_BLOOD_PRESSURE)"
+                ]
+                
+            },
+            {
+                "id": 44,
+                "texts": "A person may not be aware of having it unless the blood pressure is measured.",
+                "propositions": [
+                    "MAY_NOT_BE_AWARE(PERSON, HAVE(HIGH_BLOOD_PRESSURE))",
+                    "UNLESS(MEASURED(BLOOD_PRESSURE))"
+                ]
+                
+            },
+            {
+                "id": 45,
+                "texts": "Among the new drugs for treating heart disease are a family of compounds called beta blocking drugs, or simply, beta blockers.",
+                "propositions": [
+                    "INCLUDE(NEW_DRUGS_FOR_HEART_DISEASE, BETA_BLOCKING_DRUGS)",
+                    "IS_CALLED(FAMILY_OF_COMPOUNDS, BETA_BLOCKERS)"
+                ]
+                
+            },
+            {
+                "id": 46,
+                "texts": "They lessen the after-effects of heart attacks, can prevent second attacks, and can lower the blood pressure of people who have high blood pressure.",
+                "propositions": [
+                    "LESSEN(BETA_BLOCKERS, AFTER_EFFECTS(HEART_ATTACKS))",
+                    "PREVENT(BETA_BLOCKERS, SECOND_ATTACKS)",
+                    "LOWER(BETA_BLOCKERS, BLOOD_PRESSURE(PEOPLE_WITH_HIGH_BP))"
+                ]
+                
+            },
+            {
+                "id": 47,
+                "texts": "Other drugs dissolve the lumps which break off the walls of veins and arteries.",
+                "propositions": [
+                    "DISSOLVE(DRUGS, LUMPS)",
+                    "BREAK_OFF(LUMPS, WALLS(VEINS_AND_ARTERIES))"
+                ]
+                
+            },
+            {
+                "id": 48,
+                "texts": "Heart transplants are used more often than mechanical hearts.",
+                "propositions": [
+                    "USED_MORE_OFTEN(HEART_TRANSPLANTS, MECHANICAL_HEARTS)"
+                ]
+                
+            },
+            {
+                "id": 49,
+                "texts": "In transplant surgery, the healthy heart of someone who has died replaces the heart of the patient.",
+                "propositions": [
+                    "REPLACE(HEALTHY_HEART(DONOR), HEART(PATIENT))",
+                    "INCLUDE(PROCEDURE, TRANSPLANT_SURGERY)"
+                ]
+                
+            },
+            {
+                "id": 50,
+                "texts": "Mechanical devices can be implanted in people's bodies to keep their hearts functioning.",
+                "propositions": [
+                    "IMPLANT(MECHANICAL_DEVICES, HUMAN_BODIES)",
+                    "KEEP_FUNCTIONING(MECHANICAL_DEVICES, HEARTS)"
+                ]
+                
+            },
+            {
+                "id": 51,
+                "texts": "The commonly used pacemaker does not heal the diseased heart, but it relieves the symptoms of an irregular heart and keeps a steady beat for normal living.",
+                "propositions": [
+                    "NOT(HEAL(PACEMAKER, DISEASED_HEART))",
+                    "RELIEVE(PACEMAKER, SYMPTOMS(IRREGULAR_HEART))",
+                    "KEEP(PACEMAKER, STEADY_BEAT)",
+                    "SUPPORT(STEADY_BEAT, NORMAL_LIVING)"
+                ]
+                
+            },
+            {
+                "id": 52,
+                "texts": "When a heart cannot pump enough blood through the lungs because of poorly functioning valves, the valves can be replaced with artificial ones of plastic and metal.",
+                "propositions": [
+                    "CANNOT(PUMP(HEART, ENOUGH_BLOOD))",
+                    "CAUSE(POOR_FUNCTION(VALVES), INSUFFICIENT_PUMP)",
+                    "REPLACE(VALVES, ARTIFICIAL_VALVES(PLASTIC_METAL))"
+                ]
+                
+            },
+            {
+                "id": 53,
+                "texts": "By-pass surgery is used to repair clogged or damaged blood vessels.",
+                "propositions": [
+                    "USE(BYPASS_SURGERY, REPAIR(CLOGGED_OR_DAMAGED_BLOOD_VESSELS))"
+                ]
+                
+            },
+            {
+                "id": 54,
+                "texts": "Doctors use pieces of a patient's own veins, often from the leg, to replace the damaged portions of arteries.",
+                "propositions": [
+                    "USE(DOCTORS, VEINS(PATIENT))",
+                    "FROM(VEINS, LEG)",
+                    "REPLACE(VEINS, DAMAGED_PORTIONS(ARTERIES))"
+                ]
+                
+            },
+            {
+                "id": 55,
+                "texts": "A substance called cholesterol is known to cause a build-up of fatty substances in the blood vessels, which can lead to heart disease, so doctors stress the importance of a diet low in fats.",
+                "propositions": [
+                    "IS_CALLED(SUBSTANCE, CHOLESTEROL)",
+                    "CAUSE(CHOLESTEROL, BUILD_UP(FATTY_SUBSTANCES, BLOOD_VESSELS))",
+                    "LEAD(BUILD_UP, HEART_DISEASE)",
+                    "STRESS(DOCTORS, IMPORTANCE(DIET_LOW_IN_FATS))"
+                ]
+                
+            },
+            {
+                "id": 56,
+                "texts": "Salt is known to increase the blood pressure, so a low-salt diet is recommended.",
+                "propositions": [
+                    "INCREASE(SALT, BLOOD_PRESSURE)",
+                    "RECOMMEND(DIET_LOW_IN_SALT)"
+                ]                
+            }
+        ]
+    }
+]

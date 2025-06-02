@@ -1,0 +1,1688 @@
+[
+  {
+    "text_title": "Heart Disease",
+    "coherence": "Fully Coherent",
+    "original_propositions": [
+      {
+        "proposition_index": 1,
+        "proposition_text": "IS(HEART, ORGAN)",
+        "global_coherence": 0.8457433581352234,
+        "local_coherence": 0.866180419921875
+      },
+      {
+        "proposition_index": 2,
+        "proposition_text": "HARDWORKING(HEART, ORGAN)",
+        "global_coherence": 0.8361827731132507,
+        "local_coherence": 0.8724555969238281
+      },
+      {
+        "proposition_index": 3,
+        "proposition_text": "SUPERLATIVE(HARDWORKING, HEART)",
+        "global_coherence": 0.7920703291893005,
+        "local_coherence": 0.8237665295600891
+      },
+      {
+        "proposition_index": 4,
+        "proposition_text": "IN(HEART, BODY)",
+        "global_coherence": 0.8494282960891724,
+        "local_coherence": 0.8687076568603516
+      },
+      {
+        "proposition_index": 5,
+        "proposition_text": "RELY(WE, SUPPLY(IT, BLOOD))",
+        "global_coherence": 0.8214474320411682,
+        "local_coherence": 0.8634185791015625
+      },
+      {
+        "proposition_index": 6,
+        "proposition_text": "MANNER(SUPPLY(IT, BLOOD), REGULARLY)",
+        "global_coherence": 0.8176442980766296,
+        "local_coherence": 0.8742783665657043
+      },
+      {
+        "proposition_index": 7,
+        "proposition_text": "TO(SUPPLY(IT, BLOOD), BODY)",
+        "global_coherence": 0.8276495933532715,
+        "local_coherence": 0.8929719924926758
+      },
+      {
+        "proposition_index": 8,
+        "proposition_text": "TIME(RELY(WE, SUPPLY(IT, BLOOD)), EVERY_MOMENT(EVERY_DAY))",
+        "global_coherence": 0.8165172934532166,
+        "local_coherence": 0.8741985559463501
+      },
+      {
+        "proposition_index": 9,
+        "proposition_text": "STOP(DISORDER, SUPPLY(HEART, BLOOD))",
+        "global_coherence": 0.8509637117385864,
+        "local_coherence": 0.8800753951072693
+      },
+      {
+        "proposition_index": 10,
+        "proposition_text": "TO(SUPPLY(HEART, BLOOD), BODY)",
+        "global_coherence": 0.850569486618042,
+        "local_coherence": 0.8911499381065369
+      },
+      {
+        "proposition_index": 11,
+        "proposition_text": "IS(DISORDER(STOP(HEART_SUPPLY_BLOOD)), THREAT_TO(LIFE))",
+        "global_coherence": 0.8522118330001831,
+        "local_coherence": 0.8794198036193848
+      },
+      {
+        "proposition_index": 12,
+        "proposition_text": "IS(HEART_DISEASE, DISORDER)",
+        "global_coherence": 0.8547358512878418,
+        "local_coherence": 0.8636510372161865
+      },
+      {
+        "proposition_index": 13,
+        "proposition_text": "BE(IT, COMMON)",
+        "global_coherence": 0.8002115488052368,
+        "local_coherence": 0.8151887059211731
+      },
+      {
+        "proposition_index": 14,
+        "proposition_text": "KILL(HEART_DISEASE, MORE_PEOPLE)",
+        "global_coherence": 0.8504131436347961,
+        "local_coherence": 0.8943052291870117
+      },
+      {
+        "proposition_index": 15,
+        "proposition_text": "TIME(KILL(HEART_DISEASE, MORE_PEOPLE), EVERY_YEAR)",
+        "global_coherence": 0.8312423825263977,
+        "local_coherence": 0.8798524737358093
+      },
+      {
+        "proposition_index": 16,
+        "proposition_text": "LOCATION(KILL(HEART_DISEASE, MORE_PEOPLE), U.S.)",
+        "global_coherence": 0.8389256596565247,
+        "local_coherence": 0.8847106695175171
+      },
+      {
+        "proposition_index": 17,
+        "proposition_text": "COMPARE(KILL(HEART_DISEASE, PEOPLE), KILL(OTHER_DISEASE, PEOPLE))",
+        "global_coherence": 0.8521191477775574,
+        "local_coherence": 0.8802224397659302
+      },
+      {
+        "proposition_index": 18,
+        "proposition_text": "EXIST(MANY_KINDS, HEART_DISEASE)",
+        "global_coherence": 0.8573259115219116,
+        "local_coherence": 0.8875641822814941
+      },
+      {
+        "proposition_index": 19,
+        "proposition_text": "SOME_PRESENT_AT_BIRTH(HEART_DISEASE)",
+        "global_coherence": 0.8550840616226196,
+        "local_coherence": 0.891647219657898
+      },
+      {
+        "proposition_index": 20,
+        "proposition_text": "SOME_ACQUIRED_LATER(HEART_DISEASE)",
+        "global_coherence": 0.855742871761322,
+        "local_coherence": 0.8735216856002808
+      },
+      {
+        "proposition_index": 21,
+        "proposition_text": "1(_, _)",
+        "global_coherence": 0.808411180973053,
+        "local_coherence": 0.8191367387771606
+      },
+      {
+        "proposition_index": 22,
+        "proposition_text": "IS(CONGENITAL_HEART_DISEASE, DEFECT)",
+        "global_coherence": 0.8465529084205627,
+        "local_coherence": 0.8702797293663025
+      },
+      {
+        "proposition_index": 23,
+        "proposition_text": "BORN_WITH(BABY, CONGENITAL_HEART_DISEASE)",
+        "global_coherence": 0.8289921879768372,
+        "local_coherence": 0.8817272782325745
+      },
+      {
+        "proposition_index": 24,
+        "proposition_text": "BORN_WITH(MOST_BABIES, PERFECT_HEARTS)",
+        "global_coherence": 0.8038860559463501,
+        "local_coherence": 0.8429338932037354
+      },
+      {
+        "proposition_index": 25,
+        "proposition_text": "PROBABILITY(BORN_WITH(BABY, BAD_HEART), ONE_IN_200)",
+        "global_coherence": 0.8123301267623901,
+        "local_coherence": 0.8434284925460815
+      },
+      {
+        "proposition_index": 26,
+        "proposition_text": "HAVE(HEART, FLAPS)",
+        "global_coherence": 0.8385719656944275,
+        "local_coherence": 0.8467854261398315
+      },
+      {
+        "proposition_index": 27,
+        "proposition_text": "IS_CALLED(FLAPS, VALVES)",
+        "global_coherence": 0.8245588541030884,
+        "local_coherence": 0.8390071392059326
+      },
+      {
+        "proposition_index": 28,
+        "proposition_text": "CONTROL(VALVES, BLOOD_FLOW)",
+        "global_coherence": 0.833549976348877,
+        "local_coherence": 0.841225266456604
+      },
+      {
+        "proposition_index": 29,
+        "proposition_text": "BETWEEN(BLOOD_FLOW, HEART_CHAMBERS)",
+        "global_coherence": 0.8559683561325073,
+        "local_coherence": 0.8343372941017151
+      },
+      {
+        "proposition_index": 30,
+        "proposition_text": "DEVELOP(VALVE, WRONG_SHAPE)",
+        "global_coherence": 0.7931035757064819,
+        "local_coherence": 0.8417446613311768
+      },
+      {
+        "proposition_index": 31,
+        "proposition_text": "TOO_TIGHT(VALVE)",
+        "global_coherence": 0.7978379726409912,
+        "local_coherence": 0.8385255336761475
+      },
+      {
+        "proposition_index": 32,
+        "proposition_text": "FAIL_TO_CLOSE(VALVE)",
+        "global_coherence": 0.7865597605705261,
+        "local_coherence": 0.8233853578567505
+      },
+      {
+        "proposition_index": 33,
+        "proposition_text": "RESULT_IN(FAILURE(VALVE), CONGENITAL_HEART_DISEASE)",
+        "global_coherence": 0.8449824452400208,
+        "local_coherence": 0.8412188291549683
+      },
+      {
+        "proposition_index": 34,
+        "proposition_text": "IS_LEFT(GAP, WALL)",
+        "global_coherence": 0.7975677847862244,
+        "local_coherence": 0.8269091844558716
+      },
+      {
+        "proposition_index": 35,
+        "proposition_text": "BETWEEN(GAP, HEART_SIDES)",
+        "global_coherence": 0.8364879488945007,
+        "local_coherence": 0.8404210805892944
+      },
+      {
+        "proposition_index": 36,
+        "proposition_text": "IS(WALL, SEPTUM)",
+        "global_coherence": 0.8103198409080505,
+        "local_coherence": 0.8368811011314392
+      },
+      {
+        "proposition_index": 37,
+        "proposition_text": "IS(CONGENITAL_HEART_DISEASE, SEPTAL_DEFECT)",
+        "global_coherence": 0.8449822664260864,
+        "local_coherence": 0.8782414197921753
+      },
+      {
+        "proposition_index": 38,
+        "proposition_text": "IS_CALLED(SEPTAL_DEFECT, CONGENITAL_HEART_DISEASE)",
+        "global_coherence": 0.8323632478713989,
+        "local_coherence": 0.8524512648582458
+      },
+      {
+        "proposition_index": 39,
+        "proposition_text": "BADLY_SHAPED(BABY_HEART)",
+        "global_coherence": 0.8327053785324097,
+        "local_coherence": 0.8598731756210327
+      },
+      {
+        "proposition_index": 40,
+        "proposition_text": "CANNOT(WORK_EFFICIENTLY, BABY_HEART)",
+        "global_coherence": 0.8306045532226562,
+        "local_coherence": 0.8558258414268494
+      },
+      {
+        "proposition_index": 41,
+        "proposition_text": "CANNOT(PUMP(BABY_HEART, BLOOD), LUNGS)",
+        "global_coherence": 0.8487889170646667,
+        "local_coherence": 0.8888460993766785
+      },
+      {
+        "proposition_index": 42,
+        "proposition_text": "NOT_RECEIVE(BLOOD, ENOUGH_OXYGEN)",
+        "global_coherence": 0.8331432342529297,
+        "local_coherence": 0.8591095209121704
+      },
+      {
+        "proposition_index": 43,
+        "proposition_text": "CAUSE(BREATHLESSNESS, NOT_ENOUGH_OXYGEN)",
+        "global_coherence": 0.8313915133476257,
+        "local_coherence": 0.8644977807998657
+      },
+      {
+        "proposition_index": 44,
+        "proposition_text": "BECOME(BABY, BREATHLESS)",
+        "global_coherence": 0.8071578741073608,
+        "local_coherence": 0.8503632545471191
+      },
+      {
+        "proposition_index": 45,
+        "proposition_text": "CANNOT(EXPEL(BLOOD, CARBON_DIOXIDE), LUNGS)",
+        "global_coherence": 0.8343775868415833,
+        "local_coherence": 0.863140344619751
+      },
+      {
+        "proposition_index": 46,
+        "proposition_text": "BECOME(BLOOD, PURPLISH)",
+        "global_coherence": 0.8203797936439514,
+        "local_coherence": 0.8434695601463318
+      },
+      {
+        "proposition_index": 47,
+        "proposition_text": "CAUSE(PURPLISH_BLOOD, LOOK_BLUE(BABY_SKIN))",
+        "global_coherence": 0.8384964466094971,
+        "local_coherence": 0.8575143218040466
+      },
+      {
+        "proposition_index": 48,
+        "proposition_text": "POSSIBLE(SAVE(LIFE, BLUE_BABIES), NOW)",
+        "global_coherence": 0.8217059969902039,
+        "local_coherence": 0.8346006274223328
+      },
+      {
+        "proposition_index": 49,
+        "proposition_text": "2(_, _)",
+        "global_coherence": 0.8127978444099426,
+        "local_coherence": 0.8174662590026855
+      },
+      {
+        "proposition_index": 50,
+        "proposition_text": "IS(ACQUIRED_HEART_DISEASE, HEART_DISEASE)",
+        "global_coherence": 0.8577191233634949,
+        "local_coherence": 0.8602156639099121
+      },
+      {
+        "proposition_index": 51,
+        "proposition_text": "ACQUIRED(AFTER(BABY, BIRTH), SOME_HEART_DISEASE)",
+        "global_coherence": 0.8510854244232178,
+        "local_coherence": 0.8705356121063232
+      },
+      {
+        "proposition_index": 52,
+        "proposition_text": "IS(RHEUMATIC_FEVER, EXAMPLE(ACQUIRED_DISEASE))",
+        "global_coherence": 0.8293970823287964,
+        "local_coherence": 0.8686574697494507
+      },
+      {
+        "proposition_index": 53,
+        "proposition_text": "MAY_CAUSE(RHEUMATIC_FEVER, DAMAGE(HEART))",
+        "global_coherence": 0.8449094891548157,
+        "local_coherence": 0.8839696049690247
+      },
+      {
+        "proposition_index": 54,
+        "proposition_text": "FOLLOW(DISEASE, SORE_THROAT)",
+        "global_coherence": 0.8292980790138245,
+        "local_coherence": 0.8670141696929932
+      },
+      {
+        "proposition_index": 55,
+        "proposition_text": "CAUSE(BACTERIA(STREPTOCOCCI), SORE_THROAT)",
+        "global_coherence": 0.8142043948173523,
+        "local_coherence": 0.8841705322265625
+      },
+      {
+        "proposition_index": 56,
+        "proposition_text": "IS_CALLED(SORE_THROAT_CAUSED_BY_STREPTOCOCCI, STREP_THROAT)",
+        "global_coherence": 0.8211241364479065,
+        "local_coherence": 0.8764750957489014
+      },
+      {
+        "proposition_index": 57,
+        "proposition_text": "CAUSE(STREP_THROAT, RHEUMATIC_FEVER)",
+        "global_coherence": 0.8320859670639038,
+        "local_coherence": 0.8835582733154297
+      },
+      {
+        "proposition_index": 58,
+        "proposition_text": "BECOME_INFLAMED(TISSUES(HEART))",
+        "global_coherence": 0.8503774404525757,
+        "local_coherence": 0.86421799659729
+      },
+      {
+        "proposition_index": 59,
+        "proposition_text": "BADLY_AFFECTED(HEART)",
+        "global_coherence": 0.8525795340538025,
+        "local_coherence": 0.8633298873901367
+      },
+      {
+        "proposition_index": 60,
+        "proposition_text": "FAIL(HEART, SOON)",
+        "global_coherence": 0.8339226245880127,
+        "local_coherence": 0.8452953100204468
+      },
+      {
+        "proposition_index": 61,
+        "proposition_text": "RECOVER(HEART)",
+        "global_coherence": 0.8409054279327393,
+        "local_coherence": 0.8458244800567627
+      },
+      {
+        "proposition_index": 62,
+        "proposition_text": "RESULT(DAMAGE, SEEN_LATER)",
+        "global_coherence": 0.8045724034309387,
+        "local_coherence": 0.8156048059463501
+      },
+      {
+        "proposition_index": 63,
+        "proposition_text": "LEAVE_SCARS(RHEUMATIC_FEVER, VALVES(HEART))",
+        "global_coherence": 0.8443732261657715,
+        "local_coherence": 0.8563193082809448
+      },
+      {
+        "proposition_index": 64,
+        "proposition_text": "CANNOT(WORK_PROPERLY, VALVES)",
+        "global_coherence": 0.8089494109153748,
+        "local_coherence": 0.816307008266449
+      },
+      {
+        "proposition_index": 65,
+        "proposition_text": "PUTS_STRAIN(VALVE_FAILURE, HEART)",
+        "global_coherence": 0.8452348709106445,
+        "local_coherence": 0.8638307452201843
+      },
+      {
+        "proposition_index": 66,
+        "proposition_text": "MAY_FAIL(HEART, EVENTUALLY)",
+        "global_coherence": 0.8375877737998962,
+        "local_coherence": 0.8465099334716797
+      },
+      {
+        "proposition_index": 67,
+        "proposition_text": "TAKE_TIME(EFFECTS(RHEUMATIC_FEVER), 20_TO_30_YEARS)",
+        "global_coherence": 0.8216519355773926,
+        "local_coherence": 0.836370587348938
+      },
+      {
+        "proposition_index": 68,
+        "proposition_text": "IS(CORONARY_DISEASE, EXAMPLE(ACQUIRED_HEART_DISEASE))",
+        "global_coherence": 0.8537818193435669,
+        "local_coherence": 0.8616352081298828
+      },
+      {
+        "proposition_index": 69,
+        "proposition_text": "AFFECT(DISEASE, CORONARY_ARTERIES)",
+        "global_coherence": 0.8545181751251221,
+        "local_coherence": 0.8752939701080322
+      },
+      {
+        "proposition_index": 70,
+        "proposition_text": "IS(CORONARY_ARTERIES, BLOOD_VESSELS)",
+        "global_coherence": 0.8443210124969482,
+        "local_coherence": 0.8806220889091492
+      },
+      {
+        "proposition_index": 71,
+        "proposition_text": "EXTEND_ACROSS(BLOOD_VESSELS, HEART)",
+        "global_coherence": 0.8524079918861389,
+        "local_coherence": 0.8830820322036743
+      },
+      {
+        "proposition_index": 72,
+        "proposition_text": "SUPPLY(BLOOD_VESSELS, HEART)",
+        "global_coherence": 0.8521496653556824,
+        "local_coherence": 0.907723069190979
+      },
+      {
+        "proposition_index": 73,
+        "proposition_text": "SOURCE(BLOOD, LUNGS)",
+        "global_coherence": 0.8364526033401489,
+        "local_coherence": 0.8731770515441895
+      },
+      {
+        "proposition_index": 74,
+        "proposition_text": "IMPORTANT(CORONARY_ARTERIES)",
+        "global_coherence": 0.8500391840934753,
+        "local_coherence": 0.8939849138259888
+      },
+      {
+        "proposition_index": 75,
+        "proposition_text": "GIVE(CORONARY_ARTERIES, HEART_MUSCLE, OXYGEN)",
+        "global_coherence": 0.8615673184394836,
+        "local_coherence": 0.913257896900177
+      },
+      {
+        "proposition_index": 76,
+        "proposition_text": "NEED(HEART_MUSCLE, OXYGEN)",
+        "global_coherence": 0.8556591868400574,
+        "local_coherence": 0.9025357365608215
+      },
+      {
+        "proposition_index": 77,
+        "proposition_text": "CARRY_ON(HEART_MUSCLE, WORKING)",
+        "global_coherence": 0.8374654054641724,
+        "local_coherence": 0.8682616949081421
+      },
+      {
+        "proposition_index": 78,
+        "proposition_text": "BECOME(BLOCKED, CORONARY_ARTERIES)",
+        "global_coherence": 0.8561237454414368,
+        "local_coherence": 0.8865801095962524
+      },
+      {
+        "proposition_index": 79,
+        "proposition_text": "CAUSE(BLOCKAGE, DIE(PARTS(HEART_MUSCLE)))",
+        "global_coherence": 0.8587044477462769,
+        "local_coherence": 0.9116003513336182
+      },
+      {
+        "proposition_index": 80,
+        "proposition_text": "CAUSE(DIE(HEART_MUSCLE), LACK(OXYGEN))",
+        "global_coherence": 0.855402946472168,
+        "local_coherence": 0.8975367546081543
+      },
+      {
+        "proposition_index": 81,
+        "proposition_text": "CAUSE(BLOCKAGE, HEART_ATTACK(PATIENT))",
+        "global_coherence": 0.8536285758018494,
+        "local_coherence": 0.8941681981086731
+      },
+      {
+        "proposition_index": 82,
+        "proposition_text": "IS_FATAL(HEART_ATTACK)",
+        "global_coherence": 0.8416317701339722,
+        "local_coherence": 0.8716682195663452
+      },
+      {
+        "proposition_index": 83,
+        "proposition_text": "CAUSE(BLOCKAGE(CORONARY_ARTERY), BLOOD_CLOT)",
+        "global_coherence": 0.8504433035850525,
+        "local_coherence": 0.9097167253494263
+      },
+      {
+        "proposition_index": 84,
+        "proposition_text": "IS_CALLED(BLOOD_CLOT, THROMBUS)",
+        "global_coherence": 0.8304636478424072,
+        "local_coherence": 0.8802511692047119
+      },
+      {
+        "proposition_index": 85,
+        "proposition_text": "FORM(CLOT, CORONARY_ARTERY)",
+        "global_coherence": 0.8438584804534912,
+        "local_coherence": 0.8941267728805542
+      },
+      {
+        "proposition_index": 86,
+        "proposition_text": "IS_CALLED(CLOT_FORMATION, CORONARY_THROMBOSIS)",
+        "global_coherence": 0.835299015045166,
+        "local_coherence": 0.9003962874412537
+      },
+      {
+        "proposition_index": 87,
+        "proposition_text": "IS(CORONARY_THROMBOSIS, HEART_ATTACK)",
+        "global_coherence": 0.8516742587089539,
+        "local_coherence": 0.8964868187904358
+      },
+      {
+        "proposition_index": 88,
+        "proposition_text": "NOT_FORM(BLOOD, CLOTS)",
+        "global_coherence": 0.8444654941558838,
+        "local_coherence": 0.8848668336868286
+      },
+      {
+        "proposition_index": 89,
+        "proposition_text": "IN(BLOOD, NORMAL_ARTERIES)",
+        "global_coherence": 0.8493641018867493,
+        "local_coherence": 0.8870322704315186
+      },
+      {
+        "proposition_index": 90,
+        "proposition_text": "IS_NOT_NORMAL(WALLS, ARTERIES)",
+        "global_coherence": 0.8421792387962341,
+        "local_coherence": 0.8924700617790222
+      },
+      {
+        "proposition_index": 91,
+        "proposition_text": "IN(CORONARY_DISEASE, WALLS_NOT_NORMAL)",
+        "global_coherence": 0.8521628975868225,
+        "local_coherence": 0.889003336429596
+      },
+      {
+        "proposition_index": 92,
+        "proposition_text": "BECOME(ARTERY_WALLS, LUMPY)",
+        "global_coherence": 0.8463989496231079,
+        "local_coherence": 0.9027228355407715
+      },
+      {
+        "proposition_index": 93,
+        "proposition_text": "BECOME(ARTERY_WALLS, ROUGH)",
+        "global_coherence": 0.8383013010025024,
+        "local_coherence": 0.8903701305389404
+      },
+      {
+        "proposition_index": 94,
+        "proposition_text": "BECOME(ARTERY_WALLS, NARROW)",
+        "global_coherence": 0.8334536552429199,
+        "local_coherence": 0.8785877227783203
+      },
+      {
+        "proposition_index": 95,
+        "proposition_text": "BREAK_OFF(LUMPS)",
+        "global_coherence": 0.8211557865142822,
+        "local_coherence": 0.8393121957778931
+      },
+      {
+        "proposition_index": 96,
+        "proposition_text": "FORM(LUMPS, CLOTS)",
+        "global_coherence": 0.8396597504615784,
+        "local_coherence": 0.8570674061775208
+      },
+      {
+        "proposition_index": 97,
+        "proposition_text": "STOP(CLOTS, FLOW(BLOOD, HEART))",
+        "global_coherence": 0.8555014729499817,
+        "local_coherence": 0.8584014177322388
+      },
+      {
+        "proposition_index": 98,
+        "proposition_text": "IS_EXAMPLE(ARRHYTHMIA, ACQUIRED_HEART_DISEASE)",
+        "global_coherence": 0.8439368009567261,
+        "local_coherence": 0.8720992803573608
+      },
+      {
+        "proposition_index": 99,
+        "proposition_text": "IS_EXAMPLE(ANGINA, ACQUIRED_HEART_DISEASE)",
+        "global_coherence": 0.845302164554596,
+        "local_coherence": 0.8741025924682617
+      },
+      {
+        "proposition_index": 100,
+        "proposition_text": "IS_EXAMPLE(HIGH_BLOOD_PRESSURE, ACQUIRED_HEART_DISEASE)",
+        "global_coherence": 0.8466412425041199,
+        "local_coherence": 0.8713944554328918
+      },
+      {
+        "proposition_index": 101,
+        "proposition_text": "MEAN(ARRHYTHMIA, LACK_OF_RHYTHM)",
+        "global_coherence": 0.8311600089073181,
+        "local_coherence": 0.8572251796722412
+      },
+      {
+        "proposition_index": 102,
+        "proposition_text": "IS(ARRHYTHMIA, INTERRUPTION(HEART_BEAT))",
+        "global_coherence": 0.835601806640625,
+        "local_coherence": 0.8644444346427917
+      },
+      {
+        "proposition_index": 103,
+        "proposition_text": "IS(ANGINA, SHARP_PAIN(CHEST))",
+        "global_coherence": 0.833033561706543,
+        "local_coherence": 0.8699318766593933
+      },
+      {
+        "proposition_index": 104,
+        "proposition_text": "SIMILAR_TO(ANGINA, PAIN(FROM(HEART_ATTACK_OR_THROMBOSIS)))",
+        "global_coherence": 0.8501768708229065,
+        "local_coherence": 0.8760481476783752
+      },
+      {
+        "proposition_index": 105,
+        "proposition_text": "IS(HIGH_BLOOD_PRESSURE, HEART_DISEASE)",
+        "global_coherence": 0.8504418134689331,
+        "local_coherence": 0.8876112699508667
+      },
+      {
+        "proposition_index": 106,
+        "proposition_text": "IS_COMMON(HIGH_BLOOD_PRESSURE)",
+        "global_coherence": 0.8295295238494873,
+        "local_coherence": 0.877326488494873
+      },
+      {
+        "proposition_index": 107,
+        "proposition_text": "PLACE_STRONG_STRAIN(HIGH_BLOOD_PRESSURE, HEART)",
+        "global_coherence": 0.8500365018844604,
+        "local_coherence": 0.9044396281242371
+      },
+      {
+        "proposition_index": 108,
+        "proposition_text": "PLACE_STRONG_STRAIN(HIGH_BLOOD_PRESSURE, ORGANS)",
+        "global_coherence": 0.8450716137886047,
+        "local_coherence": 0.9055913686752319
+      },
+      {
+        "proposition_index": 109,
+        "proposition_text": "NOT_TREATED(HIGH_BLOOD_PRESSURE)",
+        "global_coherence": 0.8399114012718201,
+        "local_coherence": 0.899320125579834
+      },
+      {
+        "proposition_index": 110,
+        "proposition_text": "CAUSE(HIGH_BLOOD_PRESSURE, HEART_ATTACKS)",
+        "global_coherence": 0.8520994782447815,
+        "local_coherence": 0.919695258140564
+      },
+      {
+        "proposition_index": 111,
+        "proposition_text": "CAUSE(HIGH_BLOOD_PRESSURE, KIDNEY_FAILURE)",
+        "global_coherence": 0.8350980877876282,
+        "local_coherence": 0.9042767286300659
+      },
+      {
+        "proposition_index": 112,
+        "proposition_text": "CAUSE(HIGH_BLOOD_PRESSURE, SERIOUS_PROBLEMS)",
+        "global_coherence": 0.8315839767456055,
+        "local_coherence": 0.9051089882850647
+      },
+      {
+        "proposition_index": 113,
+        "proposition_text": "IS(HIGH_BLOOD_PRESSURE, DISEASE)",
+        "global_coherence": 0.8401809334754944,
+        "local_coherence": 0.8938578367233276
+      },
+      {
+        "proposition_index": 114,
+        "proposition_text": "HAS_NO_SYMPTOMS(HIGH_BLOOD_PRESSURE)",
+        "global_coherence": 0.8279498815536499,
+        "local_coherence": 0.8698400855064392
+      },
+      {
+        "proposition_index": 115,
+        "proposition_text": "MAY_NOT_BE_AWARE(PERSON, HIGH_BLOOD_PRESSURE)",
+        "global_coherence": 0.8208956718444824,
+        "local_coherence": 0.8588651418685913
+      },
+      {
+        "proposition_index": 116,
+        "proposition_text": "UNLESS(MEASURED(BLOOD_PRESSURE))",
+        "global_coherence": 0.8433836102485657,
+        "local_coherence": 0.8594192266464233
+      },
+      {
+        "proposition_index": 117,
+        "proposition_text": "3(_, _)",
+        "global_coherence": 0.8115664720535278,
+        "local_coherence": 0.8025137186050415
+      },
+      {
+        "proposition_index": 118,
+        "proposition_text": "MAKE_PROGRESS(MEDICAL_SCIENCE, TREATMENT(HEART_DISEASE))",
+        "global_coherence": 0.8574415445327759,
+        "local_coherence": 0.8614963293075562
+      },
+      {
+        "proposition_index": 119,
+        "proposition_text": "MAKE_PROGRESS(MEDICAL_SCIENCE, PREVENTION(HEART_DISEASE))",
+        "global_coherence": 0.8518670201301575,
+        "local_coherence": 0.8628508448600769
+      },
+      {
+        "proposition_index": 120,
+        "proposition_text": "TIME(MAKE_PROGRESS, SINCE(1960s))",
+        "global_coherence": 0.7897837162017822,
+        "local_coherence": 0.8163497447967529
+      },
+      {
+        "proposition_index": 121,
+        "proposition_text": "DEVELOPED(NEW_DRUGS)",
+        "global_coherence": 0.8142216801643372,
+        "local_coherence": 0.8544430732727051
+      },
+      {
+        "proposition_index": 122,
+        "proposition_text": "DEVELOPED(NEW_SURGICAL_METHODS)",
+        "global_coherence": 0.826708972454071,
+        "local_coherence": 0.8448816537857056
+      },
+      {
+        "proposition_index": 123,
+        "proposition_text": "INCLUDE(NEW_DRUGS, BETA_BLOCKERS)",
+        "global_coherence": 0.8379011750221252,
+        "local_coherence": 0.8802318572998047
+      },
+      {
+        "proposition_index": 124,
+        "proposition_text": "TREAT(BETA_BLOCKERS, HEART_DISEASE)",
+        "global_coherence": 0.8453876376152039,
+        "local_coherence": 0.8694295883178711
+      },
+      {
+        "proposition_index": 125,
+        "proposition_text": "IS_CALLED(CHEMICALS, BETA_BLOCKERS)",
+        "global_coherence": 0.824645459651947,
+        "local_coherence": 0.87018883228302
+      },
+      {
+        "proposition_index": 126,
+        "proposition_text": "LESSEN(BETA_BLOCKERS, AFTER_EFFECTS(HEART_ATTACKS))",
+        "global_coherence": 0.84002685546875,
+        "local_coherence": 0.8827409148216248
+      },
+      {
+        "proposition_index": 127,
+        "proposition_text": "PREVENT(BETA_BLOCKERS, SECOND_ATTACKS)",
+        "global_coherence": 0.8122485280036926,
+        "local_coherence": 0.8638182878494263
+      },
+      {
+        "proposition_index": 128,
+        "proposition_text": "LOWER(BETA_BLOCKERS, BLOOD_PRESSURE(PEOPLE_WITH_HIGH_BP))",
+        "global_coherence": 0.8216027021408081,
+        "local_coherence": 0.8511391878128052
+      },
+      {
+        "proposition_index": 129,
+        "proposition_text": "DISSOLVE(DRUGS, LUMPS)",
+        "global_coherence": 0.8165154457092285,
+        "local_coherence": 0.8380193710327148
+      },
+      {
+        "proposition_index": 130,
+        "proposition_text": "BREAK_OFF(LUMPS, ARTERY_WALLS)",
+        "global_coherence": 0.8510558605194092,
+        "local_coherence": 0.8552839159965515
+      },
+      {
+        "proposition_index": 131,
+        "proposition_text": "PREVENT(LUMPS, STOP(FLOW(BLOOD, HEART)))",
+        "global_coherence": 0.8484698534011841,
+        "local_coherence": 0.8526762127876282
+      },
+      {
+        "proposition_index": 132,
+        "proposition_text": "RANGE(SURGICAL_TECHNIQUES, REPAIR(DAMAGED_PARTS))",
+        "global_coherence": 0.8088836669921875,
+        "local_coherence": 0.8501138091087341
+      },
+      {
+        "proposition_index": 133,
+        "proposition_text": "RANGE(SURGICAL_TECHNIQUES, REPLACE(DAMAGED_PARTS))",
+        "global_coherence": 0.8117789030075073,
+        "local_coherence": 0.8642047643661499
+      },
+      {
+        "proposition_index": 134,
+        "proposition_text": "INCLUDE(DAMAGED_PARTS, VALVES)",
+        "global_coherence": 0.8172820806503296,
+        "local_coherence": 0.8643878698348999
+      },
+      {
+        "proposition_index": 135,
+        "proposition_text": "INCLUDE(DAMAGED_PARTS, ARTERIES)",
+        "global_coherence": 0.8551540970802307,
+        "local_coherence": 0.887684166431427
+      },
+      {
+        "proposition_index": 136,
+        "proposition_text": "INCLUDE(SURGICAL_TECHNIQUES, REPLACEMENT(ENTIRE_HEART))",
+        "global_coherence": 0.8407275676727295,
+        "local_coherence": 0.884720504283905
+      },
+      {
+        "proposition_index": 137,
+        "proposition_text": "IF(DAMAGED(HEART), CANNOT(FUNCTION, HEART))",
+        "global_coherence": 0.8566706776618958,
+        "local_coherence": 0.8776028156280518
+      },
+      {
+        "proposition_index": 138,
+        "proposition_text": "REPLACE(HEART, MECHANICAL_HEART)",
+        "global_coherence": 0.8430368900299072,
+        "local_coherence": 0.893354594707489
+      },
+      {
+        "proposition_index": 139,
+        "proposition_text": "REPLACE(HEART, HEART_TRANSPLANT)",
+        "global_coherence": 0.8458923101425171,
+        "local_coherence": 0.906972348690033
+      },
+      {
+        "proposition_index": 140,
+        "proposition_text": "OFTEN(USE, HEART_TRANSPLANT)",
+        "global_coherence": 0.845541775226593,
+        "local_coherence": 0.8781872391700745
+      },
+      {
+        "proposition_index": 141,
+        "proposition_text": "REPLACE(HEALTHY_HEART(DONOR), DISEASED_HEART(PATIENT))",
+        "global_coherence": 0.8548065423965454,
+        "local_coherence": 0.8919278383255005
+      },
+      {
+        "proposition_index": 142,
+        "proposition_text": "INCLUDE(PROCESS, TRANSPLANT_SURGERY)",
+        "global_coherence": 0.8240519165992737,
+        "local_coherence": 0.8460568785667419
+      },
+      {
+        "proposition_index": 143,
+        "proposition_text": "IMPLANT(MECHANICAL_DEVICES, HUMAN_BODY)",
+        "global_coherence": 0.8191309571266174,
+        "local_coherence": 0.8456440567970276
+      },
+      {
+        "proposition_index": 144,
+        "proposition_text": "KEEP_FUNCTIONING(MECHANICAL_DEVICES, HEARTS)",
+        "global_coherence": 0.8294730186462402,
+        "local_coherence": 0.8675670623779297
+      },
+      {
+        "proposition_index": 145,
+        "proposition_text": "IS(PACEMAKER, MOST_COMMON(DEVICE))",
+        "global_coherence": 0.8080841302871704,
+        "local_coherence": 0.8444221615791321
+      },
+      {
+        "proposition_index": 146,
+        "proposition_text": "NOT(HEAL(PACEMAKER, DISEASED_HEART))",
+        "global_coherence": 0.8550534248352051,
+        "local_coherence": 0.8733920454978943
+      },
+      {
+        "proposition_index": 147,
+        "proposition_text": "RELIEVE(PACEMAKER, SYMPTOMS(IRREGULAR_HEARTBEAT))",
+        "global_coherence": 0.8224297761917114,
+        "local_coherence": 0.8634694814682007
+      },
+      {
+        "proposition_index": 148,
+        "proposition_text": "MAINTAIN(PACEMAKER, STEADY_BEAT)",
+        "global_coherence": 0.816422164440155,
+        "local_coherence": 0.8680238723754883
+      },
+      {
+        "proposition_index": 149,
+        "proposition_text": "NEEDED(STEADY_BEAT, NORMAL_LIVING)",
+        "global_coherence": 0.8323855400085449,
+        "local_coherence": 0.8411149382591248
+      },
+      {
+        "proposition_index": 150,
+        "proposition_text": "CANNOT(PUMP(HEART, BLOOD), LUNGS)",
+        "global_coherence": 0.8501620292663574,
+        "local_coherence": 0.8564774990081787
+      },
+      {
+        "proposition_index": 151,
+        "proposition_text": "CAUSE(POORLY_FUNCTIONING(VALVES), INSUFFICIENT_PUMP)",
+        "global_coherence": 0.8252503871917725,
+        "local_coherence": 0.8387699127197266
+      },
+      {
+        "proposition_index": 152,
+        "proposition_text": "REPLACE(VALVES, ARTIFICIAL_ONES(PLASTIC_METAL))",
+        "global_coherence": 0.8018594980239868,
+        "local_coherence": 0.817213773727417
+      },
+      {
+        "proposition_index": 153,
+        "proposition_text": "USE(BYPASS_SURGERY, REPAIR(ARTERIES))",
+        "global_coherence": 0.8498252034187317,
+        "local_coherence": 0.8681194186210632
+      },
+      {
+        "proposition_index": 154,
+        "proposition_text": "CONDITION(PATIENTS, CORONARY_DISEASE)",
+        "global_coherence": 0.8446993827819824,
+        "local_coherence": 0.8325067758560181
+      },
+      {
+        "proposition_index": 155,
+        "proposition_text": "OFTEN(USE, BYPASS_SURGERY)",
+        "global_coherence": 0.8353947997093201,
+        "local_coherence": 0.8458853960037231
+      },
+      {
+        "proposition_index": 156,
+        "proposition_text": "USE(DOCTORS, VEINS(PATIENT))",
+        "global_coherence": 0.8298017382621765,
+        "local_coherence": 0.8599152565002441
+      },
+      {
+        "proposition_index": 157,
+        "proposition_text": "FROM(VEINS, LEG)",
+        "global_coherence": 0.8262649178504944,
+        "local_coherence": 0.8372668027877808
+      },
+      {
+        "proposition_index": 158,
+        "proposition_text": "REPLACE(VEINS, DAMAGED_PARTS(ARTERIES))",
+        "global_coherence": 0.8418046832084656,
+        "local_coherence": 0.8435726165771484
+      },
+      {
+        "proposition_index": 159,
+        "proposition_text": "GETTING_BETTER(PREVENTIVE_CARE)",
+        "global_coherence": 0.8191977739334106,
+        "local_coherence": 0.840265154838562
+      },
+      {
+        "proposition_index": 160,
+        "proposition_text": "LEARN(SCIENTISTS, CAUSES(HEART_DISEASE))",
+        "global_coherence": 0.8465936779975891,
+        "local_coherence": 0.857138991355896
+      },
+      {
+        "proposition_index": 161,
+        "proposition_text": "GETTING_BETTER(PREVENTIVE_CARE)",
+        "global_coherence": 0.8191977739334106,
+        "local_coherence": 0.8435866832733154
+      },
+      {
+        "proposition_index": 162,
+        "proposition_text": "LEARN(SCIENTISTS, CAUSES(HEART_DISEASE))",
+        "global_coherence": 0.8465936779975891,
+        "local_coherence": 0.8666524887084961
+      },
+      {
+        "proposition_index": 163,
+        "proposition_text": "SHOW(SCIENTISTS, IMPORTANCE(DIET))",
+        "global_coherence": 0.7935840487480164,
+        "local_coherence": 0.8329623341560364
+      },
+      {
+        "proposition_index": 164,
+        "proposition_text": "CONTROL(DIET, HEART_DISEASE)",
+        "global_coherence": 0.8487991690635681,
+        "local_coherence": 0.8730769753456116
+      },
+      {
+        "proposition_index": 165,
+        "proposition_text": "STRESS(DOCTORS, IMPORTANCE(LOW_CHOLESTEROL_DIET))",
+        "global_coherence": 0.8137781620025635,
+        "local_coherence": 0.8599383234977722
+      },
+      {
+        "proposition_index": 166,
+        "proposition_text": "INCREASE(SALT, BLOOD_PRESSURE)",
+        "global_coherence": 0.8248454928398132,
+        "local_coherence": 0.8496115803718567
+      },
+      {
+        "proposition_index": 167,
+        "proposition_text": "RECOMMEND(DOCTORS, LOW_SALT_DIET(PATIENTS_WITH_HIGH_BP))",
+        "global_coherence": 0.8255792856216431,
+        "local_coherence": 0.8758313655853271
+      }
+    ]
+  },
+  {
+    "text_title": "Heart Disease",
+    "coherence": "Minimally Coherent",
+    "original_propositions": [
+      {
+        "proposition_index": 1,
+        "proposition_text": "IS(HEART, ORGAN)",
+        "global_coherence": 0.8415164351463318,
+        "local_coherence": 0.8706329464912415
+      },
+      {
+        "proposition_index": 2,
+        "proposition_text": "HARDWORKING(HEART, ORGAN)",
+        "global_coherence": 0.8321982622146606,
+        "local_coherence": 0.8735151290893555
+      },
+      {
+        "proposition_index": 3,
+        "proposition_text": "SUPERLATIVE(HARDWORKING, HEART)",
+        "global_coherence": 0.7894443869590759,
+        "local_coherence": 0.8206470608711243
+      },
+      {
+        "proposition_index": 4,
+        "proposition_text": "IN(HEART, BODY)",
+        "global_coherence": 0.8462439179420471,
+        "local_coherence": 0.8617085218429565
+      },
+      {
+        "proposition_index": 5,
+        "proposition_text": "RELY(WE, BLOOD_SUPPLY)",
+        "global_coherence": 0.8407747149467468,
+        "local_coherence": 0.8681809902191162
+      },
+      {
+        "proposition_index": 6,
+        "proposition_text": "MOD(BLOOD_SUPPLY, REGULAR)",
+        "global_coherence": 0.8288933038711548,
+        "local_coherence": 0.8434429168701172
+      },
+      {
+        "proposition_index": 7,
+        "proposition_text": "TIME(RELY(WE, BLOOD_SUPPLY), EVERY_MOMENT(EVERY_DAY))",
+        "global_coherence": 0.8299617767333984,
+        "local_coherence": 0.8554799556732178
+      },
+      {
+        "proposition_index": 8,
+        "proposition_text": "STOP(DISORDER, BLOOD_SUPPLY)",
+        "global_coherence": 0.841468095779419,
+        "local_coherence": 0.8678436279296875
+      },
+      {
+        "proposition_index": 9,
+        "proposition_text": "IS(DISORDER(STOP(BLOOD_SUPPLY)), THREAT_TO(LIFE))",
+        "global_coherence": 0.84030681848526,
+        "local_coherence": 0.8743528127670288
+      },
+      {
+        "proposition_index": 10,
+        "proposition_text": "IS_COMMON(HEART_DISEASE)",
+        "global_coherence": 0.8386549949645996,
+        "local_coherence": 0.8604140281677246
+      },
+      {
+        "proposition_index": 11,
+        "proposition_text": "IS(HEART_DISEASE, DISEASE)",
+        "global_coherence": 0.8539701104164124,
+        "local_coherence": 0.881712794303894
+      },
+      {
+        "proposition_index": 12,
+        "proposition_text": "KILL(HEART_DISEASE, MORE_PEOPLE)",
+        "global_coherence": 0.848552942276001,
+        "local_coherence": 0.8909856081008911
+      },
+      {
+        "proposition_index": 13,
+        "proposition_text": "TIME(KILL(HEART_DISEASE, PEOPLE), EVERY_YEAR)",
+        "global_coherence": 0.836785078048706,
+        "local_coherence": 0.8737077713012695
+      },
+      {
+        "proposition_index": 14,
+        "proposition_text": "LOCATION(KILL(HEART_DISEASE, PEOPLE), U.S.)",
+        "global_coherence": 0.840327262878418,
+        "local_coherence": 0.8743661046028137
+      },
+      {
+        "proposition_index": 15,
+        "proposition_text": "COMPARE(KILL(HEART_DISEASE, PEOPLE), KILL(OTHER_DISEASES, PEOPLE))",
+        "global_coherence": 0.848016619682312,
+        "local_coherence": 0.8734631538391113
+      },
+      {
+        "proposition_index": 16,
+        "proposition_text": "IS(CONGENITAL_DISEASE, DISEASE)",
+        "global_coherence": 0.8258671164512634,
+        "local_coherence": 0.8339599967002869
+      },
+      {
+        "proposition_index": 17,
+        "proposition_text": "BORN_WITH(PERSON, CONGENITAL_DISEASE)",
+        "global_coherence": 0.8057566285133362,
+        "local_coherence": 0.8253087401390076
+      },
+      {
+        "proposition_index": 18,
+        "proposition_text": "BORN_WITH(MOST_BABIES, PERFECT_HEARTS)",
+        "global_coherence": 0.8011730909347534,
+        "local_coherence": 0.799039900302887
+      },
+      {
+        "proposition_index": 19,
+        "proposition_text": "PROBABILITY(GOES_WRONG(SOMETHING), ONE_IN_200)",
+        "global_coherence": 0.8073262572288513,
+        "local_coherence": 0.8100168704986572
+      },
+      {
+        "proposition_index": 20,
+        "proposition_text": "DEVELOP(VALVE, WRONG_SHAPE)",
+        "global_coherence": 0.7906482219696045,
+        "local_coherence": 0.8171190619468689
+      },
+      {
+        "proposition_index": 21,
+        "proposition_text": "TOO_TIGHT(VALVE)",
+        "global_coherence": 0.7984057664871216,
+        "local_coherence": 0.8149919509887695
+      },
+      {
+        "proposition_index": 22,
+        "proposition_text": "FAIL_TO_CLOSE(VALVE)",
+        "global_coherence": 0.7873700857162476,
+        "local_coherence": 0.8089219331741333
+      },
+      {
+        "proposition_index": 23,
+        "proposition_text": "IS_LEFT(GAP, SEPTAL_WALL)",
+        "global_coherence": 0.8094267249107361,
+        "local_coherence": 0.8366146087646484
+      },
+      {
+        "proposition_index": 24,
+        "proposition_text": "BETWEEN(SEPTAL_WALL, HEART_SIDES)",
+        "global_coherence": 0.8356094360351562,
+        "local_coherence": 0.843093991279602
+      },
+      {
+        "proposition_index": 25,
+        "proposition_text": "IS_CALLED(GAP, SEPTAL_DEFECT)",
+        "global_coherence": 0.816831111907959,
+        "local_coherence": 0.8331153392791748
+      },
+      {
+        "proposition_index": 26,
+        "proposition_text": "BADLY_FORMED(BABY_HEART)",
+        "global_coherence": 0.8253515958786011,
+        "local_coherence": 0.8304538130760193
+      },
+      {
+        "proposition_index": 27,
+        "proposition_text": "CANNOT(WORK_EFFICIENTLY, BABY_HEART)",
+        "global_coherence": 0.829215943813324,
+        "local_coherence": 0.840774655342102
+      },
+      {
+        "proposition_index": 28,
+        "proposition_text": "NOT_RECEIVE(BLOOD, ENOUGH_OXYGEN)",
+        "global_coherence": 0.8329997062683105,
+        "local_coherence": 0.843192458152771
+      },
+      {
+        "proposition_index": 29,
+        "proposition_text": "BECOME(BABY, BREATHLESS)",
+        "global_coherence": 0.8061152100563049,
+        "local_coherence": 0.8426784873008728
+      },
+      {
+        "proposition_index": 30,
+        "proposition_text": "CANNOT(EXPEL(BLOOD, CARBON_DIOXIDE))",
+        "global_coherence": 0.8281896710395813,
+        "local_coherence": 0.8407816886901855
+      },
+      {
+        "proposition_index": 31,
+        "proposition_text": "THROUGH(EXPEL, LUNGS)",
+        "global_coherence": 0.8241294026374817,
+        "local_coherence": 0.8352645635604858
+      },
+      {
+        "proposition_index": 32,
+        "proposition_text": "BECOME(BLOOD, PURPLISH)",
+        "global_coherence": 0.8221682906150818,
+        "local_coherence": 0.8400673270225525
+      },
+      {
+        "proposition_index": 33,
+        "proposition_text": "LOOK(SKIN(BABY), BLUE)",
+        "global_coherence": 0.7986581921577454,
+        "local_coherence": 0.8148992657661438
+      },
+      {
+        "proposition_index": 34,
+        "proposition_text": "POSSIBLE(NOW, SAVE(LIVES, BLUE_BABIES))",
+        "global_coherence": 0.8199161887168884,
+        "local_coherence": 0.8244543075561523
+      },
+      {
+        "proposition_index": 35,
+        "proposition_text": "MAY_CAUSE(RHEUMATIC_FEVER, HARM(HEART))",
+        "global_coherence": 0.8413494825363159,
+        "local_coherence": 0.8481104373931885
+      },
+      {
+        "proposition_index": 36,
+        "proposition_text": "IS(DISEASE, RHEUMATIC_FEVER)",
+        "global_coherence": 0.8349241018295288,
+        "local_coherence": 0.8607006072998047
+      },
+      {
+        "proposition_index": 37,
+        "proposition_text": "FOLLOW(RHEUMATIC_FEVER, SORE_THROAT)",
+        "global_coherence": 0.8377810716629028,
+        "local_coherence": 0.8676247596740723
+      },
+      {
+        "proposition_index": 38,
+        "proposition_text": "CAUSE(STREPTOCOCCI, SORE_THROAT)",
+        "global_coherence": 0.8161141872406006,
+        "local_coherence": 0.8578660488128662
+      },
+      {
+        "proposition_index": 39,
+        "proposition_text": "IS_CALLED(BACTERIA, STREPTOCOCCI)",
+        "global_coherence": 0.8133869171142578,
+        "local_coherence": 0.8344727754592896
+      },
+      {
+        "proposition_index": 40,
+        "proposition_text": "BECOME_INFLAMED(TISSUES(HEART))",
+        "global_coherence": 0.8475742936134338,
+        "local_coherence": 0.8573410511016846
+      },
+      {
+        "proposition_index": 41,
+        "proposition_text": "BADLY_AFFECTED(HEART)",
+        "global_coherence": 0.8496348261833191,
+        "local_coherence": 0.8607549667358398
+      },
+      {
+        "proposition_index": 42,
+        "proposition_text": "FAIL(HEART)",
+        "global_coherence": 0.821975588798523,
+        "local_coherence": 0.8270882368087769
+      },
+      {
+        "proposition_index": 43,
+        "proposition_text": "RECOVER(HEART)",
+        "global_coherence": 0.8364701867103577,
+        "local_coherence": 0.8413061499595642
+      },
+      {
+        "proposition_index": 44,
+        "proposition_text": "SEEN_LATER(RESULTS(DAMAGE), YEARS)",
+        "global_coherence": 0.7912493944168091,
+        "local_coherence": 0.7963494062423706
+      },
+      {
+        "proposition_index": 45,
+        "proposition_text": "LEFT_WITH(VALVES(HEART), SCARS)",
+        "global_coherence": 0.8417090773582458,
+        "local_coherence": 0.8489780426025391
+      },
+      {
+        "proposition_index": 46,
+        "proposition_text": "CANNOT(WORK_PROPERLY, VALVES)",
+        "global_coherence": 0.8084741830825806,
+        "local_coherence": 0.8096016645431519
+      },
+      {
+        "proposition_index": 47,
+        "proposition_text": "PUTS(STRAIN, HEART)",
+        "global_coherence": 0.8410661816596985,
+        "local_coherence": 0.8455671072006226
+      },
+      {
+        "proposition_index": 48,
+        "proposition_text": "MAY_FAIL(HEART, EVENTUALLY)",
+        "global_coherence": 0.8380257487297058,
+        "local_coherence": 0.8414754867553711
+      },
+      {
+        "proposition_index": 49,
+        "proposition_text": "MAY_TAKE(EFFECTS(RHEUMATIC_FEVER), YEARS(20_TO_30))",
+        "global_coherence": 0.8244011402130127,
+        "local_coherence": 0.8376941680908203
+      },
+      {
+        "proposition_index": 50,
+        "proposition_text": "TO_APPEAR(EFFECTS(RHEUMATIC_FEVER))",
+        "global_coherence": 0.8245359063148499,
+        "local_coherence": 0.8376262187957764
+      },
+      {
+        "proposition_index": 51,
+        "proposition_text": "EXTEND_ACROSS(BLOOD_VESSELS, HEART)",
+        "global_coherence": 0.8505862951278687,
+        "local_coherence": 0.8755298852920532
+      },
+      {
+        "proposition_index": 52,
+        "proposition_text": "SUPPLY(BLOOD_VESSELS, HEART, BLOOD)",
+        "global_coherence": 0.8501204252243042,
+        "local_coherence": 0.8798637390136719
+      },
+      {
+        "proposition_index": 53,
+        "proposition_text": "IS_CALLED(BLOOD_VESSELS, CORONARY_ARTERIES)",
+        "global_coherence": 0.8393715620040894,
+        "local_coherence": 0.8670364618301392
+      },
+      {
+        "proposition_index": 54,
+        "proposition_text": "IMPORTANT(CORONARY_ARTERIES)",
+        "global_coherence": 0.8481240272521973,
+        "local_coherence": 0.8875608444213867
+      },
+      {
+        "proposition_index": 55,
+        "proposition_text": "GIVE(CORONARY_ARTERIES, HEART, OXYGEN)",
+        "global_coherence": 0.8592084050178528,
+        "local_coherence": 0.9100534915924072
+      },
+      {
+        "proposition_index": 56,
+        "proposition_text": "NEED(HEART, OXYGEN)",
+        "global_coherence": 0.8498489260673523,
+        "local_coherence": 0.8829646110534668
+      },
+      {
+        "proposition_index": 57,
+        "proposition_text": "CARRY_ON(HEART, WORKING)",
+        "global_coherence": 0.8322341442108154,
+        "local_coherence": 0.8469406366348267
+      },
+      {
+        "proposition_index": 58,
+        "proposition_text": "BECOME(BLOCKED, CORONARY_ARTERIES)",
+        "global_coherence": 0.8558282256126404,
+        "local_coherence": 0.8792812824249268
+      },
+      {
+        "proposition_index": 59,
+        "proposition_text": "WILL_DIE(PARTS(HEART_MUSCLE))",
+        "global_coherence": 0.8454793691635132,
+        "local_coherence": 0.8689634203910828
+      },
+      {
+        "proposition_index": 60,
+        "proposition_text": "HAS(PATIENT, HEART_ATTACK)",
+        "global_coherence": 0.8541121482849121,
+        "local_coherence": 0.8813217282295227
+      },
+      {
+        "proposition_index": 61,
+        "proposition_text": "CAN_BE_FATAL(HEART_ATTACK)",
+        "global_coherence": 0.8318447470664978,
+        "local_coherence": 0.8630791306495667
+      },
+      {
+        "proposition_index": 62,
+        "proposition_text": "IS_CAUSED_BY(BLOCKAGE(CORONARY_ARTERY), THROMBUS)",
+        "global_coherence": 0.8368237614631653,
+        "local_coherence": 0.8909591436386108
+      },
+      {
+        "proposition_index": 63,
+        "proposition_text": "IS(THROMBUS, BLOOD_CLOT)",
+        "global_coherence": 0.8395658731460571,
+        "local_coherence": 0.8903597593307495
+      },
+      {
+        "proposition_index": 64,
+        "proposition_text": "HAPPEN(CORONARY_THROMBOSIS)",
+        "global_coherence": 0.8529016971588135,
+        "local_coherence": 0.8981325626373291
+      },
+      {
+        "proposition_index": 65,
+        "proposition_text": "FORM(CLOT, CORONARY_ARTERY)",
+        "global_coherence": 0.8416731953620911,
+        "local_coherence": 0.8864717483520508
+      },
+      {
+        "proposition_index": 66,
+        "proposition_text": "IS(CORONARY_THROMBOSIS, HEART_ATTACK)",
+        "global_coherence": 0.8490540385246277,
+        "local_coherence": 0.8913863301277161
+      },
+      {
+        "proposition_index": 67,
+        "proposition_text": "NOT(FORM(BLOOD, CLOTS))",
+        "global_coherence": 0.8392605185508728,
+        "local_coherence": 0.8786067366600037
+      },
+      {
+        "proposition_index": 68,
+        "proposition_text": "IN(BLOOD, NORMAL_ARTERIES)",
+        "global_coherence": 0.84879469871521,
+        "local_coherence": 0.8895728588104248
+      },
+      {
+        "proposition_index": 69,
+        "proposition_text": "BECOME(WALLS(BLOOD_VESSELS), LUMPY)",
+        "global_coherence": 0.8413888216018677,
+        "local_coherence": 0.8780133128166199
+      },
+      {
+        "proposition_index": 70,
+        "proposition_text": "BECOME(WALLS(BLOOD_VESSELS), ROUGH)",
+        "global_coherence": 0.8412526249885559,
+        "local_coherence": 0.8779353499412537
+      },
+      {
+        "proposition_index": 71,
+        "proposition_text": "BECOME(WALLS(BLOOD_VESSELS), NARROW)",
+        "global_coherence": 0.8369420170783997,
+        "local_coherence": 0.8687235116958618
+      },
+      {
+        "proposition_index": 72,
+        "proposition_text": "IN(CORONARY_DISEASE, BLOOD_VESSELS)",
+        "global_coherence": 0.85184246301651,
+        "local_coherence": 0.8793661594390869
+      },
+      {
+        "proposition_index": 73,
+        "proposition_text": "IS(ARRHYTHMIA, INTERRUPTION(HEART_BEAT))",
+        "global_coherence": 0.8329567909240723,
+        "local_coherence": 0.8282365798950195
+      },
+      {
+        "proposition_index": 74,
+        "proposition_text": "IS(ANGINA, SHARP_PAIN(CHEST))",
+        "global_coherence": 0.8309746384620667,
+        "local_coherence": 0.8543381690979004
+      },
+      {
+        "proposition_index": 75,
+        "proposition_text": "SIMILAR_TO(ANGINA, PAIN_CAUSED_BY(THROMBOSIS))",
+        "global_coherence": 0.8390856385231018,
+        "local_coherence": 0.8606671094894409
+      },
+      {
+        "proposition_index": 76,
+        "proposition_text": "IS_COMMON(HIGH_BLOOD_PRESSURE)",
+        "global_coherence": 0.8287087678909302,
+        "local_coherence": 0.8692837357521057
+      },
+      {
+        "proposition_index": 77,
+        "proposition_text": "UNTREATED(HIGH_BLOOD_PRESSURE)",
+        "global_coherence": 0.8442577719688416,
+        "local_coherence": 0.8801791667938232
+      },
+      {
+        "proposition_index": 78,
+        "proposition_text": "MAY_LEAD(HIGH_BLOOD_PRESSURE, HEART_ATTACKS)",
+        "global_coherence": 0.8490574359893799,
+        "local_coherence": 0.9109347462654114
+      },
+      {
+        "proposition_index": 79,
+        "proposition_text": "MAY_LEAD(HIGH_BLOOD_PRESSURE, KIDNEY_FAILURE)",
+        "global_coherence": 0.8384969830513,
+        "local_coherence": 0.9037270545959473
+      },
+      {
+        "proposition_index": 80,
+        "proposition_text": "MAY_LEAD(HIGH_BLOOD_PRESSURE, SERIOUS_PROBLEMS)",
+        "global_coherence": 0.8389220833778381,
+        "local_coherence": 0.9109504818916321
+      },
+      {
+        "proposition_index": 81,
+        "proposition_text": "MAY_HAVE_NO_SYMPTOMS(HIGH_BLOOD_PRESSURE)",
+        "global_coherence": 0.8211087584495544,
+        "local_coherence": 0.8781609535217285
+      },
+      {
+        "proposition_index": 82,
+        "proposition_text": "MAY_NOT_BE_AWARE(PERSON, HAVE(HIGH_BLOOD_PRESSURE))",
+        "global_coherence": 0.8221986293792725,
+        "local_coherence": 0.8715534210205078
+      },
+      {
+        "proposition_index": 83,
+        "proposition_text": "UNLESS(MEASURED(BLOOD_PRESSURE))",
+        "global_coherence": 0.8435443639755249,
+        "local_coherence": 0.8518874645233154
+      },
+      {
+        "proposition_index": 84,
+        "proposition_text": "INCLUDE(NEW_DRUGS_FOR_HEART_DISEASE, BETA_BLOCKING_DRUGS)",
+        "global_coherence": 0.8393394947052002,
+        "local_coherence": 0.8651344776153564
+      },
+      {
+        "proposition_index": 85,
+        "proposition_text": "IS_CALLED(FAMILY_OF_COMPOUNDS, BETA_BLOCKERS)",
+        "global_coherence": 0.800849974155426,
+        "local_coherence": 0.8345731496810913
+      },
+      {
+        "proposition_index": 86,
+        "proposition_text": "LESSEN(BETA_BLOCKERS, AFTER_EFFECTS(HEART_ATTACKS))",
+        "global_coherence": 0.8388040661811829,
+        "local_coherence": 0.8721810579299927
+      },
+      {
+        "proposition_index": 87,
+        "proposition_text": "PREVENT(BETA_BLOCKERS, SECOND_ATTACKS)",
+        "global_coherence": 0.812757134437561,
+        "local_coherence": 0.8453655242919922
+      },
+      {
+        "proposition_index": 88,
+        "proposition_text": "LOWER(BETA_BLOCKERS, BLOOD_PRESSURE(PEOPLE_WITH_HIGH_BP))",
+        "global_coherence": 0.8214483857154846,
+        "local_coherence": 0.8478075265884399
+      },
+      {
+        "proposition_index": 89,
+        "proposition_text": "DISSOLVE(DRUGS, LUMPS)",
+        "global_coherence": 0.8158776164054871,
+        "local_coherence": 0.8294600248336792
+      },
+      {
+        "proposition_index": 90,
+        "proposition_text": "BREAK_OFF(LUMPS, WALLS(VEINS_AND_ARTERIES))",
+        "global_coherence": 0.8503183722496033,
+        "local_coherence": 0.8473928570747375
+      },
+      {
+        "proposition_index": 91,
+        "proposition_text": "USED_MORE_OFTEN(HEART_TRANSPLANTS, MECHANICAL_HEARTS)",
+        "global_coherence": 0.8334594368934631,
+        "local_coherence": 0.84416663646698
+      },
+      {
+        "proposition_index": 92,
+        "proposition_text": "REPLACE(HEALTHY_HEART(DONOR), HEART(PATIENT))",
+        "global_coherence": 0.84538733959198,
+        "local_coherence": 0.8603277802467346
+      },
+      {
+        "proposition_index": 93,
+        "proposition_text": "INCLUDE(PROCEDURE, TRANSPLANT_SURGERY)",
+        "global_coherence": 0.8219934701919556,
+        "local_coherence": 0.8386591672897339
+      },
+      {
+        "proposition_index": 94,
+        "proposition_text": "IMPLANT(MECHANICAL_DEVICES, HUMAN_BODIES)",
+        "global_coherence": 0.8138071298599243,
+        "local_coherence": 0.8420398235321045
+      },
+      {
+        "proposition_index": 95,
+        "proposition_text": "KEEP_FUNCTIONING(MECHANICAL_DEVICES, HEARTS)",
+        "global_coherence": 0.8265357613563538,
+        "local_coherence": 0.8726576566696167
+      },
+      {
+        "proposition_index": 96,
+        "proposition_text": "NOT(HEAL(PACEMAKER, DISEASED_HEART))",
+        "global_coherence": 0.8520691990852356,
+        "local_coherence": 0.8741456866264343
+      },
+      {
+        "proposition_index": 97,
+        "proposition_text": "RELIEVE(PACEMAKER, SYMPTOMS(IRREGULAR_HEART))",
+        "global_coherence": 0.8242288827896118,
+        "local_coherence": 0.85286545753479
+      },
+      {
+        "proposition_index": 98,
+        "proposition_text": "KEEP(PACEMAKER, STEADY_BEAT)",
+        "global_coherence": 0.8087379336357117,
+        "local_coherence": 0.8508047461509705
+      },
+      {
+        "proposition_index": 99,
+        "proposition_text": "SUPPORT(STEADY_BEAT, NORMAL_LIVING)",
+        "global_coherence": 0.8330756425857544,
+        "local_coherence": 0.8524686098098755
+      },
+      {
+        "proposition_index": 100,
+        "proposition_text": "CANNOT(PUMP(HEART, ENOUGH_BLOOD))",
+        "global_coherence": 0.8494414687156677,
+        "local_coherence": 0.8557716608047485
+      },
+      {
+        "proposition_index": 101,
+        "proposition_text": "CAUSE(POOR_FUNCTION(VALVES), INSUFFICIENT_PUMP)",
+        "global_coherence": 0.8225968480110168,
+        "local_coherence": 0.8363460898399353
+      },
+      {
+        "proposition_index": 102,
+        "proposition_text": "REPLACE(VALVES, ARTIFICIAL_VALVES(PLASTIC_METAL))",
+        "global_coherence": 0.8017661571502686,
+        "local_coherence": 0.8280719518661499
+      },
+      {
+        "proposition_index": 103,
+        "proposition_text": "USE(BYPASS_SURGERY, REPAIR(CLOGGED_OR_DAMAGED_BLOOD_VESSELS))",
+        "global_coherence": 0.8477506041526794,
+        "local_coherence": 0.8659377694129944
+      },
+      {
+        "proposition_index": 104,
+        "proposition_text": "USE(DOCTORS, VEINS(PATIENT))",
+        "global_coherence": 0.8291770219802856,
+        "local_coherence": 0.8476905822753906
+      },
+      {
+        "proposition_index": 105,
+        "proposition_text": "FROM(VEINS, LEG)",
+        "global_coherence": 0.8264453411102295,
+        "local_coherence": 0.8324175477027893
+      },
+      {
+        "proposition_index": 106,
+        "proposition_text": "REPLACE(VEINS, DAMAGED_PORTIONS(ARTERIES))",
+        "global_coherence": 0.8385149836540222,
+        "local_coherence": 0.8554288744926453
+      },
+      {
+        "proposition_index": 107,
+        "proposition_text": "IS_CALLED(SUBSTANCE, CHOLESTEROL)",
+        "global_coherence": 0.8203187584877014,
+        "local_coherence": 0.8269144296646118
+      },
+      {
+        "proposition_index": 108,
+        "proposition_text": "CAUSE(CHOLESTEROL, BUILD_UP(FATTY_SUBSTANCES, BLOOD_VESSELS))",
+        "global_coherence": 0.8351024389266968,
+        "local_coherence": 0.8534040451049805
+      },
+      {
+        "proposition_index": 109,
+        "proposition_text": "LEAD(BUILD_UP, HEART_DISEASE)",
+        "global_coherence": 0.8491451740264893,
+        "local_coherence": 0.8509893417358398
+      },
+      {
+        "proposition_index": 110,
+        "proposition_text": "STRESS(DOCTORS, IMPORTANCE(DIET_LOW_IN_FATS))",
+        "global_coherence": 0.807317316532135,
+        "local_coherence": 0.8414697647094727
+      },
+      {
+        "proposition_index": 111,
+        "proposition_text": "INCREASE(SALT, BLOOD_PRESSURE)",
+        "global_coherence": 0.8244114518165588,
+        "local_coherence": 0.856598973274231
+      },
+      {
+        "proposition_index": 112,
+        "proposition_text": "RECOMMEND(DIET_LOW_IN_SALT)",
+        "global_coherence": 0.8097999095916748,
+        "local_coherence": 0.8594596982002258
+      }
+    ]
+  }
+]
