@@ -231,8 +231,14 @@ sysinfo.txt
 /_draft_files/
 /cc.en.300.bin
 /results/section1/simulated_results/archives
-/data/human_data/read_under_time_pressure
 /step5/data/sim_results/word_activation/
 /step5/data/sim_results/sentence_reading/
 /results/section2/_raw_simulated_results/_archived
 /results/section2/processed_simulated_results/_archived
+/data/human_data/zuco1_task2
+/data/human_data/bai_read_under_time_pressure/analyzed_data
+/data/human_data/bai_read_under_time_pressure/comprehension_data
+/data/human_data/bai_read_under_time_pressure/corrected_data_by_fix8
+/data/human_data/bai_read_under_time_pressure/processed_data
+/data/human_data/bai_read_under_time_pressure/raw_data
+/data/human_data/bai_read_under_time_pressure/stimuli

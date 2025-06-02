@@ -1,0 +1,144 @@
+{
+    "metrics": {
+        "avg_fix_duration_30": 224.90851801281377,
+        "avg_fixations_per_trial_30": 113.3452380952381,
+        "avg_saccade_length_30": 135.89036228557495,
+        "avg_fix_duration_60": 232.9860907759883,
+        "avg_fixations_per_trial_60": 211.4047619047619,
+        "avg_saccade_length_60": 145.95247913991633,
+        "avg_fix_duration_90": 235.59352755844256,
+        "avg_fixations_per_trial_90": 309.7469879518072,
+        "avg_saccade_length_90": 141.6065775362933,
+        "regression_rate_30": 44.15502573259111,
+        "regression_rate_60": 42.696249577655145,
+        "regression_rate_90": 41.720798164067055,
+        "skip_rate_30": 45.23684486923643,
+        "skip_rate_60": 44.03649059578781,
+        "skip_rate_90": 42.94216033295733,
+        "mean_gaze_duration_30": 337.75299684542586,
+        "mean_gaze_duration_60": 482.379270141075,
+        "mean_gaze_duration_90": 641.6859836847124,
+        "reading_speed_30": 180.60290029862506,
+        "reading_speed_60": 125.37277370407644,
+        "reading_speed_90": 94.27512794803641
+    },
+    "statistical_analysis": {
+        "fix_duration_anova": {
+            "f_statistic": 27.564076430527475,
+            "p_value": 1.0846683206405002e-12,
+            "significant": true,
+            "eta_squared": 0.001039366886561364
+        },
+        "fix_duration_tukey": {
+            "groups": [
+                30,
+                60,
+                90
+            ],
+            "meandiffs": [
+                8.077572763174516,
+                10.685009545628787,
+                2.607436782454272
+            ],
+            "p_values": [
+                3.515067064085997e-07,
+                9.896417019206183e-12,
+                0.06680875474234294
+            ],
+            "significant": [
+                true,
+                true,
+                false
+            ]
+        },
+        "saccade_length_anova": {
+            "f_statistic": NaN,
+            "p_value": NaN,
+            "significant": false
+        },
+        "num_fixations_anova": {
+            "f_statistic": 754.2732075063418,
+            "p_value": 3.7515806913930893e-106,
+            "significant": true,
+            "eta_squared": 0.8588138645922376
+        },
+        "num_fixations_tukey": {
+            "groups": [
+                30,
+                60,
+                90
+            ],
+            "meandiffs": [
+                98.0595238095238,
+                196.40174985656913,
+                98.34222604704533
+            ],
+            "p_values": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "significant": [
+                true,
+                true,
+                true
+            ]
+        },
+        "skip_rate_anova": {
+            "f_statistic": 9.193540713363971,
+            "p_value": 0.00014072673824356487,
+            "significant": true,
+            "eta_squared": 0.06902392311312358
+        },
+        "skip_rate_tukey": {
+            "groups": [
+                30,
+                60,
+                90
+            ],
+            "meandiffs": [
+                -0.9822910717050988,
+                -2.0983979794138605,
+                -1.1161069077087618
+            ],
+            "p_values": [
+                0.111379596162124,
+                7.726079414605014e-05,
+                0.06058094375009904
+            ],
+            "significant": [
+                false,
+                true,
+                false
+            ]
+        },
+        "regression_rate_anova": {
+            "f_statistic": 11.717337571048736,
+            "p_value": 1.3724858588457378e-05,
+            "significant": true,
+            "eta_squared": 0.08633633536256773
+        },
+        "regression_rate_tukey": {
+            "groups": [
+                30,
+                60,
+                90
+            ],
+            "meandiffs": [
+                -1.3109027496869032,
+                -2.361005030689519,
+                -1.0501022810026157
+            ],
+            "p_values": [
+                0.020781843495530472,
+                7.132049459679379e-06,
+                0.08241759567487394
+            ],
+            "significant": [
+                true,
+                true,
+                false
+            ]
+        }
+    }
+}
