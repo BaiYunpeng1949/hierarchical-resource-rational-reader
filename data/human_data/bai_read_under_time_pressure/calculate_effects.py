@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import stats
 from statsmodels.stats.multicomp import MultiComparison
+import sys
+from calculate_metrics_for_user_study import AggregatedFixationMetrics
 
 INTEGRATED_CORRECTED_SCANPATH_FILE_NAME = "11_18_17_40_integrated_corrected_human_scanpath.json"
 
@@ -143,9 +145,18 @@ def calculate_regression_rate(df: pd.DataFrame) -> Dict:
         time_data['next_word_index'] = time_data.groupby(['participant_id', 'stimulus_index'])['word_index'].shift(-1)
         time_data['is_regression'] = time_data['next_word_index'] < time_data['word_index']
         
-        # Calculate regression rate
-        regression_rate = time_data['is_regression'].mean() * 100
-        regression_rates[f'regression_rate_{time_constraint}'] = regression_rate
+        # Calculate regression rate by reading progress
+        last_read_word_index = time_data.groupby(['participant_id', 'stimulus_index'])['word_index'].max()
+        total_words_to_last_read = last_read_word_index + 1  # Assuming word indices start from 0
+        
+        # Calculate regression rate by fixations
+        regression_rate_by_fixations = time_data['is_regression'].mean() * 100
+        
+        # Calculate regression rate by reading progress
+        regression_rate_by_progress = (time_data['is_regression'].sum() / total_words_to_last_read.mean()) * 100
+        
+        regression_rates[f'regression_rate_by_fixations_{time_constraint}'] = regression_rate_by_fixations
+        regression_rates[f'regression_rate_by_progress_{time_constraint}'] = regression_rate_by_progress
     
     return regression_rates
 
@@ -171,9 +182,18 @@ def calculate_skip_rate(df: pd.DataFrame) -> Dict:
         time_data['next_word_index'] = time_data.groupby(['participant_id', 'stimulus_index'])['word_index'].shift(-1)
         time_data['word_diff'] = time_data['next_word_index'] - time_data['word_index']
         
-        # Calculate skip rate (words skipped > 1)
-        skip_rate = (time_data['word_diff'] > 1).mean() * 100
-        skip_rates[f'skip_rate_{time_constraint}'] = skip_rate
+        # Calculate skip rate by reading progress
+        last_read_word_index = time_data.groupby(['participant_id', 'stimulus_index'])['word_index'].max()
+        total_words_to_last_read = last_read_word_index + 1  # Assuming word indices start from 0
+        
+        # Calculate skip rate by saccades
+        skip_rate_by_saccades = (time_data['word_diff'] > 1).mean() * 100
+        
+        # Calculate skip rate by reading progress
+        skip_rate_by_progress = (time_data['word_diff'].apply(lambda x: x > 1).sum() / total_words_to_last_read.mean()) * 100
+        
+        skip_rates[f'skip_rate_by_saccades_{time_constraint}'] = skip_rate_by_saccades
+        skip_rates[f'skip_rate_by_progress_{time_constraint}'] = skip_rate_by_progress
     
     return skip_rates
 
@@ -222,9 +242,14 @@ def calculate_reading_speed(df: pd.DataFrame) -> Dict:
             'fix_duration': 'sum'  # Total reading time in ms
         })
         
-        # Calculate reading speed (words per minute)
-        reading_speed = (trial_stats['word_index'] / (trial_stats['fix_duration'] / 60000)).mean()
-        reading_speeds[f'reading_speed_{time_constraint}'] = reading_speed
+        # Calculate reading speed using time constraint
+        reading_speed_by_constraint = (trial_stats['word_index'] / time_constraint * 60).mean()
+        
+        # Calculate reading speed using total fixation duration
+        reading_speed_by_fixations = (trial_stats['word_index'] / (trial_stats['fix_duration'] / 60000)).mean()
+        
+        reading_speeds[f'reading_speed_by_constraint_{time_constraint}'] = reading_speed_by_constraint
+        reading_speeds[f'reading_speed_by_fixations_{time_constraint}'] = reading_speed_by_fixations
     
     return reading_speeds
 
@@ -272,6 +297,7 @@ def calculate_sentence_regression_metrics(df: pd.DataFrame, sentence_metadata: L
             # Get sentence metadata for this stimulus
             stimulus_meta = next((s for s in sentence_metadata if s['stimulus_id'] == stimulus_id), None)
             if not stimulus_meta:
+                print(f"Warning: No metadata found for stimulus {stimulus_id}")
                 continue
                 
             # Sort fixations by time
@@ -293,6 +319,7 @@ def calculate_sentence_regression_metrics(df: pd.DataFrame, sentence_metadata: L
                 # Get sentence ID for this fixation
                 sentence_id = get_sentence_id(fixation['word_index'], stimulus_meta['sentences'])
                 if sentence_id == -1:
+                    print(f"Warning: No sentence found for word index {fixation['word_index']} in stimulus {stimulus_id}")
                     continue
                 
                 # Update sentence fixations
@@ -326,19 +353,32 @@ def calculate_sentence_regression_metrics(df: pd.DataFrame, sentence_metadata: L
             total_sentences_read += len(sentence_fixations)
         
         # Calculate metrics
-        fixation_regression_rate = (regressed_fixations / total_fixations * 100) if total_fixations > 0 else 0
-        sentence_regression_rate = (len(regressed_sentences) / total_sentences_read * 100) if total_sentences_read > 0 else 0
-        avg_revisited_sentences = len(revisited_sentences) / len(time_data.groupby(['stimulus_index', 'participant_id'])) if len(time_data.groupby(['stimulus_index', 'participant_id'])) > 0 else 0
+        if total_fixations > 0:
+            fixation_regression_rate = (regressed_fixations / total_fixations * 100)
+        else:
+            fixation_regression_rate = 0.0
+            
+        if total_sentences_read > 0:
+            sentence_regression_rate = (len(regressed_sentences) / total_sentences_read * 100)
+        else:
+            sentence_regression_rate = 0.0
+            
+        num_trials = len(time_data.groupby(['stimulus_index', 'participant_id']))
+        if num_trials > 0:
+            avg_revisited_sentences = len(revisited_sentences) / num_trials
+        else:
+            avg_revisited_sentences = 0.0
         
-        regression_metrics[f'fixation_regression_rate_{time_constraint}'] = fixation_regression_rate
-        regression_metrics[f'sentence_regression_rate_{time_constraint}'] = sentence_regression_rate
-        regression_metrics[f'avg_revisited_sentences_{time_constraint}'] = avg_revisited_sentences
+        # Store metrics with explicit float conversion
+        regression_metrics[f'fixation_regression_rate_{time_constraint}'] = float(fixation_regression_rate)
+        regression_metrics[f'sentence_regression_rate_{time_constraint}'] = float(sentence_regression_rate)
+        regression_metrics[f'avg_revisited_sentences_{time_constraint}'] = float(avg_revisited_sentences)
     
     return regression_metrics
 
 def calculate_all_metrics(df: pd.DataFrame, sentence_metadata: List[Dict]) -> Dict:
     """
-    Calculate all metrics from the processed scanpath data.
+    Calculate all metrics from the processed scanpath data using AggregatedFixationMetrics.
     
     Args:
         df: DataFrame containing the processed scanpath data
@@ -347,156 +387,168 @@ def calculate_all_metrics(df: pd.DataFrame, sentence_metadata: List[Dict]) -> Di
     Returns:
         Dictionary containing all calculated metrics
     """
-    # Calculate saccade lengths
-    df = calculate_saccade_lengths(df)
-    
-    # Calculate all metrics
     metrics = {}
     
-    # Basic metrics
     for time_constraint in df['time_constraint'].unique():
-        time_data = df[df['time_constraint'] == time_constraint]
+        time_data = df[df['time_constraint'] == time_constraint].copy()
         
-        # Average fixation duration
-        metrics[f'avg_fix_duration_{time_constraint}'] = time_data['fix_duration'].mean()
-        
-        # Number of fixations per trial
-        fixations_per_trial = time_data.groupby(['stimulus_index', 'participant_id']).size()
-        metrics[f'avg_fixations_per_trial_{time_constraint}'] = fixations_per_trial.mean()
-        
-        # Average saccade length
-        metrics[f'avg_saccade_length_{time_constraint}'] = time_data['saccade_length'].mean()
+        # Process each trial
+        for (stimulus_id, participant_id), trial_data in time_data.groupby(['stimulus_index', 'participant_id']):
+            # Convert trial data to list of fixation dictionaries
+            fixation_data = trial_data.to_dict('records')
+            
+            # Create AggregatedFixationMetrics instance
+            metrics_calculator = AggregatedFixationMetrics(
+                fixation_data=fixation_data,
+                time_constraint=time_constraint
+            )
+            
+            # Calculate metrics
+            trial_metrics = metrics_calculator.compute_all_metrics()
+            
+            # Store metrics with time constraint
+            for metric_name, value in trial_metrics.items():
+                key = f'{metric_name}_{time_constraint}'
+                if key not in metrics:
+                    metrics[key] = []
+                metrics[key].append(value)
     
-    # Add regression rates
-    metrics.update(calculate_regression_rate(df))
+    # Calculate means for each metric
+    final_metrics = {}
+    for key, values in metrics.items():
+        final_metrics[key] = float(np.mean(values))
     
-    # Add skip rates
-    metrics.update(calculate_skip_rate(df))
-    
-    # Add gaze durations
-    metrics.update(calculate_gaze_duration(df))
-    
-    # Add reading speeds
-    metrics.update(calculate_reading_speed(df))
-    
-    # Add sentence regression metrics
-    metrics.update(calculate_sentence_regression_metrics(df, sentence_metadata))
-    
-    return metrics
+    return final_metrics
 
-def perform_statistical_analysis(df: pd.DataFrame) -> Dict:
+def perform_statistical_analysis(df: pd.DataFrame, metrics: Dict) -> Dict:
     """
     Perform statistical analysis (ANOVA and post-hoc tests) on the metrics.
     
     Args:
         df: DataFrame containing the processed scanpath data
+        metrics: Dictionary containing the calculated metrics
         
     Returns:
         Dictionary containing statistical test results
     """
-    # Calculate saccade lengths if not already present
-    if 'saccade_length' not in df.columns:
-        df = calculate_saccade_lengths(df)
-    
     # Prepare data for statistical analysis
     stats_results = {}
     
-    # Metrics to analyze
-    metrics_to_analyze = {
-        'fix_duration': 'Fixation Duration (ms)',
-        'saccade_length': 'Saccade Length (pixels)',
-        'num_fixations': 'Number of Fixations',
-        'skip_rate': 'Word Skip Rate (%)',
-        'regression_rate': 'Word Regression Rate (%)',
-        'fixation_regression_rate': 'Sentence Fixation Regression Rate (%)',
-        'sentence_regression_rate': 'Sentence Regression Rate (%)'
-    }
+    # Calculate metrics for each trial
+    trial_metrics = {}
     
-    # Calculate number of fixations per trial
-    fixations_per_trial = df.groupby(['time_constraint', 'stimulus_index', 'participant_id']).size().reset_index(name='num_fixations')
-    
-    # Calculate skip rates and regression rates per trial
-    skip_rates = []
-    regression_rates = []
+    # Group data by time constraint and trial
     for time_constraint in df['time_constraint'].unique():
         time_data = df[df['time_constraint'] == time_constraint].copy()
-        time_data = time_data.sort_values(['participant_id', 'stimulus_index', 'fix_x'])
-        time_data['next_word_index'] = time_data.groupby(['participant_id', 'stimulus_index'])['word_index'].shift(-1)
         
-        # Calculate skip rate
-        time_data['word_diff'] = time_data['next_word_index'] - time_data['word_index']
-        skip_rate = time_data.groupby(['participant_id', 'stimulus_index'])['word_diff'].apply(lambda x: (x > 1).mean() * 100)
-        skip_rates.extend([{'time_constraint': time_constraint, 'skip_rate': rate} for rate in skip_rate])
-        
-        # Calculate regression rate
-        time_data['is_regression'] = time_data['next_word_index'] < time_data['word_index']
-        regression_rate = time_data.groupby(['participant_id', 'stimulus_index'])['is_regression'].mean() * 100
-        regression_rates.extend([{'time_constraint': time_constraint, 'regression_rate': rate} for rate in regression_rate])
+        # Process each trial
+        for (stimulus_id, participant_id), trial_data in time_data.groupby(['stimulus_index', 'participant_id']):
+            # Convert trial data to list of fixation dictionaries
+            fixation_data = trial_data.to_dict('records')
+            
+            # Create AggregatedFixationMetrics instance
+            metrics_calculator = AggregatedFixationMetrics(
+                fixation_data=fixation_data,
+                time_constraint=time_constraint
+            )
+            
+            # Calculate metrics
+            trial_metrics[f'{time_constraint}_{stimulus_id}_{participant_id}'] = metrics_calculator.compute_all_metrics()
     
-    skip_rates_df = pd.DataFrame(skip_rates)
-    regression_rates_df = pd.DataFrame(regression_rates)
+    # Metrics to analyze
+    metrics_to_analyze = {
+        'Number of Fixations': 'Number of Fixations',
+        'Average Saccade Length (px)': 'Average Saccade Length (pixels)',
+        'Word Skip Percentage by Saccades V2 With Word Index Correction': 'Word Skip Rate (%)',
+        'Revisit Percentage by Saccades V2 With Word Index Correction': 'Word Regression Rate (%)',
+        'Average Reading Speed (wpm)': 'Reading Speed (wpm)'
+    }
     
     # Perform ANOVA for each metric
-    for metric, metric_name in metrics_to_analyze.items():
-        if metric == 'num_fixations':
-            data = fixations_per_trial
-        elif metric == 'skip_rate':
-            data = skip_rates_df
-        elif metric == 'regression_rate':
-            data = regression_rates_df
-        elif metric in ['fixation_regression_rate', 'sentence_regression_rate']:
-            # Skip ANOVA for sentence regression metrics as they're already aggregated
+    for metric_key, metric_name in metrics_to_analyze.items():
+        # Extract values for each time constraint
+        time_constraints = []
+        metric_values = []
+        metric_stds = []
+        
+        # Group trial metrics by time constraint
+        time_groups = {}
+        for key, value in trial_metrics.items():
+            time_constraint = int(key.split('_')[0])
+            if time_constraint not in time_groups:
+                time_groups[time_constraint] = []
+            if metric_key in value:
+                time_groups[time_constraint].append(value[metric_key])
+        
+        # Calculate means and standard deviations
+        for time_constraint in sorted(time_groups.keys()):
+            values = time_groups[time_constraint]
+            if values:
+                time_constraints.append(time_constraint)
+                metric_values.append(np.mean(values))
+                metric_stds.append(np.std(values))
+        
+        if not metric_values:
+            print(f"Warning: No data found for metric {metric_key}")
             continue
-        else:
-            data = df
         
         # Perform one-way ANOVA
-        groups = [group for _, group in data.groupby('time_constraint')[metric]]
-        f_stat, p_value = stats.f_oneway(*groups)
-        
-        # Store ANOVA results
-        stats_results[f'{metric}_anova'] = {
-            'f_statistic': float(f_stat),
-            'p_value': float(p_value),
-            'significant': bool(p_value < 0.05)
-        }
-        
-        # Perform post-hoc Tukey HSD test if ANOVA is significant
-        if p_value < 0.05:
-            mc = MultiComparison(data[metric], data['time_constraint'])
-            tukey_result = mc.tukeyhsd()
+        groups = [time_groups[tc] for tc in sorted(time_groups.keys())]
+        if len(groups) >= 2 and all(len(g) > 0 for g in groups):
+            f_stat, p_value = stats.f_oneway(*groups)
             
-            # Store Tukey HSD results
-            stats_results[f'{metric}_tukey'] = {
-                'groups': tukey_result.groupsunique.tolist(),
-                'meandiffs': [float(x) for x in tukey_result.meandiffs],
-                'p_values': [float(x) for x in tukey_result.pvalues],
-                'significant': [bool(x) for x in (tukey_result.pvalues < 0.05)]
+            # Store ANOVA results
+            stats_results[f'{metric_key}_anova'] = {
+                'f_statistic': float(f_stat),
+                'p_value': float(p_value),
+                'significant': bool(p_value < 0.05)
             }
-    
-    # Calculate effect sizes (eta-squared) for significant results
-    for metric, metric_name in metrics_to_analyze.items():
-        if metric in ['fixation_regression_rate', 'sentence_regression_rate']:
-            continue
             
-        if stats_results[f'{metric}_anova']['significant']:
-            if metric == 'num_fixations':
-                data = fixations_per_trial
-            elif metric == 'skip_rate':
-                data = skip_rates_df
-            elif metric == 'regression_rate':
-                data = regression_rates_df
-            else:
-                data = df
+            # Perform post-hoc Tukey HSD test if ANOVA is significant
+            if p_value < 0.05:
+                # Prepare data for Tukey test
+                values = []
+                groups_labels = []
+                for tc in sorted(time_groups.keys()):
+                    values.extend(time_groups[tc])
+                    groups_labels.extend([tc] * len(time_groups[tc]))
+                
+                mc = MultiComparison(values, groups_labels)
+                tukey_result = mc.tukeyhsd()
+                
+                # Store Tukey HSD results
+                stats_results[f'{metric_key}_tukey'] = {
+                    'groups': tukey_result.groupsunique.tolist(),
+                    'meandiffs': [float(x) for x in tukey_result.meandiffs],
+                    'p_values': [float(x) for x in tukey_result.pvalues],
+                    'significant': [bool(x) for x in (tukey_result.pvalues < 0.05)]
+                }
             
             # Calculate eta-squared
-            groups = [group for _, group in data.groupby('time_constraint')[metric]]
-            grand_mean = np.mean(data[metric])
-            ss_total = np.sum((data[metric] - grand_mean) ** 2)
-            ss_between = np.sum([len(g) * (np.mean(g) - grand_mean) ** 2 for g in groups])
-            eta_squared = ss_between / ss_total
+            all_values = []
+            for group in groups:
+                all_values.extend(group)
+            grand_mean = np.mean(all_values)
+            ss_total = np.sum([(v - grand_mean) ** 2 for v in all_values])
+            ss_between = np.sum([len(group) * (np.mean(group) - grand_mean) ** 2 for group in groups])
+            eta_squared = ss_between / ss_total if ss_total != 0 else 0
             
-            stats_results[f'{metric}_anova']['eta_squared'] = float(eta_squared)
+            stats_results[f'{metric_key}_anova']['eta_squared'] = float(eta_squared)
+        else:
+            print(f"Warning: Not enough data for ANOVA on metric {metric_key}")
+            stats_results[f'{metric_key}_anova'] = {
+                'f_statistic': None,
+                'p_value': None,
+                'significant': False,
+                'eta_squared': None
+            }
+        
+        # Store the values for plotting
+        stats_results[f'{metric_key}_values'] = {
+            'time_constraints': time_constraints,
+            'values': metric_values,
+            'stds': metric_stds
+        }
     
     return stats_results
 
@@ -512,86 +564,50 @@ def plot_metrics_with_stats(df: pd.DataFrame, results: Dict, output_dir: str):
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
-    # Calculate saccade lengths if not already present
-    if 'saccade_length' not in df.columns:
-        df = calculate_saccade_lengths(df)
+    # Get metrics from results
+    metrics = results['metrics']
+    stats_results = results['statistical_analysis']
     
-    # Calculate number of fixations per trial
-    fixations_per_trial = df.groupby(['time_constraint', 'stimulus_index', 'participant_id']).size().reset_index(name='num_fixations')
-    
-    # Calculate skip rates and regression rates per trial
-    skip_rates = []
-    regression_rates = []
-    for time_constraint in df['time_constraint'].unique():
-        time_data = df[df['time_constraint'] == time_constraint].copy()
-        time_data = time_data.sort_values(['participant_id', 'stimulus_index', 'fix_x'])
-        time_data['next_word_index'] = time_data.groupby(['participant_id', 'stimulus_index'])['word_index'].shift(-1)
-        
-        # Calculate skip rate
-        time_data['word_diff'] = time_data['next_word_index'] - time_data['word_index']
-        skip_rate = time_data.groupby(['participant_id', 'stimulus_index'])['word_diff'].apply(lambda x: (x > 1).mean() * 100)
-        skip_rates.extend([{'time_constraint': time_constraint, 'skip_rate': rate} for rate in skip_rate])
-        
-        # Calculate regression rate
-        time_data['is_regression'] = time_data['next_word_index'] < time_data['word_index']
-        regression_rate = time_data.groupby(['participant_id', 'stimulus_index'])['is_regression'].mean() * 100
-        regression_rates.extend([{'time_constraint': time_constraint, 'regression_rate': rate} for rate in regression_rate])
-    
-    skip_rates_df = pd.DataFrame(skip_rates)
-    regression_rates_df = pd.DataFrame(regression_rates)
-    
-    # Plot metrics with statistical significance
+    # Define metrics to plot with their display names
     metrics_to_plot = {
-        'fix_duration': 'Fixation Duration (ms)',
-        'saccade_length': 'Saccade Length (pixels)',
-        'num_fixations': 'Number of Fixations',
-        'skip_rate': 'Word Skip Rate (%)',
-        'regression_rate': 'Word Regression Rate (%)',
-        'fixation_regression_rate': 'Sentence Fixation Regression Rate (%)',
-        'sentence_regression_rate': 'Sentence Regression Rate (%)',
-        'avg_revisited_sentences': 'Average Number of Revisited Sentences'
+        'Number of Fixations': 'Number of Fixations',
+        'Average Saccade Length (px)': 'Average Saccade Length (pixels)',
+        'Word Skip Percentage by Saccades V2 With Word Index Correction': 'Word Skip Rate (%)',
+        'Revisit Percentage by Saccades V2 With Word Index Correction': 'Word Regression Rate (%)',
+        'Average Reading Speed (wpm)': 'Reading Speed (wpm)'
     }
     
     # Set style
     plt.style.use('seaborn')
     
-    for metric, ylabel in metrics_to_plot.items():
+    for metric_key, ylabel in metrics_to_plot.items():
         # Create figure with specific size and DPI
-        plt.figure(figsize=(10, 8), dpi=100)
+        plt.figure(figsize=(12, 8), dpi=100)
         
-        if metric == 'num_fixations':
-            data = fixations_per_trial
-        elif metric == 'skip_rate':
-            data = skip_rates_df
-        elif metric == 'regression_rate':
-            data = regression_rates_df
-        elif metric in ['fixation_regression_rate', 'sentence_regression_rate', 'avg_revisited_sentences']:
-            # Create DataFrame for sentence regression metrics
-            data = []
-            for time_constraint in df['time_constraint'].unique():
-                metric_name = f'{metric}_{time_constraint}'
-                if metric_name in results['metrics']:
-                    data.append({
-                        'time_constraint': time_constraint,
-                        metric: results['metrics'][metric_name]
-                    })
-            data = pd.DataFrame(data)
-            if data.empty:
-                print(f"Warning: No data found for metric {metric}")
-                plt.close()
-                continue
-        else:
-            data = df
+        # Get values from statistical analysis results
+        if f'{metric_key}_values' not in stats_results:
+            print(f"Warning: No data found for metric {metric_key}")
+            plt.close()
+            continue
+            
+        values_data = stats_results[f'{metric_key}_values']
+        time_constraints = values_data['time_constraints']
+        metric_values = values_data['values']
+        metric_stds = values_data['stds']
         
         # Create bar plot with error bars
-        means = data.groupby('time_constraint')[metric].mean()
-        stds = data.groupby('time_constraint')[metric].std()
+        bars = plt.bar(range(len(metric_values)), metric_values, alpha=0.7, width=0.6,
+                      yerr=metric_stds, capsize=5)
         
-        # Create bar plot
-        bars = plt.bar(range(len(means)), means, yerr=stds, capsize=10, alpha=0.7, width=0.6)
+        # Add value annotations on top of each bar
+        for i, (value, std) in enumerate(zip(metric_values, metric_stds)):
+            if np.isfinite(value):
+                plt.text(i, value + std + 0.02 * (max(metric_values) - min(metric_values)),
+                        f'{value:.1f} ± {std:.1f}',
+                        ha='center', va='bottom', fontsize=10)
         
         # Customize x-axis
-        plt.xticks(range(len(means)), means.index, fontsize=12)
+        plt.xticks(range(len(time_constraints)), time_constraints, fontsize=12)
         plt.xlabel('Time Constraint (seconds)', fontsize=12, labelpad=10)
         
         # Customize y-axis
@@ -601,37 +617,66 @@ def plot_metrics_with_stats(df: pd.DataFrame, results: Dict, output_dir: str):
         # Add title
         plt.title(f'{ylabel} by Time Constraint', fontsize=14, pad=20)
         
-        # Add statistical significance indicators
-        if metric in results.get('statistical_analysis', {}) and f'{metric}_anova' in results['statistical_analysis']:
-            anova_results = results['statistical_analysis'][f'{metric}_anova']
+        # Add statistical significance indicators if available
+        if f'{metric_key}_anova' in stats_results and f'{metric_key}_tukey' in stats_results:
+            anova_results = stats_results[f'{metric_key}_anova']
+            tukey_results = stats_results[f'{metric_key}_tukey']
+            
             if anova_results['significant']:
-                tukey_results = results['statistical_analysis'][f'{metric}_tukey']
-                groups = tukey_results['groups']
-                p_values = tukey_results['p_values']
-                
                 # Calculate y-axis limits for significance bars
-                y_max = means.max() + stds[means.idxmax()]
-                y_min = means.min() - stds[means.idxmin()]
+                y_max = max([v + s for v, s in zip(metric_values, metric_stds)])
+                y_min = min([v - s for v, s in zip(metric_values, metric_stds)])
                 y_range = y_max - y_min
                 
-                # Add significance bars with proper spacing
-                for i, (g1, g2) in enumerate(zip(groups[:-1], groups[1:])):
-                    if p_values[i] < 0.05:
-                        # Draw significance bar
-                        bar_height = y_max + 0.05 * y_range
-                        plt.plot([i, i+1], [bar_height, bar_height], 'k-', lw=1.5)
-                        plt.text((i + i+1)/2, bar_height + 0.02 * y_range, '*', 
-                                ha='center', va='bottom', fontsize=14)
+                # Add significance bars with detailed annotations
+                bar_height = y_max + 0.15 * y_range
+                if np.isfinite(bar_height):
+                    # Add significance bars for each significant comparison
+                    for i, (g1, g2, p_val, mean_diff) in enumerate(zip(
+                        tukey_results['groups'][:-1],
+                        tukey_results['groups'][1:],
+                        tukey_results['p_values'],
+                        tukey_results['meandiffs']
+                    )):
+                        if p_val < 0.05:
+                            # Draw significance bar
+                            plt.plot([i, i+1], [bar_height, bar_height], 'k-', lw=1.5)
+                            
+                            # Add p-value and effect size annotation
+                            # Handle very small p-values
+                            if p_val < 1e-10:
+                                p_stars = '***'
+                                p_text = 'p < 1e-10'
+                            else:
+                                p_stars = '*' * min(3, 1 + int(-np.log10(p_val)))
+                                p_text = f'p = {p_val:.3e}'
+                            
+                            plt.text((i + i+1)/2, bar_height + 0.02 * y_range,
+                                    f'{p_stars}\n{p_text}\nΔ = {mean_diff:.1f}',
+                                    ha='center', va='bottom', fontsize=9)
+                            
+                            # Add a second bar if needed for multiple comparisons
+                            if i < len(tukey_results['groups']) - 2:
+                                bar_height += 0.1 * y_range
                 
-                # Adjust y-axis limits to accommodate significance bars
-                plt.ylim(y_min, y_max + 0.15 * y_range)
+                # Adjust y-axis limits
+                if np.isfinite(y_min) and np.isfinite(y_max):
+                    plt.ylim(y_min, y_max + 0.4 * y_range)
         
-        # Add ANOVA results to plot
-        if metric in results.get('statistical_analysis', {}) and f'{metric}_anova' in results['statistical_analysis']:
-            anova_results = results['statistical_analysis'][f'{metric}_anova']
-            stats_text = f'ANOVA: F={anova_results["f_statistic"]:.2f}, p={anova_results["p_value"]:.3f}'
+        # Add ANOVA results to plot if available
+        if f'{metric_key}_anova' in stats_results:
+            anova_results = stats_results[f'{metric_key}_anova']
+            stats_text = f'ANOVA Results:\n'
+            stats_text += f'F({len(time_constraints)-1}, {len(time_constraints)*len(metric_values)-len(time_constraints)}) = {anova_results["f_statistic"]:.2f}\n'
+            
+            # Handle very small p-values
+            if anova_results['p_value'] < 1e-10:
+                stats_text += 'p < 1e-10\n'
+            else:
+                stats_text += f'p = {anova_results["p_value"]:.3e}\n'
+            
             if anova_results['significant']:
-                stats_text += f'\nη²={anova_results["eta_squared"]:.3f}'
+                stats_text += f'η² = {anova_results["eta_squared"]:.3f}'
             
             # Add statistics text in a box
             plt.text(0.02, 0.98, stats_text,
@@ -647,7 +692,7 @@ def plot_metrics_with_stats(df: pd.DataFrame, results: Dict, output_dir: str):
         plt.tight_layout()
         
         # Save figure with high quality
-        plt.savefig(os.path.join(output_dir, f'{metric}_with_stats.png'), 
+        plt.savefig(os.path.join(output_dir, f'{metric_key.replace(" ", "_")}_with_stats.png'), 
                    dpi=300, bbox_inches='tight')
         plt.close()
 
@@ -657,6 +702,9 @@ def main():
     data_dir = os.path.join(base_dir, "data/human_data/bai_read_under_time_pressure/corrected_data_by_fix8/11_all_corrected_scanpaths_across_stimuli")
     metadata_dir = os.path.join(base_dir, "data/human_data/bai_read_under_time_pressure/stimuli/10_27_15_58_100_images_W1920H1080WS16_LS40_MARGIN400")
     output_dir = os.path.join(base_dir, "data/human_data/bai_read_under_time_pressure/calculated_effects")
+    
+    # Create output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
     
     # Load data
     metadata = load_bbox_metadata(metadata_dir)
@@ -669,8 +717,14 @@ def main():
     # Calculate metrics
     metrics = calculate_all_metrics(df, sentence_metadata)
     
+    # Save final_metrics to a separate JSON file
+    final_metrics_file = os.path.join(output_dir, 'final_metrics.json')
+    with open(final_metrics_file, 'w') as f:
+        json.dump(metrics, f, indent=4)
+    print(f"Final metrics saved to {final_metrics_file}")
+    
     # Perform statistical analysis
-    stats_results = perform_statistical_analysis(df)
+    stats_results = perform_statistical_analysis(df, metrics)
     
     # Save metrics and statistical results to file
     results = {

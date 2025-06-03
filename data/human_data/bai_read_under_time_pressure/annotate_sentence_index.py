@@ -14,7 +14,7 @@ def process_stimulus(text):
     sentence_indices = []
     current_index = 0  # Reset index for each stimulus
     
-    for sentence in sentences:
+    for sentence_idx, sentence in enumerate(sentences):
         if not sentence.strip():
             continue
             
@@ -26,6 +26,7 @@ def process_stimulus(text):
         
         sentence_indices.append({
             'sentence': sentence,
+            'sentence_idx': sentence_idx,  # Add sentence index within the text
             'start_idx': start_idx,
             'end_idx': end_idx,
             'word_count': len(words)
@@ -44,7 +45,7 @@ def main():
     
     # Process each stimulus
     results = []
-    for i, stimulus in enumerate(stimuli, 1):
+    for i, stimulus in enumerate(stimuli):
         sentence_indices = process_stimulus(stimulus)
         results.append({
             'stimulus_id': i,
