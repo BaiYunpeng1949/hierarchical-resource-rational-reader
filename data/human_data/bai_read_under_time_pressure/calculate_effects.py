@@ -696,6 +696,154 @@ def plot_metrics_with_stats(df: pd.DataFrame, results: Dict, output_dir: str):
                    dpi=300, bbox_inches='tight')
         plt.close()
 
+def calculate_sentence_level_revisit(df: pd.DataFrame, sentence_metadata: List[Dict]) -> Dict:
+    """
+    Calculate sentence-level revisit metrics.
+    A sentence is considered regressed if it falls behind the latest sentence index that has fixations.
+    
+    Args:
+        df: DataFrame containing the processed scanpath data
+        sentence_metadata: List of stimulus metadata with sentence information
+        
+    Returns:
+        Dictionary containing sentence-level revisit metrics by time constraint
+    """
+    revisit_metrics = {}
+    
+    for time_constraint in df['time_constraint'].unique():
+        time_data = df[df['time_constraint'] == time_constraint].copy()
+        
+        # Initialize metrics
+        total_trials = 0
+        total_regressed_sentences = 0
+        total_sentences_read = 0
+        
+        # Process each trial
+        for (stimulus_id, participant_id), trial_data in time_data.groupby(['stimulus_index', 'participant_id']):
+            # Get sentence metadata for this stimulus
+            stimulus_meta = next((s for s in sentence_metadata if s['stimulus_id'] == stimulus_id), None)
+            if not stimulus_meta:
+                print(f"Warning: No metadata found for stimulus {stimulus_id}")
+                continue
+            
+            # Sort fixations by time
+            trial_data = trial_data.sort_values('fix_x')
+            
+            # Track reading progress
+            max_sentence_idx = -1
+            regressed_sentences = set()
+            sentences_read = set()
+            
+            # Process each fixation
+            for _, fixation in trial_data.iterrows():
+                if fixation['word_index'] == -1:  # Skip invalid word indices
+                    continue
+                
+                # Get sentence ID for this fixation
+                sentence_id = get_sentence_id(fixation['word_index'], stimulus_meta['sentences'])
+                if sentence_id == -1:
+                    continue
+                
+                # Update sentences read
+                sentences_read.add(sentence_id)
+                
+                # Update max sentence index
+                if sentence_id > max_sentence_idx:
+                    max_sentence_idx = sentence_id
+                # If current sentence is behind max sentence, it's a regression
+                elif sentence_id < max_sentence_idx:
+                    regressed_sentences.add(sentence_id)
+            
+            # Update metrics
+            total_trials += 1
+            total_regressed_sentences += len(regressed_sentences)
+            total_sentences_read += len(sentences_read)
+        
+        # Calculate metrics
+        if total_trials > 0:
+            avg_regressed_sentences = total_regressed_sentences / total_trials
+            avg_sentences_read = total_sentences_read / total_trials
+            regression_rate = (total_regressed_sentences / total_sentences_read * 100) if total_sentences_read > 0 else 0
+        else:
+            avg_regressed_sentences = 0
+            avg_sentences_read = 0
+            regression_rate = 0
+        
+        # Store metrics
+        revisit_metrics[f'sentence_level_revisit_{time_constraint}'] = {
+            'avg_regressed_sentences': float(avg_regressed_sentences),
+            'avg_sentences_read': float(avg_sentences_read),
+            'regression_rate': float(regression_rate)
+        }
+    
+    return revisit_metrics
+
+def plot_sentence_revisit_metrics(metrics: Dict, output_dir: str):
+    """
+    Create simple bar plots for sentence-level revisit metrics.
+    
+    Args:
+        metrics: Dictionary containing the calculated metrics
+        output_dir: Directory to save the plots
+    """
+    # Create output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Extract sentence-level revisit metrics
+    time_constraints = []
+    avg_regressed = []
+    regression_rates = []
+    
+    for time_constraint in [30, 60, 90]:
+        key = f'sentence_level_revisit_{time_constraint}'
+        if key in metrics:
+            time_constraints.append(time_constraint)
+            avg_regressed.append(metrics[key]['avg_regressed_sentences'])
+            regression_rates.append(metrics[key]['regression_rate'])
+    
+    # Set style
+    plt.style.use('seaborn')
+    
+    # Plot 1: Average Number of Regressed Sentences
+    plt.figure(figsize=(10, 6))
+    bars = plt.bar(time_constraints, avg_regressed, width=20, alpha=0.7)
+    
+    # Add value labels on top of bars
+    for bar in bars:
+        height = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width()/2., height,
+                f'{height:.2f}',
+                ha='center', va='bottom')
+    
+    plt.xlabel('Time Constraint (seconds)')
+    plt.ylabel('Average Number of Regressed Sentences')
+    plt.title('Average Number of Regressed Sentences by Time Constraint')
+    plt.xticks(time_constraints)
+    plt.grid(True, axis='y', linestyle='--', alpha=0.7)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'sentence_regression_count.png'), dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    # Plot 2: Regression Rate
+    plt.figure(figsize=(10, 6))
+    bars = plt.bar(time_constraints, regression_rates, width=20, alpha=0.7)
+    
+    # Add value labels on top of bars
+    for bar in bars:
+        height = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width()/2., height,
+                f'{height:.1f}%',
+                ha='center', va='bottom')
+    
+    plt.xlabel('Time Constraint (seconds)')
+    plt.ylabel('Regression Rate (%)')
+    plt.title('Sentence Regression Rate by Time Constraint')
+    plt.xticks(time_constraints)
+    plt.grid(True, axis='y', linestyle='--', alpha=0.7)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'sentence_regression_rate.png'), dpi=300, bbox_inches='tight')
+    plt.close()
+
 def main():
     # Define paths
     base_dir = "/home/baiy4/reader-agent-zuco"
@@ -717,6 +865,12 @@ def main():
     # Calculate metrics
     metrics = calculate_all_metrics(df, sentence_metadata)
     
+    # Calculate sentence-level revisit metrics
+    revisit_metrics = calculate_sentence_level_revisit(df, sentence_metadata)
+    
+    # Add revisit metrics to the main metrics dictionary
+    metrics.update(revisit_metrics)
+    
     # Save final_metrics to a separate JSON file
     final_metrics_file = os.path.join(output_dir, 'final_metrics.json')
     with open(final_metrics_file, 'w') as f:
@@ -736,6 +890,9 @@ def main():
     
     # Create plots with statistical significance
     plot_metrics_with_stats(df, results, output_dir)
+    
+    # Create sentence-level revisit plots
+    plot_sentence_revisit_metrics(metrics, output_dir)
     
     print(f"Analysis complete. Results saved to {output_dir}")
 

@@ -13,5 +13,20 @@
     "Average Saccade Length (px)_60": 137.8451204092313,
     "Word Skip Percentage by Saccades V2 With Word Index Correction_60": 32.265846624427994,
     "Revisit Percentage by Saccades V2 With Word Index Correction_60": 47.72694567224823,
-    "Average Reading Speed (wpm)_60": 171.48809523809524
+    "Average Reading Speed (wpm)_60": 171.48809523809524,
+    "sentence_level_revisit_90": {
+        "avg_regressed_sentences": 7.843373493975903,
+        "avg_sentences_read": 8.843373493975903,
+        "regression_rate": 88.69209809264305
+    },
+    "sentence_level_revisit_30": {
+        "avg_regressed_sentences": 6.714285714285714,
+        "avg_sentences_read": 7.738095238095238,
+        "regression_rate": 86.76923076923076
+    },
+    "sentence_level_revisit_60": {
+        "avg_regressed_sentences": 7.690476190476191,
+        "avg_sentences_read": 8.702380952380953,
+        "regression_rate": 88.37209302325581
+    }
 }
