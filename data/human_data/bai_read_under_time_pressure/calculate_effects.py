@@ -25,6 +25,21 @@ def load_bbox_metadata(metadata_dir: str) -> Dict:
         metadata = json.load(f)
     return metadata
 
+def load_sentence_metadata(metadata_dir: str) -> Dict:
+    """
+    Load the sentence metadata from the JSON file.
+    
+    Args:
+        metadata_dir: Directory containing the metadata files
+        
+    Returns:
+        Dictionary containing the sentence metadata
+    """
+    metadata_path = os.path.join(metadata_dir, "assets", "metadata_sentence_indeces.json")
+    with open(metadata_path, 'r') as f:
+        metadata = json.load(f)
+    return metadata
+
 def load_corrected_scanpath_data(data_dir: str) -> Dict:
     """
     Load the corrected scanpath data from a JSON file.
@@ -213,12 +228,121 @@ def calculate_reading_speed(df: pd.DataFrame) -> Dict:
     
     return reading_speeds
 
-def calculate_all_metrics(df: pd.DataFrame) -> Dict:
+def get_sentence_id(word_index: int, sentences: List[Dict]) -> int:
+    """
+    Get the sentence ID for a given word index.
+    
+    Args:
+        word_index: The word index to look up
+        sentences: List of sentence dictionaries with start_idx and end_idx
+        
+    Returns:
+        The sentence ID (0-based index) or -1 if not found
+    """
+    for i, sentence in enumerate(sentences):
+        if sentence['start_idx'] <= word_index <= sentence['end_idx']:
+            return i
+    return -1
+
+def calculate_sentence_regression_metrics(df: pd.DataFrame, sentence_metadata: List[Dict]) -> Dict:
+    """
+    Calculate sentence-level regression metrics.
+    
+    Args:
+        df: DataFrame containing the processed scanpath data
+        sentence_metadata: List of stimulus metadata with sentence information
+        
+    Returns:
+        Dictionary containing sentence regression metrics by time constraint
+    """
+    regression_metrics = {}
+    
+    for time_constraint in df['time_constraint'].unique():
+        time_data = df[df['time_constraint'] == time_constraint].copy()
+        
+        # Initialize metrics
+        total_fixations = 0
+        regressed_fixations = 0
+        total_sentences_read = 0
+        regressed_sentences = set()
+        revisited_sentences = {}  # Track how many times each sentence is revisited
+        
+        # Process each trial
+        for (stimulus_id, participant_id), trial_data in time_data.groupby(['stimulus_index', 'participant_id']):
+            # Get sentence metadata for this stimulus
+            stimulus_meta = next((s for s in sentence_metadata if s['stimulus_id'] == stimulus_id), None)
+            if not stimulus_meta:
+                continue
+                
+            # Sort fixations by time
+            trial_data = trial_data.sort_values('fix_x')
+            
+            # Track reading progress
+            current_sentence_id = -1
+            max_sentence_id = -1
+            sentence_fixations = {}  # Track fixations per sentence
+            sentence_visits = {}  # Track number of visits per sentence
+            
+            # Process each fixation
+            for _, fixation in trial_data.iterrows():
+                if fixation['word_index'] == -1:  # Skip invalid word indices
+                    continue
+                    
+                total_fixations += 1
+                
+                # Get sentence ID for this fixation
+                sentence_id = get_sentence_id(fixation['word_index'], stimulus_meta['sentences'])
+                if sentence_id == -1:
+                    continue
+                
+                # Update sentence fixations
+                if sentence_id not in sentence_fixations:
+                    sentence_fixations[sentence_id] = 0
+                sentence_fixations[sentence_id] += 1
+                
+                # Update sentence visits
+                if sentence_id not in sentence_visits:
+                    sentence_visits[sentence_id] = 0
+                sentence_visits[sentence_id] += 1
+                
+                # Update reading progress
+                if sentence_id > max_sentence_id:
+                    max_sentence_id = sentence_id
+                    current_sentence_id = sentence_id
+                
+                # Check for regression
+                if sentence_id < current_sentence_id:
+                    regressed_fixations += 1
+                    regressed_sentences.add(sentence_id)
+            
+            # Count revisited sentences (sentences visited more than once)
+            for sentence_id, visits in sentence_visits.items():
+                if visits > 1:
+                    if sentence_id not in revisited_sentences:
+                        revisited_sentences[sentence_id] = 0
+                    revisited_sentences[sentence_id] += 1
+            
+            # Count total sentences read
+            total_sentences_read += len(sentence_fixations)
+        
+        # Calculate metrics
+        fixation_regression_rate = (regressed_fixations / total_fixations * 100) if total_fixations > 0 else 0
+        sentence_regression_rate = (len(regressed_sentences) / total_sentences_read * 100) if total_sentences_read > 0 else 0
+        avg_revisited_sentences = len(revisited_sentences) / len(time_data.groupby(['stimulus_index', 'participant_id'])) if len(time_data.groupby(['stimulus_index', 'participant_id'])) > 0 else 0
+        
+        regression_metrics[f'fixation_regression_rate_{time_constraint}'] = fixation_regression_rate
+        regression_metrics[f'sentence_regression_rate_{time_constraint}'] = sentence_regression_rate
+        regression_metrics[f'avg_revisited_sentences_{time_constraint}'] = avg_revisited_sentences
+    
+    return regression_metrics
+
+def calculate_all_metrics(df: pd.DataFrame, sentence_metadata: List[Dict]) -> Dict:
     """
     Calculate all metrics from the processed scanpath data.
     
     Args:
         df: DataFrame containing the processed scanpath data
+        sentence_metadata: List of stimulus metadata with sentence information
         
     Returns:
         Dictionary containing all calculated metrics
@@ -255,6 +379,9 @@ def calculate_all_metrics(df: pd.DataFrame) -> Dict:
     # Add reading speeds
     metrics.update(calculate_reading_speed(df))
     
+    # Add sentence regression metrics
+    metrics.update(calculate_sentence_regression_metrics(df, sentence_metadata))
+    
     return metrics
 
 def perform_statistical_analysis(df: pd.DataFrame) -> Dict:
@@ -280,7 +407,9 @@ def perform_statistical_analysis(df: pd.DataFrame) -> Dict:
         'saccade_length': 'Saccade Length (pixels)',
         'num_fixations': 'Number of Fixations',
         'skip_rate': 'Word Skip Rate (%)',
-        'regression_rate': 'Regression Rate (%)'
+        'regression_rate': 'Word Regression Rate (%)',
+        'fixation_regression_rate': 'Sentence Fixation Regression Rate (%)',
+        'sentence_regression_rate': 'Sentence Regression Rate (%)'
     }
     
     # Calculate number of fixations per trial
@@ -315,6 +444,9 @@ def perform_statistical_analysis(df: pd.DataFrame) -> Dict:
             data = skip_rates_df
         elif metric == 'regression_rate':
             data = regression_rates_df
+        elif metric in ['fixation_regression_rate', 'sentence_regression_rate']:
+            # Skip ANOVA for sentence regression metrics as they're already aggregated
+            continue
         else:
             data = df
         
@@ -324,9 +456,9 @@ def perform_statistical_analysis(df: pd.DataFrame) -> Dict:
         
         # Store ANOVA results
         stats_results[f'{metric}_anova'] = {
-            'f_statistic': float(f_stat),  # Convert numpy float to Python float
-            'p_value': float(p_value),     # Convert numpy float to Python float
-            'significant': bool(p_value < 0.05)  # Convert numpy bool to Python bool
+            'f_statistic': float(f_stat),
+            'p_value': float(p_value),
+            'significant': bool(p_value < 0.05)
         }
         
         # Perform post-hoc Tukey HSD test if ANOVA is significant
@@ -337,13 +469,16 @@ def perform_statistical_analysis(df: pd.DataFrame) -> Dict:
             # Store Tukey HSD results
             stats_results[f'{metric}_tukey'] = {
                 'groups': tukey_result.groupsunique.tolist(),
-                'meandiffs': [float(x) for x in tukey_result.meandiffs],  # Convert numpy floats to Python floats
-                'p_values': [float(x) for x in tukey_result.pvalues],     # Convert numpy floats to Python floats
-                'significant': [bool(x) for x in (tukey_result.pvalues < 0.05)]  # Convert numpy bools to Python bools
+                'meandiffs': [float(x) for x in tukey_result.meandiffs],
+                'p_values': [float(x) for x in tukey_result.pvalues],
+                'significant': [bool(x) for x in (tukey_result.pvalues < 0.05)]
             }
     
     # Calculate effect sizes (eta-squared) for significant results
     for metric, metric_name in metrics_to_analyze.items():
+        if metric in ['fixation_regression_rate', 'sentence_regression_rate']:
+            continue
+            
         if stats_results[f'{metric}_anova']['significant']:
             if metric == 'num_fixations':
                 data = fixations_per_trial
@@ -361,17 +496,17 @@ def perform_statistical_analysis(df: pd.DataFrame) -> Dict:
             ss_between = np.sum([len(g) * (np.mean(g) - grand_mean) ** 2 for g in groups])
             eta_squared = ss_between / ss_total
             
-            stats_results[f'{metric}_anova']['eta_squared'] = float(eta_squared)  # Convert numpy float to Python float
+            stats_results[f'{metric}_anova']['eta_squared'] = float(eta_squared)
     
     return stats_results
 
-def plot_metrics_with_stats(df: pd.DataFrame, stats_results: Dict, output_dir: str):
+def plot_metrics_with_stats(df: pd.DataFrame, results: Dict, output_dir: str):
     """
     Create bar plots of the scanpath metrics with statistical significance indicators and standard deviation.
     
     Args:
         df: DataFrame containing the processed scanpath data
-        stats_results: Dictionary containing statistical test results
+        results: Dictionary containing metrics and statistical analysis results
         output_dir: Directory to save the plots
     """
     # Create output directory if it doesn't exist
@@ -411,7 +546,10 @@ def plot_metrics_with_stats(df: pd.DataFrame, stats_results: Dict, output_dir: s
         'saccade_length': 'Saccade Length (pixels)',
         'num_fixations': 'Number of Fixations',
         'skip_rate': 'Word Skip Rate (%)',
-        'regression_rate': 'Regression Rate (%)'
+        'regression_rate': 'Word Regression Rate (%)',
+        'fixation_regression_rate': 'Sentence Fixation Regression Rate (%)',
+        'sentence_regression_rate': 'Sentence Regression Rate (%)',
+        'avg_revisited_sentences': 'Average Number of Revisited Sentences'
     }
     
     # Set style
@@ -427,6 +565,21 @@ def plot_metrics_with_stats(df: pd.DataFrame, stats_results: Dict, output_dir: s
             data = skip_rates_df
         elif metric == 'regression_rate':
             data = regression_rates_df
+        elif metric in ['fixation_regression_rate', 'sentence_regression_rate', 'avg_revisited_sentences']:
+            # Create DataFrame for sentence regression metrics
+            data = []
+            for time_constraint in df['time_constraint'].unique():
+                metric_name = f'{metric}_{time_constraint}'
+                if metric_name in results['metrics']:
+                    data.append({
+                        'time_constraint': time_constraint,
+                        metric: results['metrics'][metric_name]
+                    })
+            data = pd.DataFrame(data)
+            if data.empty:
+                print(f"Warning: No data found for metric {metric}")
+                plt.close()
+                continue
         else:
             data = df
         
@@ -449,40 +602,43 @@ def plot_metrics_with_stats(df: pd.DataFrame, stats_results: Dict, output_dir: s
         plt.title(f'{ylabel} by Time Constraint', fontsize=14, pad=20)
         
         # Add statistical significance indicators
-        if stats_results[f'{metric}_anova']['significant']:
-            tukey_results = stats_results[f'{metric}_tukey']
-            groups = tukey_results['groups']
-            p_values = tukey_results['p_values']
-            
-            # Calculate y-axis limits for significance bars
-            y_max = means.max() + stds[means.idxmax()]
-            y_min = means.min() - stds[means.idxmin()]
-            y_range = y_max - y_min
-            
-            # Add significance bars with proper spacing
-            for i, (g1, g2) in enumerate(zip(groups[:-1], groups[1:])):
-                if p_values[i] < 0.05:
-                    # Draw significance bar
-                    bar_height = y_max + 0.05 * y_range
-                    plt.plot([i, i+1], [bar_height, bar_height], 'k-', lw=1.5)
-                    plt.text((i + i+1)/2, bar_height + 0.02 * y_range, '*', 
-                            ha='center', va='bottom', fontsize=14)
-            
-            # Adjust y-axis limits to accommodate significance bars
-            plt.ylim(y_min, y_max + 0.15 * y_range)
+        if metric in results.get('statistical_analysis', {}) and f'{metric}_anova' in results['statistical_analysis']:
+            anova_results = results['statistical_analysis'][f'{metric}_anova']
+            if anova_results['significant']:
+                tukey_results = results['statistical_analysis'][f'{metric}_tukey']
+                groups = tukey_results['groups']
+                p_values = tukey_results['p_values']
+                
+                # Calculate y-axis limits for significance bars
+                y_max = means.max() + stds[means.idxmax()]
+                y_min = means.min() - stds[means.idxmin()]
+                y_range = y_max - y_min
+                
+                # Add significance bars with proper spacing
+                for i, (g1, g2) in enumerate(zip(groups[:-1], groups[1:])):
+                    if p_values[i] < 0.05:
+                        # Draw significance bar
+                        bar_height = y_max + 0.05 * y_range
+                        plt.plot([i, i+1], [bar_height, bar_height], 'k-', lw=1.5)
+                        plt.text((i + i+1)/2, bar_height + 0.02 * y_range, '*', 
+                                ha='center', va='bottom', fontsize=14)
+                
+                # Adjust y-axis limits to accommodate significance bars
+                plt.ylim(y_min, y_max + 0.15 * y_range)
         
         # Add ANOVA results to plot
-        anova_results = stats_results[f'{metric}_anova']
-        stats_text = f'ANOVA: F={anova_results["f_statistic"]:.2f}, p={anova_results["p_value"]:.3f}'
-        if anova_results['significant']:
-            stats_text += f'\nη²={anova_results["eta_squared"]:.3f}'
-        
-        # Add statistics text in a box
-        plt.text(0.02, 0.98, stats_text,
-                transform=plt.gca().transAxes,
-                verticalalignment='top',
-                bbox=dict(facecolor='white', alpha=0.8, edgecolor='none', pad=5),
-                fontsize=10)
+        if metric in results.get('statistical_analysis', {}) and f'{metric}_anova' in results['statistical_analysis']:
+            anova_results = results['statistical_analysis'][f'{metric}_anova']
+            stats_text = f'ANOVA: F={anova_results["f_statistic"]:.2f}, p={anova_results["p_value"]:.3f}'
+            if anova_results['significant']:
+                stats_text += f'\nη²={anova_results["eta_squared"]:.3f}'
+            
+            # Add statistics text in a box
+            plt.text(0.02, 0.98, stats_text,
+                    transform=plt.gca().transAxes,
+                    verticalalignment='top',
+                    bbox=dict(facecolor='white', alpha=0.8, edgecolor='none', pad=5),
+                    fontsize=10)
         
         # Add grid for better readability
         plt.grid(True, axis='y', linestyle='--', alpha=0.7)
@@ -504,13 +660,14 @@ def main():
     
     # Load data
     metadata = load_bbox_metadata(metadata_dir)
+    sentence_metadata = load_sentence_metadata(metadata_dir)
     scanpath_data = load_corrected_scanpath_data(data_dir)
     
     # Process data
     df = process_scanpath_data(scanpath_data, metadata)
     
     # Calculate metrics
-    metrics = calculate_all_metrics(df)
+    metrics = calculate_all_metrics(df, sentence_metadata)
     
     # Perform statistical analysis
     stats_results = perform_statistical_analysis(df)
@@ -524,7 +681,7 @@ def main():
         json.dump(results, f, indent=4)
     
     # Create plots with statistical significance
-    plot_metrics_with_stats(df, stats_results, output_dir)
+    plot_metrics_with_stats(df, results, output_dir)
     
     print(f"Analysis complete. Results saved to {output_dir}")
 

@@ -20,7 +20,16 @@
         "mean_gaze_duration_90": 641.6859836847124,
         "reading_speed_30": 180.60290029862506,
         "reading_speed_60": 125.37277370407644,
-        "reading_speed_90": 94.27512794803641
+        "reading_speed_90": 94.27512794803641,
+        "fixation_regression_rate_30": 86.62092624356775,
+        "sentence_regression_rate_30": 1.6129032258064515,
+        "avg_revisited_sentences_30": 0.13095238095238096,
+        "fixation_regression_rate_60": 88.88389128060142,
+        "sentence_regression_rate_60": 1.5822784810126582,
+        "avg_revisited_sentences_60": 0.13095238095238096,
+        "fixation_regression_rate_90": 90.283203125,
+        "sentence_regression_rate_90": 1.5105740181268883,
+        "avg_revisited_sentences_90": 0.13253012048192772
     },
     "statistical_analysis": {
         "fix_duration_anova": {

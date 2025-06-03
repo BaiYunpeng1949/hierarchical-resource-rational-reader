@@ -9,6 +9,41 @@ The analysis uses the integrated corrected human scanpath data from `11_18_17_40
 - Fixation data across different time conditions
 - Participant and stimulus information
 
+## Text Processing and Sentence Annotation
+
+The text stimuli are processed using `annotate_sentence_index.py` to generate `metadata_sentence_indeces.json`. This file is crucial for text-level regression analysis as it:
+
+1. Separates each stimulus text into individual sentences
+2. Assigns word indices (starting from 0) for each sentence
+3. Tracks sentence boundaries and word positions
+4. Enables analysis of:
+   - Sentence-level regression patterns
+   - Cross-sentence reading behavior
+   - Sentence boundary effects on eye movements
+
+### Generating Sentence Indices
+
+To generate the sentence indices:
+```bash
+python annotate_sentence_index.py
+```
+
+This will:
+1. Read the corpus file (`corpus_10_27.txt`)
+2. Process each line as a separate stimulus
+3. Split each stimulus into sentences using punctuation (.!?)
+4. Calculate word indices for each sentence
+5. Save the results to `metadata_sentence_indeces.json`
+
+The output JSON contains:
+- Stimulus ID
+- Original text
+- Sentence-level information:
+  - Sentence text
+  - Start and end word indices
+  - Word count per sentence
+- Total word count per stimulus
+
 ## Analysis Procedure
 
 The analysis is performed using `calculate_effects.py`, which:
