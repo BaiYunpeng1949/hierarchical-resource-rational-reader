@@ -1,0 +1,76 @@
+simulator_name: 'step5'
+
+rl:
+  mode: train   # Options: train, continual_train, test, debug, simulate (run modules), and grid_test.
+
+  train:
+    total_timesteps: 100000000
+    checkpoints_folder_name: 0604_sentence_read_under_time_pressure_v0604
+    num_workers: 20   # Smaller than the server's number of processes: 16 - should not be the maximum capacity of the processors, otherwise the local memory will overflow.
+    num_steps: 10000   # Don't change this parameter -- previously 5000
+    batch_size: 1000  # We recommend using a `batch_size` that is a factor of `n_steps * n_envs` -- previously 500
+    ent_coef: 0.03    # Entropy coefficient
+    n_epochs: 10       # Number of epochs
+    clip_range: 0.2   # Clipping range
+    clip_range_vf: None   # Clipping range for the value function
+    target_kl: 0.1    # Target kl
+    learning_rate:   # Learning rate
+      initial_value: 1e-5
+      min_value: 1e-7
+      threshold: 0.8
+    gamma: 0.99    # 0.99
+    device: 'cuda'     # 'cuda' for default
+    save_freq: 10000000  # Save a checkpoint every 0.50 million steps
+
+  test:
+    num_episodes: 5
+    loaded_model_name: 'rl_model_100000000_steps'
+    continual_logs_name: 'PPO_89'
+    dataset_for_testing: 'simulate'   # OPTIONS: 'test', 'train', 'simulate'
+    grid_params:
+      w_penalty_spec: [1, 20, 1]
+
+simulate:
+  num_episodes: 1             # Number of episodes to simulate per dataset instance
+  rl_models:
+    supervisory_controller:
+      env_name: 'SupervisoryControllerEnv'   
+      checkpoints_folder_name: 1101_supervisory_controller_version1101_03 # 1028_supervisory_controller_version1023_01 # 1023_supervisory_controller_version1018_01   # 1019_supervisory_controller_version1018_01   # 1016_supervisory_controller_02
+      loaded_model_name: 'rl_model_10000000_steps'
+    word_controller:
+      env_name: 'SentenceLevelControllerEnv'           
+      checkpoints_folder_name: 1015_sentence_level_controller_v1014_01
+      loaded_model_name: 'rl_model_70000000_steps'
+    oculomotor_controller:
+      env_name: 'GeneralOculomotorControllerEnv'     
+      checkpoints_folder_name: 1123_oculomotor_controller_version1122_weighted_incorrect_penalty_ng5_ng15_02 # 1010_oculomotor_controller_weight_100_stimuli_500_for_train_01, rl_model_continual_160000000_steps
+      loaded_model_name: rl_model_200000000_steps # 'rl_model_continual_160000000_steps'
+  # The baseline configurations -- revise them later
+  llm_model:
+    env_name: 'LLMEnv'                      # Options: LLMEnv
+  bayesian_model:
+    env_name: 'BayesianSkipperEnv'          # Options: BayesianSkipperEnv
+    skip_activation_threshold: [[0.4, 0.8], 0.1]
+    word_frequency_weight: [[4, 20], 2]
+    word_predictability_weight: [[0.2, 1], 0.1]
+    konst: [[0, 0.5], 0.1]
+  computationally_rational_model:
+    env_name: 'OculomotorControllerEnv'     # Options: OculomotorControllerEnv
+    checkpoints_folder_name: 0904_oculomotor_controller_12
+    loaded_model_name: 'rl_model_continual_48000000_steps'
+  working_memory:
+    env_name: 'WorkingMemoryEnv'            # Options: WorkingMemoryEnv
+    task_spec: "You are a human reader, please read these texts, comprehend, and answer the questions later."
+    short_term_memory:
+      capacity: 4
+    central_executive:
+    episodic_buffer:
+
+llm:
+  use_aalto_openai_api: True
+  API_key: "sk-proj-H1oYBOCwNe22E5Mgc0V4T3BlbkFJUcRwMP0goXMjO04NWk47"   # My personal key
+  AALTO_OPENAI_API_KEY: b5de1b1587e04ee187293168b540136a                             # The Aalto University's key
+  model: "gpt-4o"
+  refresh_interval: 20
+  max_num_requests: 10       # Maximum number of retries for each API call
+  retry_delay: 20           # Time to wait between retries (in seconds)

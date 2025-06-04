@@ -1,0 +1,474 @@
+{
+  "0": {
+    "sentence_content": "With his interest in race cars, he formed a second company, the Henry Ford Company.",
+    "words": [
+      {
+        "word_id": 0,
+        "word": "With",
+        "word_clean": "with",
+        "length": 4,
+        "frequency": 5048.33,
+        "log_frequency": 3.7031477361914535,
+        "difficulty": 0.663350205800777,
+        "predictability": 0.006274226699834925,
+        "logit_predictability": -2.532505522132319
+      },
+      {
+        "word_id": 1,
+        "word": "his",
+        "word_clean": "his",
+        "length": 3,
+        "frequency": 2124.78,
+        "log_frequency": 3.3273139698064678,
+        "difficulty": 0.6975169118357756,
+        "predictability": 0.03113543924669106,
+        "logit_predictability": -1.7188890669507786
+      },
+      {
+        "word_id": 2,
+        "word": "interest",
+        "word_clean": "interest",
+        "length": 8,
+        "frequency": 50.94,
+        "log_frequency": 1.7070589406275962,
+        "difficulty": 0.8448128235793094,
+        "predictability": 0.0001,
+        "logit_predictability": -4.605120183487925
+      },
+      {
+        "word_id": 3,
+        "word": "in",
+        "word_clean": "in",
+        "length": 2,
+        "frequency": 9773.41,
+        "log_frequency": 3.9900461180481677,
+        "difficulty": 0.6372685347228939,
+        "predictability": 0.4460191243923981,
+        "logit_predictability": -0.10838416734160258
+      },
+      {
+        "word_id": 4,
+        "word": "race",
+        "word_clean": "race",
+        "length": 4,
+        "frequency": 61.9,
+        "log_frequency": 1.791690649020118,
+        "difficulty": 0.837119031907262,
+        "predictability": 0.0001,
+        "logit_predictability": -4.605120183487925
+      },
+      {
+        "word_id": 5,
+        "word": "cars,",
+        "word_clean": "cars",
+        "length": 4,
+        "frequency": 45.63,
+        "log_frequency": 1.6592504687726608,
+        "difficulty": 0.8491590482933945,
+        "predictability": 0.0001,
+        "logit_predictability": -4.605120183487925
+      },
+      {
+        "word_id": 6,
+        "word": "he",
+        "word_clean": "he",
+        "length": 2,
+        "frequency": 7637.2,
+        "log_frequency": 3.882934163885178,
+        "difficulty": 0.6470059851013474,
+        "predictability": 0.001981818767042032,
+        "logit_predictability": -3.1108782507603756
+      },
+      {
+        "word_id": 7,
+        "word": "formed",
+        "word_clean": "formed",
+        "length": 6,
+        "frequency": 4.73,
+        "log_frequency": 0.6748611407378116,
+        "difficulty": 0.9386489872056535,
+        "predictability": 0.0001,
+        "logit_predictability": -4.605120183487925
+      },
+      {
+        "word_id": 8,
+        "word": "a",
+        "word_clean": "a",
+        "length": 1,
+        "frequency": 20415.27,
+        "log_frequency": 4.309955128012859,
+        "difficulty": 0.6081858974533765,
+        "predictability": 0.06928243731391509,
+        "logit_predictability": -1.2988822085776615
+      },
+      {
+        "word_id": 9,
+        "word": "second",
+        "word_clean": "second",
+        "length": 6,
+        "frequency": 284.57,
+        "log_frequency": 2.4541891138747682,
+        "difficulty": 0.7768918987386575,
+        "predictability": 0.0001603329424399309,
+        "logit_predictability": -4.369048834368522
+      },
+      {
+        "word_id": 10,
+        "word": "company,",
+        "word_clean": "company",
+        "length": 7,
+        "frequency": 147.2,
+        "log_frequency": 2.16790781000148,
+        "difficulty": 0.8029174718180473,
+        "predictability": 0.0001,
+        "logit_predictability": -4.605120183487925
+      },
+      {
+        "word_id": 11,
+        "word": "the",
+        "word_clean": "the",
+        "length": 3,
+        "frequency": 29449.18,
+        "log_frequency": 4.469073206544746,
+        "difficulty": 0.5937206175868412,
+        "predictability": 0.009704474496153616,
+        "logit_predictability": -2.3127081708906405
+      },
+      {
+        "word_id": 12,
+        "word": "Henry",
+        "word_clean": "henry",
+        "length": 5,
+        "frequency": 76.55,
+        "log_frequency": 1.8839451950342798,
+        "difficulty": 0.8287322549968836,
+        "predictability": 0.0001,
+        "logit_predictability": -4.605120183487925
+      },
+      {
+        "word_id": 13,
+        "word": "Ford",
+        "word_clean": "ford",
+        "length": 4,
+        "frequency": 11.51,
+        "log_frequency": 1.0610753236297918,
+        "difficulty": 0.9035386069427462,
+        "predictability": 0.0034942027659925373,
+        "logit_predictability": -2.8265748572891285
+      },
+      {
+        "word_id": 14,
+        "word": "Company.",
+        "word_clean": "company",
+        "length": 7,
+        "frequency": 147.2,
+        "log_frequency": 2.16790781000148,
+        "difficulty": 0.8029174718180473,
+        "predictability": 0.0001,
+        "logit_predictability": -4.605120183487925
+      }
+    ]
+  },
+  "1": {
+    "sentence_content": "During this period, he personally drove his Quadricycle to victory in a race against Alexander Winton, a well-known driver and the heavy favorite on October 10, 1901.",
+    "words": [
+      {
+        "word_id": 0,
+        "word": "During",
+        "word_clean": "during",
+        "length": 6,
+        "frequency": 75.92,
+        "log_frequency": 1.8803561994192362,
+        "difficulty": 0.829058527325524,
+        "predictability": 0.0007770936696754139,
+        "logit_predictability": -3.5795861330531347
+      },
+      {
+        "word_id": 1,
+        "word": "this",
+        "word_clean": "this",
+        "length": 4,
+        "frequency": 7978.73,
+        "log_frequency": 3.9019337688086244,
+        "difficulty": 0.645278748290125,
+        "predictability": 0.03853633749876041,
+        "logit_predictability": -1.6084275722512202
+      },
+      {
+        "word_id": 2,
+        "word": "period,",
+        "word_clean": "period",
+        "length": 6,
+        "frequency": 27.78,
+        "log_frequency": 1.4437322414015967,
+        "difficulty": 0.8687516144180367,
+        "predictability": 0.0001,
+        "logit_predictability": -4.605120183487925
+      },
+      {
+        "word_id": 3,
+        "word": "he",
+        "word_clean": "he",
+        "length": 2,
+        "frequency": 7637.2,
+        "log_frequency": 3.882934163885178,
+        "difficulty": 0.6470059851013474,
+        "predictability": 0.001981818767042032,
+        "logit_predictability": -3.1108782507603756
+      },
+      {
+        "word_id": 4,
+        "word": "personally",
+        "word_clean": "personally",
+        "length": 10,
+        "frequency": 36.67,
+        "log_frequency": 1.5643109099606027,
+        "difficulty": 0.8577899172763088,
+        "predictability": 0.00045394957150935095,
+        "logit_predictability": -3.848535194712551
+      },
+      {
+        "word_id": 5,
+        "word": "drove",
+        "word_clean": "drove",
+        "length": 5,
+        "frequency": 28.86,
+        "log_frequency": 1.4602963267574753,
+        "difficulty": 0.8672457884765932,
+        "predictability": 0.0001,
+        "logit_predictability": -4.605120183487925
+      },
+      {
+        "word_id": 6,
+        "word": "his",
+        "word_clean": "his",
+        "length": 3,
+        "frequency": 2124.78,
+        "log_frequency": 3.3273139698064678,
+        "difficulty": 0.6975169118357756,
+        "predictability": 0.01567719487736555,
+        "logit_predictability": -2.0698733982249204
+      },
+      {
+        "word_id": 7,
+        "word": "Quadricycle",
+        "word_clean": "quadricycle",
+        "length": 11,
+        "frequency": 1.0,
+        "log_frequency": 0.0,
+        "difficulty": 1.0,
+        "predictability": 0.0001,
+        "logit_predictability": -4.605120183487925
+      },
+      {
+        "word_id": 8,
+        "word": "to",
+        "word_clean": "to",
+        "length": 2,
+        "frequency": 22677.84,
+        "log_frequency": 4.355601686871926,
+        "difficulty": 0.6040362102843704,
+        "predictability": 0.01192539900771116,
+        "logit_predictability": -2.2085438529968964
+      },
+      {
+        "word_id": 9,
+        "word": "victory",
+        "word_clean": "victory",
+        "length": 7,
+        "frequency": 21.45,
+        "log_frequency": 1.331427296520743,
+        "difficulty": 0.8789611548617506,
+        "predictability": 0.0001,
+        "logit_predictability": -4.605120183487925
+      },
+      {
+        "word_id": 10,
+        "word": "in",
+        "word_clean": "in",
+        "length": 2,
+        "frequency": 9773.41,
+        "log_frequency": 3.9900461180481677,
+        "difficulty": 0.6372685347228939,
+        "predictability": 0.9585654376768815,
+        "logit_predictability": 1.570661229902746
+      },
+      {
+        "word_id": 11,
+        "word": "a",
+        "word_clean": "a",
+        "length": 1,
+        "frequency": 20415.27,
+        "log_frequency": 4.309955128012859,
+        "difficulty": 0.6081858974533765,
+        "predictability": 0.004046259821714793,
+        "logit_predictability": -2.752953928642072
+      },
+      {
+        "word_id": 12,
+        "word": "race",
+        "word_clean": "race",
+        "length": 4,
+        "frequency": 61.9,
+        "log_frequency": 1.791690649020118,
+        "difficulty": 0.837119031907262,
+        "predictability": 0.0001,
+        "logit_predictability": -4.605120183487925
+      },
+      {
+        "word_id": 13,
+        "word": "against",
+        "word_clean": "against",
+        "length": 7,
+        "frequency": 201.73,
+        "log_frequency": 2.3047704885232587,
+        "difficulty": 0.7904754101342493,
+        "predictability": 0.1508861667318978,
+        "logit_predictability": -0.8638337833704023
+      },
+      {
+        "word_id": 14,
+        "word": "Alexander",
+        "word_clean": "alexander",
+        "length": 9,
+        "frequency": 9.51,
+        "log_frequency": 0.9781805169374139,
+        "difficulty": 0.9110744984602351,
+        "predictability": 0.0001,
+        "logit_predictability": -4.605120183487925
+      },
+      {
+        "word_id": 15,
+        "word": "Winton,",
+        "word_clean": "winton",
+        "length": 6,
+        "frequency": 1.0,
+        "log_frequency": 0.0,
+        "difficulty": 1.0,
+        "predictability": 0.0001,
+        "logit_predictability": -4.605120183487925
+      },
+      {
+        "word_id": 16,
+        "word": "a",
+        "word_clean": "a",
+        "length": 1,
+        "frequency": 20415.27,
+        "log_frequency": 4.309955128012859,
+        "difficulty": 0.6081858974533765,
+        "predictability": 0.005292513691102967,
+        "logit_predictability": -2.618077699708295
+      },
+      {
+        "word_id": 17,
+        "word": "well-known",
+        "word_clean": "wellknown",
+        "length": 9,
+        "frequency": 1.0,
+        "log_frequency": 0.0,
+        "difficulty": 1.0,
+        "predictability": 0.00021654901580274932,
+        "logit_predictability": -4.218738531372071
+      },
+      {
+        "word_id": 18,
+        "word": "driver",
+        "word_clean": "driver",
+        "length": 6,
+        "frequency": 47.37,
+        "log_frequency": 1.6755033847279566,
+        "difficulty": 0.8476815104792766,
+        "predictability": 0.0001,
+        "logit_predictability": -4.605120183487925
+      },
+      {
+        "word_id": 19,
+        "word": "and",
+        "word_clean": "and",
+        "length": 3,
+        "frequency": 13387.84,
+        "log_frequency": 4.126710513400982,
+        "difficulty": 0.6248444987817289,
+        "predictability": 0.020806837093753812,
+        "logit_predictability": -1.9257236451409634
+      },
+      {
+        "word_id": 20,
+        "word": "the",
+        "word_clean": "the",
+        "length": 3,
+        "frequency": 29449.18,
+        "log_frequency": 4.469073206544746,
+        "difficulty": 0.5937206175868412,
+        "predictability": 0.005218018569746909,
+        "logit_predictability": -2.625202926757315
+      },
+      {
+        "word_id": 21,
+        "word": "heavy",
+        "word_clean": "heavy",
+        "length": 5,
+        "frequency": 47.29,
+        "log_frequency": 1.6747693140154263,
+        "difficulty": 0.8477482441804158,
+        "predictability": 0.0001,
+        "logit_predictability": -4.605120183487925
+      },
+      {
+        "word_id": 22,
+        "word": "favorite",
+        "word_clean": "favorite",
+        "length": 8,
+        "frequency": 59.45,
+        "log_frequency": 1.7741518589547105,
+        "difficulty": 0.8387134673677537,
+        "predictability": 0.0001,
+        "logit_predictability": -4.605120183487925
+      },
+      {
+        "word_id": 23,
+        "word": "on",
+        "word_clean": "on",
+        "length": 2,
+        "frequency": 6955.73,
+        "log_frequency": 3.8423427156846266,
+        "difficulty": 0.6506961167559431,
+        "predictability": 0.0005608442810380735,
+        "logit_predictability": -3.742753131633251
+      },
+      {
+        "word_id": 24,
+        "word": "October",
+        "word_clean": "october",
+        "length": 7,
+        "frequency": 9.92,
+        "log_frequency": 0.9965116721541787,
+        "difficulty": 0.9094080298041656,
+        "predictability": 0.0019850525644233927,
+        "logit_predictability": -3.110061429491644
+      },
+      {
+        "word_id": 25,
+        "word": "10,",
+        "word_clean": "10",
+        "length": 2,
+        "frequency": 1.0,
+        "log_frequency": 0.0,
+        "difficulty": 1.0,
+        "predictability": 0.0001,
+        "logit_predictability": -4.605120183487925
+      },
+      {
+        "word_id": 26,
+        "word": "1901.",
+        "word_clean": "1901",
+        "length": 4,
+        "frequency": 1.0,
+        "log_frequency": 0.0,
+        "difficulty": 1.0,
+        "predictability": 0.0001,
+        "logit_predictability": -4.605120183487925
+      }
+    ]
+  }
+}
