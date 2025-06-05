@@ -5,28 +5,40 @@ import numpy as np
 
 # Example data
 words = [
-    "adjacent word1", "adjacent word2", "adjacent word3", "adjacent word4", "adjacent word5", 
+    "adjacent word1", "adjacent word2", 
+    # "adjacent word3", "adjacent word4", "adjacent word5", 
     "reading word", 
-    "adjacent word6", "adjacent word7", "adjacent word8", "adjacent word9"
+    "adjacent word6", "adjacent word7", 
+    # "adjacent word8", "adjacent word9"
 ]
 # beliefs: Sharper Gaussian-like, highest at reading word, drops off quickly
-beliefs = [0.005, 0.01, 0.02, 0.04, 0.10, 0.65, 0.10, 0.04, 0.02, 0.005]  # Must sum to 1
+# beliefs = [0.005, 0.01, 0.02, 0.04, 0.10, 0.65, 0.10, 0.04, 0.02, 0.005]  # Must sum to 1
+beliefs = [0.05, 0.1, 0.7, 0.1, 0.05]
 
 # Define RGB colors (0-255)
 bar_colors_rgb = [
-    (246, 198, 173), (246, 198, 173), (246, 198, 173), (246, 198, 173), (246, 198, 173),
-    (255, 0, 0),  # Red for reading word
-    (246, 198, 173), (246, 198, 173), (246, 198, 173), (246, 198, 173)
+    (246, 198, 173), (246, 198, 173), 
+    # (246, 198, 173), (246, 198, 173), (246, 198, 173),
+    (255, 80, 80),  # Red for reading word
+    # (246, 198, 173),   # normal color for the initalization
+    (246, 198, 173), (246, 198, 173), 
+    # (246, 198, 173), (246, 198, 173)
 ]
 
 # Convert to 0-1 scale for matplotlib
 bar_colors = [(r/255, g/255, b/255) for r, g, b in bar_colors_rgb]
 
 # Plot
-plt.figure(figsize=(10, 2))
+plt.figure(figsize=(2, 2))
 ax = plt.gca()
 bars = ax.bar(words, beliefs, color=bar_colors)
-plt.ylabel("Belief", fontsize=20)
+
+# Add black border to the central bar
+central_bar_index = words.index("reading word")
+bars[central_bar_index].set_edgecolor('black')
+bars[central_bar_index].set_linewidth(2)
+
+plt.ylabel("Belief distribution", fontsize=12)
 # plt.title("Belief Distribution over Words")
 plt.ylim(0, 1)
 

@@ -242,3 +242,5 @@ sysinfo.txt
 /data/human_data/bai_read_under_time_pressure/processed_data
 /data/human_data/bai_read_under_time_pressure/raw_data
 /data/human_data/bai_read_under_time_pressure/stimuli
+/step5/simulators/simulator_v20250604/sub_models/training/logs
+/step5/simulators/simulator_v20250604/sub_models/training/saved_models
