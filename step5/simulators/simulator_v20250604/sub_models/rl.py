@@ -33,7 +33,7 @@ from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
 # from modules.rl_envs.word_activation_v0218.WordActivationEnvV0218 import WordActivationRLEnv
 from sentence_read_v0604.SentenceReadingEnv import SentenceReadingEnv
-from text_comprehension_v0604.TextComprehensionEnv import TextComprehensionEnv
+from text_read_v0604.TextReadEnv import TextReadingUnderTimePressureEnv
 
 
 
@@ -115,8 +115,8 @@ class RL:
             )
 
         # Get the environment class
-        # env_class = TextComprehensionEnv # SentenceReadingEnv # WordActivationRLEnv # OculomotorControllerRLEnv # GeneralOculomotorControllerEnv     
-        env_class = SentenceReadingEnv
+        env_class = TextReadingUnderTimePressureEnv # SentenceReadingEnv # WordActivationRLEnv # OculomotorControllerRLEnv # GeneralOculomotorControllerEnv     
+        # env_class = SentenceReadingEnv
 
         # Read the total dataset if training the general oculomotor controller model.
         # if env_class == WordActivationRLEnv:        NOTE: uncomment this later if the word recognizer agent is needed
@@ -147,10 +147,10 @@ class RL:
                 seed=42,
                 vec_env_cls=SubprocVecEnv,
             )
-        elif env_class == TextComprehensionEnv:
-            self._env = TextComprehensionEnv()
+        elif env_class == TextReadingUnderTimePressureEnv:
+            self._env = TextReadingUnderTimePressureEnv()
             def make_env():
-                env = TextComprehensionEnv()
+                env = TextReadingUnderTimePressureEnv()
                 # env = Monitor(env)
                 return env
             # Initialise parallel environments
@@ -178,7 +178,7 @@ class RL:
             # Configure the model - HRL - Ocular motor control
             # if isinstance(self._env, SampleFixationVersion1) or isinstance(self._env, SampleFixationVersion2):
             # if isinstance(self._env, WordActivationRLEnv) or isinstance(self._env, SentenceReadingEnv) or isinstance(self._env, TextComprehensionEnv):      NOTE: uncomment this later if the word recognizer agent is needed
-            if isinstance(self._env, SentenceReadingEnv) or isinstance(self._env, TextComprehensionEnv):
+            if isinstance(self._env, SentenceReadingEnv) or isinstance(self._env, TextReadingUnderTimePressureEnv):
                 policy_kwargs = dict(
                     features_extractor_class=StatefulInformationExtractor,       
                     features_extractor_kwargs=dict(features_dim=128),
@@ -312,7 +312,7 @@ class RL:
             #     self._word_activation_test()
             if isinstance(self._env, SentenceReadingEnv):
                 self._sentence_reading_test()
-            elif isinstance(self._env, TextComprehensionEnv):
+            elif isinstance(self._env, TextReadingUnderTimePressureEnv):
                 self._text_comprehension_test()
             else:
                 raise ValueError(f'Invalid environment {self._env}.')

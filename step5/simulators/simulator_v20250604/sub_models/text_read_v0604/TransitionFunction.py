@@ -70,3 +70,11 @@ class TransitionFunction():
                 read_sentence_appraisal_scores_distribution[i] = np.clip(read_sentence_appraisal_scores_distribution[i] - Constants.MEMORY_DECAY_CONSTANT, 0, 1)
         
         return read_sentence_appraisal_scores_distribution.copy()
+    
+    def update_state_time(self, elapsed_time, sentence_reading_time, time_condition_value):
+        """
+        Update the state of the time.
+        """
+        elapsed_time += sentence_reading_time
+        remaining_time = time_condition_value - elapsed_time
+        return elapsed_time, remaining_time

@@ -9,15 +9,16 @@ from gymnasium import Env
 from gymnasium.spaces import Box, Discrete, Dict
 
 from .TextManager import TextManager
+from .TimeConditionManager import TimeConditionManager
 from .TransitionFunction import TransitionFunction
 from .RewardFunction import RewardFunction
 from . import Constants
 
 
-class TextComprehensionEnv(Env):
+class TextReadingUnderTimePressureEnv(Env):
     def __init__(self):
         """
-        Create on 16 May 2025.
+        Create on 04 June 2025.
         This is the environment for the RL-based high level -- text-level control agent: 
             it controls externally which sentence to read (proceed or regress to a previous one).
 
@@ -30,14 +31,18 @@ class TextComprehensionEnv(Env):
             Time pressure (so need to finish reading before time runs out)
         
         Version: 1
-            A simple version for sentence reading, where only regress to the previous sentence is the action. Observations are directly the 
+            A simple version for sentence reading but under time pressure.
         
         Future work:
         1. Graph-based gist
         2. Fluid schema
         3. Reading flow interruption costs (apply from the memory perspective)
 
-        /home/baiy4/reader-agent-zuco/step5/simulators/simulator_v20250604/sub_models/config.yaml
+        Training Objective:
+            4th June 2025:
+                - More sentence regressions when time is sufficient
+        
+        # TODO finish the text reading env with different time conditions
 
         """
         # Load configuration
@@ -48,10 +53,11 @@ class TextComprehensionEnv(Env):
         self._mode = self._config["rl"]["mode"]
         self.num_episodes = self._config["rl"]["test"]["num_episodes"]
         
-        print(f"Text Comprehension Environment V0516 -- Deploying in {self._mode} mode")
+        print(f"Text Reading (Under Time Pressure) Environment V0604 -- Deploying in {self._mode} mode")
 
         # Initialize components
         self.text_manager = TextManager()
+        self.time_condition_manager = TimeConditionManager()
         self.transition_function = TransitionFunction()
         self.reward_function = RewardFunction()
 
@@ -67,6 +73,12 @@ class TextComprehensionEnv(Env):
         # External states
         self._current_sentence_index = None     # Actually the reading progress, because the revisited sentence index is not trakced here
         self._actual_reading_sentence_index = None  # Tracking the revisited sentence index
+
+        # Time conditions
+        self._time_condition = None     # Select from 30s, 60s, 90s
+        self._time_condition_value = None     # Value of the time condition, in seconds
+        self._elapsed_time = None     # Timer for ticking the time, in seconds
+        self._remaining_time = None     # Remaining time, in seconds
 
         # Environment parameters
         self._steps = None
@@ -86,7 +98,7 @@ class TextComprehensionEnv(Env):
         self.action_space = Box(low=0, high=1, shape=(3,))      # First action decides keeps reading or not; second acction decides where to regress to; third action decides whether to stop
         
         # Observation space - simplified to scalar signals
-        self._num_stateful_obs = Constants.MAX_NUM_SENTENCES + 3 + 1     # Distribution of the appraisal scores over the sentences, current sentence index, and the time awareness 
+        self._num_stateful_obs = Constants.MAX_NUM_SENTENCES + 3 + 2 + 1     # Distribution of the appraisal scores over the sentences, current sentence index, time awarenesss and remaining time, and the time awareness 
         self.observation_space = Box(low=-1, high=1, shape=(self._num_stateful_obs,))
 
         #########################################################
@@ -117,6 +129,11 @@ class TextComprehensionEnv(Env):
 
         # # TODO debug delete later
         # print(f"Text ID sampled: {text_id}")
+
+        # Get the time condition
+        self._time_condition, self._time_condition_value = self.time_condition_manager.reset()
+        self._elapsed_time = 0
+        self._remaining_time = self._time_condition_value - self._elapsed_time        # TODO done here, do from here, transition function and reward function
         
         return self._get_obs(), {}
     
@@ -130,7 +147,7 @@ class TextComprehensionEnv(Env):
         continue_or_stop_action = action[2]
 
         if continue_or_stop_action <= self._stop_division:
-            if read_or_regress_action > self._regress_proceed_division:
+            if read_or_regress_action > self._regress_proceed_division:     # Read the next sentence
                 # Then update state with new sentence
                 new_scores, action_validity = self.transition_function.update_state_read_next_sentence(
                     current_sentence_index=self._current_sentence_index,
@@ -144,13 +161,19 @@ class TextComprehensionEnv(Env):
                     self._actual_reading_sentence_index = self._current_sentence_index
                     self._num_sentences_read += 1
                     self._num_remaining_sentence -= 1
-                                    # Apply memory decay first
+                    # Apply memory decay first
                     self._already_read_sentences_appraisal_scores_distribution = self.transition_function.apply_time_independent_memory_decay(
                         self._already_read_sentences_appraisal_scores_distribution, 
                         self._current_sentence_index
                     )
-
+                    # Update the sentences' appraisal scores
                     self._already_read_sentences_appraisal_scores_distribution[self._current_sentence_index] = new_scores[self._current_sentence_index]
+                    # Update the elapsed time
+                    self._elapsed_time, self._remaining_time = self.transition_function.update_state_time(
+                        elapsed_time=self._elapsed_time,
+                        sentence_reading_time=self._sampled_text_metadata["sentence_reading_times"][self._actual_reading_sentence_index],
+                        time_condition_value=self._time_condition_value
+                    )
                 else: 
                     self._already_read_sentences_appraisal_scores_distribution = self.transition_function.apply_time_independent_memory_decay(
                         self._already_read_sentences_appraisal_scores_distribution, 
@@ -175,6 +198,13 @@ class TextComprehensionEnv(Env):
                     furtherest_read_sentence_index=self._current_sentence_index,
                     read_sentence_appraisal_scores_distribution=self._already_read_sentences_appraisal_scores_distribution
                 )
+
+                # Update the elapsed time
+                self._elapsed_time, self._remaining_time = self.transition_function.update_state_time(
+                    elapsed_time=self._elapsed_time,
+                    sentence_reading_time=self._sampled_text_metadata["sentence_reading_times"][self._actual_reading_sentence_index],
+                    time_condition_value=self._time_condition_value
+                )
                 
                 self._current_sentence_index = self._current_sentence_index     # Just a placeholder here -- automatically jumps back to the latest sentence that read. NOTE: make this complex later    
                 
@@ -185,8 +215,13 @@ class TextComprehensionEnv(Env):
             self._terminate = True
             self._truncated = False
 
-        # Check termination
+        # Check termination by the episode length
         if self._steps >= self.ep_len:
+            self._terminate = True
+            self._truncated = True
+        
+        # Check termination by the time condition
+        if self._remaining_time <= 0:
             self._terminate = True
             self._truncated = True
 
@@ -239,12 +274,22 @@ class TextComprehensionEnv(Env):
         
         on_going_comprehension_log_scalar = np.clip(on_going_comprehension_log_scalar, 0, 1)
 
-        stateful_obs = np.concatenate([padded_appraisals, [norm_current_position], [remaining_episode_length_awareness], [norm_remaining_sentence], [on_going_comprehension_log_scalar]])
+        # Get the time condition awareness
+        if self._time_condition == "30s":
+            time_condition_awareness = -1
+        elif self._time_condition == "60s":
+            time_condition_awareness = 0
+        elif self._time_condition == "90s":
+            time_condition_awareness = 1
+        else:
+            raise ValueError(f"Invalid time condition: {self._time_condition}")
+        
+        norm_remaining_time = self.normalise(self._remaining_time, 0, self._time_condition_value, 0, 1)
+
+        # Concatenate the observations
+        stateful_obs = np.concatenate([padded_appraisals, [norm_current_position], [remaining_episode_length_awareness], [norm_remaining_sentence], [on_going_comprehension_log_scalar], [time_condition_awareness], [norm_remaining_time]])
 
         assert stateful_obs.shape[0] == self._num_stateful_obs, f"expected {self._num_stateful_obs} but got {stateful_obs.shape[0]}"
-
-        # # TODO debug delete later
-        # print(f"Stateful observation is: {stateful_obs}")
         
         ################## Update step-wise log here because some values are computed here ##################
         self._step_wise_log.append({

@@ -28,13 +28,16 @@ class RewardFunction():
         """
         Compute reward for terminating reading.
         Uses sigmoid saturation to encourage more human-like reading behavior.
+
+        NOTE: might need to change to another reward function design later, where cumulative comprehensions are applied, 
+        not just the averaged comprehension score across all sentences that does not account for the reading progress's effect.
         """
         # Identify valid scores first
         valid_scores = [a for a in sentence_appraisal_scores_distribution if 0 <= a <= 1]
 
         # Penalize for not finishing the sentence reading task
         if num_sentences_read < num_sentences:
-            return -100
+            return -100        # This simple reward makes the agent wants to complete the sentence reading under limited time TODO: this is tunable with the lateral reward
         else:
 
             # Compute geometric mean of word beliefs
@@ -49,8 +52,8 @@ class RewardFunction():
 
             # NOTE: linear reward: linear scaling for the comprehension performance
             final_reward = 100 * self._coefficeint_comprehension * overall_comprehension_scalar
-
-            # # TODO debug delete later
-            # print(f"The final reward is: {final_reward}")
                 
             return final_reward
+
+
+# TODO modify the reward function to consider the time condition
