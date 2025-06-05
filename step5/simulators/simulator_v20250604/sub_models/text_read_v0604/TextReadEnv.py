@@ -101,8 +101,10 @@ class TextReadingUnderTimePressureEnv(Env):
         self._num_stateful_obs = Constants.MAX_NUM_SENTENCES + 3 + 2 + 1     # Distribution of the appraisal scores over the sentences, current sentence index, time awarenesss and remaining time, and the time awareness 
         self.observation_space = Box(low=-1, high=1, shape=(self._num_stateful_obs,))
 
-        #########################################################
+        #########################################################   NOTE: log related variables
         self.episode_id = 0        # Initialize here because need to accumulate across episodes
+        self._log_number_regressions = None
+        self._log_episodic_regression_rate = None
         
     def reset(self, seed=42):
         """Reset environment and initialize states"""
@@ -134,6 +136,11 @@ class TextReadingUnderTimePressureEnv(Env):
         self._time_condition, self._time_condition_value = self.time_condition_manager.reset()
         self._elapsed_time = 0
         self._remaining_time = self._time_condition_value - self._elapsed_time        # TODO done here, do from here, transition function and reward function
+
+        # Initialize log variables
+        self._log_number_regressions = 0
+        self._log_episodic_regression_rate_over_num_read_sentences = 0
+        self._log_episodic_regression_rate_over_steps = 0
         
         return self._get_obs(), {}
     
@@ -181,7 +188,7 @@ class TextReadingUnderTimePressureEnv(Env):
                     )
                 # Get the reward    
                 reward = self.reward_function.compute_read_next_sentence_reward()
-            else:
+            else:   # Regress to a previously read sentence
                 # Regress to a previously read sentence
                 revised_sentence_index = self._get_regress_sentence_index(raw_regress_sentence_value)
                 self._actual_reading_sentence_index = revised_sentence_index
@@ -208,6 +215,9 @@ class TextReadingUnderTimePressureEnv(Env):
                 
                 self._current_sentence_index = self._current_sentence_index     # Just a placeholder here -- automatically jumps back to the latest sentence that read. NOTE: make this complex later    
                 
+                # Update the log variables
+                self._log_number_regressions += 1
+
                 # Get the reward
                 reward = self.reward_function.compute_regress_to_sentence_reward()
         else:
@@ -291,7 +301,7 @@ class TextReadingUnderTimePressureEnv(Env):
 
         assert stateful_obs.shape[0] == self._num_stateful_obs, f"expected {self._num_stateful_obs} but got {stateful_obs.shape[0]}"
         
-        ################## Update step-wise log here because some values are computed here ##################
+        ################## Update step-wise log here because some values are computed here ##################   TODO: check here and think about a reliable way to evaluate
         self._step_wise_log.append({
             "step": self._steps,
             "current_sentence_index": self._current_sentence_index,
@@ -306,16 +316,26 @@ class TextReadingUnderTimePressureEnv(Env):
         
     def get_episode_log(self) -> dict:
         """Get logs for the episode"""
+
+        # Update the log variables
+        self._log_episodic_regression_rate_over_num_read_sentences = self._log_number_regressions / self._num_sentences_read    
+        self._log_episodic_regression_rate_over_steps = self._log_number_regressions / self._steps
+
         episode_log = {
             "episode_id": self.episode_id,
             "total_episodes": self.num_episodes,
+            "time_condition": self._time_condition,
+            "time_condition_value": self._time_condition_value,
             "num_sentences": self._num_sentences,
             "init_sentence_appraisal_scores_distribution": self._sentence_appraisal_scores_distribution,
+            "sentence_lengths": self._sampled_text_metadata["sentence_lengths"],
+            "sentence_reading_times": self._sampled_text_metadata["sentence_reading_times"],
+            "log_number_regressions": self._log_number_regressions,
+            "log_episodic_regression_rate_over_num_read_sentences": self._log_episodic_regression_rate_over_num_read_sentences,
+            "log_episodic_regression_rate_over_steps": self._log_episodic_regression_rate_over_steps,
+
             "step_wise_log": self._step_wise_log,
         }
-
-        # # TODO debug delete later
-        # print(f"Episode log is: {episode_log}")
 
         return episode_log
 

@@ -369,6 +369,9 @@ class RL:
          # Start the timer
         start_time = time.time()
 
+        # Prepare to collect logs
+        all_episode_logs = []
+
         for episode in range(1, self._num_episodes + 1):
             obs, info = self._env.reset()
             done = False
@@ -391,9 +394,29 @@ class RL:
                 f'{"-" * 50}\n'
             )
 
-        print(f'Time elapsed for running the DEBUG/TEST: {time.time() - start_time} seconds')
-        
+            # Collect episode log after each episode
+            episode_log = self._env.get_episode_log()
+            episode_log['score'] = score
+            all_episode_logs.append(episode_log)
 
+        print(f'Time elapsed for running the DEBUG/TEST: {time.time() - start_time} seconds')
+
+        # Save logs to JSON file in the specified folder structure
+        # Folder: simulated_results/<checkpoint_folder>__<model_name>__<num_episodes>
+        checkpoint_folder = self._checkpoints_folder_name if hasattr(self, '_checkpoints_folder_name') else 'unknown_checkpoint'
+        model_name = self._loaded_model_name if hasattr(self, '_loaded_model_name') else 'unknown_model'
+        num_episodes = self._num_episodes if hasattr(self, '_num_episodes') else 'unknown_episodes'
+        results_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            'text_read_v0604',
+            'simulated_results',
+            f'{checkpoint_folder}__{model_name}__{num_episodes}'
+        )
+        os.makedirs(results_dir, exist_ok=True)
+        results_path = os.path.join(results_dir, 'simulated_episode_logs.json')
+        with open(results_path, 'w') as f:
+            json.dump(all_episode_logs, f, indent=2)
+        print(f"Saved episode logs to {results_path}")
 
     def __del__(self):
         # Close the environment.
