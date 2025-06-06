@@ -6,8 +6,12 @@ MIN_NUM_SENTENCES = 5
 MAX_SENTENCE_LENGTH = 30
 MIN_SENTENCE_LENGTH = 5
 
-# Approximated reading speed (seconds per word) -- 238 words per minute
-READING_SPEED = 0.252
+# Parameters for the text length
+MAX_TEXT_LENGTH = 150
+MIN_TEXT_LENGTH = 130
+
+# Approximated reading speed (seconds per word) -- 238 words per minute: 0.252 seconds per word
+READING_SPEED = 0.4     # 0.252 is too fast to our participants.
 
 # A new feature: memory decay over time
 MEMORY_DECAY_CONSTANT = 0.02

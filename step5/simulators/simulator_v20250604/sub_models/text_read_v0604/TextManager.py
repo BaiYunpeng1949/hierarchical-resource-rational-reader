@@ -16,31 +16,49 @@ class TextManager():
         self._text_id_counter = 0
 
     def reset(self):
-        # Generate random number of sentences
+        # First, determine number of sentences within bounds
         num_sentences = random.randint(self.min_num_sentences, self.max_num_sentences)
         
+        # Calculate target total words based on text length constraints
+        target_total_words = random.randint(Constants.MIN_TEXT_LENGTH, Constants.MAX_TEXT_LENGTH)
+        
+        # Calculate average words per sentence
+        avg_words_per_sentence = target_total_words // num_sentences
+        
+        # Generate sentence lengths that sum up to target_total_words
+        remaining_words = target_total_words
+        sentence_lengths = []
+        
+        for i in range(num_sentences):
+            if i == num_sentences - 1:
+                # Last sentence gets remaining words
+                sentence_length = remaining_words
+            else:
+                # Calculate min and max possible length for this sentence
+                min_possible = max(Constants.MIN_SENTENCE_LENGTH, 
+                                 remaining_words - (Constants.MAX_SENTENCE_LENGTH * (num_sentences - i - 1)))
+                max_possible = min(Constants.MAX_SENTENCE_LENGTH, 
+                                 remaining_words - (Constants.MIN_SENTENCE_LENGTH * (num_sentences - i - 1)))
+                
+                # Generate length within constraints
+                sentence_length = random.randint(min_possible, max_possible)
+                remaining_words -= sentence_length
+            
+            sentence_lengths.append(sentence_length)
+        
         # Generate appraisal scores from Gaussian distribution centered at 0.6
-        # Using std dev of 0.2 to keep most values within reasonable range
         sentence_appraisal_scores = []
         for _ in range(num_sentences):
-            score = random.gauss(0.6, 0.2)  # TODO change to the real sentences' appraisal values (need to simulate the first-pass appraisals and revised appraisals)
-            # Clamp values between 0 and 1
+            # score = random.gauss(0.6, 0.2)
+            score = random.uniform(0.0, 1.0)
             score = max(0.0, min(1.0, score))
             sentence_appraisal_scores.append(round(score, 1))
         
         # Pad with -1 to maintain consistent length (20 sentences max)
         padded_scores = sentence_appraisal_scores + [-1] * (20 - num_sentences)
         
-        # Sentence lenghts
-        sentence_lengths = []
-        # Sentence reading times (in seconds)
-        sentence_reading_times = []
-
-        # Generate random number of words per sentence
-        for sentence_idx in range(num_sentences):
-            num_words_per_sentence = random.randint(Constants.MIN_SENTENCE_LENGTH, Constants.MAX_SENTENCE_LENGTH)
-            sentence_lengths.append(num_words_per_sentence)
-            sentence_reading_times.append(num_words_per_sentence * Constants.READING_SPEED)
+        # Calculate sentence reading times
+        sentence_reading_times = [length * Constants.READING_SPEED for length in sentence_lengths]
         
         # Create new text entry
         text_entry = {
@@ -49,7 +67,9 @@ class TextManager():
             "num_sentences": num_sentences,
             "sentence_appraisal_scores_distribution": padded_scores,
             "sentence_lengths": sentence_lengths,
-            "sentence_reading_times": sentence_reading_times
+            "sentence_reading_times": sentence_reading_times,
+            "total_words": sum(sentence_lengths),  # Added for verification
+            "total_one_pass_reading_time": sum(sentence_reading_times)
         }
         
         self._text_id_counter += 1

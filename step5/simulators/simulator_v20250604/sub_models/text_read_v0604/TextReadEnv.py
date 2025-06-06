@@ -41,9 +41,6 @@ class TextReadingUnderTimePressureEnv(Env):
         Training Objective:
             4th June 2025:
                 - More sentence regressions when time is sufficient
-        
-        # TODO finish the text reading env with different time conditions
-
         """
         # Load configuration
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -131,6 +128,7 @@ class TextReadingUnderTimePressureEnv(Env):
 
         # # TODO debug delete later
         # print(f"Text ID sampled: {text_id}")
+        # print(f"Sampled text metadata: {self._sampled_text_metadata}")
 
         # Get the time condition
         self._time_condition, self._time_condition_value = self.time_condition_manager.reset()
@@ -318,8 +316,8 @@ class TextReadingUnderTimePressureEnv(Env):
         """Get logs for the episode"""
 
         # Update the log variables
-        self._log_episodic_regression_rate_over_num_read_sentences = self._log_number_regressions / self._num_sentences_read    
-        self._log_episodic_regression_rate_over_steps = self._log_number_regressions / self._steps
+        self._log_episodic_regression_rate_over_num_read_sentences = self._log_number_regressions / self._num_sentences_read if self._num_sentences_read > 0 else 0
+        self._log_episodic_regression_rate_over_steps = self._log_number_regressions / self._steps if self._steps > 0 else 0
 
         episode_log = {
             "episode_id": self.episode_id,
