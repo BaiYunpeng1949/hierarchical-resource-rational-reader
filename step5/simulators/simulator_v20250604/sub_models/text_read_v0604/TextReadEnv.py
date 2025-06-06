@@ -115,7 +115,8 @@ class TextReadingUnderTimePressureEnv(Env):
 
         # Get new sentence
         self._sampled_text_metadata = self.text_manager.reset()
-        text_id = self._sampled_text_metadata["text_id"]
+        stimulus_id = self._sampled_text_metadata["stimulus_id"]
+        stimulus_source = self._sampled_text_metadata["stimulus_source"]
         self._num_sentences = self._sampled_text_metadata["num_sentences"]
         self._num_remaining_sentence = self._num_sentences
         self._sentence_appraisal_scores_distribution = self._sampled_text_metadata["sentence_appraisal_scores_distribution"]

@@ -62,7 +62,8 @@ class TextManager():
         
         # Create new text entry
         text_entry = {
-            "text_id": self._text_id_counter,
+            "stimulus_id": self._text_id_counter,
+            "stimulus_source": "generated",
             "text_content": "",  # Empty content as per original
             "num_sentences": num_sentences,
             "sentence_appraisal_scores_distribution": padded_scores,
