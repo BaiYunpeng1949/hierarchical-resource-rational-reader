@@ -102,6 +102,7 @@ class TextReadingUnderTimePressureEnv(Env):
         self.episode_id = 0        # Initialize here because need to accumulate across episodes
         self._log_number_regressions = None
         self._log_episodic_regression_rate = None
+        self._log_actions = None
         
     def reset(self, seed=42):
         """Reset environment and initialize states"""
@@ -233,6 +234,16 @@ class TextReadingUnderTimePressureEnv(Env):
         if self._remaining_time <= 0:
             self._terminate = True
             self._truncated = True
+        
+        # Log the actions
+        self._log_actions = {
+            # "read_or_regress_action_raw_value": read_or_regress_action,
+            # "raw_regress_sentence_value_raw_value": raw_regress_sentence_value,
+            # "continue_or_stop_action_raw_value": continue_or_stop_action,
+            "read_or_regress_action": "read" if read_or_regress_action > self._regress_proceed_division else "regress",
+            "raw_regress_sentence_value": self._actual_reading_sentence_index,     # TODO check this
+            "continue_or_stop_action": "continue" if continue_or_stop_action <= self._stop_division else "stop",
+        }
 
         if self._terminate: 
             reward = self.reward_function.compute_terminate_reward(self._num_sentences, self._num_sentences_read, self._already_read_sentences_appraisal_scores_distribution)
@@ -303,6 +314,7 @@ class TextReadingUnderTimePressureEnv(Env):
         ################## Update step-wise log here because some values are computed here ##################   TODO: check here and think about a reliable way to evaluate
         self._step_wise_log.append({
             "step": self._steps,
+            "action_information": self._log_actions,
             "current_sentence_index": self._current_sentence_index,
             "actual_reading_sentence_index": self._actual_reading_sentence_index,
             "remaining_episode_length_awareness": remaining_episode_length_awareness,

@@ -13,7 +13,7 @@ from Constants import TIME_CONDITIONS
 RESULTS_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     'simulated_results',
-    '0605_text_comprehension_under_time_pressure_v0604__rl_model_60000000_steps__5000'
+    '0605_text_comprehension_under_time_pressure_v0606__rl_model_90000000_steps__1000'
 )
 RESULTS_FILE = os.path.join(RESULTS_DIR, 'simulated_episode_logs.json')
 
