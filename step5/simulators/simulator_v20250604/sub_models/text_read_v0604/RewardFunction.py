@@ -35,25 +35,22 @@ class RewardFunction():
         # Identify valid scores first
         valid_scores = [a for a in sentence_appraisal_scores_distribution if 0 <= a <= 1]
 
+        # Compute geometric mean of word beliefs
+        overall_comprehension_log = 0.0
+        if len(valid_scores) > 0:
+            for a in valid_scores:
+                overall_comprehension_log += math.log(max(a, 1e-9))
+            # geometric mean
+            overall_comprehension_scalar = math.exp(overall_comprehension_log / len(valid_scores))
+        else:
+            overall_comprehension_scalar = 0.0
+
         # Penalize for not finishing the sentence reading task
         if num_sentences_read < num_sentences:
-            return -100        # This simple reward makes the agent wants to complete the sentence reading under limited time TODO: this is tunable with the lateral reward
+            reading_progress_ratio = num_sentences_read / num_sentences
+            unfinished_reading_reward = 10 * reading_progress_ratio * self._coefficeint_comprehension * overall_comprehension_scalar
+            return unfinished_reading_reward
         else:
-
-            # Compute geometric mean of word beliefs
-            overall_comprehension_log = 0.0
-            if len(valid_scores) > 0:
-                for a in valid_scores:
-                    overall_comprehension_log += math.log(max(a, 1e-9))
-                # geometric mean
-                overall_comprehension_scalar = math.exp(overall_comprehension_log / len(valid_scores))
-            else:
-                overall_comprehension_scalar = 0.0
-
             # NOTE: linear reward: linear scaling for the comprehension performance
-            final_reward = 100 * self._coefficeint_comprehension * overall_comprehension_scalar
-                
-            return final_reward
-
-
-# TODO modify the reward function to consider the time condition
+            reading_finished_reward = 100 * self._coefficeint_comprehension * overall_comprehension_scalar
+            return reading_finished_reward
