@@ -53,7 +53,7 @@ class TextReadingUnderTimePressureEnv(Env):
         print(f"Text Reading (Under Time Pressure) Environment V0604 -- Deploying in {self._mode} mode")
 
         # Initialize components
-        self.text_manager = TextManager()
+        self.text_manager = TextManager(data_source=Constants.DATA_SOURCE["real_stimuli"])     # real_stimuli or generated_stimuli
         self.time_condition_manager = TimeConditionManager()
         self.transition_function = TransitionFunction()
         self.reward_function = RewardFunction()
@@ -117,6 +117,7 @@ class TextReadingUnderTimePressureEnv(Env):
         # Get new sentence
         self._sampled_text_metadata = self.text_manager.reset()
         stimulus_id = self._sampled_text_metadata["stimulus_id"]
+
         stimulus_source = self._sampled_text_metadata["stimulus_source"]
         self._num_sentences = self._sampled_text_metadata["num_sentences"]
         self._num_remaining_sentence = self._num_sentences

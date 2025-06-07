@@ -22,3 +22,8 @@ TIME_CONDITIONS = {
     "60s": 60,
     "90s": 90,
 }
+
+DATA_SOURCE = {
+    "real_stimuli": "real_stimuli",
+    "generated_stimuli": "generated_stimuli",
+}

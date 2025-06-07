@@ -10,12 +10,33 @@ class TextManager():
     Text Manager that handles loading and sampling text from a dataset.
     """
 
-    def __init__(self, min_num_sentences=Constants.MIN_NUM_SENTENCES, max_num_sentences=Constants.MAX_NUM_SENTENCES):
+    def __init__(self, data_source=Constants.DATA_SOURCE["real_stimuli"], min_num_sentences=Constants.MIN_NUM_SENTENCES, max_num_sentences=Constants.MAX_NUM_SENTENCES):
         self.min_num_sentences = min_num_sentences
         self.max_num_sentences = max_num_sentences
         self._text_id_counter = 0
+        self._data_source = data_source
 
     def reset(self):
+        if self._data_source == Constants.DATA_SOURCE["real_stimuli"]:
+            return self._reset_real_stimuli()
+        elif self._data_source == Constants.DATA_SOURCE["generated_stimuli"]:
+            return self._reset_generated_stimuli()
+        else:
+            raise ValueError(f"Invalid data source: {self._data_source}")
+
+    def _reset_real_stimuli(self):
+        
+        json_file_path = "text_read_v0604/assets/processed_stimulus.json"
+
+        with open(json_file_path, "r") as f:
+            data = json.load(f)
+        
+        # Randomly sample a text from the data
+        sampled_text = random.choice(data)
+
+        return sampled_text
+
+    def _reset_generated_stimuli(self):
         # First, determine number of sentences within bounds
         num_sentences = random.randint(self.min_num_sentences, self.max_num_sentences)
         
@@ -74,6 +95,7 @@ class TextManager():
         }
         
         self._text_id_counter += 1
+
         return text_entry
 
 
