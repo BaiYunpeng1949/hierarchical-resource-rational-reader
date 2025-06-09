@@ -82,6 +82,18 @@ class TransitionFunction():
             
         new_word_index = current_word_index + 2
         return new_word_index, True
+    
+    def update_state_time(self, elapsed_time, expected_sentence_reading_time, word_reading_time):
+        """Update state when reading next word
+        
+        Args:
+            elapsed_time: Elapsed time
+            expected_sentence_reading_time: Expected reading time for the current sentence
+            word_reading_time: Reading time for the current word
+        """
+        updated_elapsed_time = elapsed_time + word_reading_time
+        updated_remaining_time = expected_sentence_reading_time - updated_elapsed_time
+        return updated_elapsed_time, updated_remaining_time
 
     def reset(self, sentence_words: list[str]) -> list[dict]:
         """Initialize comprehension state for new sentence"""

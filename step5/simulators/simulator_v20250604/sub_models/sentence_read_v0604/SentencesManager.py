@@ -2,6 +2,8 @@ import os
 import json
 import random
 
+from . import Constants
+
 class SentencesManager():
     """
     Sentences Manager that handles loading and sampling sentences from a dataset.
@@ -81,7 +83,8 @@ class SentencesManager():
             "words_ranked_word_integration_probabilities_for_running_model": [word["ranked_word_integration_probability"] for word in words_metadata],
             "words_predictabilities_for_running_model": word_predictabilities,
             "predicted_words_for_running_model": predicted_words,
-            "predicted_words_ranked_integration_probabilities_for_running_model": predicted_words_ranked_integration_probabilities
+            "predicted_words_ranked_integration_probabilities_for_running_model": predicted_words_ranked_integration_probabilities,
+            "individual_word_reading_time": Constants.READING_SPEED       # seconds/word
         }
         
         return sentence_info

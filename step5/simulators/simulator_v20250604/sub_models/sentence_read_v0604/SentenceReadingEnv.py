@@ -8,13 +8,20 @@ import numpy as np
 from gymnasium import Env
 from gymnasium.spaces import Box, Discrete, Dict
 
+from .TimeConditionManager import TimeConditionManager
 from .SentencesManager import SentencesManager
 from .TransitionFunction import TransitionFunction
 from .RewardFunction import RewardFunction
 from . import Constants
 
 
-class SentenceReadingEnv(Env):
+# Tunable parameters
+THIRTY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED / 2
+SIXTY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED
+NINETY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED * 1.5
+
+
+class SentenceReadingUnderTimePressureEnv(Env):
     def __init__(self):
         """
         Create on 19 March 2025.
@@ -27,6 +34,28 @@ class SentenceReadingEnv(Env):
             STM (so need to revisit sometimes, provide limited contextual predictability),
             attention resource (so need to skip the unnecessary words),
             Time pressure (so need to finish reading before time runs out)
+        
+        TODO: 1. change the POMDP to the time-pressured version
+        2. process the stimuli data to be used
+        3. train the model
+        4. tune the reward weights or change the reward function
+        5. plot results, especially the regression rate and the skipping rate
+        6. reiterate from 3 until results are satisfactory
+        7. if all works fine, then try to test on the dataset of our stimulus. (maybe just train based on our dataset, for safety)
+
+        NOTE: training method 1 and 2
+        For the training method 1: use three discrete time conditions: 30s, 60s, 90s, and manufacture the pressure;
+           Advantage: more controllable. A simplified version that treats the time pressure applied uniformly to every sentence.
+           Disadvantage: not realistic.
+        For the training method 2: use the real time left for a specific sentence, maybe range from 0s to 90s; then see whether the agent could learn to read adaptively, 
+           i.e., the agent would read slower, have more regressions and less skips when time is sufficient; and when time is running out, the agent would read faster.
+           Advantage: more realisitic.
+           Challenge: when human are reading, the time pressure might occur when reading the very first sentence, because human have a global estimation of the time. 
+           The pressure is not evenly applied to every sentence.
+           NOTE: how to solve that -- use some mathematical equation to regulate this perception of time. TODO: go check with GPT.
+        NOTE: apply the first method first, see results for quick results production.
+        
+
         """
         # Load configuration
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -34,9 +63,10 @@ class SentenceReadingEnv(Env):
             self._config = yaml.load(f, Loader=yaml.FullLoader)
         self._mode = self._config["rl"]["mode"]
         
-        print(f"Sentence Reading Environment V0319 -- Deploying in {self._mode} mode with simplified scalar signals")
+        print(f"Sentence Reading Under Time Pressure Environment V0604 -- Deploying in {self._mode} mode with simplified scalar signals")
 
         # Initialize components
+        self.time_condition_manager = TimeConditionManager()
         self.sentences_manager = SentencesManager()
         self.transition_function = TransitionFunction()
         self.reward_function = RewardFunction()
@@ -54,6 +84,13 @@ class SentenceReadingEnv(Env):
         self._regressed_words_indexes = None
         self._reading_sequence = None
 
+        # Time tracking
+        self._time_condition = None
+        self._time_condition_value = None
+        self._elapsed_time = None
+        self._remaining_time = None
+        self._sentence_wise_expected_reading_time_in_seconds = None
+
         # Environment parameters
         self._steps = None
         self.ep_len = 2 * Constants.MAX_SENTENCE_LENGTH
@@ -69,12 +106,13 @@ class SentenceReadingEnv(Env):
         self.action_space = Discrete(4)     
         
         # Observation space - simplified to scalar signals
-        self._num_stateful_obs = 6 + 1      # +1 for the regression cost
+        self._num_stateful_obs = 6 + 2 + 1      # +1 for the regression cost, +2 for the time condition and remaining time
         self.observation_space = Box(low=0, high=1, shape=(self._num_stateful_obs,))
         self._noisy_obs_sigma = Constants.NOISY_OBS_SIGMA
 
         # Free parameters
-        self._w_regression_cost = None
+        self._w_regression_cost = None          # NOTE: the most important parameter to tune for natural reading
+        self._w_comprehension_vs_reading_time = None    # NOTE: another parameter might be needed
         
     def reset(self, seed=42, sentence_idx=None, episode_id=None):
         """Reset environment and initialize states"""
@@ -102,12 +140,28 @@ class SentenceReadingEnv(Env):
         self._regressed_words_indexes = []
         self._reading_sequence = []
 
-        # Initialize a random regression cost
-        # self._w_regression_cost = random.uniform(0, 1)
-        self._w_regression_cost = 1.0
+        # Reset the time related variables
+        self._time_condition, self._time_condition_value = self.time_condition_manager.reset()
+        if self._time_condition == "30s":
+            reading_speed = THIRTY_SECONDS_EXPECTED_READING_SPEED
+        elif self._time_condition == "60s":
+            reading_speed = SIXTY_SECONDS_EXPECTED_READING_SPEED
+        elif self._time_condition == "90s":
+            reading_speed = NINETY_SECONDS_EXPECTED_READING_SPEED
+        else:
+            raise ValueError(f"Invalid time condition: {self._time_condition}")
+        self._sentence_wise_expected_reading_time_in_seconds = reading_speed * self._sentence_len
+        self._elapsed_time = 0
+        self._remaining_time = self._sentence_wise_expected_reading_time_in_seconds - self._elapsed_time
 
-        # TODO debug delete later
-        print(f"w_regression_cost: {self._w_regression_cost}")
+        # Initialize a random regression cost
+        self._w_regression_cost = random.uniform(0, 1)   # NOTE: uncomment when training!!!!
+        # self._w_regression_cost = 1.0    # NOTE: uncomment when testing!!!!
+
+        self._w_comprehension_vs_reading_time = 1.0    # Start from a deterministic value
+
+        # TODO: do later
+        # Initialize the log variables
 
         return self._get_obs(), {}
     
@@ -129,17 +183,15 @@ class SentenceReadingEnv(Env):
             if action_validity:
                 self._regressed_words_indexes.append(self._current_word_index)
                 self._reading_sequence.append(self._current_word_index)
-                # NOTE: plan 1 -- Reset belief to 1 for regressed word -- results: too many regressions
-                # self._word_beliefs[self._current_word_index] = 1.0
-                # NOTE: plan 2 -- a small increment for regressed word -- results: no regressions at all with original dataset
-                # self._word_beliefs[self._current_word_index] = np.clip(0.5*(self._word_beliefs[self._current_word_index]+1.0), 0, 1)
-                # NOTE: plan 3 -- reinforce both the revisited word and the difficult word: source: https://docs.google.com/presentation/d/1JYPKUz5k5Ncp_WJHWshXA4j_h5Nnnd_D2RlHfh9Taoo/edit?slide=id.g349565993ea_0_0#slide=id.g349565993ea_0_0
                 self._word_beliefs[self._current_word_index] = 1.0
                 self._word_beliefs[self._current_word_index+1] = 1.0    # Simple reinforcment, directly set to 1.0
 
                 # Lower the cost of regression: jump to thye last and automatically jump back. Objective: see whether the agent would try regressions more often
                 self._current_word_index += 1
                 self._previous_word_index = self._current_word_index - 1
+
+                # Update the time related variables
+                self._update_time_related_variables()
 
             reward = self.reward_function.compute_regress_reward(w_regression_cost=self._w_regression_cost)
         
@@ -168,18 +220,6 @@ class SentenceReadingEnv(Env):
                     pass
                 else:
                     self._word_beliefs[self._current_word_index] = self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'][self._current_word_index]
-                
-                # # NOTE 1: option 1, directly use the original integration values, result: the regression probability is too high
-                # self._word_beliefs[skipped_word_index] = self._sentence_info['predicted_words_ranked_integration_probabilities_for_running_model'][skipped_word_index]
-                # self._word_beliefs[self._current_word_index] = self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'][self._current_word_index]
-                
-                # # NOTE 2: option 2, use the higher integration values, see whether could reduce the regression probability
-                # predicted_word_integration_value = self._sentence_info['predicted_words_ranked_integration_probabilities_for_running_model'][skipped_word_index]
-                # enhanced_predicted_word_integration_value = np.clip(predicted_word_integration_value * 2, 0, 1)
-                # self._word_beliefs[skipped_word_index] = enhanced_predicted_word_integration_value
-                # read_word_integration_value = self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'][self._current_word_index]
-                # enhanced_read_word_integration_value = np.clip(read_word_integration_value * 2, 0, 1)
-                # self._word_beliefs[self._current_word_index] = enhanced_read_word_integration_value
 
                 # Check if the skipped word is the first-pass skipped word
                 if skipped_word_index not in self._reading_sequence:
@@ -187,6 +227,10 @@ class SentenceReadingEnv(Env):
 
                 self._reading_sequence.append(skipped_word_index)
                 self._reading_sequence.append(self._current_word_index)
+
+                # Update the time related variables
+                self._update_time_related_variables()
+
             reward = self.reward_function.compute_skip_reward()
         
         elif action == self._READ_ACTION:
@@ -201,18 +245,14 @@ class SentenceReadingEnv(Env):
                 self._reading_sequence.append(self._current_word_index)
                 self._previous_word_index = self._current_word_index - 1
 
-                # # NOTE 1: option 1, directly use the original integration values, result: the regression probability is too high
-                # self._word_beliefs[self._current_word_index] = self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'][self._current_word_index]
-                # # NOTE 2: option 2, use the higher integration values, see whether could reduce the regression probability
-                # read_word_integration_value = self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'][self._current_word_index]
-                # enhanced_read_word_integration_value = np.clip(read_word_integration_value * 2, 0, 1)
-                # self._word_beliefs[self._current_word_index] = enhanced_read_word_integration_value
-
                 # If the read word has been read before, use the original integration values
                 if self._current_word_index in self._read_words:
                     pass
                 else:
                     self._word_beliefs[self._current_word_index] = self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'][self._current_word_index]
+                    
+                    # Update the time related variables
+                    self._update_time_related_variables()
 
             reward = self.reward_function.compute_read_reward()
 
@@ -225,8 +265,14 @@ class SentenceReadingEnv(Env):
             reward = self.reward_function.compute_terminate_reward(
                 sentence_len=self._sentence_len,
                 num_words_read=len(valid_words_beliefs),
-                words_beliefs=valid_words_beliefs
+                words_beliefs=valid_words_beliefs,
+                remaining_time=self._remaining_time,
+                expected_sentence_reading_time=self._sentence_wise_expected_reading_time_in_seconds,
+                w_comprehension_vs_reading_time=self._w_comprehension_vs_reading_time
             )
+        
+        # NOTE: different from the text-level reading, I do not cut down the reading time for the sentence. 
+        #       Because I hold the assumption that sentences could always be finished.
         
         # Check termination
         if self._steps >= self.ep_len:
@@ -280,9 +326,20 @@ class SentenceReadingEnv(Env):
             on_going_comprehension_log_scalar = 0.0
         
         on_going_comprehension_log_scalar = np.clip(on_going_comprehension_log_scalar, 0, 1)
-
+        
+        # Weights
         norm_w_regression_cost = self.normalise(self._w_regression_cost, 0, 1, 0, 1)
 
+        # Time related variables
+        if self._time_condition == "30s":
+            norm_time_condition = -1
+        elif self._time_condition == "60s":
+            norm_time_condition = 0
+        elif self._time_condition == "90s":
+            norm_time_condition = 1
+        else:
+            raise ValueError(f"Invalid time condition: {self._time_condition}")
+        norm_remaining_time = self.normalise(self._remaining_time, 0, self._sentence_wise_expected_reading_time_in_seconds, 0, 1)
 
         stateful_obs = np.array([
             current_position,
@@ -291,12 +348,22 @@ class SentenceReadingEnv(Env):
             observed_current_word_belief,
             observed_next_word_predictability,
             on_going_comprehension_log_scalar,
-            norm_w_regression_cost
+            norm_w_regression_cost,
+            norm_time_condition,
+            norm_remaining_time
         ])
 
         assert stateful_obs.shape == (self._num_stateful_obs,)
 
         return stateful_obs
+
+    def _update_time_related_variables(self):
+        """Update the time related variables"""
+        self._elapsed_time, self._remaining_time = self.transition_function.update_state_time(
+            elapsed_time=self._elapsed_time,
+            expected_sentence_reading_time=self._sentence_wise_expected_reading_time_in_seconds,
+            word_reading_time=self._sentence_info['individual_word_reading_time']
+        )
         
     def get_episode_log(self) -> dict:
         """Get logs for the episode"""

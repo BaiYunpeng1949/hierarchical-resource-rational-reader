@@ -121,7 +121,7 @@ class TextReadingUnderTimePressureEnv(Env):
         stimulus_source = self._sampled_text_metadata["stimulus_source"]
         self._num_sentences = self._sampled_text_metadata["num_sentences"]
         self._num_remaining_sentence = self._num_sentences
-        self._sentence_appraisal_scores_distribution = self._sampled_text_metadata["sentence_appraisal_scores_distribution"]
+        self._sentence_appraisal_scores_distribution = self._sampled_text_metadata["sentence_appraisal_scores_distribution"]    # NOTE: these comprehensions could somehow be integrated with the sentence-level comprehension scores; 
         self._already_read_sentences_appraisal_scores_distribution = [-1] * self._num_sentences
         self._current_sentence_index = -1
         self._num_sentences_read = 0

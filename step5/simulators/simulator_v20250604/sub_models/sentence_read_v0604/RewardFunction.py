@@ -46,13 +46,14 @@ class RewardFunction():
         """
         return -0.1 * self._coefficient_eye_movement_cost
     
-    def compute_terminate_reward(self, sentence_len: int, num_words_read: int, words_beliefs: list[float]):
+    def compute_terminate_reward(self, sentence_len: int, num_words_read: int, words_beliefs: list[float], remaining_time: float, expected_sentence_reading_time: float, w_comprehension_vs_reading_time: float):
         """
         Compute reward for terminating reading.
         Uses sigmoid saturation to encourage more human-like reading behavior.
         """
         # Penalize for not finishing the sentence reading task
         if num_words_read < sentence_len:
+            penalty_for_unfinished_reading_and_wasting_time = -100 + (remaining_time / expected_sentence_reading_time) * 10
             return -100
         else:
             # Compute geometric mean of word beliefs
@@ -64,15 +65,8 @@ class RewardFunction():
                 overall_comprehension_scalar = math.exp(overall_comprehension_log / len(words_beliefs))
             else:
                 overall_comprehension_scalar = 0.0
-            
-            # NOTE: satisfication reward: saturation for the comprehension performance
-            # # Apply sigmoid saturation to comprehension
-            # saturated_comprehension = self._sigmoid(overall_comprehension_scalar)
-            
-            # # Scale the final reward (100 is the max reward)
-            # final_reward = 100 * self._coefficeint_comprehension * saturated_comprehension
 
             # NOTE: linear reward: linear scaling for the comprehension performance
-            final_reward = 100 * self._coefficeint_comprehension * overall_comprehension_scalar
+            final_reward = 100 * self._coefficeint_comprehension * overall_comprehension_scalar + 10 * w_comprehension_vs_reading_time * (remaining_time / expected_sentence_reading_time)
                 
             return final_reward

@@ -12,3 +12,19 @@ LANGUAGE_MODEL_NAME = "bert-base-uncased"
 CONTEXT_SIZE = 5
 
 NOISY_OBS_SIGMA = 0.1
+
+#########################
+# Time conditions
+#########################
+
+TIME_CONDITIONS = {
+    "30s": 30,
+    "60s": 60,
+    "90s": 90,
+}
+
+#########################
+# Reading speed: approximated from our human participants' preliminary tests
+#########################
+
+READING_SPEED = 0.4     # 0.252 is too fast to our participants.
