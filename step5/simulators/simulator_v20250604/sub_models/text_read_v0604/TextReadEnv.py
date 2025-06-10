@@ -53,7 +53,7 @@ class TextReadingUnderTimePressureEnv(Env):
         print(f"Text Reading (Under Time Pressure) Environment V0604 -- Deploying in {self._mode} mode")
 
         # Initialize components
-        self.text_manager = TextManager(data_source=Constants.DATA_SOURCE["real_stimuli"])     # real_stimuli or generated_stimuli
+        self.text_manager = TextManager(data_source=Constants.DATA_SOURCE["generated_stimuli"])     # real_stimuli or generated_stimuli
         self.time_condition_manager = TimeConditionManager()
         self.transition_function = TransitionFunction()
         self.reward_function = RewardFunction()

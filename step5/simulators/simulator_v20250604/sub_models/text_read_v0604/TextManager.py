@@ -79,7 +79,7 @@ class TextManager():
         padded_scores = sentence_appraisal_scores + [-1] * (20 - num_sentences)
         
         # Calculate sentence reading times
-        sentence_reading_times = [length * Constants.READING_SPEED for length in sentence_lengths]
+        sentence_reading_times = self._sample_sentences_reading_times(sentence_lengths)
         
         # Create new text entry
         text_entry = {
@@ -97,7 +97,23 @@ class TextManager():
         self._text_id_counter += 1
 
         return text_entry
-
+    
+    def _sample_sentences_reading_times(self, sentence_lengths):
+        """
+        Sample noisy sentences reading times for generalizability when dealing with different lower-level agents.
+        """
+        lower_bound_coefficient = 0.8
+        upper_bound_coefficient = 1.2
+        
+        # Sample noisy reading times from a Gaussian distribution
+        noisy_reading_times = []
+        for sentence_length in sentence_lengths:
+            regular_reading_time = sentence_length * Constants.READING_SPEED
+            lower_bound = regular_reading_time * (Constants.TIME_CONDITIONS['30s'] / Constants.TIME_CONDITIONS['60s']) * lower_bound_coefficient
+            upper_bound = regular_reading_time * (Constants.TIME_CONDITIONS['90s'] / Constants.TIME_CONDITIONS['60s']) * upper_bound_coefficient
+            noisy_reading_time = random.uniform(lower_bound, upper_bound)
+            noisy_reading_times.append(noisy_reading_time)
+        return noisy_reading_times
 
 
 if __name__ == "__main__":
