@@ -48,3 +48,5 @@ Procedure:
 2. python main.py
 3. cd step5/modules/rl_envs/text_comprehension_v0516/utils
 4. python plot.py
+
+# TODO: Train the agent with various sentence time costs. Because sometimes the sentence-level agent would have adaptive regressions and skips. 

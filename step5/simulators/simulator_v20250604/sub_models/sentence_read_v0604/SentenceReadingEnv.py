@@ -113,6 +113,12 @@ class SentenceReadingUnderTimePressureEnv(Env):
         # Free parameters
         self._w_regression_cost = None          # NOTE: the most important parameter to tune for natural reading
         self._w_comprehension_vs_reading_time = None    # NOTE: another parameter might be needed
+
+        # Log variables
+        self._log_elapsed_time_list_for_each_index = None
+        self._log_remaining_time_list_for_each_index = None
+        self._log_num_skips = None
+        self._log_num_regressions = None
         
     def reset(self, seed=42, sentence_idx=None, episode_id=None):
         """Reset environment and initialize states"""
@@ -155,13 +161,16 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._remaining_time = self._sentence_wise_expected_reading_time_in_seconds - self._elapsed_time
 
         # Initialize a random regression cost
-        self._w_regression_cost = random.uniform(0, 1)   # NOTE: uncomment when training!!!!
-        # self._w_regression_cost = 1.0    # NOTE: uncomment when testing!!!!
+        # self._w_regression_cost = random.uniform(0, 1)   # NOTE: uncomment when training!!!!
+        self._w_regression_cost = 1.0    # NOTE: uncomment when testing!!!!
 
         self._w_comprehension_vs_reading_time = 1.0    # Start from a deterministic value
 
-        # TODO: do later
         # Initialize the log variables
+        self._log_elapsed_time_list_for_each_index = []
+        self._log_remaining_time_list_for_each_index = []
+        self._log_num_skips = 0
+        self._log_num_regressions = 0
 
         return self._get_obs(), {}
     
@@ -191,7 +200,9 @@ class SentenceReadingUnderTimePressureEnv(Env):
                 self._previous_word_index = self._current_word_index - 1
 
                 # Update the time related variables
-                self._update_time_related_variables()
+                self._update_time_related_variables()      
+
+                self._log_num_regressions += 1
 
             reward = self.reward_function.compute_regress_reward(w_regression_cost=self._w_regression_cost)
         
@@ -230,6 +241,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
 
                 # Update the time related variables
                 self._update_time_related_variables()
+
+                self._log_num_skips += 1
 
             reward = self.reward_function.compute_skip_reward()
         
@@ -395,111 +408,24 @@ class SentenceReadingUnderTimePressureEnv(Env):
             'participant_id': self._sentence_info['participant_id'],
             'sentence_content': self._sentence_info['sentence_content'],
             'sentence_len': self._sentence_len,
-            "words": words_data_list
+            "words": words_data_list,
+            "time_condition": self._time_condition,
+            "time_condition_value": self._time_condition_value,
+            "elapsed_time": self._elapsed_time,
+            "remaining_time": self._remaining_time,
+            "sentence_wise_expected_reading_time_in_seconds": self._sentence_wise_expected_reading_time_in_seconds,
+            "w_regression_cost": self._w_regression_cost,
+            "w_comprehension_vs_reading_time": self._w_comprehension_vs_reading_time,
+            "num_steps": self._steps,
+            "num_regressions": self._log_num_regressions,
+            "num_skips": self._log_num_skips,
+            "sentence_wise_regression_rate": self._log_num_regressions / self._sentence_len,
+            "sentence_wise_skip_rate": self._log_num_skips / self._sentence_len,
+            "sentence_wise_reading_speed": self._sentence_len / self._elapsed_time * 60,
         }
 
         return episode_log
 
 
 if __name__ == "__main__":
-    def print_state(env, action_name):
-        """Helper function to print current state"""
-        print(f"\nAction: {action_name}")
-        print(f"Current word index: {env._current_word_index}")
-        print(f"Previous word index: {env._previous_word_index}")
-        print(f"Word beliefs: {env._word_beliefs}")
-        print(f"Reading sequence: {env._reading_sequence}")
-        print(f"Skipped words: {env._skipped_words_indexes}")
-        print(f"Regressed words: {env._regressed_words_indexes}")
-        print(f"Observation: {env._get_obs()}")
-
-    def test_normal_reading():
-        """Test normal word-by-word reading"""
-        print("\n=== Testing Normal Reading ===")
-        env = SentenceReadingEnv()
-        obs, _ = env.reset(sentence_idx=0)  # Use first sentence for testing
-        print(f"Initial observation: {obs}")
-        
-        # Read first few words
-        for i in range(3):
-            obs, reward, term, trunc, _ = env.step(env._READ_ACTION)
-            print_state(env, "READ")
-            print(f"Reward: {reward}")
-            print(f"Terminated: {term}")
-            print(f"Truncated: {trunc}")
-
-    def test_skipping():
-        """Test word skipping behavior"""
-        print("\n=== Testing Word Skipping ===")
-        env = SentenceReadingEnv()
-        obs, _ = env.reset(sentence_idx=0)
-        
-        # Read first word
-        obs, reward, term, trunc, _ = env.step(env._READ_ACTION)
-        print_state(env, "READ")
-        
-        # Skip next word
-        obs, reward, term, trunc, _ = env.step(env._SKIP_ACTION)
-        print_state(env, "SKIP")
-        print(f"Reward: {reward}")
-
-    def test_regression():
-        """Test regression behavior"""
-        print("\n=== Testing Regression ===")
-        env = SentenceReadingEnv()
-        obs, _ = env.reset(sentence_idx=0)
-        
-        # Read first two words
-        for _ in range(2):
-            obs, reward, term, trunc, _ = env.step(env._READ_ACTION)
-            print_state(env, "READ")
-        
-        # Regress to previous word
-        obs, reward, term, trunc, _ = env.step(env._REGRESS_ACTION)
-        print_state(env, "REGRESS")
-        print(f"Reward: {reward}")
-
-    def test_termination():
-        """Test environment termination"""
-        print("\n=== Testing Termination ===")
-        env = SentenceReadingEnv()
-        obs, _ = env.reset(sentence_idx=0)
-        
-        # Read all words
-        while not env._terminate:
-            obs, reward, term, trunc, _ = env.step(env._READ_ACTION)
-            print_state(env, "READ")
-            if term:
-                print(f"Terminated with reward: {reward}")
-                break
-        
-        # Try to stop
-        obs, reward, term, trunc, _ = env.step(env._STOP_ACTION)
-        print_state(env, "STOP")
-        print(f"Final reward: {reward}")
-        print(f"Terminated: {term}")
-
-    def test_episode_length():
-        """Test episode length limit"""
-        print("\n=== Testing Episode Length ===")
-        env = SentenceReadingEnv()
-        obs, _ = env.reset(sentence_idx=0)
-        
-        # Run until truncation
-        step = 0
-        while not env._truncated:
-            obs, reward, term, trunc, _ = env.step(env._READ_ACTION)
-            step += 1
-            if step % 10 == 0:
-                print(f"Step {step}: Current word index = {env._current_word_index}")
-        
-        print(f"Episode truncated after {step} steps")
-        print(f"Final observation: {obs}")
-
-    # Run all tests
-    test_normal_reading()
-    test_skipping()
-    test_regression()
-    test_termination()
-    test_episode_length()
-        
+    pass
