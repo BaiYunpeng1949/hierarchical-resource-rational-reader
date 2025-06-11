@@ -5,7 +5,7 @@ rl:
 
   train:
     total_timesteps: 200000000
-    checkpoints_folder_name: 0610_text_reading_under_time_pressure_v0604_01
+    checkpoints_folder_name: 0609_sentence_reading_under_time_pressure_v0604_01
     num_workers: 20   # Smaller than the server's number of processes: 16 - should not be the maximum capacity of the processors, otherwise the local memory will overflow.
     num_steps: 10000   # Don't change this parameter -- previously 5000
     batch_size: 1000  # We recommend using a `batch_size` that is a factor of `n_steps * n_envs` -- previously 500
@@ -23,8 +23,8 @@ rl:
     save_freq: 10000000  # Save a checkpoint every 0.50 million steps
 
   test:
-    num_episodes: 1000
-    loaded_model_name: 'rl_model_180000000_steps'   
+    num_episodes: 10
+    loaded_model_name: 'rl_model_100000000_steps'   
     continual_logs_name: 'PPO_89'
     dataset_for_testing: 'simulate'   # OPTIONS: 'test', 'train', 'simulate'
     grid_params:
