@@ -20,6 +20,10 @@ THIRTY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED / 2
 SIXTY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED
 NINETY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED * 1.5
 
+# Dataset
+DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
+# DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
+
 
 class SentenceReadingUnderTimePressureEnv(Env):
     def __init__(self):
@@ -63,11 +67,11 @@ class SentenceReadingUnderTimePressureEnv(Env):
             self._config = yaml.load(f, Loader=yaml.FullLoader)
         self._mode = self._config["rl"]["mode"]
         
-        print(f"Sentence Reading Under Time Pressure Environment V0604 -- Deploying in {self._mode} mode with simplified scalar signals")
+        print(f"Sentence Reading Under Time Pressure Environment V0604 -- Deploying in {self._mode} mode with the dataset {DATASET}")
 
         # Initialize components
         self.time_condition_manager = TimeConditionManager()
-        self.sentences_manager = SentencesManager()
+        self.sentences_manager = SentencesManager(dataset=DATASET)     # TODO set different modes to sample sentences
         self.transition_function = TransitionFunction()
         self.reward_function = RewardFunction()
 

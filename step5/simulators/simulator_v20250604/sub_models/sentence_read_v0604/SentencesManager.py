@@ -8,12 +8,27 @@ class SentencesManager():
     """
     Sentences Manager that handles loading and sampling sentences from a dataset.
     Each sentence comes with word-level information including predictability values.
+    Supports both ZuCo dataset and custom stimulus-based dataset.
     """
 
-    def __init__(self):
-        # Read all the sentences from the assets/sentences_dataset.json
-        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'sentences_dataset_processed.json'), 'r') as f:
-            self._sentences_dataset = json.load(f)
+    def __init__(self, dataset="ZuCo1.0"):
+        # Set the dataset
+        self._dataset = dataset
+        self._sentences_dataset = {}
+        self._current_sentence_id = 0
+
+        if dataset == "Ours":
+            # Read all stimulus
+            with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'processed_my_stimulus_with_observations.json'), 'r') as f:
+                self._stimulus_dataset = json.load(f)
+            
+            # Parse to sentences across different stimulus
+            self._sentences_dataset = self._parse_stimulus_to_sentences(self._stimulus_dataset)
+            
+        elif dataset == "ZuCo1.0":
+            # Read all the sentences from the assets/sentences_dataset.json
+            with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'sentences_dataset_processed.json'), 'r') as f:
+                self._sentences_dataset = json.load(f)
             
         # Store dataset statistics
         self._num_sentences = len(self._sentences_dataset)
@@ -45,8 +60,6 @@ class SentencesManager():
         # Extract word-level information
         words_metadata = sentence_data["words"]
         
-        # Format sentence information
-
         # Get word predictabilities from the dataset: get the largest
         word_predictabilities = []
         predicted_words = []
@@ -88,9 +101,41 @@ class SentencesManager():
         }
         
         return sentence_info
+    
+    def _parse_stimulus_to_sentences(self, stimulus_dataset):
+        """
+        Parse the stimulus dataset to sentences across different stimulus
+        Args:
+            stimulus_dataset: Dictionary containing stimulus data with sentences
+        Returns:
+            Dictionary of sentences with sequential IDs
+        """
+        parsed_sentences = {}
+        current_sentence_id = 0
+
+        for stimulus_id, stimulus_data in stimulus_dataset.items():
+            for sentence in stimulus_data["sentences"]:
+                # Create a new sentence entry with sequential ID
+                parsed_sentences[str(current_sentence_id)] = {
+                    "sentence_id": current_sentence_id,
+                    "stimulus_id": stimulus_id,
+                    "sentence_content": sentence["sentence"],
+                    "words": sentence["words"]
+                }
+                current_sentence_id += 1
+
+        return parsed_sentences
 
 
 if __name__ == "__main__":
-    sentences_manager = SentencesManager()
-    sentences_manager.reset()
+    # Test with both datasets
+    print("Testing ZuCo dataset...")
+    sentences_manager_zuco = SentencesManager(dataset="ZuCo1.0")
+    sentence_info_zuco = sentences_manager_zuco.reset()
+    print(f"ZuCo sentence info: {sentence_info_zuco['sentence_id']}")
+
+    print("\nTesting Our dataset...")
+    sentences_manager_ours = SentencesManager(dataset="Ours")
+    sentence_info_ours = sentences_manager_ours.reset()
+    print(f"Our sentence info: {sentence_info_ours['sentence_id']}")
         

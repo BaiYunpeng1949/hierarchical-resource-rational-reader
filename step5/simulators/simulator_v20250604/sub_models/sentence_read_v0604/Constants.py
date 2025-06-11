@@ -28,3 +28,12 @@ TIME_CONDITIONS = {
 #########################
 
 READING_SPEED = 0.4     # 0.252 is too fast to our participants.
+
+#########################
+# Datasets
+#########################
+
+DATASETS = {
+    "Ours": "Bai",
+    "ZuCo1.0": "ZuCo",
+}
