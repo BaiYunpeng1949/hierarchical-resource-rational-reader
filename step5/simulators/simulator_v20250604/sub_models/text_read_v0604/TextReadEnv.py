@@ -68,7 +68,7 @@ class TextReadingUnderTimePressureEnv(Env):
         # Internal states
         self._already_read_sentences_appraisal_scores_distribution = None
         # External states
-        self._current_sentence_index = None     # Actually the reading progress, because the revisited sentence index is not trakced here
+        self.current_sentence_index = None     # Actually the reading progress, because the revisited sentence index is not trakced here
         self._actual_reading_sentence_index = None  # Tracking the revisited sentence index
 
         # Time conditions
@@ -104,7 +104,7 @@ class TextReadingUnderTimePressureEnv(Env):
         self._log_episodic_regression_rate = None
         self._log_actions = None
         
-    def reset(self, seed=42):
+    def reset(self, seed=42, inputs: dict=None):                
         """Reset environment and initialize states"""
         super().reset(seed=seed)
 
@@ -115,7 +115,7 @@ class TextReadingUnderTimePressureEnv(Env):
         self._truncated = False
 
         # Get new sentence
-        self._sampled_text_metadata = self.text_manager.reset()
+        self._sampled_text_metadata = self.text_manager.reset(inputs=inputs)
         stimulus_id = self._sampled_text_metadata["stimulus_id"]
 
         stimulus_source = self._sampled_text_metadata["stimulus_source"]
@@ -123,7 +123,7 @@ class TextReadingUnderTimePressureEnv(Env):
         self._num_remaining_sentence = self._num_sentences
         self._sentence_appraisal_scores_distribution = self._sampled_text_metadata["sentence_appraisal_scores_distribution"]    # NOTE: these comprehensions could somehow be integrated with the sentence-level comprehension scores; 
         self._already_read_sentences_appraisal_scores_distribution = [-1] * self._num_sentences
-        self._current_sentence_index = -1
+        self.current_sentence_index = -1
         self._num_sentences_read = 0
         self._regress_sentence_index = -1    # -1 means no regress# NOTE: if the agent does not learn, include this into the observation space
 
@@ -134,9 +134,9 @@ class TextReadingUnderTimePressureEnv(Env):
         # print(f"Sampled text metadata: {self._sampled_text_metadata}")
 
         # Get the time condition
-        self._time_condition, self._time_condition_value = self.time_condition_manager.reset()
+        self._time_condition, self._time_condition_value = self.time_condition_manager.reset(inputs=inputs)
         self._elapsed_time = 0
-        self._remaining_time = self._time_condition_value - self._elapsed_time        # TODO done here, do from here, transition function and reward function
+        self._remaining_time = self._time_condition_value - self._elapsed_time        
 
         # Initialize log variables
         self._log_number_regressions = 0
@@ -158,24 +158,24 @@ class TextReadingUnderTimePressureEnv(Env):
             if read_or_regress_action > self._regress_proceed_division:     # Read the next sentence
                 # Then update state with new sentence
                 new_scores, action_validity = self.transition_function.update_state_read_next_sentence(
-                    current_sentence_index=self._current_sentence_index,
+                    current_sentence_index=self.current_sentence_index,
                     sentence_appraisal_scores_distribution=self._sentence_appraisal_scores_distribution,
                     num_sentences=self._num_sentences
                 )
                 
                 if action_validity:
                     # Only update the new sentence's score, preserve decayed scores for others
-                    self._current_sentence_index = self._current_sentence_index + 1
-                    self._actual_reading_sentence_index = self._current_sentence_index
+                    self.current_sentence_index = self.current_sentence_index + 1
+                    self._actual_reading_sentence_index = self.current_sentence_index
                     self._num_sentences_read += 1
                     self._num_remaining_sentence -= 1
                     # Apply memory decay first
                     self._already_read_sentences_appraisal_scores_distribution = self.transition_function.apply_time_independent_memory_decay(
                         self._already_read_sentences_appraisal_scores_distribution, 
-                        self._current_sentence_index
+                        self.current_sentence_index
                     )
                     # Update the sentences' appraisal scores
-                    self._already_read_sentences_appraisal_scores_distribution[self._current_sentence_index] = new_scores[self._current_sentence_index]
+                    self._already_read_sentences_appraisal_scores_distribution[self.current_sentence_index] = new_scores[self.current_sentence_index]
                     # Update the elapsed time
                     self._elapsed_time, self._remaining_time = self.transition_function.update_state_time(
                         elapsed_time=self._elapsed_time,
@@ -203,7 +203,7 @@ class TextReadingUnderTimePressureEnv(Env):
                 # Then update the regressed sentence's score
                 self._already_read_sentences_appraisal_scores_distribution, action_validity = self.transition_function.update_state_regress_to_sentence(
                     revised_sentence_index=revised_sentence_index,
-                    furtherest_read_sentence_index=self._current_sentence_index,
+                    furtherest_read_sentence_index=self.current_sentence_index,
                     read_sentence_appraisal_scores_distribution=self._already_read_sentences_appraisal_scores_distribution
                 )
 
@@ -214,7 +214,7 @@ class TextReadingUnderTimePressureEnv(Env):
                     time_condition_value=self._time_condition_value
                 )
                 
-                self._current_sentence_index = self._current_sentence_index     # Just a placeholder here -- automatically jumps back to the latest sentence that read. NOTE: make this complex later    
+                self.current_sentence_index = self.current_sentence_index     # Just a placeholder here -- automatically jumps back to the latest sentence that read. NOTE: make this complex later    
                 
                 # Update the log variables
                 self._log_number_regressions += 1
@@ -274,7 +274,7 @@ class TextReadingUnderTimePressureEnv(Env):
         norm_remaining_sentence = 1 if self._num_remaining_sentence > 0 else 0      # A noisier but more realistic signal denoting the reading progress
 
         # Get current sentence position (normalized)    NOTE: maybe add the revised sentence index ot the agent as an observation, not always the current sentence index
-        norm_current_position = self.normalise(self._current_sentence_index, 0, Constants.MAX_NUM_SENTENCES - 1, 0, 1)
+        norm_current_position = self.normalise(self.current_sentence_index, 0, Constants.MAX_NUM_SENTENCES - 1, 0, 1)
         
         # Get the valid sentences appraisal scores
         valid_sentences_appraisals = [a for a in self._already_read_sentences_appraisal_scores_distribution if a != -1]
@@ -316,7 +316,7 @@ class TextReadingUnderTimePressureEnv(Env):
         self._step_wise_log.append({
             "step": self._steps,
             "action_information": self._log_actions,
-            "current_sentence_index": self._current_sentence_index,
+            "current_sentence_index": self.current_sentence_index,
             "actual_reading_sentence_index": self._actual_reading_sentence_index,
             "remaining_episode_length_awareness": remaining_episode_length_awareness,
             "already_read_sentences_appraisal_scores_distribution": self._already_read_sentences_appraisal_scores_distribution.copy(),

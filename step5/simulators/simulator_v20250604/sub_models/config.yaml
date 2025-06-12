@@ -33,38 +33,39 @@ rl:
 simulate:
   num_episodes: 1             # Number of episodes to simulate per dataset instance
   rl_models:
-    supervisory_controller:
-      env_name: 'SupervisoryControllerEnv'   
-      checkpoints_folder_name: 1101_supervisory_controller_version1101_03 # 1028_supervisory_controller_version1023_01 # 1023_supervisory_controller_version1018_01   # 1019_supervisory_controller_version1018_01   # 1016_supervisory_controller_02
-      loaded_model_name: 'rl_model_10000000_steps'
-    word_controller:
-      env_name: 'SentenceLevelControllerEnv'           
-      checkpoints_folder_name: 1015_sentence_level_controller_v1014_01
-      loaded_model_name: 'rl_model_70000000_steps'
-    oculomotor_controller:
-      env_name: 'GeneralOculomotorControllerEnv'     
-      checkpoints_folder_name: 1123_oculomotor_controller_version1122_weighted_incorrect_penalty_ng5_ng15_02 # 1010_oculomotor_controller_weight_100_stimuli_500_for_train_01, rl_model_continual_160000000_steps
-      loaded_model_name: rl_model_200000000_steps # 'rl_model_continual_160000000_steps'
-  # The baseline configurations -- revise them later
-  llm_model:
-    env_name: 'LLMEnv'                      # Options: LLMEnv
-  bayesian_model:
-    env_name: 'BayesianSkipperEnv'          # Options: BayesianSkipperEnv
-    skip_activation_threshold: [[0.4, 0.8], 0.1]
-    word_frequency_weight: [[4, 20], 2]
-    word_predictability_weight: [[0.2, 1], 0.1]
-    konst: [[0, 0.5], 0.1]
-  computationally_rational_model:
-    env_name: 'OculomotorControllerEnv'     # Options: OculomotorControllerEnv
-    checkpoints_folder_name: 0904_oculomotor_controller_12
-    loaded_model_name: 'rl_model_continual_48000000_steps'
-  working_memory:
-    env_name: 'WorkingMemoryEnv'            # Options: WorkingMemoryEnv
-    task_spec: "You are a human reader, please read these texts, comprehend, and answer the questions later."
-    short_term_memory:
-      capacity: 4
-    central_executive:
-    episodic_buffer:
+    text_reader:
+      env_name: TextReadingUnderTimePressureEnv
+      checkpoints_folder_name: '0610_text_reading_under_time_pressure_v0604_01'
+      loaded_model_name: 'rl_model_200000000_steps.zip'
+    sentence_reader:
+      env_name: SentenceReadingUnderTimePressureEnv           
+      checkpoints_folder_name: '0609_sentence_reading_under_time_pressure_v0604_01'
+      loaded_model_name: 'rl_model_100000000_steps.zip'
+    word_recognizer:   # TODO determine to do later or not
+      env_name: NA     
+      checkpoints_folder_name: NA 
+      loaded_model_name: NA 
+  
+  # # The baseline configurations -- revise them later
+  # llm_model:
+  #   env_name: 'LLMEnv'                      # Options: LLMEnv
+  # bayesian_model:
+  #   env_name: 'BayesianSkipperEnv'          # Options: BayesianSkipperEnv
+  #   skip_activation_threshold: [[0.4, 0.8], 0.1]
+  #   word_frequency_weight: [[4, 20], 2]
+  #   word_predictability_weight: [[0.2, 1], 0.1]
+  #   konst: [[0, 0.5], 0.1]
+  # computationally_rational_model:
+  #   env_name: 'OculomotorControllerEnv'     # Options: OculomotorControllerEnv
+  #   checkpoints_folder_name: 0904_oculomotor_controller_12
+  #   loaded_model_name: 'rl_model_continual_48000000_steps'
+  # working_memory:
+  #   env_name: 'WorkingMemoryEnv'            # Options: WorkingMemoryEnv
+  #   task_spec: "You are a human reader, please read these texts, comprehend, and answer the questions later."
+  #   short_term_memory:
+  #     capacity: 4
+  #   central_executive:
+  #   episodic_buffer:
 
 llm:
   use_aalto_openai_api: True

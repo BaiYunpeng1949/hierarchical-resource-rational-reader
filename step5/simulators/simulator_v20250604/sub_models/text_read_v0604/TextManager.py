@@ -16,23 +16,27 @@ class TextManager():
         self._text_id_counter = 0
         self._data_source = data_source
 
-    def reset(self):
+    def reset(self, inputs: dict=None):
         if self._data_source == Constants.DATA_SOURCE["real_stimuli"]:
-            return self._reset_real_stimuli()
+            return self._reset_real_stimuli(inputs=inputs)
         elif self._data_source == Constants.DATA_SOURCE["generated_stimuli"]:
             return self._reset_generated_stimuli()
         else:
             raise ValueError(f"Invalid data source: {self._data_source}")
 
-    def _reset_real_stimuli(self):
+    def _reset_real_stimuli(self, inputs=None):
         
         json_file_path = "text_read_v0604/assets/processed_stimulus.json"
 
         with open(json_file_path, "r") as f:
             data = json.load(f)
         
-        # Randomly sample a text from the data
-        sampled_text = random.choice(data)
+        if inputs is None:
+            # Randomly sample a text from the data
+            sampled_text = random.choice(data)
+        else:
+            stimulus_id = inputs["stimulus_id"]
+            sampled_text = data[stimulus_id]
 
         return sampled_text
 

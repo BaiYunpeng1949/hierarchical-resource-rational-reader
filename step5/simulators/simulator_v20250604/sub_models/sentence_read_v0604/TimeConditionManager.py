@@ -13,10 +13,15 @@ class TimeConditionManager():
     def __init__(self):
         self._time_conditions = Constants.TIME_CONDITIONS
 
-    def reset(self):
-        # Randomly select a time condition, return the key and value
-        time_condition = random.choice(list(self._time_conditions.keys()))
-        return time_condition, self._time_conditions[time_condition]
+    def reset(self, inputs: dict=None):
+
+        if inputs is None:
+            # Randomly select a time condition, return the key and value
+            time_condition = random.choice(list(self._time_conditions.keys()))
+            return time_condition, self._time_conditions[time_condition]
+        else:
+            time_condition = inputs["time_condition"]
+            return time_condition, self._time_conditions[time_condition]
 
 
 if __name__ == "__main__":

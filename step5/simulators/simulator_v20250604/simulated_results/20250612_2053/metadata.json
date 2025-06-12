@@ -1,0 +1,20 @@
+{
+    "num_episodes": 1,
+    "rl_models": {
+        "text_reader": {
+            "env_name": "TextReadingUnderTimePressureEnv",
+            "checkpoints_folder_name": "0610_text_reading_under_time_pressure_v0604_01",
+            "loaded_model_name": "rl_model_200000000_steps.zip"
+        },
+        "sentence_reader": {
+            "env_name": "SentenceReadingUnderTimePressureEnv",
+            "checkpoints_folder_name": "0609_sentence_reading_under_time_pressure_v0604_01",
+            "loaded_model_name": "rl_model_100000000_steps.zip"
+        },
+        "word_recognizer": {
+            "env_name": "NA",
+            "checkpoints_folder_name": "NA",
+            "loaded_model_name": "NA"
+        }
+    }
+}

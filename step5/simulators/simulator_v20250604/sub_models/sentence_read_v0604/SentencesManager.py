@@ -38,7 +38,7 @@ class SentencesManager():
         self._max_sent_len = max(all_lengths)
         self._min_sent_len = min(all_lengths)
 
-    def reset(self, sentence_idx=None):
+    def reset(self, sentence_idx=None, inputs: dict=None):
         """
         Get a sentence for reading
         Args:
@@ -50,12 +50,18 @@ class SentencesManager():
             - other word-level metadata
         """
         # Get sentence data either by index or randomly
-        if sentence_idx is not None and 0 <= sentence_idx < self._num_sentences:
-            sentence_data = self._sentences_dataset[str(sentence_idx)]
-        else:
+        # if sentence_idx is not None and 0 <= sentence_idx < self._num_sentences:
+        #     sentence_data = self._sentences_dataset[str(sentence_idx)]
+        # else:
+        if inputs is None:
             random_idx = random.randint(0, self._num_sentences - 1)
-            sentence_data = self._sentences_dataset[str(random_idx)]
             sentence_idx = random_idx
+            sentence_data = self._sentences_dataset[str(random_idx)]
+        else:
+            assert self._dataset == "Ours", "Only Ours dataset supports the feature of intact simulations."
+            stimulus_id = inputs["stimulus_id"]
+            sentence_idx = inputs["sentence_id"]
+            sentence_data = self._stimulus_dataset[str(stimulus_id)]["sentences"][sentence_idx]
             
         # Extract word-level information
         words_metadata = sentence_data["words"]
@@ -82,7 +88,7 @@ class SentencesManager():
         sentence_info = {
             "sentence_id": sentence_idx,
             "participant_id": "SIM",
-            "sentence_content": sentence_data["sentence_content"],
+            "sentence_content": sentence_data["sentence_content"] if "sentence_content" in sentence_data else sentence_data["sentence"],
             "sentence_len": len(words_metadata),
             "words": [word["word"] for word in words_metadata],
             "word_cleans": [word["word_clean"] for word in words_metadata],
