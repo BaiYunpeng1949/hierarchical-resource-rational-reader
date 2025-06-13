@@ -91,6 +91,8 @@ class TextReader:
         self.text_reading_steps += 1
         self.action, self._states = self._model.predict(self._obs, deterministic=True)
         self._obs, self._reward, self.done, self._truncated, self._info = self.env.step(action=self.action)
+        # Get the step-wise log
+        self.text_reading_logs = self.env.get_individual_step_log()
 
 
 class SentenceReader:
@@ -153,10 +155,11 @@ class SentenceReader:
         """
         Read the whole sentence, return corresponding states information.
         """
-
         self.sentence_reading_steps += 1
         self.action, self._states = self._model.predict(self._obs, deterministic=True)
         self._obs, self._reward, self.done, self._truncated, self._info = self.env.step(action=self.action)
+        # Get the step-wise log
+        self.sentence_reading_logs = self.env.get_individual_step_log()        # TODO code in the original env
 
 
 class ReaderAgent:
@@ -294,6 +297,9 @@ class ReaderAgent:
         # Reset the word index in the sentence
         self.current_word_index = -1          # Always start from the first word when running the simulation
 
+        # Reset the individual sentence reading logs
+        self._individual_sentence_reading_logs = []
+
         while not self.sentence_reader.done:
 
             # Determine which word to read using the RL model
@@ -301,10 +307,12 @@ class ReaderAgent:
 
             # Get the reading word index
             self.current_word_index = self.sentence_reader.env.current_word_index     # TODO need to differentiate from the word that is being actually read NOTE: the regressed and skipped words will not be tracked down; so better check the reading sequence
-      
+            
             # Update sentence logs
-            self._update_sentence_reading_logs()        # TODO I can do the cross validation using the reading_sequence and logs from that reader
-        
+            self._update_sentence_reading_logs()        
+            # TODO I can do the cross validation using the reading_sequence and logs from that reader
+            # TODO check whether the index input is correct -- Error: list index out of range
+
         # Return the time consumed by the sentence reading
         return self.sentence_reader.env.elapsed_time
 
@@ -321,19 +329,25 @@ class ReaderAgent:
             "total_time": self._total_time,
             "text_reading_logs": [],
         }
+        self._individual_sentence_reading_logs = []
     
     def _update_text_reading_logs(self):
         """
         Update the text reading logs.
         """
-        self._single_episode_logs["text_reading_logs"].append(self.text_reader.text_reading_logs)     # TODO debug this later
+        # Add the sentence in the text
+        self._single_episode_logs["text_reading_logs"].append(self.text_reader.text_reading_logs)    
+        # Add the sentence reading summary
+        self._single_episode_logs["text_reading_logs"][self.text_reader.text_reading_steps - 1]["sentence_reading_summary"] = self.sentence_reader.env.get_summarised_sentence_reading_logs()
+        # Add the words reading in the given sentence (the reading sequence)
+        self._single_episode_logs["text_reading_logs"][self.text_reader.text_reading_steps - 1]["sentence_reading_logs"] = self._individual_sentence_reading_logs
     
-    def _update_sentence_reading_logs(self, text_reading_step: int = None):
+    def _update_sentence_reading_logs(self):
         """
         Update the sentence reading logs.
         """
-        # self._single_episode_logs["text_reading_logs"][text_reading_step].append(self.sentence_reader.sentence_reading_logs)     # TODO debug this later
-        pass
+        self._individual_sentence_reading_logs.append(self.sentence_reader.sentence_reading_logs)
+        # self._single_episode_logs["text_reading_logs"][text_reading_step]["sentence_reading_logs"].append(self.sentence_reader.sentence_reading_logs)     # TODO debug this later -- check whether the text_reading_step is correct
     
     def _save_data(self):
         """

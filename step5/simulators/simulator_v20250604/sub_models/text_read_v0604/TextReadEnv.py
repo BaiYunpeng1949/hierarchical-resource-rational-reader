@@ -82,7 +82,9 @@ class TextReadingUnderTimePressureEnv(Env):
         self.ep_len = 3 * Constants.MAX_NUM_SENTENCES           # Enough steps for the agent to stop reading actively
         self._terminate = None
         self._truncated = None
-        self._step_wise_log = None
+
+        self._individual_step_log = None
+        self._step_wise_logs = None
 
         # Action space
         # 0 to MAX_NUM_SENTENCES, corresponding to valid sentence indexes for revisiting; max_num_sentences + 1 is the read next sentence action, max_num_sentences + 2 is the stop action
@@ -126,8 +128,9 @@ class TextReadingUnderTimePressureEnv(Env):
         self.current_sentence_index = -1
         self._num_sentences_read = 0
         self._regress_sentence_index = -1    # -1 means no regress# NOTE: if the agent does not learn, include this into the observation space
-
-        self._step_wise_log = []
+        
+        self._individual_step_log = {}
+        self._step_wise_logs = []
 
         # # TODO debug delete later
         # print(f"Text ID sampled: {text_id}")
@@ -313,18 +316,27 @@ class TextReadingUnderTimePressureEnv(Env):
         assert stateful_obs.shape[0] == self._num_stateful_obs, f"expected {self._num_stateful_obs} but got {stateful_obs.shape[0]}"
         
         ################## Update step-wise log here because some values are computed here ##################   TODO: check here and think about a reliable way to evaluate
-        self._step_wise_log.append({
+        self._individual_step_log = {
             "step": self._steps,
             "action_information": self._log_actions,
             "current_sentence_index": self.current_sentence_index,
             "actual_reading_sentence_index": self._actual_reading_sentence_index,
-            "remaining_episode_length_awareness": remaining_episode_length_awareness,
+            # "remaining_episode_length_awareness": remaining_episode_length_awareness,
             "already_read_sentences_appraisal_scores_distribution": self._already_read_sentences_appraisal_scores_distribution.copy(),
             "on_going_comprehension_log_scalar": on_going_comprehension_log_scalar,
+            "remaining_time": self._remaining_time,
             "terminate": self._terminate,
-        })
+            "sentence_reading_summary": {},
+            "sentence_reading_logs": [],
+        }
+        self._step_wise_logs.append(self._individual_step_log)
 
         return stateful_obs
+    
+    ############################### Helper functions ###############################
+    def get_individual_step_log(self) -> dict:
+        """Get individual step log"""
+        return self._individual_step_log.copy()
         
     def get_episode_log(self) -> dict:
         """Get logs for the episode"""
@@ -346,7 +358,7 @@ class TextReadingUnderTimePressureEnv(Env):
             "log_episodic_regression_rate_over_num_read_sentences": self._log_episodic_regression_rate_over_num_read_sentences,
             "log_episodic_regression_rate_over_steps": self._log_episodic_regression_rate_over_steps,
 
-            "step_wise_log": self._step_wise_log,
+            "step_wise_log": self._step_wise_logs,
         }
 
         return episode_log

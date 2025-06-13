@@ -80,6 +80,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._sentence_len = None
         self.current_word_index = None
         self._previous_word_index = None
+        self._actual_reading_word_index = None
         self._word_beliefs = None  # Store beliefs for each word
         self._read_words = set()  # Track which words have been read
 
@@ -119,7 +120,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._w_comprehension_vs_reading_time = None    # NOTE: another parameter might be needed
 
         # Log variables
-        self._logelapsed_time_list_for_each_index = None
+        self._log_individual_step_action = None
+        self._log_elapsed_time_list_for_each_index = None
         self._log_remaining_time_list_for_each_index = None
         self._log_num_skips = None
         self._log_num_regressions = None
@@ -149,6 +151,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         # Reset reading state
         self.current_word_index = -1
         self._previous_word_index = None
+        self._actual_reading_word_index = None
         
         # Reset tracking
         self._skipped_words_indexes = []    # only check the first-pass skipped words
@@ -176,7 +179,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._w_comprehension_vs_reading_time = 1.0    # Start from a deterministic value
 
         # Initialize the log variables
-        self._logelapsed_time_list_for_each_index = []
+        self._log_elapsed_time_list_for_each_index = []
         self._log_remaining_time_list_for_each_index = []
         self._log_num_skips = 0
         self._log_num_regressions = 0
@@ -188,6 +191,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._steps += 1
         reward = 0
 
+        self._log_individual_step_action = action
+
         if action == self._REGRESS_ACTION:
             self.current_word_index, action_validity = (
                 self.transition_function.update_state_regress(
@@ -195,6 +200,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
                     self._sentence_len
                 )    # The current word now is the word before
             )
+            self._actual_reading_word_index = self.current_word_index
             if action_validity:
                 self._regressed_words_indexes.append(self.current_word_index)
                 self.reading_sequence.append(self.current_word_index)
@@ -220,6 +226,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
                     self._sentence_len
                 )
             )    # The current word now is the word after the word being skipped.
+            self._actual_reading_word_index = self.current_word_index
             if action_validity:
                 # Use pre-computed ranked integration probability as belief
                 skipped_word_index = self.current_word_index - 1
@@ -260,6 +267,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
                     self._sentence_len
                 )
             )    # The current word now is the next word being read.
+            self._actual_reading_word_index = self.current_word_index
             if action_validity:
                 # Sample from prediction candidates with highest probabilit
                 self.reading_sequence.append(self.current_word_index)
@@ -376,6 +384,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
         assert stateful_obs.shape == (self._num_stateful_obs,)
 
         return stateful_obs
+    
+    ############################### Helper functions ###############################
 
     def _update_time_related_variables(self):
         """Update the time related variables"""
@@ -385,6 +395,48 @@ class SentenceReadingUnderTimePressureEnv(Env):
             word_reading_time=self._sentence_info['individual_word_reading_time']
         )
         
+    def get_individual_step_log(self) -> dict:
+        """Get individual step log"""
+        if self._log_individual_step_action == self._REGRESS_ACTION:
+            action_information = "regress"
+        elif self._log_individual_step_action == self._SKIP_ACTION:
+            action_information = "skip"
+        elif self._log_individual_step_action == self._READ_ACTION:
+            action_information = "read"
+        elif self._log_individual_step_action == self._STOP_ACTION:
+            action_information = "stop"
+        else:
+            raise ValueError(f"Invalid action: {self._log_individual_step_action}")
+        
+        individual_step_log = {
+            "step": self._steps,
+            "action": action_information,
+            "current_word_index": self.current_word_index,
+            "actual_reading_word_index": self.reading_sequence[-1],
+            "elapsed_time": self.elapsed_time,
+            "remaining_time": self._remaining_time,
+        }
+        return individual_step_log
+    
+    def get_summarised_sentence_reading_logs(self) -> dict:
+        """Get summarised sentence reading logs"""
+        summarised_sentence_reading_logs = {
+            "sentence_id": self._sentence_info['sentence_id'],
+            "num_steps_or_fixations": self._steps,
+            "num_regressions": self._log_num_regressions,
+            "num_skips": self._log_num_skips,
+            "num_stops": 1,
+            "reading_sequence": self.reading_sequence.copy(),
+            "skipped_words_indexes": self._skipped_words_indexes.copy(),
+            "regressed_words_indexes": self._regressed_words_indexes.copy(),
+            "sentence_wise_expected_reading_time_in_seconds": self._sentence_wise_expected_reading_time_in_seconds,
+            "w_regression_cost": self._w_regression_cost,
+            "w_comprehension_vs_reading_time": self._w_comprehension_vs_reading_time,
+            "elapsed_time": self.elapsed_time,
+            "remaining_time": self._remaining_time,
+        }
+        return summarised_sentence_reading_logs
+    
     def get_episode_log(self) -> dict:
         """Get logs for the episode"""
         words_data_list = []
