@@ -25,9 +25,11 @@ class TextManager():
             raise ValueError(f"Invalid data source: {self._data_source}")
 
     def _reset_real_stimuli(self, inputs=None):
-        
-        json_file_path = "text_read_v0604/assets/processed_stimulus.json"
 
+        # Get the current directory
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        json_file_path = os.path.join(current_dir, "assets", "processed_stimulus.json")
+        
         with open(json_file_path, "r") as f:
             data = json.load(f)
         

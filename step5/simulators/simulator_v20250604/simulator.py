@@ -269,6 +269,7 @@ class ReaderAgent:
 
             # UPDATE! Get the reading sentence index
             self.current_sentence_index = self.text_reader.env.current_sentence_index
+            self.actual_reading_sentence_index = self.text_reader.env.actual_reading_sentence_index
 
             # Having the sentence index, read the sentence using the sentence reader, and update the time consumption (and maybe also the comprehension score)
             sentence_reading_time_consumed = self._simulate_sentence_reading()
@@ -289,7 +290,7 @@ class ReaderAgent:
         inputs = {
             "episode_id": self._episode_index,
             "stimulus_id": self._stimulus_index,
-            "sentence_id": self.current_sentence_index,
+            "sentence_id": self.actual_reading_sentence_index,
             "time_condition": self._time_condition,
         }
         self.sentence_reader.reset(inputs=inputs)
@@ -375,15 +376,107 @@ class ReaderAgent:
         print(f"The metadata about the simulation configurations are stored at: {os.path.join(simulation_folder_path, 'metadata.json')}")
 
 
-if __name__ == "__main__":
+def run_batch_simulations(
+    stimulus_ids: list = None,
+    time_conditions: list = None,
+    num_trials: int = 1,
+    output_dir: str = None
+) -> dict:
     """
-    One trial test. TODO: try multiple trials later, a simulation of the batch of trials.
+    Run multiple trials across specified stimuli and time conditions.
+    
+    Args:
+        stimulus_ids (list): List of stimulus IDs to simulate. If None, uses default range.
+        time_conditions (list): List of time conditions to test. If None, uses default conditions.
+        num_trials (int): Number of trials per stimulus-condition combination.
+        output_dir (str): Directory to save results. If None, creates timestamped directory.
+    
+    Returns:
+        dict: Dictionary containing all simulation results and metadata.
     """
     # Initialize the simulator
     simulator = ReaderAgent()
 
-    # Reset the simulator
-    simulator.reset(episode_index=0, stimulus_index=0, time_condition="30s")
+    # Set default values if not provided
+    if stimulus_ids is None:
+        stimulus_ids = list(range(0, 9))  # Default range
+    if time_conditions is None:
+        time_conditions = ["30s", "60s", "90s"]
 
-    # Run the simulation
-    simulator.run()
+    # Create output directory if not provided
+    if output_dir is None:
+        simulation_date = datetime.now().strftime("%Y%m%d")
+        simulation_time = datetime.now().strftime("%H%M")
+        simulation_folder_name = f"{simulation_date}_{simulation_time}_trials{num_trials}_stims{len(stimulus_ids)}_conds{len(time_conditions)}"
+        output_dir = os.path.join(SIM_RESULTS_DIR, simulation_folder_name)
+    
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # Store all results
+    all_results = []
+
+    # Run simulations for each combination
+    for stimulus_id in stimulus_ids:
+        for time_condition in time_conditions:
+            for trial in range(num_trials):
+                print(f"\nRunning trial {trial + 1}/{num_trials} for stimulus {stimulus_id} under {time_condition} condition")
+                
+                # Reset the simulator with current parameters
+                simulator.reset(
+                    episode_index=trial,
+                    stimulus_index=stimulus_id,
+                    time_condition=time_condition
+                )
+
+                # Run the simulation
+                simulator.run()
+
+                # Add the results to our collection
+                all_results.append(simulator._single_episode_logs)
+
+    # Save all results to a single JSON file
+    results_file = os.path.join(output_dir, "all_simulation_results.json")
+    with open(results_file, "w") as file:
+        json.dump(all_results, file, indent=4)
+    print(f"\nAll simulation results have been saved to: {results_file}")
+
+    # Save the metadata about the simulation configurations
+    metadata_dict = simulator.config["simulate"]
+    metadata_dict.update({
+        "num_trials": num_trials,
+        "stimulus_ids": stimulus_ids,
+        "time_conditions": time_conditions,
+        "total_simulations": len(stimulus_ids) * len(time_conditions) * num_trials,
+        "simulation_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    })
+    metadata_file = os.path.join(output_dir, "metadata.json")
+    with open(metadata_file, "w") as file:
+        json.dump(metadata_dict, file, indent=4)
+    print(f"Simulation metadata has been saved to: {metadata_file}")
+
+    return {
+        "results": all_results,
+        "metadata": metadata_dict,
+        "output_dir": output_dir
+    }
+
+
+if __name__ == "__main__":
+    """
+    Example usage of the batch simulation function.
+    """
+    # Run simulations with default parameters
+    results = run_batch_simulations(num_trials=5)
+    
+    # # Example of running with custom parameters:
+    # custom_stimuli = [0, 1, 2, 3, 4] # [0, 1, 2]
+    # custom_conditions = ["30s", "60s", "90s"]
+    # custom_trials = 1
+    # custom_output = "custom_simulation_results"
+    # results = run_batch_simulations(
+    #     stimulus_ids=custom_stimuli,
+    #     time_conditions=custom_conditions,
+    #     num_trials=custom_trials,
+    #     output_dir=custom_output
+    # )

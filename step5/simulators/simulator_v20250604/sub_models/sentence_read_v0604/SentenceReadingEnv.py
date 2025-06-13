@@ -422,6 +422,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         """Get summarised sentence reading logs"""
         summarised_sentence_reading_logs = {
             "sentence_id": self._sentence_info['sentence_id'],
+            "num_words_in_sentence": self._sentence_len, 
             "num_steps_or_fixations": self._steps,
             "num_regressions": self._log_num_regressions,
             "num_skips": self._log_num_skips,

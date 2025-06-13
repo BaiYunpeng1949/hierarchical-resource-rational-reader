@@ -15,6 +15,10 @@ from .RewardFunction import RewardFunction
 from . import Constants
 
 
+DATA_SOURCE = "real_stimuli"
+# DATA_SOURCE = "generated_stimuli"
+
+
 class TextReadingUnderTimePressureEnv(Env):
     def __init__(self):
         """
@@ -53,7 +57,7 @@ class TextReadingUnderTimePressureEnv(Env):
         print(f"Text Reading (Under Time Pressure) Environment V0604 -- Deploying in {self._mode} mode")
 
         # Initialize components
-        self.text_manager = TextManager(data_source=Constants.DATA_SOURCE["generated_stimuli"])     # real_stimuli or generated_stimuli
+        self.text_manager = TextManager(data_source=DATA_SOURCE)
         self.time_condition_manager = TimeConditionManager()
         self.transition_function = TransitionFunction()
         self.reward_function = RewardFunction()
@@ -69,7 +73,7 @@ class TextReadingUnderTimePressureEnv(Env):
         self._already_read_sentences_appraisal_scores_distribution = None
         # External states
         self.current_sentence_index = None     # Actually the reading progress, because the revisited sentence index is not trakced here
-        self._actual_reading_sentence_index = None  # Tracking the revisited sentence index
+        self.actual_reading_sentence_index = None  # Tracking the revisited sentence index
 
         # Time conditions
         self._time_condition = None     # Select from 30s, 60s, 90s
@@ -169,7 +173,7 @@ class TextReadingUnderTimePressureEnv(Env):
                 if action_validity:
                     # Only update the new sentence's score, preserve decayed scores for others
                     self.current_sentence_index = self.current_sentence_index + 1
-                    self._actual_reading_sentence_index = self.current_sentence_index
+                    self.actual_reading_sentence_index = self.current_sentence_index
                     self._num_sentences_read += 1
                     self._num_remaining_sentence -= 1
                     # Apply memory decay first
@@ -182,7 +186,7 @@ class TextReadingUnderTimePressureEnv(Env):
                     # Update the elapsed time
                     self._elapsed_time, self._remaining_time = self.transition_function.update_state_time(
                         elapsed_time=self._elapsed_time,
-                        sentence_reading_time=self._sampled_text_metadata["sentence_reading_times"][self._actual_reading_sentence_index],
+                        sentence_reading_time=self._sampled_text_metadata["sentence_reading_times"][self.actual_reading_sentence_index],
                         time_condition_value=self._time_condition_value
                     )
                 else: 
@@ -195,7 +199,7 @@ class TextReadingUnderTimePressureEnv(Env):
             else:   # Regress to a previously read sentence
                 # Regress to a previously read sentence
                 revised_sentence_index = self._get_regress_sentence_index(raw_regress_sentence_value)
-                self._actual_reading_sentence_index = revised_sentence_index
+                self.actual_reading_sentence_index = revised_sentence_index
                 
                 # Apply memory decay first
                 self._already_read_sentences_appraisal_scores_distribution = self.transition_function.apply_time_independent_memory_decay(
@@ -213,7 +217,7 @@ class TextReadingUnderTimePressureEnv(Env):
                 # Update the elapsed time
                 self._elapsed_time, self._remaining_time = self.transition_function.update_state_time(
                     elapsed_time=self._elapsed_time,
-                    sentence_reading_time=self._sampled_text_metadata["sentence_reading_times"][self._actual_reading_sentence_index],
+                    sentence_reading_time=self._sampled_text_metadata["sentence_reading_times"][self.actual_reading_sentence_index],
                     time_condition_value=self._time_condition_value
                 )
                 
@@ -245,7 +249,7 @@ class TextReadingUnderTimePressureEnv(Env):
             # "raw_regress_sentence_value_raw_value": raw_regress_sentence_value,
             # "continue_or_stop_action_raw_value": continue_or_stop_action,
             "read_or_regress_action": "read" if read_or_regress_action > self._regress_proceed_division else "regress",
-            "raw_regress_sentence_value": self._actual_reading_sentence_index,     # TODO check this
+            "raw_regress_sentence_value": self.actual_reading_sentence_index,     # TODO check this
             "continue_or_stop_action": "continue" if continue_or_stop_action <= self._stop_division else "stop",
         }
 
@@ -320,7 +324,8 @@ class TextReadingUnderTimePressureEnv(Env):
             "step": self._steps,
             "action_information": self._log_actions,
             "current_sentence_index": self.current_sentence_index,
-            "actual_reading_sentence_index": self._actual_reading_sentence_index,
+            "num_words_in_sentence": self._sampled_text_metadata["sentence_lengths"][self.actual_reading_sentence_index] if self.actual_reading_sentence_index is not None else None,
+            "actual_reading_sentence_index": self.actual_reading_sentence_index,
             # "remaining_episode_length_awareness": remaining_episode_length_awareness,
             "already_read_sentences_appraisal_scores_distribution": self._already_read_sentences_appraisal_scores_distribution.copy(),
             "on_going_comprehension_log_scalar": on_going_comprehension_log_scalar,
