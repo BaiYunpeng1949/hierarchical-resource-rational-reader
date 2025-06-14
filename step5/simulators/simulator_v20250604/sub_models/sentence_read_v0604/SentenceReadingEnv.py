@@ -4,6 +4,7 @@ import yaml
 import random
 import torch
 import numpy as np
+import json
 
 from gymnasium import Env
 from gymnasium.spaces import Box, Discrete, Dict
@@ -88,6 +89,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._skipped_words_indexes = None      
         self._regressed_words_indexes = None
         self.reading_sequence = None
+        self.local_actual_fixation_sequence_in_sentence = None
+        self.global_actual_fixation_sequence_in_text = None
 
         # Time tracking
         self._time_condition = None
@@ -157,6 +160,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._skipped_words_indexes = []    # only check the first-pass skipped words
         self._regressed_words_indexes = []
         self.reading_sequence = []
+        self.local_actual_fixation_sequence_in_sentence = []
+        self.global_actual_fixation_sequence_in_text = []
 
         # Reset the time related variables
         self._time_condition, self._time_condition_value = self.time_condition_manager.reset(inputs=inputs)
@@ -204,6 +209,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
             if action_validity:
                 self._regressed_words_indexes.append(self.current_word_index)
                 self.reading_sequence.append(self.current_word_index)
+                self.local_actual_fixation_sequence_in_sentence.append(self.current_word_index)
                 # NOTE: plan 3 -- reinforce both the revisited word and the difficult word: source: https://docs.google.com/presentation/d/1JYPKUz5k5Ncp_WJHWshXA4j_h5Nnnd_D2RlHfh9Taoo/edit?slide=id.g349565993ea_0_0#slide=id.g349565993ea_0_0
                 self._word_beliefs[self.current_word_index] = 1.0
                 self._word_beliefs[self.current_word_index+1] = 1.0    # Simple reinforcment, directly set to 1.0
@@ -253,6 +259,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
                 self.reading_sequence.append(skipped_word_index)
                 self.reading_sequence.append(self.current_word_index)
 
+                self.local_actual_fixation_sequence_in_sentence.append(self._actual_reading_word_index)
+
                 # Update the time related variables
                 self._update_time_related_variables()
 
@@ -271,6 +279,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
             if action_validity:
                 # Sample from prediction candidates with highest probabilit
                 self.reading_sequence.append(self.current_word_index)
+                self.local_actual_fixation_sequence_in_sentence.append(self._actual_reading_word_index)
+
                 self._previous_word_index = self.current_word_index - 1
 
                 # If the read word has been read before, use the original integration values
@@ -387,6 +397,42 @@ class SentenceReadingUnderTimePressureEnv(Env):
     
     ############################### Helper functions ###############################
 
+    def _get_global_actual_fixation_sequence_in_text(self):
+        """Get the global actual fixation sequence in text"""
+        # Get the current sentence info
+        sentence_id = self._sentence_info['sentence_id']
+        
+        # Load metadata to get sentence start indices
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        metadata_path = os.path.join(root_dir, "sentence_read_v0604", "assets", "metadata_sentence_indeces.json")
+        with open(metadata_path, 'r') as f:
+            metadata = json.load(f)
+        
+        # Find the stimulus and sentence that contains our sentence content
+        current_sentence_content = self._sentence_info['sentence_content']
+        current_stimulus = None
+        current_sentence_info = None
+        
+        for stimulus in metadata:
+            for sentence in stimulus['sentences']:
+                if sentence['sentence'] == current_sentence_content:
+                    current_stimulus = stimulus
+                    current_sentence_info = sentence
+                    break
+            if current_stimulus:
+                break
+                
+        if not current_stimulus or not current_sentence_info:
+            raise ValueError(f"Sentence content not found in metadata")
+            
+        # Get the start index of the current sentence in the global text
+        sentence_start_idx = current_sentence_info['start_idx']
+        
+        # Convert local fixation indices to global indices
+        global_fixation_sequence = [idx + sentence_start_idx for idx in self.local_actual_fixation_sequence_in_sentence]
+        
+        return global_fixation_sequence
+
     def _update_time_related_variables(self):
         """Update the time related variables"""
         self.elapsed_time, self._remaining_time = self.transition_function.update_state_time(
@@ -428,6 +474,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
             "num_skips": self._log_num_skips,
             "num_stops": 1,
             "reading_sequence": self.reading_sequence.copy(),
+            "local_actual_fixation_sequence_in_sentence": self.local_actual_fixation_sequence_in_sentence.copy(),
+            "global_actual_fixation_sequence_in_text": self._get_global_actual_fixation_sequence_in_text(),
             "skipped_words_indexes": self._skipped_words_indexes.copy(),
             "regressed_words_indexes": self._regressed_words_indexes.copy(),
             "sentence_wise_expected_reading_time_in_seconds": self._sentence_wise_expected_reading_time_in_seconds,

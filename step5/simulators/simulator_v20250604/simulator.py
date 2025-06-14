@@ -467,11 +467,11 @@ if __name__ == "__main__":
     Example usage of the batch simulation function.
     """
     # Run simulations with default parameters
-    results = run_batch_simulations(num_trials=5)
+    results = run_batch_simulations(num_trials=1)
     
     # # Example of running with custom parameters:
-    # custom_stimuli = [0, 1, 2, 3, 4] # [0, 1, 2]
-    # custom_conditions = ["30s", "60s", "90s"]
+    # custom_stimuli = [0] # [0, 1, 2]
+    # custom_conditions = ["30s", "60s"]
     # custom_trials = 1
     # custom_output = "custom_simulation_results"
     # results = run_batch_simulations(

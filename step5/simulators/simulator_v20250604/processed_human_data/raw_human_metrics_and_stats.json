@@ -1,0 +1,261 @@
+{
+    "metrics": {
+        "Number of Fixations_90": 309.7469879518072,
+        "Average Saccade Length (px)_90": 136.60914837838376,
+        "Word Skip Percentage by Saccades V2 With Word Index Correction_90": 31.012941469670803,
+        "Revisit Percentage by Saccades V2 With Word Index Correction_90": 59.10776774666215,
+        "Average Reading Speed (wpm)_90": 165.91164658634534,
+        "Number of Fixations_30": 113.3452380952381,
+        "Average Saccade Length (px)_30": 155.95404190273152,
+        "Word Skip Percentage by Saccades V2 With Word Index Correction_30": 39.215056137433734,
+        "Revisit Percentage by Saccades V2 With Word Index Correction_30": 31.982704799289206,
+        "Average Reading Speed (wpm)_30": 192.4047619047619,
+        "Number of Fixations_60": 211.4047619047619,
+        "Average Saccade Length (px)_60": 137.8451204092313,
+        "Word Skip Percentage by Saccades V2 With Word Index Correction_60": 32.265846624427994,
+        "Revisit Percentage by Saccades V2 With Word Index Correction_60": 47.72694567224823,
+        "Average Reading Speed (wpm)_60": 171.48809523809524,
+        "sentence_level_revisit_90": {
+            "avg_regressed_sentences": 7.843373493975903,
+            "avg_sentences_read": 8.843373493975903,
+            "regression_rate": 88.69209809264305
+        },
+        "sentence_level_revisit_30": {
+            "avg_regressed_sentences": 6.714285714285714,
+            "avg_sentences_read": 7.738095238095238,
+            "regression_rate": 86.76923076923076
+        },
+        "sentence_level_revisit_60": {
+            "avg_regressed_sentences": 7.690476190476191,
+            "avg_sentences_read": 8.702380952380953,
+            "regression_rate": 88.37209302325581
+        }
+    },
+    "statistical_analysis": {
+        "Number of Fixations_anova": {
+            "f_statistic": 754.2732075063418,
+            "p_value": 3.7515806913930893e-106,
+            "significant": true,
+            "eta_squared": 0.8588138645922376
+        },
+        "Number of Fixations_tukey": {
+            "groups": [
+                30,
+                60,
+                90
+            ],
+            "meandiffs": [
+                98.0595238095238,
+                196.40174985656913,
+                98.34222604704533
+            ],
+            "p_values": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "significant": [
+                true,
+                true,
+                true
+            ]
+        },
+        "Number of Fixations_values": {
+            "time_constraints": [
+                30,
+                60,
+                90
+            ],
+            "values": [
+                113.3452380952381,
+                211.4047619047619,
+                309.7469879518072
+            ],
+            "stds": [
+                27.47141113421761,
+                28.697568773586717,
+                39.905564238494684
+            ]
+        },
+        "Average Saccade Length (px)_anova": {
+            "f_statistic": 13.572685565351957,
+            "p_value": 2.548556515782043e-06,
+            "significant": true,
+            "eta_squared": 0.09865828750507614
+        },
+        "Average Saccade Length (px)_tukey": {
+            "groups": [
+                30,
+                60,
+                90
+            ],
+            "meandiffs": [
+                -18.10892149350019,
+                -19.344893524347725,
+                -1.2359720308475346
+            ],
+            "p_values": [
+                5.622585318743045e-05,
+                1.6431546016382192e-05,
+                0.9526187383836233
+            ],
+            "significant": [
+                true,
+                true,
+                false
+            ]
+        },
+        "Average Saccade Length (px)_values": {
+            "time_constraints": [
+                30,
+                60,
+                90
+            ],
+            "values": [
+                155.95404190273152,
+                137.8451204092313,
+                136.60914837838376
+            ],
+            "stds": [
+                30.067132082066706,
+                25.72278150857773,
+                24.062755092965432
+            ]
+        },
+        "Word Skip Percentage by Saccades V2 With Word Index Correction_anova": {
+            "f_statistic": 20.588544077331736,
+            "p_value": 5.341795565672605e-09,
+            "significant": true,
+            "eta_squared": 0.14239402027812212
+        },
+        "Word Skip Percentage by Saccades V2 With Word Index Correction_tukey": {
+            "groups": [
+                30,
+                60,
+                90
+            ],
+            "meandiffs": [
+                -6.949209513005762,
+                -8.202114667762938,
+                -1.2529051547571761
+            ],
+            "p_values": [
+                2.511676308825095e-06,
+                2.764805373534074e-08,
+                0.6354714143002858
+            ],
+            "significant": [
+                true,
+                true,
+                false
+            ]
+        },
+        "Word Skip Percentage by Saccades V2 With Word Index Correction_values": {
+            "time_constraints": [
+                30,
+                60,
+                90
+            ],
+            "values": [
+                39.215056137433734,
+                32.265846624427994,
+                31.012941469670803
+            ],
+            "stds": [
+                9.260099901135295,
+                8.742162714803694,
+                8.552293191297197
+            ]
+        },
+        "Revisit Percentage by Saccades V2 With Word Index Correction_anova": {
+            "f_statistic": 70.74844573422591,
+            "p_value": 4.892298221792089e-25,
+            "significant": true,
+            "eta_squared": 0.36328118289979355
+        },
+        "Revisit Percentage by Saccades V2 With Word Index Correction_tukey": {
+            "groups": [
+                30,
+                60,
+                90
+            ],
+            "meandiffs": [
+                15.744240872959026,
+                27.125062947372925,
+                11.3808220744139
+            ],
+            "p_values": [
+                1.347849609700802e-10,
+                0.0,
+                3.768083073119044e-06
+            ],
+            "significant": [
+                true,
+                true,
+                true
+            ]
+        },
+        "Revisit Percentage by Saccades V2 With Word Index Correction_values": {
+            "time_constraints": [
+                30,
+                60,
+                90
+            ],
+            "values": [
+                31.982704799289206,
+                47.72694567224823,
+                59.10776774666215
+            ],
+            "stds": [
+                16.884940563640157,
+                15.204800847137431,
+                11.497130595402444
+            ]
+        },
+        "Average Reading Speed (wpm)_anova": {
+            "f_statistic": 9.723151287709918,
+            "p_value": 8.603402623192967e-05,
+            "significant": true,
+            "eta_squared": 0.07271105410005069
+        },
+        "Average Reading Speed (wpm)_tukey": {
+            "groups": [
+                30,
+                60,
+                90
+            ],
+            "meandiffs": [
+                -20.916666666666657,
+                -26.493115318416557,
+                -5.5764486517498995
+            ],
+            "p_values": [
+                0.0030900079576543504,
+                0.0001209214224362487,
+                0.6539217852946462
+            ],
+            "significant": [
+                true,
+                true,
+                false
+            ]
+        },
+        "Average Reading Speed (wpm)_values": {
+            "time_constraints": [
+                30,
+                60,
+                90
+            ],
+            "values": [
+                192.4047619047619,
+                171.48809523809524,
+                165.91164658634534
+            ],
+            "stds": [
+                56.21284361111856,
+                30.629698491908396,
+                29.506929022535743
+            ]
+        }
+    }
+}
