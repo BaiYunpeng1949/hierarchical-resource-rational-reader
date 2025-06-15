@@ -18,8 +18,66 @@ The simulator builds upon the base reading models and adds time-pressure specifi
   - `sentence_read_v0604/`: Sentence-level reading model
 - `utils/`: Utility scripts for testing and validation
   - `_test_code.py`: Scripts for validating simulation results
+  - `analyze_data.py`: Scripts for analyzing and plotting simulation results
+- `processed_human_data/`: Directory for human data processing
+  - `convert_format.py`: Script to convert raw human metrics to analysis format
 - `simulated_results/`: Directory for storing simulation outputs
 - `config.yaml`: Configuration file for model parameters and simulation settings
+
+## Data Preparation and Analysis Workflow
+
+### 1. Prepare Human Data
+
+The human data needs to be converted to the correct format before comparison with simulation results:
+
+```bash
+# Navigate to the processed_human_data directory
+cd processed_human_data
+
+# Run the conversion script
+python convert_format.py
+```
+
+This will:
+- Read the raw human metrics from `raw_human_metrics.json`
+- Convert the metrics to the analysis format
+- Save the processed metrics to `analyzed_human_metrics.json`
+
+### 2. Run Simulations
+
+Run the simulator to generate results:
+
+```python
+from simulator import run_batch_simulations
+
+# Run with default parameters
+results = run_batch_simulations()
+```
+
+This will create a new directory in `simulated_results/` with the format: `YYYYMMDD_HHMM_trials{N}_stims{N}_conds{N}`
+
+### 3. Generate Comparison Plots
+
+To generate comparison plots between human and simulation data:
+
+1. Open `utils/analyze_data.py`
+2. Update the `file_name` variable to match your simulation results folder:
+   ```python
+   file_name = "20250614_2133_trials1_stims9_conds3"  # Replace with your folder name
+   ```
+3. Run the script:
+   ```bash
+   cd utils
+   python analyze_data.py
+   ```
+
+The script will:
+- Process the simulation results
+- Generate fixation sequences
+- Analyze metrics
+- Create comparison plots
+
+The final plot will be saved as `metrics_comparison.png` in your simulation results folder.
 
 ## Configuration
 
@@ -91,6 +149,10 @@ The validation script will:
 Each simulation run generates:
 1. `all_simulation_results.json`: Contains all simulation data
 2. `metadata.json`: Configuration and summary information
+3. `processed_reading_metrics.json`: Processed reading metrics
+4. `processed_fixation_sequences.json`: Processed fixation sequences
+5. `analyzed_fixation_metrics.json`: Analyzed fixation metrics
+6. `metrics_comparison.png`: Comparison plot with human data
 
 ## Dependencies
 
@@ -101,6 +163,7 @@ Each simulation run generates:
   - PyYAML
   - numpy
   - torch
+  - matplotlib
 
 ## Troubleshooting
 
@@ -120,3 +183,8 @@ Common issues and solutions:
    - Reduce the number of trials or stimuli
    - Use a smaller subset of time conditions
    - Consider running simulations in parallel (future feature)
+
+4. **Plotting Issues**:
+   - Verify that the simulation folder name in `analyze_data.py` matches your results
+   - Check that `analyzed_human_metrics.json` exists in the correct location
+   - Ensure all required metrics are present in both human and simulation data

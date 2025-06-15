@@ -385,7 +385,7 @@ def calculate_all_metrics(df: pd.DataFrame, sentence_metadata: List[Dict]) -> Di
         sentence_metadata: List of stimulus metadata with sentence information
         
     Returns:
-        Dictionary containing all calculated metrics
+        Dictionary containing all calculated metrics with means and standard deviations
     """
     metrics = {}
     
@@ -393,6 +393,7 @@ def calculate_all_metrics(df: pd.DataFrame, sentence_metadata: List[Dict]) -> Di
         time_data = df[df['time_constraint'] == time_constraint].copy()
         
         # Process each trial
+        trial_metrics = {}
         for (stimulus_id, participant_id), trial_data in time_data.groupby(['stimulus_index', 'participant_id']):
             # Convert trial data to list of fixation dictionaries
             fixation_data = trial_data.to_dict('records')
@@ -404,21 +405,18 @@ def calculate_all_metrics(df: pd.DataFrame, sentence_metadata: List[Dict]) -> Di
             )
             
             # Calculate metrics
-            trial_metrics = metrics_calculator.compute_all_metrics()
+            trial_metrics[f'{stimulus_id}_{participant_id}'] = metrics_calculator.compute_all_metrics()
+        
+        # Calculate means and standard deviations for each metric
+        for metric_name in trial_metrics[list(trial_metrics.keys())[0]].keys():
+            values = [trial_metrics[trial][metric_name] for trial in trial_metrics]
+            mean_key = f'{metric_name}_{time_constraint}'
+            std_key = f'{metric_name}_{time_constraint}_std'
             
-            # Store metrics with time constraint
-            for metric_name, value in trial_metrics.items():
-                key = f'{metric_name}_{time_constraint}'
-                if key not in metrics:
-                    metrics[key] = []
-                metrics[key].append(value)
+            metrics[mean_key] = float(np.mean(values))
+            metrics[std_key] = float(np.std(values))
     
-    # Calculate means for each metric
-    final_metrics = {}
-    for key, values in metrics.items():
-        final_metrics[key] = float(np.mean(values))
-    
-    return final_metrics
+    return metrics
 
 def perform_statistical_analysis(df: pd.DataFrame, metrics: Dict) -> Dict:
     """

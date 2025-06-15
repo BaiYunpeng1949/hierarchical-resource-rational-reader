@@ -278,16 +278,16 @@ def plot_metrics_comparison(human_data_path: str, sim_data: Dict, output_path: s
     ax1.errorbar(x + width/2, sim_speeds, yerr=sim_speeds_std, fmt='none', color='black', capsize=5)
     
     # Add value annotations
-    for bar in bars1:
+    for bar, std in zip(bars1, human_speeds_std):
         height = bar.get_height()
-        ax1.annotate(f'{height:.1f}',
+        ax1.annotate(f'{height:.1f} ({std:.1f})',
                     xy=(bar.get_x() + bar.get_width()/2, height),
                     xytext=(0, 3),  # 3 points vertical offset
                     textcoords="offset points",
                     ha='center', va='bottom')
-    for bar in bars2:
+    for bar, std in zip(bars2, sim_speeds_std):
         height = bar.get_height()
-        ax1.annotate(f'{height:.1f}',
+        ax1.annotate(f'{height:.1f} ({std:.1f})',
                     xy=(bar.get_x() + bar.get_width()/2, height),
                     xytext=(0, 3),
                     textcoords="offset points",
@@ -311,16 +311,16 @@ def plot_metrics_comparison(human_data_path: str, sim_data: Dict, output_path: s
     ax2.errorbar(x + width/2, sim_skips, yerr=sim_skips_std, fmt='none', color='black', capsize=5)
     
     # Add value annotations
-    for bar in bars1:
+    for bar, std in zip(bars1, human_skips_std):
         height = bar.get_height()
-        ax2.annotate(f'{height:.2f}',
+        ax2.annotate(f'{height:.2f} ({std:.2f})',
                     xy=(bar.get_x() + bar.get_width()/2, height),
                     xytext=(0, 3),
                     textcoords="offset points",
                     ha='center', va='bottom')
-    for bar in bars2:
+    for bar, std in zip(bars2, sim_skips_std):
         height = bar.get_height()
-        ax2.annotate(f'{height:.2f}',
+        ax2.annotate(f'{height:.2f} ({std:.2f})',
                     xy=(bar.get_x() + bar.get_width()/2, height),
                     xytext=(0, 3),
                     textcoords="offset points",
@@ -344,16 +344,16 @@ def plot_metrics_comparison(human_data_path: str, sim_data: Dict, output_path: s
     ax3.errorbar(x + width/2, sim_regress, yerr=sim_regress_std, fmt='none', color='black', capsize=5)
     
     # Add value annotations
-    for bar in bars1:
+    for bar, std in zip(bars1, human_regress_std):
         height = bar.get_height()
-        ax3.annotate(f'{height:.2f}',
+        ax3.annotate(f'{height:.2f} ({std:.2f})',
                     xy=(bar.get_x() + bar.get_width()/2, height),
                     xytext=(0, 3),
                     textcoords="offset points",
                     ha='center', va='bottom')
-    for bar in bars2:
+    for bar, std in zip(bars2, sim_regress_std):
         height = bar.get_height()
-        ax3.annotate(f'{height:.2f}',
+        ax3.annotate(f'{height:.2f} ({std:.2f})',
                     xy=(bar.get_x() + bar.get_width()/2, height),
                     xytext=(0, 3),
                     textcoords="offset points",
