@@ -161,9 +161,9 @@ def analyze_fixation_sequences(input_file: str, output_file: str):
     """
     Analyze reading metrics from processed fixation sequences.
     Metrics:
-    1. Reading speed: furthest index reached + 1 / time
-    2. First-pass skip rate: number of skips (non-consecutive fixations) in first pass / furthest index + 1
-    3. Regression rate: number of regressions (fixations behind current furthest) / furthest index + 1
+    1. Reading speed: unique words read / time (wpm)
+    2. Skip rate: number of skips (word_diff > 1) / total fixations
+    3. Regression rate: number of regressions (next_word < current_word) / total fixations
     """
     # Read input file
     with open(input_file, 'r') as f:
@@ -175,37 +175,30 @@ def analyze_fixation_sequences(input_file: str, output_file: str):
         fixation_sequence = episode['global_fixation_sequence']
         total_time = episode['total_time']
         
-        # Find furthest index reached
-        furthest_index = max(fixation_sequence) if fixation_sequence else -1
+        # Calculate unique words read (excluding -1)
+        unique_words = len(set([w for w in fixation_sequence if w != -1]))
         
-        # Calculate reading speed
-        reading_speed = ((furthest_index + 1) / total_time) * 60  # words per minute
+        # Calculate reading speed (wpm)
+        reading_speed = (unique_words / total_time) * 60
         
-        # Calculate first-pass skip rate
-        first_pass_fixations = []
-        current_max = -1
+        # Calculate skip rate
         skips = 0
-        
-        for i, fix in enumerate(fixation_sequence):
-            if fix > current_max:
-                current_max = fix
-                first_pass_fixations.append(fix)
-                # Check if this fixation is a skip (non-consecutive)
-                if i > 0 and fix - first_pass_fixations[-2] > 1:
+        for i in range(len(fixation_sequence)-1):
+            if fixation_sequence[i] != -1 and fixation_sequence[i+1] != -1:
+                word_diff = fixation_sequence[i+1] - fixation_sequence[i]
+                if word_diff > 1:
                     skips += 1
         
-        skip_rate = skips / (furthest_index + 1) if furthest_index >= 0 else 0
+        skip_rate = skips / len(fixation_sequence) if fixation_sequence else 0
         
         # Calculate regression rate
         regressions = 0
-        current_max = -1
+        for i in range(len(fixation_sequence)-1):
+            if fixation_sequence[i] != -1 and fixation_sequence[i+1] != -1:
+                if fixation_sequence[i+1] < fixation_sequence[i]:
+                    regressions += 1
         
-        for fix in fixation_sequence:
-            if fix < current_max:
-                regressions += 1
-            current_max = max(current_max, fix)
-        
-        regression_rate = regressions / (furthest_index + 1) if furthest_index >= 0 else 0
+        regression_rate = regressions / len(fixation_sequence) if fixation_sequence else 0
         
         # Store metrics
         episode_metrics = {
@@ -213,7 +206,7 @@ def analyze_fixation_sequences(input_file: str, output_file: str):
             'stimulus_index': episode['stimulus_index'],
             'time_condition': episode['time_condition'],
             'total_time': total_time,
-            'furthest_index': furthest_index,
+            'unique_words': unique_words,
             'reading_speed': reading_speed,
             'skip_rate': skip_rate,
             'regression_rate': regression_rate,
