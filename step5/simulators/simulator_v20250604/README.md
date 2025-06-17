@@ -126,6 +126,30 @@ results = run_batch_simulations(
 
 The simulator includes validation tools to check the consistency of simulation results.
 
+### Reading Metrics Calculation
+
+The simulator calculates several key reading metrics:
+
+1. **Reading Speed**:
+   - Calculated as words per minute (wpm)
+   - Formula: `(total_words_read / total_time) * 60`
+
+2. **Skip Rate**:
+   - Measures the proportion of saccades that skip words
+   - Calculated by counting saccades where words are skipped between fixations
+   - Formula: `total_skip_saccades / total_saccades`
+   - Range: 0 to 1 (0% to 100%)
+   - Example: A skip rate of 0.3 means 30% of saccades skipped words
+
+3. **Regression Rate**:
+   - Measures the proportion of fixations that revisit previous words
+   - Calculated by tracking the last read word index and counting revisits
+   - Formula: `total_revisit_words / total_valid_fixations`
+   - Range: 0 to 1 (0% to 100%)
+   - Example: A regression rate of 0.2 means 20% of fixations were revisits
+
+Note: Both skip rate and regression rate are calculated excluding unmapped word indices (-1).
+
 ### Word Count Validation
 
 Use the `_test_code.py` script to verify that word counts match between text reading logs and sentence reading summaries:

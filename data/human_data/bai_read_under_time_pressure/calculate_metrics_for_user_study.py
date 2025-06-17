@@ -1165,6 +1165,10 @@ class AggregatedFixationMetrics:
         - word_skip_percentage_by_reading_progress: Skip percentage by reading progress (word-based)
         - word_skip_percentage_by_saccades: Skip percentage by total number of saccades
         """
+        
+        # NOTE a notification
+        print(f"        Calculating word skip percentage ... ...")
+        
         df_fixations = self.df_fixations
 
         # Using word indices from df_fixations
@@ -1212,6 +1216,10 @@ class AggregatedFixationMetrics:
         - revisit_percentage_by_reading_progress: Revisit percentage by reading progress (word-based)
         - revisit_percentage_by_fixations: Revisit percentage by total number of fixations
         """
+
+        # NOTE a notification
+        print(f"        Calculating revisit percentage ... ...")
+
         df_fixations = self.df_fixations
         fixated_word_indices = df_fixations['word_index'].tolist()
 
@@ -1284,6 +1292,11 @@ class AggregatedFixationMetrics:
         Returns:
         - reading_speed: Number of words read per minute.
         """
+        
+        # NOTE a notification
+        print(f"        Calculating reading speed ... ...")
+
+
         df_fixations = self.df_fixations
         fixated_word_indices = df_fixations['word_index'].tolist()
 
