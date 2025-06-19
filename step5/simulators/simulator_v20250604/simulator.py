@@ -81,7 +81,7 @@ class TextReader:
         self.text_reading_steps = 0
         self.text_reading_logs = {}
     
-    def step(self):
+    def step(self, time_info: dict = None):
         """
         Read the whole text, return corresponding states information.
         NOTE: might need to parse this reader into two parts, because I may use on-the-fly sentence reading content and comprehension score to evaluate the reading appraisals.
@@ -90,7 +90,7 @@ class TextReader:
         """
         self.text_reading_steps += 1
         self.action, self._states = self._model.predict(self._obs, deterministic=True)
-        self._obs, self._reward, self.done, self._truncated, self._info = self.env.step(action=self.action)
+        self._obs, self._reward, self.done, self._truncated, self._info = self.env.step(action=self.action, time_info=time_info)
         # Get the step-wise log
         self.text_reading_logs = self.env.get_individual_step_log()
 
@@ -177,8 +177,14 @@ class ReaderAgent:
                 and comprehension metrics (including the comprehension score and the comprehension time) are compatible with human data.
             NOTE: if want to compare the gaze duration vs. time conditions. Then I need to retrain that model to be time-awared, then integrate here to run simulations.
         
-        Version 061?
+        Version 0612
             Based on the version 0612, but using the real reading time.
+
+
+        Version 0617
+            Using the real reading time done by the simulation.
+            TODO: train a faster reading speed.
+            NOTE: try later -- use the handcrafted sentence comprehension to guide the text reader.
         """
 
         # Read the configuration file
@@ -258,14 +264,20 @@ class ReaderAgent:
             "episode_id": self._episode_index,
             "stimulus_id": self._stimulus_index,
             "time_condition": self._time_condition,
+            "get_data_from_agents": True,
         }
         self.text_reader.reset(inputs=inputs)          
+
+        time_info = {
+            "elapsed_time": self._elapsed_time,
+            "remaining_time": self._remaining_time,
+        }
 
         # Start to read the given stimulus -- the text paragraph with many sentences
         while not self.text_reader.done:
 
             # Determine which sentence to read using the RL model
-            self.text_reader.step()
+            self.text_reader.step(time_info=time_info)
 
             # UPDATE! Get the reading sentence index
             self.current_sentence_index = self.text_reader.env.current_sentence_index
@@ -277,10 +289,13 @@ class ReaderAgent:
             # Update the time-related variables
             self._elapsed_time += sentence_reading_time_consumed
             self._remaining_time = self._total_time - self._elapsed_time
-            # TODO these information are needed for the agent as observations for the next step
-
             # Update text logs
             self._update_text_reading_logs()
+            # Update the time-info
+            time_info = {
+                "elapsed_time": self._elapsed_time,
+                "remaining_time": self._remaining_time,
+            }
     
     def _simulate_sentence_reading(self):
         """

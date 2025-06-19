@@ -109,6 +109,9 @@ class TextReadingUnderTimePressureEnv(Env):
         self._log_number_regressions = None
         self._log_episodic_regression_rate = None
         self._log_actions = None
+
+        ###################  Get data from the simulator or not  #######################
+        self._get_data_from_other_agents = None
         
     def reset(self, seed=42, inputs: dict=None):                
         """Reset environment and initialize states"""
@@ -145,6 +148,10 @@ class TextReadingUnderTimePressureEnv(Env):
         self._elapsed_time = 0
         self._remaining_time = self._time_condition_value - self._elapsed_time        
 
+        # Get the running mode
+        self._get_data_from_other_agents = inputs["get_data_from_agents"]
+        assert self._get_data_from_other_agents in [True, False], f"Invalid configuration on data source: {self._get_data_from_other_agents}, should be True or False"
+
         # Initialize log variables
         self._log_number_regressions = 0
         self._log_episodic_regression_rate_over_num_read_sentences = 0
@@ -152,7 +159,7 @@ class TextReadingUnderTimePressureEnv(Env):
         
         return self._get_obs(), {}
     
-    def step(self, action):
+    def step(self, action, time_info: dict = None):
         """Take action and update states"""
         self._steps += 1
         reward = 0
@@ -184,11 +191,15 @@ class TextReadingUnderTimePressureEnv(Env):
                     # Update the sentences' appraisal scores
                     self._already_read_sentences_appraisal_scores_distribution[self.current_sentence_index] = new_scores[self.current_sentence_index]
                     # Update the elapsed time
-                    self._elapsed_time, self._remaining_time = self.transition_function.update_state_time(
-                        elapsed_time=self._elapsed_time,
-                        sentence_reading_time=self._sampled_text_metadata["sentence_reading_times"][self.actual_reading_sentence_index],
-                        time_condition_value=self._time_condition_value
-                    )
+                    if self._get_data_from_other_agents:
+                        self._elapsed_time = time_info["elapsed_time"]
+                        self._remaining_time = time_info["remaining_time"]
+                    else:   
+                        self._elapsed_time, self._remaining_time = self.transition_function.update_state_time(
+                            elapsed_time=self._elapsed_time,
+                            sentence_reading_time=self._sampled_text_metadata["sentence_reading_times"][self.actual_reading_sentence_index],
+                            time_condition_value=self._time_condition_value
+                        )
                 else: 
                     self._already_read_sentences_appraisal_scores_distribution = self.transition_function.apply_time_independent_memory_decay(
                         self._already_read_sentences_appraisal_scores_distribution, 
@@ -215,11 +226,15 @@ class TextReadingUnderTimePressureEnv(Env):
                 )
 
                 # Update the elapsed time
-                self._elapsed_time, self._remaining_time = self.transition_function.update_state_time(
-                    elapsed_time=self._elapsed_time,
-                    sentence_reading_time=self._sampled_text_metadata["sentence_reading_times"][self.actual_reading_sentence_index],
-                    time_condition_value=self._time_condition_value
-                )
+                if self._get_data_from_other_agents:
+                    self._elapsed_time = time_info["elapsed_time"]
+                    self._remaining_time = time_info["remaining_time"]
+                else:   
+                    self._elapsed_time, self._remaining_time = self.transition_function.update_state_time(
+                        elapsed_time=self._elapsed_time,
+                        sentence_reading_time=self._sampled_text_metadata["sentence_reading_times"][self.actual_reading_sentence_index],
+                        time_condition_value=self._time_condition_value
+                    )
                 
                 self.current_sentence_index = self.current_sentence_index     # Just a placeholder here -- automatically jumps back to the latest sentence that read. NOTE: make this complex later    
                 
