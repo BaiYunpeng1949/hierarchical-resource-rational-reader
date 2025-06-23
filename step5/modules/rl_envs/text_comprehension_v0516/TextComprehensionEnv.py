@@ -61,9 +61,13 @@ class TextComprehensionEnv(Env):
         self._regress_sentence_index = None
         # Internal states
         self._already_read_sentences_appraisal_scores_distribution = None
+        self._previous_already_read_sentences_appraisal_scores_distribution = None
         # External states
         self._current_sentence_index = None     # Actually the reading progress, because the revisited sentence index is not trakced here
         self._actual_reading_sentence_index = None  # Tracking the revisited sentence index
+        # State flags
+        self._flag_is_regress = None
+        self._flag_is_sentence_all_finished = None
 
         # Environment parameters
         self._steps = None
@@ -106,10 +110,17 @@ class TextComprehensionEnv(Env):
         self._num_remaining_sentence = self._num_sentences
         self._sentence_appraisal_scores_distribution = self._sampled_text_metadata["sentence_appraisal_scores_distribution"]
         self._already_read_sentences_appraisal_scores_distribution = [-1] * self._num_sentences
+        self._previous_already_read_sentences_appraisal_scores_distribution = self._already_read_sentences_appraisal_scores_distribution.copy()
         self._current_sentence_index = -1
         self._num_sentences_read = 0
         self._regress_sentence_index = -1    # -1 means no regress# NOTE: if the agent does not learn, include this into the observation space
 
+        # Reset state flags
+        self._flag_is_regress = False
+        self._flag_is_sentence_all_finished = False
+        self._sentence_appraisal_before_regress = None
+
+        # Step-wise log
         self._step_wise_log = []
 
         # # TODO debug delete later
@@ -126,6 +137,13 @@ class TextComprehensionEnv(Env):
         raw_regress_sentence_value = action[1]
         continue_or_stop_action = action[2]
 
+        # Store the previous state
+        self._previous_already_read_sentences_appraisal_scores_distribution = self._already_read_sentences_appraisal_scores_distribution.copy()
+
+        # Update the state flags
+        self._flag_is_regress = False
+        
+        # Execute the action in the new state
         if continue_or_stop_action <= self._stop_division:
             if read_or_regress_action > self._regress_proceed_division:
                 # Then update state with new sentence
@@ -141,7 +159,7 @@ class TextComprehensionEnv(Env):
                     self._actual_reading_sentence_index = self._current_sentence_index
                     self._num_sentences_read += 1
                     self._num_remaining_sentence -= 1
-                                    # Apply memory decay first
+                    # Apply memory decay first
                     self._already_read_sentences_appraisal_scores_distribution = self.transition_function.apply_time_independent_memory_decay(
                         self._already_read_sentences_appraisal_scores_distribution, 
                         self._current_sentence_index
@@ -174,6 +192,9 @@ class TextComprehensionEnv(Env):
                 )
                 
                 self._current_sentence_index = self._current_sentence_index     # Just a placeholder here -- automatically jumps back to the latest sentence that read. NOTE: make this complex later    
+
+                # Update state flags    
+                self._flag_is_regress = True
                 
                 # Get the reward
                 reward = self.reward_function.compute_regress_to_sentence_reward()
@@ -181,6 +202,10 @@ class TextComprehensionEnv(Env):
             # Stop reading
             self._terminate = True
             self._truncated = False
+        
+        # Check if the sentence is all finished
+        if self._num_remaining_sentence == 0:
+            self._flag_is_sentence_all_finished = True
 
         # Check termination
         if self._steps >= self.ep_len:
@@ -239,15 +264,15 @@ class TextComprehensionEnv(Env):
         stateful_obs = np.concatenate([padded_appraisals, [norm_current_position], [remaining_episode_length_awareness], [norm_remaining_sentence], [on_going_comprehension_log_scalar]])
 
         assert stateful_obs.shape[0] == self._num_stateful_obs, f"expected {self._num_stateful_obs} but got {stateful_obs.shape[0]}"
-
-        # # TODO debug delete later
-        # print(f"Stateful observation is: {stateful_obs}")
         
         ################## Update step-wise log here because some values are computed here ##################
         self._step_wise_log.append({
             "step": self._steps,
             "current_sentence_index": self._current_sentence_index,
             "actual_reading_sentence_index": self._actual_reading_sentence_index,
+            "sentence_appraisal_before_regress": self._previous_already_read_sentences_appraisal_scores_distribution[self._actual_reading_sentence_index] if self._flag_is_regress else None,
+            "is_regress": self._flag_is_regress,
+            "is_sentence_all_finished": self._flag_is_sentence_all_finished,
             "remaining_episode_length_awareness": remaining_episode_length_awareness,
             "already_read_sentences_appraisal_scores_distribution": self._already_read_sentences_appraisal_scores_distribution.copy(),
             "on_going_comprehension_log_scalar": on_going_comprehension_log_scalar,

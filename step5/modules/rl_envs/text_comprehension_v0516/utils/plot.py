@@ -356,11 +356,215 @@ def plot_regression_comprehension_simple(json_file_path):
     
     return comprehension_after_regressions
 
+def plot_regression_timing_vs_completion(json_file_path):
+    """
+    Plots when regressions occur relative to the completion of the first pass of reading.
+    A scatter plot is generated where each point is a regression. The y-axis shows the episode ID
+    and the x-axis shows the normalized time of the regression. A vertical line indicates
+    the average time at which the first full read-through of all sentences is completed.
+    """
+    with open(json_file_path, 'r') as f:
+        data = json.load(f)
+
+    regression_timings = []
+    finish_timings = []
+    
+    regression_timings_per_episode = defaultdict(list)
+
+    for episode in data:
+        episode_id = episode['episode_id']
+        step_logs = episode['step_wise_log']
+        
+        max_steps = len(step_logs) - 1
+        if max_steps <= 0:
+            continue
+
+        first_finish_step = -1
+        for i, step in enumerate(step_logs):
+            if step['is_sentence_all_finished']:
+                first_finish_step = i
+                break
+        
+        if first_finish_step != -1:
+            finish_timings.append(first_finish_step / max_steps)
+
+        current_sentence_index = -1
+        for step_idx, step in enumerate(step_logs):
+            if step['terminate']:
+                continue
+                
+            actual_reading_sentence_index = step.get('actual_reading_sentence_index')
+            
+            if actual_reading_sentence_index is not None:
+                if step.get('is_regress', False) and actual_reading_sentence_index < current_sentence_index:
+                    normalized_time = step_idx / max_steps
+                    regression_timings.append(normalized_time)
+                    regression_timings_per_episode[episode_id].append(normalized_time)
+
+                current_sentence_index = actual_reading_sentence_index
+    
+    if not regression_timings:
+        print("No regression events found to plot.")
+        return
+
+    avg_finish_time = np.mean(finish_timings) if finish_timings else -1
+
+    plt.figure(figsize=(15, 8))
+    
+    y_vals = []
+    x_vals = []
+    for episode_id, timings in sorted(regression_timings_per_episode.items()):
+        y_vals.extend([episode_id] * len(timings))
+        x_vals.extend(timings)
+
+    plt.scatter(x_vals, y_vals, alpha=0.6, label='Regression Event', s=50)
+
+    if avg_finish_time != -1:
+        plt.axvline(x=avg_finish_time, color='r', linestyle='--', linewidth=2, 
+                    label=f'Avg. First Full Read Completion (t={avg_finish_time:.2f})')
+        
+    plt.xlabel("Normalized Time Step in Episode")
+    plt.ylabel("Episode ID")
+    plt.title("Timing of Regression Events During Reading Episodes")
+    if regression_timings_per_episode:
+        plt.yticks(sorted(list(regression_timings_per_episode.keys())))
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.tight_layout()
+    plt.savefig('regression_timing_vs_completion.png', dpi=300)
+    plt.show()
+    plt.close()
+
+    print("Regression timing plot generated: 'regression_timing_vs_completion.png'")
+    if avg_finish_time != -1:
+        before_count = sum(1 for t in regression_timings if t < avg_finish_time)
+        after_count = sum(1 for t in regression_timings if t >= avg_finish_time)
+        print(f"Average finish time for first pass: {avg_finish_time:.3f}")
+        if regression_timings:
+            print(f"Regressions before first pass completion: {before_count} ({before_count/len(regression_timings)*100:.1f}%)")
+            print(f"Regressions after first pass completion: {after_count} ({after_count/len(regression_timings)*100:.1f}%)")
+
+def plot_regression_count_vs_appraisal(json_file_path):
+    """
+    Generates a scatter plot of regression counts versus sentence appraisal scores.
+    Each point represents a unique sentence appraisal score, with the y-axis showing
+    how many times sentences with that score were regressed to.
+    This version uses the dynamic appraisal score of the target sentence at the moment of regression.
+    """
+    with open(json_file_path, 'r') as f:
+        data = json.load(f)
+
+    regression_target_appraisals = []
+    for episode in data:
+        step_logs = episode['step_wise_log']
+        
+        for step_idx, step in enumerate(step_logs):
+            if step_idx == 0:
+                continue
+
+            if step.get('is_regress'):
+                target_idx = step.get('actual_reading_sentence_index')
+                if target_idx is None:
+                    continue
+
+                # Get appraisal distribution from the previous step
+                prev_step = step_logs[step_idx - 1]
+                appraisal_dist_before = prev_step.get('already_read_sentences_appraisal_scores_distribution')
+
+                if appraisal_dist_before and target_idx < len(appraisal_dist_before):
+                    appraisal_score = appraisal_dist_before[target_idx]
+                    if appraisal_score is not None and appraisal_score != -1:
+                        regression_target_appraisals.append(appraisal_score)
+
+    if not regression_target_appraisals:
+        print("No regression events with valid dynamic appraisals found.")
+        return
+
+    appraisal_counts = defaultdict(int)
+    for appraisal in regression_target_appraisals:
+        # Round to group similar appraisal scores
+        appraisal_counts[round(appraisal, 2)] += 1
+    
+    appraisals = list(appraisal_counts.keys())
+    counts = list(appraisal_counts.values())
+    
+    plt.figure(figsize=(12, 8))
+    plt.scatter(appraisals, counts, s=100, alpha=0.7, color='blue', edgecolor='black')
+    
+    plt.xlabel("Target Sentence Appraisal at Time of Regression", fontsize=12)
+    plt.ylabel('Number of Regressions', fontsize=12)
+    plt.title('Regressions Count vs. Dynamic Appraisal of Target Sentence', fontsize=14)
+    plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+        
+    plt.tight_layout()
+    plt.savefig('regression_count_vs_dynamic_appraisal.png', dpi=300)
+    plt.show()
+    plt.close()
+
+    print("Regression count vs dynamic appraisal plot generated: 'regression_count_vs_dynamic_appraisal.png'")
+
+def plot_triggering_appraisal_distribution(json_file_path):
+    """
+    Plots the distribution of sentence appraisal scores that trigger a regression.
+    It collects 'sentence_appraisal_before_regress' for all regression events
+    and plots a histogram to show the distribution of these scores.
+    """
+    with open(json_file_path, 'r') as f:
+        data = json.load(f)
+
+    triggering_appraisals = []
+    for episode in data:
+        for step in episode['step_wise_log']:
+            if step.get('is_regress'):
+                appraisal = step.get('sentence_appraisal_before_regress')
+                if appraisal is not None and appraisal != -1:
+                    triggering_appraisals.append(appraisal)
+
+    if not triggering_appraisals:
+        print("No valid regression-triggering appraisal scores found.")
+        return
+
+    plt.figure(figsize=(10, 6))
+    sns.histplot(triggering_appraisals, bins=20, kde=True, color='purple')
+    
+    plt.xlabel("Sentence Appraisal Score Before Regression")
+    plt.ylabel("Frequency")
+    plt.title("Distribution of Appraisal Scores Triggering a Regression")
+    
+    mean_val = np.mean(triggering_appraisals)
+    median_val = np.median(triggering_appraisals)
+    
+    plt.axvline(mean_val, color='red', linestyle='--', label=f'Mean: {mean_val:.2f}')
+    plt.axvline(median_val, color='green', linestyle='-', label=f'Median: {median_val:.2f}')
+    
+    plt.legend()
+    plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+    plt.tight_layout()
+    plt.savefig('regression_triggering_appraisal_distribution.png', dpi=300)
+    plt.show()
+    plt.close()
+
+    print("Plot generated: 'regression_triggering_appraisal_distribution.png'")
+    print(f"Found {len(triggering_appraisals)} regression-triggering events with valid appraisal scores.")
+    print(f"Mean appraisal score: {mean_val:.3f}")
+    print(f"Median appraisal score: {median_val:.3f}")
+
 if __name__ == "__main__":
     # Example usage
-    json_file_path = "/home/baiy4/reader-agent-zuco/step5/modules/rl_envs/text_comprehension_v0516/temp_sim_data/0530_text_comprehension_v0516_05_rl_model_100000000_steps/5ep/raw_sim_results.json"
-    
+    # json_file_path = "/home/baiy4/reader-agent-zuco/step5/modules/rl_envs/text_comprehension_v0516/temp_sim_data/0530_text_comprehension_v0516_05_rl_model_100000000_steps/5ep/raw_sim_results.json"
+    json_file_path = "/home/baiy4/reader-agent-zuco/step5/modules/rl_envs/text_comprehension_v0516/temp_sim_data/0530_text_comprehension_v0516_05_rl_model_100000000_steps/500ep/raw_sim_results.json"
+
     # Generate all three plots
-    events = plot_regression_analysis(json_file_path)
-    regression_appraisals = plot_appraisal_vs_regression(json_file_path)
-    comprehension_scores = plot_regression_comprehension_simple(json_file_path)
+    # events = plot_regression_analysis(json_file_path)
+    # regression_appraisals = plot_appraisal_vs_regression(json_file_path)
+    # comprehension_scores = plot_regression_comprehension_simple(json_file_path)
+
+    # New plots
+    plot_regression_timing_vs_completion(json_file_path)
+    plot_regression_count_vs_appraisal(json_file_path)
+    plot_triggering_appraisal_distribution(json_file_path)
+
+
+    # TODO: I can plot:
+    # 1. regress probability vs. appraisal score (then a regression line)
+    # 2. TODO: depict how regressions are happening after the first passes (link this to the whole text reading time, use it as a bar, a threshold, then position the regressions)
