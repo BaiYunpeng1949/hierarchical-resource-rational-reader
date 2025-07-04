@@ -5,23 +5,26 @@ import numpy as np
 
 # Example data
 words = [
-    "adjacent word1", "adjacent word2", 
-    # "adjacent word3", "adjacent word4", "adjacent word5", 
     "reading word", 
-    "adjacent word6", "adjacent word7", 
+    "adjacent word1", "adjacent word2", "adjacent word3",
+    # "adjacent word3", "adjacent word4", "adjacent word5", 
+    # "reading word", 
+    # "adjacent word6", "adjacent word7", 
     # "adjacent word8", "adjacent word9"
 ]
 # beliefs: Sharper Gaussian-like, highest at reading word, drops off quickly
 # beliefs = [0.005, 0.01, 0.02, 0.04, 0.10, 0.65, 0.10, 0.04, 0.02, 0.005]  # Must sum to 1
-beliefs = [0.05, 0.1, 0.7, 0.1, 0.05]
+# beliefs = [0.3, 0.6, 0.7, 0.1, 0.05]
+beliefs = [0.9, 0.6, 0.7, 0.65]
 
 # Define RGB colors (0-255)
 bar_colors_rgb = [
-    (246, 198, 173), (246, 198, 173), 
+    (0, 255, 0),
+    (196, 196, 196), (196, 196, 196), (196, 196, 196),
     # (246, 198, 173), (246, 198, 173), (246, 198, 173),
-    (255, 80, 80),  # Red for reading word
+    # (255, 0, 0),  # Red for reading word
     # (246, 198, 173),   # normal color for the initalization
-    (246, 198, 173), (246, 198, 173), 
+    # (246, 198, 173), (246, 198, 173), 
     # (246, 198, 173), (246, 198, 173)
 ]
 
@@ -38,7 +41,7 @@ central_bar_index = words.index("reading word")
 bars[central_bar_index].set_edgecolor('black')
 bars[central_bar_index].set_linewidth(2)
 
-plt.ylabel("Belief distribution", fontsize=12)
+plt.ylabel("Sentence appraisal", fontsize=12)
 # plt.title("Belief Distribution over Words")
 plt.ylim(0, 1)
 
