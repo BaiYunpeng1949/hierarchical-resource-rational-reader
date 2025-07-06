@@ -162,14 +162,16 @@ class TextComprehensionEnv(Env):
                     # Apply memory decay first
                     self._already_read_sentences_appraisal_scores_distribution = self.transition_function.apply_time_independent_memory_decay(
                         self._already_read_sentences_appraisal_scores_distribution, 
-                        self._current_sentence_index
+                        self._current_sentence_index,
+                        apply=False
                     )
 
                     self._already_read_sentences_appraisal_scores_distribution[self._current_sentence_index] = new_scores[self._current_sentence_index]
                 else: 
                     self._already_read_sentences_appraisal_scores_distribution = self.transition_function.apply_time_independent_memory_decay(
                         self._already_read_sentences_appraisal_scores_distribution, 
-                        -1
+                        -1,
+                        apply=False
                     )
                 # Get the reward    
                 reward = self.reward_function.compute_read_next_sentence_reward()
@@ -181,7 +183,8 @@ class TextComprehensionEnv(Env):
                 # Apply memory decay first
                 self._already_read_sentences_appraisal_scores_distribution = self.transition_function.apply_time_independent_memory_decay(
                     self._already_read_sentences_appraisal_scores_distribution, 
-                    revised_sentence_index
+                    revised_sentence_index,
+                    apply=False
                 )
                 
                 # Then update the regressed sentence's score
