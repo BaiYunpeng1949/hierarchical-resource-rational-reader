@@ -1,6 +1,9 @@
 import math
 import numpy as np
 
+from gymnasium.spaces import Dict, Discrete
+from gymnasium import Wrapper
+
 
 def calc_dynamic_text_comprehension_score(scores, mode="softmin", tau=0.1):
     """
@@ -24,6 +27,26 @@ def calc_dynamic_text_comprehension_score(scores, mode="softmin", tau=0.1):
         return float((w * scores).sum() / w.sum())
     else:
         raise ValueError(f"Invalid mode: {mode}")
+
+
+class DictActionUnwrapper(Wrapper):
+    def __init__(self, env):
+        super().__init__(env)
+        self.action_space = Discrete(env.action_space['action_type'].n * env.action_space['regress_target'].n)
+
+        # Save structure
+        self._action_type_n = env.action_space['action_type'].n
+        self._regress_target_n = env.action_space['regress_target'].n
+
+    def step(self, action):
+        # Unflatten
+        action_type = action // self._regress_target_n
+        regress_target = action % self._regress_target_n
+        action_dict = {
+            'action_type': action_type,
+            'regress_target': regress_target
+        }
+        return self.env.step(action_dict)
 
 
 if __name__ == "__main__":

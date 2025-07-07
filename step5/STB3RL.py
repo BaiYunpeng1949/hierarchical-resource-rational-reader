@@ -59,6 +59,7 @@ from modules.rl_envs.word_activation_v0218.WordActivationEnvV0218 import WordAct
 # from modules.rl_envs.sentence_read_v0306.SentenceReadingEnvV0306 import SentenceReadingEnv
 from modules.rl_envs.sentence_read_v0319.SentenceReadingEnv import SentenceReadingEnv
 from modules.rl_envs.text_comprehension_v0516.TextComprehensionEnv import TextComprehensionEnv
+from modules.rl_envs.text_comprehension_v0516.Utilities import DictActionUnwrapper
 
 
 _MODES = {
@@ -409,10 +410,15 @@ class RL:
             )
         elif env_class == TextComprehensionEnv:
             self._env = TextComprehensionEnv()
+            # def make_env():
+            #     env = TextComprehensionEnv()
+            #     # env = Monitor(env)
+            #     return env
             def make_env():
                 env = TextComprehensionEnv()
-                # env = Monitor(env)
+                env = DictActionUnwrapper(env)
                 return env
+
             # Initialise parallel environments
             self._parallel_envs = make_vec_env(
                 env_id=make_env,
