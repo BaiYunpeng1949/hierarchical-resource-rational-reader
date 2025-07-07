@@ -6,6 +6,22 @@ From the Kintsch's paper, he mentioned something like "The mechanism of only a l
 Action: so later I could introduce a memory decay over sentences (in a higher level, not micro-propositions), showing the similar trend.
 Warning: to make the above-mentioned effect clear, maybe need to make the agent's initial appraisals range from an overall higher region. 
 
+## Why use softmin instead of geometric mean for comprehension aggregation?
+
+Previously, the geometric mean was used to aggregate sentence appraisals:
+- The geometric mean hides big gaps: progress on any sentence boosts the mean, so after a few high-score sentences, low outliers hardly move the needle.
+- Raising a low score (e.g., 0.3 → 0.6) earns less than raising a high score (0.9 → 1.0), even though the first jump is more useful for comprehension.
+- This leads the agent to prefer easy top-ups over patching the biggest gaps, which is not optimal for comprehension.
+
+**Softmin** is now used instead:
+- Softmin is a differentiable, risk-averse utility that acts like an "almost-minimum"; it gives much more weight to the lowest scores.
+- For typical temperature values (τ in [0.15, 0.30]), one bad sentence dominates the utility enough that the agent is incentivized to repair it first.
+- This means the agent receives much stronger reinforcement for closing the biggest gaps, rather than just topping up already high scores.
+- Softmin is smooth and differentiable, so it works well with gradient-based RL algorithms.
+
+**Intuition:**
+> Softmin acts like a risk-averse utility: the colder the temperature, the more the agent behaves as if "the weakest link sets the value of the whole chain," so the rational move is to close the biggest gap first.
+
 ## Metrics Calculation and Visualization
 
 ### Regression Detection

@@ -12,6 +12,7 @@ from .TextManager import TextManager
 from .TransitionFunction import TransitionFunction
 from .RewardFunction import RewardFunction
 from . import Constants
+from .Utilities import calc_dynamic_text_comprehension_score
 
 
 class TextComprehensionEnv(Env):
@@ -122,9 +123,6 @@ class TextComprehensionEnv(Env):
 
         # Step-wise log
         self._step_wise_log = []
-
-        # # TODO debug delete later
-        # print(f"Text ID sampled: {text_id}")
         
         return self._get_obs(), {}
     
@@ -254,11 +252,12 @@ class TextComprehensionEnv(Env):
         # Get the on-going comprehension scalar
         on_going_comprehension_log_scalar = 0.0
         if len(valid_sentences_appraisals) > 0:
-            overall_comprehension_log = 0.0
-            for b in valid_sentences_appraisals:
-                overall_comprehension_log += math.log(max(b, 1e-9))
-            # geometric mean
-            on_going_comprehension_log_scalar = math.exp(overall_comprehension_log / len(valid_sentences_appraisals))
+            # overall_comprehension_log = 0.0
+            # for b in valid_sentences_appraisals:
+            #     overall_comprehension_log += math.log(max(b, 1e-9))
+            # # geometric mean
+            # on_going_comprehension_log_scalar = math.exp(overall_comprehension_log / len(valid_sentences_appraisals))
+            on_going_comprehension_log_scalar = max(0, calc_dynamic_text_comprehension_score(valid_sentences_appraisals, mode=Constants.COMPREHENSION_SCORE_MODE, tau=Constants.TAU))
         else:
             on_going_comprehension_log_scalar = 0.0
         
@@ -293,9 +292,6 @@ class TextComprehensionEnv(Env):
             "init_sentence_appraisal_scores_distribution": self._sentence_appraisal_scores_distribution,
             "step_wise_log": self._step_wise_log,
         }
-
-        # # TODO debug delete later
-        # print(f"Episode log is: {episode_log}")
 
         return episode_log
 
