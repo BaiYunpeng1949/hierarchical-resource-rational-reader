@@ -280,6 +280,44 @@ class NoVisionCombinedExtractor(BaseFeaturesExtractor):
         return th.cat(encoded_tensor_list, dim=1)
 
 
+class NumpyEncoder(json.JSONEncoder):
+    """
+    Custom JSON encoder that handles numpy types.
+    """
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super().default(obj)
+
+
+def convert_numpy_types_for_json(obj):
+    """
+    Convert numpy types to native Python types for JSON serialization.
+    
+    Args:
+        obj: Object that may contain numpy types
+        
+    Returns:
+        Object with numpy types converted to native Python types
+    """
+    if isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, dict):
+        return {key: convert_numpy_types_for_json(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_numpy_types_for_json(item) for item in obj]
+    else:
+        return obj
+
+
 def linear_schedule(initial_value: float, min_value: float, threshold: float = 1.0) -> Callable[[float], float]:
     """
     Linear learning rate schedule. Adapted from the example at
@@ -599,7 +637,35 @@ class RL:
 
             # Save the logs to a json file
             with open(os.path.join(save_data_dir, "raw_sim_results.json"), "w") as f:
-                json.dump(logs_across_episodes, f, indent=4)
+                json.dump(logs_across_episodes, f, indent=4, cls=NumpyEncoder)
+
+    def _oculomotor_controller_test(self):
+        """
+        Test the oculomotor controller environment.
+        """
+        print("Oculomotor controller test method not implemented yet.")
+        pass
+
+    def _word_activation_test(self):
+        """
+        Test the word activation environment.
+        """
+        print("Word activation test method not implemented yet.")
+        pass
+
+    def _sentence_reading_test(self):
+        """
+        Test the sentence reading environment.
+        """
+        print("Sentence reading test method not implemented yet.")
+        pass
+
+    def _grid_test(self):
+        """
+        Test with grid search parameters.
+        """
+        print("Grid test method not implemented yet.")
+        pass
 
 
 
