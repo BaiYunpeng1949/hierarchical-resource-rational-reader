@@ -409,15 +409,17 @@ class RL:
                 vec_env_cls=SubprocVecEnv,
             )
         elif env_class == TextComprehensionEnv:
-            self._env = TextComprehensionEnv()
-            # def make_env():
-            #     env = TextComprehensionEnv()
-            #     # env = Monitor(env)
-            #     return env
+            # self._env = TextComprehensionEnv()
+            # # def make_env():
+            # #     env = TextComprehensionEnv()
+            # #     # env = Monitor(env)
+            # #     return env
             def make_env():
                 env = TextComprehensionEnv()
                 env = DictActionUnwrapper(env)
                 return env
+
+            self._env = make_env()
 
             # Initialise parallel environments
             self._parallel_envs = make_vec_env(
@@ -443,7 +445,7 @@ class RL:
 
             # Configure the model - HRL - Ocular motor control
             # if isinstance(self._env, SampleFixationVersion1) or isinstance(self._env, SampleFixationVersion2):
-            if isinstance(self._env, WordActivationRLEnv) or isinstance(self._env, SentenceReadingEnv) or isinstance(self._env, TextComprehensionEnv):
+            if isinstance(self._env, WordActivationRLEnv) or isinstance(self._env, SentenceReadingEnv) or isinstance(self._env.unwrapped, TextComprehensionEnv):
                 policy_kwargs = dict(
                     features_extractor_class=StatefulInformationExtractor,       
                     features_extractor_kwargs=dict(features_dim=128),
@@ -489,7 +491,7 @@ class RL:
 
             # RL testing related variable: number of episodes and number of steps in each episode
             self._num_episodes = self._config_rl['test']['num_episodes']
-            self._num_steps = self._env.ep_len
+            self._num_steps = self._env.unwrapped.ep_len if isinstance(self._env.unwrapped, TextComprehensionEnv) else self._env.ep_len
 
             # Load the model
             if self._mode == _MODES['test'] or self._mode == _MODES['grid_test']:
@@ -610,7 +612,7 @@ class RL:
                 score += reward
             
             # Add the episode log to the logs across episodes
-            logs_across_episodes.append(self._env.get_episode_log())
+            logs_across_episodes.append(self._env.unwrapped.get_episode_log())
             
             print(
                 f'Episode:{episode}     Score:{score}\n'
@@ -692,7 +694,7 @@ class RL:
                 self._word_activation_test()
             elif isinstance(self._env, SentenceReadingEnv):
                 self._sentence_reading_test()
-            elif isinstance(self._env, TextComprehensionEnv):
+            elif isinstance(self._env.unwrapped, TextComprehensionEnv):
                 self._text_comprehension_test()
             else:
                 raise ValueError(f'Invalid environment {self._env}.')

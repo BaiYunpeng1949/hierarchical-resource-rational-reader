@@ -552,7 +552,7 @@ def plot_triggering_appraisal_distribution(json_file_path):
 if __name__ == "__main__":
     # Example usage
     # json_file_path = "/home/baiy4/reader-agent-zuco/step5/modules/rl_envs/text_comprehension_v0516/temp_sim_data/0706_text_comprehension_v0516_no_time_decay_00_rl_model_continual_270000000_steps/1000ep/raw_sim_results.json"
-    json_file_path = "/home/baiy4/reader-agent-zuco/step5/modules/rl_envs/text_comprehension_v0516/temp_sim_data/0707_text_comprehension_v0516_no_time_decay_softmin_reward_function_01_rl_model_80000000_steps/1000ep/raw_sim_results.json"
+    json_file_path = "/home/baiy4/reader-agent-zuco/step5/modules/rl_envs/text_comprehension_v0516/temp_sim_data/0707_text_comprehension_v0516_no_time_decay_softmin_reward_function_hierarchical_discrete_actions_02_rl_model_90000000_steps/1000ep/raw_sim_results.json"
 
     # Generate all three plots
     # events = plot_regression_analysis(json_file_path)
