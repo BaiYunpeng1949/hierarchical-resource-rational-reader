@@ -6,6 +6,41 @@ From the Kintsch's paper, he mentioned something like "The mechanism of only a l
 Action: so later I could introduce a memory decay over sentences (in a higher level, not micro-propositions), showing the similar trend.
 Warning: to make the above-mentioned effect clear, maybe need to make the agent's initial appraisals range from an overall higher region. 
 
+## Proportion of Sentences Regressed Analysis
+
+### Motivation
+The key hypothesis of adaptive reading is that agents should prioritize sentences with lower appraisal scores for regression, as these represent comprehension gaps that need to be addressed. This analysis validates whether the RL agent has learned this adaptive strategy by examining the relationship between initial sentence appraisal scores and regression frequency.
+
+### Implementation
+The analysis is implemented in `utils/plot_density.py` and calculates:
+
+1. **Binning**: Appraisal scores (0.0-1.0) are divided into 20 bins (0.0-0.05, 0.05-0.1, ..., 0.95-1.0)
+2. **Counting**: For each bin:
+   - `all_counts[i]`: Total number of sentences with appraisal scores in that bin
+   - `regress_counts[i]`: Number of regressed sentences with appraisal scores in that bin
+3. **Proportion Calculation**: 
+   - `proportions[i] = regress_counts[i] / all_counts[i]` (for bins with data)
+   - This gives the fraction (0 to 1) of sentences in each appraisal range that were regressed
+4. **Visualization**: Line chart showing regression proportion vs. appraisal score
+
+### Interpretation
+- **Downward Trend**: If the line slopes downward from left to right, low-appraisal sentences are more likely to be regressed
+- **Flat Line**: No relationship between appraisal score and regression likelihood
+- **Upward Trend**: High-appraisal sentences are more likely to be regressed (counter to adaptive strategy)
+
+### Expected Results
+For an adaptive reading agent, we expect:
+- Higher regression proportions for low appraisal scores (<0.5)
+- Lower regression proportions for high appraisal scores (≥0.5)
+- Overall downward trend indicating prioritization of comprehension gaps
+
+### Usage
+```bash
+cd step5/modules/rl_envs/text_comprehension_v0516/utils
+python plot_density.py
+```
+This generates `proportion_regressed_by_appraisal_score.png` showing the relationship between appraisal scores and regression frequency.
+
 ## Why use softmin instead of geometric mean for comprehension aggregation?
 
 Previously, the geometric mean was used to aggregate sentence appraisals:
