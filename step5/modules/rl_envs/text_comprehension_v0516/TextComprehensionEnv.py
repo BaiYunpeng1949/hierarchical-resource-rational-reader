@@ -72,7 +72,8 @@ class TextComprehensionEnv(Env):
 
         # Environment parameters
         self._steps = None
-        self.ep_len = 2 * Constants.MAX_NUM_SENTENCES           # Enough steps for the agent to stop reading actively
+        # self.ep_len = 2 * Constants.MAX_NUM_SENTENCES           # Enough steps for the agent to stop reading actively
+        self.ep_len = None
         self._terminate = None
         self._truncated = None
         self._step_wise_log = None
@@ -126,6 +127,9 @@ class TextComprehensionEnv(Env):
         self._flag_is_regress = False
         self._flag_is_sentence_all_finished = False
         self._sentence_appraisal_before_regress = None
+
+        # Initialize the episode length
+        self.ep_len = self._num_sentences + 3     # NOTE: trial of limited episode length
 
         # Step-wise log
         self._step_wise_log = []
