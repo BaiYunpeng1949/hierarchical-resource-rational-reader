@@ -4,8 +4,8 @@ rl:
   mode: test   # Options: train, continual_train, test, debug, simulate (run modules), and grid_test.
 
   train:
-    total_timesteps: 100000000
-    checkpoints_folder_name: 0530_text_comprehension_v0516_05
+    total_timesteps: 500000000
+    checkpoints_folder_name: 0708_text_comprehension_v0516_no_time_decay_softmin_reward_function_hierarchical_discrete_actions_limited_episodes_03 # 0530_text_comprehension_v0516_05
     num_workers: 20   # Smaller than the server's number of processes: 16 - should not be the maximum capacity of the processors, otherwise the local memory will overflow.
     num_steps: 10000   # Don't change this parameter -- previously 5000
     batch_size: 1000  # We recommend using a `batch_size` that is a factor of `n_steps * n_envs` -- previously 500
@@ -23,9 +23,9 @@ rl:
     save_freq: 10000000  # Save a checkpoint every 0.50 million steps
 
   test:
-    num_episodes: 5
-    loaded_model_name: 'rl_model_100000000_steps'
-    continual_logs_name: 'PPO_89'
+    num_episodes: 2
+    loaded_model_name: 'rl_model_40000000_steps'
+    continual_logs_name: 'PPO_109'
     dataset_for_testing: 'simulate'   # OPTIONS: 'test', 'train', 'simulate'
     grid_params:
       w_penalty_spec: [1, 20, 1]

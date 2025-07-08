@@ -34,7 +34,6 @@ from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from step5.utils import constants as constants
 from step5.utils import auxiliaries as aux
 from utils import plot_word_activation_without_vision_figures as plot_word_activation_figures
-from utils import plot_sentence_reading_figures as plot_sentence_reading_figures
 
 # from step5.modules.rl_envs.SupervisoryControllerEnv_v0922 import SupervisoryControllerEnv
 # from step5.modules.rl_envs.SupervisoryControllerEnv_v1018 import SupervisoryControllerEnv
@@ -60,6 +59,7 @@ from modules.rl_envs.word_activation_v0218.WordActivationEnvV0218 import WordAct
 # from modules.rl_envs.sentence_read_v0306.SentenceReadingEnvV0306 import SentenceReadingEnv
 from modules.rl_envs.sentence_read_v0319.SentenceReadingEnv import SentenceReadingEnv
 from modules.rl_envs.text_comprehension_v0516.TextComprehensionEnv import TextComprehensionEnv
+from modules.rl_envs.text_comprehension_v0516.Utilities import DictActionUnwrapper
 
 
 _MODES = {
@@ -281,6 +281,44 @@ class NoVisionCombinedExtractor(BaseFeaturesExtractor):
         return th.cat(encoded_tensor_list, dim=1)
 
 
+class NumpyEncoder(json.JSONEncoder):
+    """
+    Custom JSON encoder that handles numpy types.
+    """
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super().default(obj)
+
+
+def convert_numpy_types_for_json(obj):
+    """
+    Convert numpy types to native Python types for JSON serialization.
+    
+    Args:
+        obj: Object that may contain numpy types
+        
+    Returns:
+        Object with numpy types converted to native Python types
+    """
+    if isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, dict):
+        return {key: convert_numpy_types_for_json(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_numpy_types_for_json(item) for item in obj]
+    else:
+        return obj
+
+
 def linear_schedule(initial_value: float, min_value: float, threshold: float = 1.0) -> Callable[[float], float]:
     """
     Linear learning rate schedule. Adapted from the example at
@@ -371,11 +409,18 @@ class RL:
                 vec_env_cls=SubprocVecEnv,
             )
         elif env_class == TextComprehensionEnv:
-            self._env = TextComprehensionEnv()
+            # self._env = TextComprehensionEnv()
+            # # def make_env():
+            # #     env = TextComprehensionEnv()
+            # #     # env = Monitor(env)
+            # #     return env
             def make_env():
                 env = TextComprehensionEnv()
-                # env = Monitor(env)
+                env = DictActionUnwrapper(env)
                 return env
+
+            self._env = make_env()
+
             # Initialise parallel environments
             self._parallel_envs = make_vec_env(
                 env_id=make_env,
@@ -400,7 +445,7 @@ class RL:
 
             # Configure the model - HRL - Ocular motor control
             # if isinstance(self._env, SampleFixationVersion1) or isinstance(self._env, SampleFixationVersion2):
-            if isinstance(self._env, WordActivationRLEnv) or isinstance(self._env, SentenceReadingEnv) or isinstance(self._env, TextComprehensionEnv):
+            if isinstance(self._env, WordActivationRLEnv) or isinstance(self._env, SentenceReadingEnv) or isinstance(self._env.unwrapped, TextComprehensionEnv):
                 policy_kwargs = dict(
                     features_extractor_class=StatefulInformationExtractor,       
                     features_extractor_kwargs=dict(features_dim=128),
@@ -446,7 +491,7 @@ class RL:
 
             # RL testing related variable: number of episodes and number of steps in each episode
             self._num_episodes = self._config_rl['test']['num_episodes']
-            self._num_steps = self._env.ep_len
+            self._num_steps = self._env.unwrapped.ep_len if isinstance(self._env.unwrapped, TextComprehensionEnv) else self._env.ep_len
 
             # Load the model
             if self._mode == _MODES['test'] or self._mode == _MODES['grid_test']:
@@ -567,7 +612,7 @@ class RL:
                 score += reward
             
             # Add the episode log to the logs across episodes
-            logs_across_episodes.append(self._env.get_episode_log())
+            logs_across_episodes.append(self._env.unwrapped.get_episode_log())
             
             print(
                 f'Episode:{episode}     Score:{score}\n'
@@ -600,7 +645,36 @@ class RL:
 
             # Save the logs to a json file
             with open(os.path.join(save_data_dir, "raw_sim_results.json"), "w") as f:
-                json.dump(logs_across_episodes, f, indent=4)
+                json.dump(logs_across_episodes, f, indent=4, cls=NumpyEncoder)
+
+    def _oculomotor_controller_test(self):
+        """
+        Test the oculomotor controller environment.
+        """
+        print("Oculomotor controller test method not implemented yet.")
+        pass
+
+    def _word_activation_test(self):
+        """
+        Test the word activation environment.
+        """
+        print("Word activation test method not implemented yet.")
+        pass
+
+    def _sentence_reading_test(self):
+        """
+        Test the sentence reading environment.
+        """
+        print("Sentence reading test method not implemented yet.")
+        pass
+
+    def _grid_test(self):
+        """
+        Test with grid search parameters.
+        """
+        print("Grid test method not implemented yet.")
+        pass
+
 
 
     def run(self):
@@ -615,13 +689,12 @@ class RL:
             self._continual_train()
         elif self._mode == _MODES['test'] or self._mode == _MODES['debug']:
             if isinstance(self._env, GeneralOculomotorControllerEnv) or isinstance(self._env, OculomotorControllerRLEnv):
-                # self._oculomotor_controller_test()
-                pass
+                self._oculomotor_controller_test()
             elif isinstance(self._env, WordActivationRLEnv):
                 self._word_activation_test()
             elif isinstance(self._env, SentenceReadingEnv):
                 self._sentence_reading_test()
-            elif isinstance(self._env, TextComprehensionEnv):
+            elif isinstance(self._env.unwrapped, TextComprehensionEnv):
                 self._text_comprehension_test()
             else:
                 raise ValueError(f'Invalid environment {self._env}.')

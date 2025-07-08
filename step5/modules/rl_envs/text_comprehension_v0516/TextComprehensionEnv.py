@@ -12,6 +12,7 @@ from .TextManager import TextManager
 from .TransitionFunction import TransitionFunction
 from .RewardFunction import RewardFunction
 from . import Constants
+from .Utilities import calc_dynamic_text_comprehension_score
 
 
 class TextComprehensionEnv(Env):
@@ -61,13 +62,18 @@ class TextComprehensionEnv(Env):
         self._regress_sentence_index = None
         # Internal states
         self._already_read_sentences_appraisal_scores_distribution = None
+        self._previous_already_read_sentences_appraisal_scores_distribution = None
         # External states
         self._current_sentence_index = None     # Actually the reading progress, because the revisited sentence index is not trakced here
         self._actual_reading_sentence_index = None  # Tracking the revisited sentence index
+        # State flags
+        self._flag_is_regress = None
+        self._flag_is_sentence_all_finished = None
 
         # Environment parameters
         self._steps = None
-        self.ep_len = 3 * Constants.MAX_NUM_SENTENCES           # Enough steps for the agent to stop reading actively
+        # self.ep_len = 2 * Constants.MAX_NUM_SENTENCES           # Enough steps for the agent to stop reading actively
+        self.ep_len = None
         self._terminate = None
         self._truncated = None
         self._step_wise_log = None
@@ -80,7 +86,12 @@ class TextComprehensionEnv(Env):
         # self.action_space = Discrete(3)      
         self._regress_proceed_division = 0.5
         self._stop_division = 0.5
-        self.action_space = Box(low=0, high=1, shape=(3,))      # First action decides keeps reading or not; second acction decides where to regress to; third action decides whether to stop
+        # self.action_space = Box(low=0, high=1, shape=(3,))      # First action decides keeps reading or not; second acction decides where to regress to; third action decides whether to stop
+        # NOTE change from the continuous action space to the discrete action space
+        self.action_space = Dict({
+            "action_type": Discrete(3),               # 0: read-next, 1: stop, 2: regress
+            "regress_target": Discrete(Constants.MAX_NUM_SENTENCES) # Only used when action_type == 2
+        })
         
         # Observation space - simplified to scalar signals
         self._num_stateful_obs = Constants.MAX_NUM_SENTENCES + 3 + 1     # Distribution of the appraisal scores over the sentences, current sentence index, and the time awareness 
@@ -89,7 +100,8 @@ class TextComprehensionEnv(Env):
         #########################################################
         self.episode_id = 0        # Initialize here because need to accumulate across episodes
         
-    def reset(self, seed=42):
+    # def reset(self, seed=42):
+    def reset(self, *, seed=None, options=None):
         """Reset environment and initialize states"""
         super().reset(seed=seed)
 
@@ -106,81 +118,169 @@ class TextComprehensionEnv(Env):
         self._num_remaining_sentence = self._num_sentences
         self._sentence_appraisal_scores_distribution = self._sampled_text_metadata["sentence_appraisal_scores_distribution"]
         self._already_read_sentences_appraisal_scores_distribution = [-1] * self._num_sentences
+        self._previous_already_read_sentences_appraisal_scores_distribution = self._already_read_sentences_appraisal_scores_distribution.copy()
         self._current_sentence_index = -1
         self._num_sentences_read = 0
         self._regress_sentence_index = -1    # -1 means no regress# NOTE: if the agent does not learn, include this into the observation space
 
-        self._step_wise_log = []
+        # Reset state flags
+        self._flag_is_regress = False
+        self._flag_is_sentence_all_finished = False
+        self._sentence_appraisal_before_regress = None
 
-        # # TODO debug delete later
-        # print(f"Text ID sampled: {text_id}")
+        # Initialize the episode length
+        self.ep_len = self._num_sentences + 3     # NOTE: trial of limited episode length
+
+        # Step-wise log
+        self._step_wise_log = []
         
         return self._get_obs(), {}
     
     def step(self, action):
         """Take action and update states"""
+
+        # Apply actions
+        action_type = action["action_type"]
+        regress_target = action["regress_target"]
+        
+        # Update variables
         self._steps += 1
         reward = 0
 
-        read_or_regress_action = action[0]
-        raw_regress_sentence_value = action[1]
-        continue_or_stop_action = action[2]
+        # read_or_regress_action = action[0]
+        # raw_regress_sentence_value = action[1]
+        # continue_or_stop_action = action[2]
 
-        if continue_or_stop_action <= self._stop_division:
-            if read_or_regress_action > self._regress_proceed_division:
-                # Then update state with new sentence
-                new_scores, action_validity = self.transition_function.update_state_read_next_sentence(
-                    current_sentence_index=self._current_sentence_index,
-                    sentence_appraisal_scores_distribution=self._sentence_appraisal_scores_distribution,
-                    num_sentences=self._num_sentences
-                )
-                
-                if action_validity:
-                    # Only update the new sentence's score, preserve decayed scores for others
-                    self._current_sentence_index = self._current_sentence_index + 1
-                    self._actual_reading_sentence_index = self._current_sentence_index
-                    self._num_sentences_read += 1
-                    self._num_remaining_sentence -= 1
-                                    # Apply memory decay first
-                    self._already_read_sentences_appraisal_scores_distribution = self.transition_function.apply_time_independent_memory_decay(
-                        self._already_read_sentences_appraisal_scores_distribution, 
-                        self._current_sentence_index
-                    )
+        # Store the previous state
+        self._previous_already_read_sentences_appraisal_scores_distribution = self._already_read_sentences_appraisal_scores_distribution.copy()
 
-                    self._already_read_sentences_appraisal_scores_distribution[self._current_sentence_index] = new_scores[self._current_sentence_index]
-                else: 
-                    self._already_read_sentences_appraisal_scores_distribution = self.transition_function.apply_time_independent_memory_decay(
-                        self._already_read_sentences_appraisal_scores_distribution, 
-                        -1
-                    )
-                # Get the reward    
-                reward = self.reward_function.compute_read_next_sentence_reward()
-            else:
-                # Regress to a previously read sentence
-                revised_sentence_index = self._get_regress_sentence_index(raw_regress_sentence_value)
-                self._actual_reading_sentence_index = revised_sentence_index
-                
-                # Apply memory decay first
+        # Update the state flags
+        self._flag_is_regress = False
+        
+        ############################################### Execute the action in the new state ###############################################
+        if action_type == 0:  # READ NEXT SENTENCE
+            new_scores, action_validity = self.transition_function.update_state_read_next_sentence(
+                current_sentence_index=self._current_sentence_index,
+                sentence_appraisal_scores_distribution=self._sentence_appraisal_scores_distribution,
+                num_sentences=self._num_sentences
+            )
+
+            if action_validity:
+                self._current_sentence_index += 1
+                self._actual_reading_sentence_index = self._current_sentence_index
+                self._num_sentences_read += 1
+                self._num_remaining_sentence -= 1
+                # Apply memory decay
                 self._already_read_sentences_appraisal_scores_distribution = self.transition_function.apply_time_independent_memory_decay(
-                    self._already_read_sentences_appraisal_scores_distribution, 
-                    revised_sentence_index
+                    self._already_read_sentences_appraisal_scores_distribution,
+                    self._current_sentence_index,
+                    apply=False
                 )
-                
-                # Then update the regressed sentence's score
-                self._already_read_sentences_appraisal_scores_distribution, action_validity = self.transition_function.update_state_regress_to_sentence(
-                    revised_sentence_index=revised_sentence_index,
-                    furtherest_read_sentence_index=self._current_sentence_index,
-                    read_sentence_appraisal_scores_distribution=self._already_read_sentences_appraisal_scores_distribution
+                self._already_read_sentences_appraisal_scores_distribution[self._current_sentence_index] = new_scores[self._current_sentence_index]
+            else:
+                self._already_read_sentences_appraisal_scores_distribution = self.transition_function.apply_time_independent_memory_decay(
+                    self._already_read_sentences_appraisal_scores_distribution,
+                    -1,
+                    apply=False
                 )
-                
-                self._current_sentence_index = self._current_sentence_index     # Just a placeholder here -- automatically jumps back to the latest sentence that read. NOTE: make this complex later    
-                
-                # Get the reward
-                reward = self.reward_function.compute_regress_to_sentence_reward()
-        else:
-            # Stop reading
+            # Get the reward
+            reward = self.reward_function.compute_read_next_sentence_reward()
+        
+        elif action_type == 1:  # STOP READING
             self._terminate = True
             self._truncated = False
+        
+        elif action_type == 2:  # REGRESS TO A SENTENCE
+            revised_sentence_index = min(regress_target, self._current_sentence_index)  # prevent forward regress
+            self._actual_reading_sentence_index = revised_sentence_index
+
+            self._already_read_sentences_appraisal_scores_distribution = self.transition_function.apply_time_independent_memory_decay(
+                self._already_read_sentences_appraisal_scores_distribution,
+                revised_sentence_index,
+                apply=False
+            )
+
+            self._already_read_sentences_appraisal_scores_distribution, action_validity = self.transition_function.update_state_regress_to_sentence(
+                revised_sentence_index=revised_sentence_index,
+                furtherest_read_sentence_index=self._current_sentence_index,
+                read_sentence_appraisal_scores_distribution=self._already_read_sentences_appraisal_scores_distribution
+            )
+
+            self._current_sentence_index = self._current_sentence_index     # Just a placeholder here -- automatically jumps back to the latest sentence that read. NOTE: make this complex later    
+
+            self._flag_is_regress = True
+            reward = self.reward_function.compute_regress_to_sentence_reward()
+
+        else:
+            raise ValueError(f"Invalid action_type: {action_type}")
+            
+              
+        # # Execute the action in the new state
+        # if continue_or_stop_action <= self._stop_division:
+        #     if read_or_regress_action > self._regress_proceed_division:
+        #         # Then update state with new sentence
+        #         new_scores, action_validity = self.transition_function.update_state_read_next_sentence(
+        #             current_sentence_index=self._current_sentence_index,
+        #             sentence_appraisal_scores_distribution=self._sentence_appraisal_scores_distribution,
+        #             num_sentences=self._num_sentences
+        #         )
+                
+        #         if action_validity:
+        #             # Only update the new sentence's score, preserve decayed scores for others
+        #             self._current_sentence_index = self._current_sentence_index + 1
+        #             self._actual_reading_sentence_index = self._current_sentence_index
+        #             self._num_sentences_read += 1
+        #             self._num_remaining_sentence -= 1
+        #             # Apply memory decay first
+        #             self._already_read_sentences_appraisal_scores_distribution = self.transition_function.apply_time_independent_memory_decay(
+        #                 self._already_read_sentences_appraisal_scores_distribution, 
+        #                 self._current_sentence_index,
+        #                 apply=False
+        #             )
+
+        #             self._already_read_sentences_appraisal_scores_distribution[self._current_sentence_index] = new_scores[self._current_sentence_index]
+        #         else: 
+        #             self._already_read_sentences_appraisal_scores_distribution = self.transition_function.apply_time_independent_memory_decay(
+        #                 self._already_read_sentences_appraisal_scores_distribution, 
+        #                 -1,
+        #                 apply=False
+        #             )
+        #         # Get the reward    
+        #         reward = self.reward_function.compute_read_next_sentence_reward()
+        #     else:
+        #         # Regress to a previously read sentence
+        #         revised_sentence_index = self._get_regress_sentence_index(raw_regress_sentence_value)
+        #         self._actual_reading_sentence_index = revised_sentence_index
+                
+        #         # Apply memory decay first
+        #         self._already_read_sentences_appraisal_scores_distribution = self.transition_function.apply_time_independent_memory_decay(
+        #             self._already_read_sentences_appraisal_scores_distribution, 
+        #             revised_sentence_index,
+        #             apply=False
+        #         )
+                
+        #         # Then update the regressed sentence's score
+        #         self._already_read_sentences_appraisal_scores_distribution, action_validity = self.transition_function.update_state_regress_to_sentence(
+        #             revised_sentence_index=revised_sentence_index,
+        #             furtherest_read_sentence_index=self._current_sentence_index,
+        #             read_sentence_appraisal_scores_distribution=self._already_read_sentences_appraisal_scores_distribution
+        #         )
+                
+        #         self._current_sentence_index = self._current_sentence_index     # Just a placeholder here -- automatically jumps back to the latest sentence that read. NOTE: make this complex later    
+
+        #         # Update state flags    
+        #         self._flag_is_regress = True
+                
+        #         # Get the reward
+        #         reward = self.reward_function.compute_regress_to_sentence_reward()
+        # else:
+        #     # Stop reading
+        #     self._terminate = True
+        #     self._truncated = False
+        
+        # Check if the sentence is all finished
+        if self._num_remaining_sentence == 0:
+            self._flag_is_sentence_all_finished = True
 
         # Check termination
         if self._steps >= self.ep_len:
@@ -226,11 +326,12 @@ class TextComprehensionEnv(Env):
         # Get the on-going comprehension scalar
         on_going_comprehension_log_scalar = 0.0
         if len(valid_sentences_appraisals) > 0:
-            overall_comprehension_log = 0.0
-            for b in valid_sentences_appraisals:
-                overall_comprehension_log += math.log(max(b, 1e-9))
-            # geometric mean
-            on_going_comprehension_log_scalar = math.exp(overall_comprehension_log / len(valid_sentences_appraisals))
+            # overall_comprehension_log = 0.0
+            # for b in valid_sentences_appraisals:
+            #     overall_comprehension_log += math.log(max(b, 1e-9))
+            # # geometric mean
+            # on_going_comprehension_log_scalar = math.exp(overall_comprehension_log / len(valid_sentences_appraisals))
+            on_going_comprehension_log_scalar = max(0, calc_dynamic_text_comprehension_score(valid_sentences_appraisals, mode=Constants.COMPREHENSION_SCORE_MODE, tau=Constants.TAU))
         else:
             on_going_comprehension_log_scalar = 0.0
         
@@ -239,15 +340,15 @@ class TextComprehensionEnv(Env):
         stateful_obs = np.concatenate([padded_appraisals, [norm_current_position], [remaining_episode_length_awareness], [norm_remaining_sentence], [on_going_comprehension_log_scalar]])
 
         assert stateful_obs.shape[0] == self._num_stateful_obs, f"expected {self._num_stateful_obs} but got {stateful_obs.shape[0]}"
-
-        # # TODO debug delete later
-        # print(f"Stateful observation is: {stateful_obs}")
         
         ################## Update step-wise log here because some values are computed here ##################
         self._step_wise_log.append({
             "step": self._steps,
             "current_sentence_index": self._current_sentence_index,
             "actual_reading_sentence_index": self._actual_reading_sentence_index,
+            "sentence_appraisal_before_regress": self._previous_already_read_sentences_appraisal_scores_distribution[self._actual_reading_sentence_index] if self._flag_is_regress else None,
+            "is_regress": self._flag_is_regress,
+            "is_sentence_all_finished": self._flag_is_sentence_all_finished,
             "remaining_episode_length_awareness": remaining_episode_length_awareness,
             "already_read_sentences_appraisal_scores_distribution": self._already_read_sentences_appraisal_scores_distribution.copy(),
             "on_going_comprehension_log_scalar": on_going_comprehension_log_scalar,
@@ -265,9 +366,6 @@ class TextComprehensionEnv(Env):
             "init_sentence_appraisal_scores_distribution": self._sentence_appraisal_scores_distribution,
             "step_wise_log": self._step_wise_log,
         }
-
-        # # TODO debug delete later
-        # print(f"Episode log is: {episode_log}")
 
         return episode_log
 
