@@ -16,6 +16,10 @@ READING_SPEED = 0.4     # 0.252 is too fast to our participants.
 # A new feature: memory decay over time
 MEMORY_DECAY_CONSTANT = 0.02
 
+############# Comprehension score related constants #############
+COMPREHENSION_SCORE_MODE = "softmin"
+TAU = 0.4
+
 # Time conditions (in seconds)
 TIME_CONDITIONS = {
     "30s": 30,

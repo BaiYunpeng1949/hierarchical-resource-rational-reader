@@ -60,16 +60,19 @@ class TransitionFunction():
 
         return revised_sentence_index
     
-    def apply_time_independent_memory_decay(self, read_sentence_appraisal_scores_distribution, sentence_index_do_not_decay):
+    def apply_time_independent_memory_decay(self, read_sentence_appraisal_scores_distribution, sentence_index_do_not_decay, apply=False):
         """
         Apply the memory decay over time to the read sentence appraisal scores distribution.
         """
-        # Apply the memory decay over time to the read sentence appraisal scores distribution
-        for i in range(len(read_sentence_appraisal_scores_distribution)):
-            if i != sentence_index_do_not_decay and read_sentence_appraisal_scores_distribution[i] != -1:
-                read_sentence_appraisal_scores_distribution[i] = np.clip(read_sentence_appraisal_scores_distribution[i] - Constants.MEMORY_DECAY_CONSTANT, 0, 1)
-        
-        return read_sentence_appraisal_scores_distribution.copy()
+        if not apply:
+            return read_sentence_appraisal_scores_distribution.copy()
+        else:
+            # Apply the memory decay over time to the read sentence appraisal scores distribution
+            for i in range(len(read_sentence_appraisal_scores_distribution)):
+                if i != sentence_index_do_not_decay and read_sentence_appraisal_scores_distribution[i] != -1:
+                    read_sentence_appraisal_scores_distribution[i] = np.clip(read_sentence_appraisal_scores_distribution[i] - Constants.MEMORY_DECAY_CONSTANT, 0, 1)
+            
+            return read_sentence_appraisal_scores_distribution.copy()
     
     def update_state_time(self, elapsed_time, sentence_reading_time, time_condition_value):
         """

@@ -34,6 +34,7 @@ from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 # from modules.rl_envs.word_activation_v0218.WordActivationEnvV0218 import WordActivationRLEnv
 from sentence_read_v0604.SentenceReadingEnv import SentenceReadingUnderTimePressureEnv
 from text_read_v0604.TextReadEnv import TextReadingUnderTimePressureEnv
+from text_read_v0604.Utilities import DictActionUnwrapper
 
 
 
@@ -85,12 +86,35 @@ def linear_schedule(initial_value: float, min_value: float, threshold: float = 1
 
     return func
 
+def convert_numpy_types_for_json(obj):
+    """
+    Convert numpy types to native Python types for JSON serialization.
+    
+    Args:
+        obj: Object that may contain numpy types
+        
+    Returns:
+        Object with numpy types converted to native Python types
+    """
+    if isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, dict):
+        return {key: convert_numpy_types_for_json(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_numpy_types_for_json(item) for item in obj]
+    else:
+        return obj
+
 
 class RL:
     def __init__(self, config_file):
         """
-        This is the reinforcement learning pipeline where MuJoCo environments are created, and models are trained and tested.
-        This pipeline is derived from my trials: context_switch.
+        This is the reinforcement learning pipeline where we train and test the models separately. 
+        After evaluation, models will be frozen and sent to the simulator to run.
 
         Args:
             config_file: the YAML configuration file that records the configurations.
@@ -115,8 +139,8 @@ class RL:
             )
 
         # Get the environment class
-        # env_class = TextReadingUnderTimePressureEnv    
-        env_class = SentenceReadingUnderTimePressureEnv
+        env_class = TextReadingUnderTimePressureEnv    
+        # env_class = SentenceReadingUnderTimePressureEnv
 
         # Read the total dataset if training the general oculomotor controller model.
         # if env_class == WordActivationRLEnv:        NOTE: uncomment this later if the word recognizer agent is needed
@@ -148,11 +172,11 @@ class RL:
                 vec_env_cls=SubprocVecEnv,
             )
         elif env_class == TextReadingUnderTimePressureEnv:
-            self._env = TextReadingUnderTimePressureEnv()
             def make_env():
                 env = TextReadingUnderTimePressureEnv()
-                # env = Monitor(env)
+                env = DictActionUnwrapper(env)
                 return env
+            self._env = make_env()
             # Initialise parallel environments
             self._parallel_envs = make_vec_env(
                 env_id=make_env,
@@ -178,7 +202,7 @@ class RL:
             # Configure the model - HRL - Ocular motor control
             # if isinstance(self._env, SampleFixationVersion1) or isinstance(self._env, SampleFixationVersion2):
             # if isinstance(self._env, WordActivationRLEnv) or isinstance(self._env, SentenceReadingEnv) or isinstance(self._env, TextComprehensionEnv):      NOTE: uncomment this later if the word recognizer agent is needed
-            if isinstance(self._env, SentenceReadingUnderTimePressureEnv) or isinstance(self._env, TextReadingUnderTimePressureEnv):
+            if isinstance(self._env, SentenceReadingUnderTimePressureEnv) or isinstance(self._env.unwrapped, TextReadingUnderTimePressureEnv):
                 policy_kwargs = dict(
                     features_extractor_class=StatefulInformationExtractor,       
                     features_extractor_kwargs=dict(features_dim=128),
@@ -224,7 +248,7 @@ class RL:
 
             # RL testing related variable: number of episodes and number of steps in each episode
             self._num_episodes = self._config_rl['test']['num_episodes']
-            self._num_steps = self._env.ep_len
+            self._num_steps = self._env.unwrapped.ep_len if isinstance(self._env.unwrapped, TextReadingUnderTimePressureEnv) else self._env.ep_len
 
             # Load the model
             if self._mode == _MODES['test'] or self._mode == _MODES['grid_test']:
@@ -312,7 +336,7 @@ class RL:
             #     self._word_activation_test()
             if isinstance(self._env, SentenceReadingUnderTimePressureEnv):
                 self._sentence_reading_test()
-            elif isinstance(self._env, TextReadingUnderTimePressureEnv):
+            elif isinstance(self._env.unwrapped, TextReadingUnderTimePressureEnv):
                 self._text_comprehension_test()
             else:
                 raise ValueError(f'Invalid environment {self._env}.')
@@ -358,7 +382,7 @@ class RL:
             )
 
             # Collect episode log after each episode
-            episode_log = self._env.get_episode_log()
+            episode_log = self._env.unwrapped.get_episode_log()
             episode_log['score'] = score
             all_episode_logs.append(episode_log)
 
@@ -420,7 +444,7 @@ class RL:
             )
 
             # Collect episode log after each episode
-            episode_log = self._env.get_episode_log()
+            episode_log = self._env.unwrapped.get_episode_log()
             episode_log['score'] = score
             all_episode_logs.append(episode_log)
 
@@ -439,8 +463,11 @@ class RL:
         )
         os.makedirs(results_dir, exist_ok=True)
         results_path = os.path.join(results_dir, 'simulated_episode_logs.json')
+
+        # Process the episode logs to convert numpy types to native Python types
+        safe_all_episode_logs = convert_numpy_types_for_json(all_episode_logs)
         with open(results_path, 'w') as f:
-            json.dump(all_episode_logs, f, indent=2)
+            json.dump(safe_all_episode_logs, f, indent=2)
         print(f"Saved episode logs to {results_path}")
 
     def __del__(self):

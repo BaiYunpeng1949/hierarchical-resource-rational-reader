@@ -4,6 +4,7 @@ import yaml
 import random
 import torch
 import numpy as np
+import logging
 
 from gymnasium import Env
 from gymnasium.spaces import Box, Discrete, Dict
@@ -13,16 +14,29 @@ from .TimeConditionManager import TimeConditionManager
 from .TransitionFunction import TransitionFunction
 from .RewardFunction import RewardFunction
 from . import Constants
+from .Utilities import calc_dynamic_text_comprehension_score
 
 
-DATA_SOURCE = "real_stimuli"
-# DATA_SOURCE = "generated_stimuli"
+logger = logging.getLogger(__name__)
+if not logger.handlers:               # avoid duplicate handlers when workers fork
+    logger.setLevel(logging.INFO)
+    handler = logging.StreamHandler()  # or FileHandler(...)
+    handler.setFormatter(
+        logging.Formatter("[%(asctime)s] %(levelname)s:%(name)s: %(message)s")
+    )
+    logger.addHandler(handler)
+
+
+# DATA_SOURCE = "real_stimuli"
+DATA_SOURCE = "generated_stimuli"    # NOTE: please set this when training the model
 
 
 class TextReadingUnderTimePressureEnv(Env):
     def __init__(self):
         """
         Create on 04 June 2025.
+            Updated on 09 July 2025.
+        
         This is the environment for the RL-based high level -- text-level control agent: 
             it controls externally which sentence to read (proceed or regress to a previous one).
 
@@ -55,6 +69,8 @@ class TextReadingUnderTimePressureEnv(Env):
         self.num_episodes = self._config["rl"]["test"]["num_episodes"]
         
         print(f"Text Reading (Under Time Pressure) Environment V0604 -- Deploying in {self._mode} mode")
+        print(f" **************************************** NOTE: Set the DATA_SOURCE to 'generated_stimuli' when training the model !!!  ****************************************")
+        print(f"")
 
         # Initialize components
         self.text_manager = TextManager(data_source=DATA_SOURCE)
@@ -96,10 +112,15 @@ class TextReadingUnderTimePressureEnv(Env):
         # self._READ_NEXT_SENTENCE_ACTION = 1
         # self._STOP_ACTION = 2
         # self.action_space = Discrete(3)      
-        self._regress_proceed_division = 0.5
-        self._stop_division = 0.5
-        self.action_space = Box(low=0, high=1, shape=(3,))      # First action decides keeps reading or not; second acction decides where to regress to; third action decides whether to stop
-        
+        # self._regress_proceed_division = 0.5
+        # self._stop_division = 0.5
+        # self.action_space = Box(low=0, high=1, shape=(3,))      # First action decides keeps reading or not; second acction decides where to regress to; third action decides whether to stop
+        self.action_space = Dict({
+            "action_type": Discrete(3),               # 0: read-next, 1: stop, 2: regress
+            "regress_target": Discrete(Constants.MAX_NUM_SENTENCES) # Only used when action_type == 2
+        })
+
+
         # Observation space - simplified to scalar signals
         self._num_stateful_obs = Constants.MAX_NUM_SENTENCES + 3 + 2 + 1     # Distribution of the appraisal scores over the sentences, current sentence index, time awarenesss and remaining time, and the time awareness 
         self.observation_space = Box(low=-1, high=1, shape=(self._num_stateful_obs,))
@@ -113,7 +134,7 @@ class TextReadingUnderTimePressureEnv(Env):
         ###################  Get data from the simulator or not  #######################
         self._get_data_from_other_agents = None
         
-    def reset(self, seed=42, inputs: dict=None):                
+    def reset(self, seed=None, options=None, inputs: dict=None):                
         """Reset environment and initialize states"""
         super().reset(seed=seed)
 
@@ -135,6 +156,7 @@ class TextReadingUnderTimePressureEnv(Env):
         self.current_sentence_index = -1
         self._num_sentences_read = 0
         self._regress_sentence_index = -1    # -1 means no regress# NOTE: if the agent does not learn, include this into the observation space
+        self.actual_reading_sentence_index = self.current_sentence_index         # TODO: the issue came from here? TODO check!
         
         self._individual_step_log = {}
         self._step_wise_logs = []
@@ -149,10 +171,11 @@ class TextReadingUnderTimePressureEnv(Env):
         self._remaining_time = self._time_condition_value - self._elapsed_time        
 
         # Get the running mode
-        self._get_data_from_other_agents = inputs["get_data_from_agents"]
+        self._get_data_from_other_agents = inputs["get_data_from_agents"] if inputs is not None else False
         assert self._get_data_from_other_agents in [True, False], f"Invalid configuration on data source: {self._get_data_from_other_agents}, should be True or False"
 
         # Initialize log variables
+        self._log_actions = {}
         self._log_number_regressions = 0
         self._log_episodic_regression_rate_over_num_read_sentences = 0
         self._log_episodic_regression_rate_over_steps = 0
@@ -161,63 +184,86 @@ class TextReadingUnderTimePressureEnv(Env):
     
     def step(self, action, time_info: dict = None):
         """Take action and update states"""
+        
+        # Apply actions
+        action_type = action["action_type"]
+        regress_target = action["regress_target"]
+        
         self._steps += 1
         reward = 0
 
-        read_or_regress_action = action[0]
-        raw_regress_sentence_value = action[1]
-        continue_or_stop_action = action[2]
+        # read_or_regress_action = action[0]
+        # raw_regress_sentence_value = action[1]
+        # continue_or_stop_action = action[2]
 
-        if continue_or_stop_action <= self._stop_division:
-            if read_or_regress_action > self._regress_proceed_division:     # Read the next sentence
-                # Then update state with new sentence
-                new_scores, action_validity = self.transition_function.update_state_read_next_sentence(
-                    current_sentence_index=self.current_sentence_index,
-                    sentence_appraisal_scores_distribution=self._sentence_appraisal_scores_distribution,
-                    num_sentences=self._num_sentences
-                )
+        ####################################################### Execute actions #######################################################
+        if action_type == 0:   # READ NEXT SENTENCE
+            # Then update state with new sentence
+            new_scores, action_validity = self.transition_function.update_state_read_next_sentence(
+                current_sentence_index=self.current_sentence_index,
+                sentence_appraisal_scores_distribution=self._sentence_appraisal_scores_distribution,
+                num_sentences=self._num_sentences
+            )
+            
+            if action_validity:
+                # Only update the new sentence's score, preserve decayed scores for others
+                self.current_sentence_index = self.current_sentence_index + 1
+                self.actual_reading_sentence_index = self.current_sentence_index
                 
-                if action_validity:
-                    # Only update the new sentence's score, preserve decayed scores for others
-                    self.current_sentence_index = self.current_sentence_index + 1
-                    self.actual_reading_sentence_index = self.current_sentence_index
-                    self._num_sentences_read += 1
-                    self._num_remaining_sentence -= 1
-                    # Apply memory decay first
-                    self._already_read_sentences_appraisal_scores_distribution = self.transition_function.apply_time_independent_memory_decay(
-                        self._already_read_sentences_appraisal_scores_distribution, 
-                        self.current_sentence_index
-                    )
-                    # Update the sentences' appraisal scores
-                    self._already_read_sentences_appraisal_scores_distribution[self.current_sentence_index] = new_scores[self.current_sentence_index]
-                    # Update the elapsed time
-                    if self._get_data_from_other_agents:
-                        self._elapsed_time = time_info["elapsed_time"]
-                        self._remaining_time = time_info["remaining_time"]
-                    else:   
-                        self._elapsed_time, self._remaining_time = self.transition_function.update_state_time(
-                            elapsed_time=self._elapsed_time,
-                            sentence_reading_time=self._sampled_text_metadata["sentence_reading_times"][self.actual_reading_sentence_index],
-                            time_condition_value=self._time_condition_value
-                        )
-                else: 
-                    self._already_read_sentences_appraisal_scores_distribution = self.transition_function.apply_time_independent_memory_decay(
-                        self._already_read_sentences_appraisal_scores_distribution, 
-                        -1
-                    )
-                # Get the reward    
-                reward = self.reward_function.compute_read_next_sentence_reward()
-            else:   # Regress to a previously read sentence
-                # Regress to a previously read sentence
-                revised_sentence_index = self._get_regress_sentence_index(raw_regress_sentence_value)
-                self.actual_reading_sentence_index = revised_sentence_index
-                
+                # TODO debug delete later
+                if self.actual_reading_sentence_index >= self._num_sentences:
+                    logger.warning(f"actual_reading_sentence_index={self.actual_reading_sentence_index} is out of range (len={self._num_sentences}) -- issue is caught here, in READING NEXT SENTENCE")
+                    # self.actual_reading_sentence_index = self._num_sentences - 1
+
+                self._num_sentences_read += 1
+                self._num_remaining_sentence -= 1
                 # Apply memory decay first
                 self._already_read_sentences_appraisal_scores_distribution = self.transition_function.apply_time_independent_memory_decay(
                     self._already_read_sentences_appraisal_scores_distribution, 
-                    revised_sentence_index
+                    self.current_sentence_index,
+                    apply=False
                 )
-                
+                # Update the sentences' appraisal scores
+                self._already_read_sentences_appraisal_scores_distribution[self.current_sentence_index] = new_scores[self.current_sentence_index]
+                # Update the elapsed time
+                if self._get_data_from_other_agents:
+                    self._elapsed_time = time_info["elapsed_time"]
+                    self._remaining_time = time_info["remaining_time"]
+                else:   
+                    self._elapsed_time, self._remaining_time = self.transition_function.update_state_time(
+                        elapsed_time=self._elapsed_time,
+                        sentence_reading_time=self._sampled_text_metadata["sentence_reading_times"][self.actual_reading_sentence_index],
+                        time_condition_value=self._time_condition_value
+                    )
+            else: 
+                self._already_read_sentences_appraisal_scores_distribution = self.transition_function.apply_time_independent_memory_decay(
+                    self._already_read_sentences_appraisal_scores_distribution, 
+                    -1,
+                    apply=False
+                )
+            # Get the reward    
+            reward = self.reward_function.compute_read_next_sentence_reward()
+        
+        elif action_type == 1:   # STOP READING
+            self._terminate = True
+            self._truncated = False
+        
+        elif action_type == 2:   # REGRESS TO A PREVIOUS SENTENCE
+            # Regress to a previously read sentence
+            revised_sentence_index = min(regress_target, self.current_sentence_index)  # prevent forward regress -- but cause a severe issue: it will set the last sentence's appraisal score to 1.0
+            
+            # Do a validity check 
+            if revised_sentence_index != -1:        # Valid regression action
+
+                self.actual_reading_sentence_index = revised_sentence_index
+            
+                # Apply memory decay first
+                self._already_read_sentences_appraisal_scores_distribution = self.transition_function.apply_time_independent_memory_decay(
+                    self._already_read_sentences_appraisal_scores_distribution, 
+                    revised_sentence_index,
+                    apply=False
+                )
+            
                 # Then update the regressed sentence's score
                 self._already_read_sentences_appraisal_scores_distribution, action_validity = self.transition_function.update_state_regress_to_sentence(
                     revised_sentence_index=revised_sentence_index,
@@ -240,13 +286,12 @@ class TextReadingUnderTimePressureEnv(Env):
                 
                 # Update the log variables
                 self._log_number_regressions += 1
+            
+            else:    # Invalid regression action, do nothing
+                pass
 
-                # Get the reward
-                reward = self.reward_function.compute_regress_to_sentence_reward()
-        else:
-            # Stop reading
-            self._terminate = True
-            self._truncated = False
+            # Get the reward
+            reward = self.reward_function.compute_regress_to_sentence_reward()
 
         # Check termination by the episode length
         if self._steps >= self.ep_len:
@@ -263,9 +308,9 @@ class TextReadingUnderTimePressureEnv(Env):
             # "read_or_regress_action_raw_value": read_or_regress_action,
             # "raw_regress_sentence_value_raw_value": raw_regress_sentence_value,
             # "continue_or_stop_action_raw_value": continue_or_stop_action,
-            "read_or_regress_action": "read" if read_or_regress_action > self._regress_proceed_division else "regress",
-            "raw_regress_sentence_value": self.actual_reading_sentence_index,     # TODO check this
-            "continue_or_stop_action": "continue" if continue_or_stop_action <= self._stop_division else "stop",
+            "read_or_regress_action": "read" if action_type == 0 else "regress" if action_type == 2 else "stop",
+            "raw_regress_sentence_value": regress_target,     # TODO check this
+            "continue_or_stop_action": "continue" if action_type != 1 else "stop",
         }
 
         if self._terminate: 
@@ -281,9 +326,9 @@ class TextReadingUnderTimePressureEnv(Env):
     # Normalise x (which is assumed to be in range [x_min, x_max]) to range [a, b]
         return (b - a) * ((x - x_min) / (x_max - x_min)) + a
     
-    def _get_regress_sentence_index(self, raw_regress_sentence_value):
-        regress_sentence_index = int(self.normalise(raw_regress_sentence_value, 0, 1, 0, self._num_sentences - 1))
-        return regress_sentence_index
+    # def _get_regress_sentence_index(self, raw_regress_sentence_value):
+    #     regress_sentence_index = int(self.normalise(raw_regress_sentence_value, 0, 1, 0, self._num_sentences - 1))
+    #     return regress_sentence_index
     
     def _get_obs(self):
         """Get observation with simplified scalar signals"""
@@ -307,11 +352,12 @@ class TextReadingUnderTimePressureEnv(Env):
         # Get the on-going comprehension scalar
         on_going_comprehension_log_scalar = 0.0
         if len(valid_sentences_appraisals) > 0:
-            overall_comprehension_log = 0.0
-            for b in valid_sentences_appraisals:
-                overall_comprehension_log += math.log(max(b, 1e-9))
-            # geometric mean
-            on_going_comprehension_log_scalar = math.exp(overall_comprehension_log / len(valid_sentences_appraisals))
+            # overall_comprehension_log = 0.0
+            # for b in valid_sentences_appraisals:
+            #     overall_comprehension_log += math.log(max(b, 1e-9))
+            # # geometric mean
+            # on_going_comprehension_log_scalar = math.exp(overall_comprehension_log / len(valid_sentences_appraisals))
+            on_going_comprehension_log_scalar = max(0, calc_dynamic_text_comprehension_score(valid_sentences_appraisals, mode=Constants.COMPREHENSION_SCORE_MODE, tau=Constants.TAU))
         else:
             on_going_comprehension_log_scalar = 0.0
         
@@ -333,13 +379,27 @@ class TextReadingUnderTimePressureEnv(Env):
         stateful_obs = np.concatenate([padded_appraisals, [norm_current_position], [remaining_episode_length_awareness], [norm_remaining_sentence], [on_going_comprehension_log_scalar], [time_condition_awareness], [norm_remaining_time]])
 
         assert stateful_obs.shape[0] == self._num_stateful_obs, f"expected {self._num_stateful_obs} but got {stateful_obs.shape[0]}"
-        
+
+        try:
+            if self.actual_reading_sentence_index is None:
+                num_words_in_sentence = None
+            else:
+                sl = self._sampled_text_metadata["sentence_lengths"]
+                num_words_in_sentence = sl[self.actual_reading_sentence_index]
+        except IndexError:
+            logger.warning(
+                "actual_reading_sentence_index=%s is out of range (len=%s) -- this is actually the text length, i.e., the number of sentences in the text",
+                self.actual_reading_sentence_index,
+                self._num_sentences,    # This is actually the text length
+            )
+            num_words_in_sentence = None
+
         ################## Update step-wise log here because some values are computed here ##################   TODO: check here and think about a reliable way to evaluate
         self._individual_step_log = {
             "step": self._steps,
             "action_information": self._log_actions,
             "current_sentence_index": self.current_sentence_index,
-            "num_words_in_sentence": self._sampled_text_metadata["sentence_lengths"][self.actual_reading_sentence_index] if self.actual_reading_sentence_index is not None else None,
+            "num_words_in_sentence": num_words_in_sentence,
             "actual_reading_sentence_index": self.actual_reading_sentence_index,
             # "remaining_episode_length_awareness": remaining_episode_length_awareness,
             "already_read_sentences_appraisal_scores_distribution": self._already_read_sentences_appraisal_scores_distribution.copy(),
@@ -349,6 +409,7 @@ class TextReadingUnderTimePressureEnv(Env):
             "sentence_reading_summary": {},
             "sentence_reading_logs": [],
         }
+
         self._step_wise_logs.append(self._individual_step_log)
 
         return stateful_obs

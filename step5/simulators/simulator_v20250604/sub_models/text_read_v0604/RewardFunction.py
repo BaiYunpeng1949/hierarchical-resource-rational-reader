@@ -2,6 +2,9 @@ import numpy as np
 import torch
 import math
 
+from .Utilities import calc_dynamic_text_comprehension_score
+from . import Constants
+
 class RewardFunction():
     """
     Reward Function for text comprehension 
@@ -35,22 +38,39 @@ class RewardFunction():
         # Identify valid scores first
         valid_scores = [a for a in sentence_appraisal_scores_distribution if 0 <= a <= 1]
 
-        # Compute geometric mean of word beliefs
-        overall_comprehension_log = 0.0
-        if len(valid_scores) > 0:
-            for a in valid_scores:
-                overall_comprehension_log += math.log(max(a, 1e-9))
-            # geometric mean
-            overall_comprehension_scalar = math.exp(overall_comprehension_log / len(valid_scores))
-        else:
-            overall_comprehension_scalar = 0.0
+        # NOTE: but if there's no cut-off from not finishing the sentence, the agent would never be eager to read more.
 
-        # Penalize for not finishing the sentence reading task
-        if num_sentences_read < num_sentences:
-            reading_progress_ratio = num_sentences_read / num_sentences
-            unfinished_reading_reward = 10 * reading_progress_ratio * self._coefficeint_comprehension * overall_comprehension_scalar
-            return unfinished_reading_reward
-        else:
-            # NOTE: linear reward: linear scaling for the comprehension performance
-            reading_finished_reward = 100 * self._coefficeint_comprehension * overall_comprehension_scalar
-            return reading_finished_reward
+        # Compute the overall comprehension score
+        overall_comprehension_scalar = 0.0
+        if len(valid_scores) > 0:
+            overall_comprehension_scalar = max(0, calc_dynamic_text_comprehension_score(valid_scores, mode=Constants.COMPREHENSION_SCORE_MODE, tau=Constants.TAU))
+        
+        # Since no unfinish penalty, need to tune the quality vs. quantity.
+        # NOTE: METHOD 1 times a coverage factor; if it does not work so good, METHOD 2 do the reward shaping by adding the coverage portion.
+        assert num_sentences_read == len(valid_scores), f"num_sentences_read={num_sentences_read} != len(valid_scores)={len(valid_scores)}"
+        coverage_factor = num_sentences_read / num_sentences
+
+        # NOTE: linear reward: linear scaling for the comprehension performance
+        final_reward = 100 * self._coefficeint_comprehension * overall_comprehension_scalar * coverage_factor
+
+        return final_reward
+        
+        # # Compute geometric mean of word beliefs
+        # overall_comprehension_log = 0.0
+        # if len(valid_scores) > 0:
+        #     for a in valid_scores:
+        #         overall_comprehension_log += math.log(max(a, 1e-9))
+        #     # geometric mean
+        #     overall_comprehension_scalar = math.exp(overall_comprehension_log / len(valid_scores))
+        # else:
+        #     overall_comprehension_scalar = 0.0
+
+        # # Penalize for not finishing the sentence reading task
+        # if num_sentences_read < num_sentences:
+        #     reading_progress_ratio = num_sentences_read / num_sentences
+        #     unfinished_reading_reward = 10 * reading_progress_ratio * self._coefficeint_comprehension * overall_comprehension_scalar
+        #     return unfinished_reading_reward
+        # else:
+        #     # NOTE: linear reward: linear scaling for the comprehension performance
+        #     reading_finished_reward = 100 * self._coefficeint_comprehension * overall_comprehension_scalar
+        #     return reading_finished_reward
