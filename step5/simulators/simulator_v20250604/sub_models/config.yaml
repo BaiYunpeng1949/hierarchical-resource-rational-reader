@@ -1,7 +1,7 @@
 simulator_name: 'step5'
 
 rl:
-  mode: train   # Options: train, continual_train, test, debug, simulate (run modules), and grid_test.       
+  mode: test   # Options: train, continual_train, test, debug, simulate (run modules), and grid_test.       
 
   train:
     total_timesteps: 200000000
@@ -24,7 +24,7 @@ rl:
 
   test:
     num_episodes: 1000
-    loaded_model_name: 'rl_model_200000000_steps'   
+    loaded_model_name: 'rl_model_30000000_steps'   
     continual_logs_name: 'PPO_89'
     dataset_for_testing: 'simulate'   # OPTIONS: 'test', 'train', 'simulate'
     grid_params:
@@ -35,8 +35,8 @@ simulate:
   rl_models:
     text_reader:
       env_name: TextReadingUnderTimePressureEnv
-      checkpoints_folder_name: '0709_text_reading_under_time_pressure_v0604_01' #'0610_text_reading_under_time_pressure_v0604_01'
-      loaded_model_name: 'rl_model_200000000_steps'
+      checkpoints_folder_name: '0710_text_reading_under_time_pressure_v0604_02' #'0610_text_reading_under_time_pressure_v0604_01'
+      loaded_model_name: 'rl_model_30000000_steps'
     sentence_reader:
       env_name: SentenceReadingUnderTimePressureEnv           
       checkpoints_folder_name: '0609_sentence_reading_under_time_pressure_v0604_01'

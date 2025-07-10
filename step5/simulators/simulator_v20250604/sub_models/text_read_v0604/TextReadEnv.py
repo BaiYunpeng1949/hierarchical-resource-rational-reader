@@ -27,8 +27,8 @@ if not logger.handlers:               # avoid duplicate handlers when workers fo
     logger.addHandler(handler)
 
 
-# DATA_SOURCE = "real_stimuli"
-DATA_SOURCE = "generated_stimuli"    # NOTE: please set this when training the model
+DATA_SOURCE = "real_stimuli"
+# DATA_SOURCE = "generated_stimuli"    # NOTE: please set this when training the model
 
 
 class TextReadingUnderTimePressureEnv(Env):
@@ -175,6 +175,9 @@ class TextReadingUnderTimePressureEnv(Env):
         # Initialize the tunable parameters
         # Randomly sample a value from the range [0, 1], but discrete with a step of 0.1
         self._free_param_coverage_factor = random.randint(0, 10) / 10
+
+        # TODO apply this parameter with a fixed value when testing
+        self._free_param_coverage_factor = 1.0
         
         return self._get_obs(), {}
     
