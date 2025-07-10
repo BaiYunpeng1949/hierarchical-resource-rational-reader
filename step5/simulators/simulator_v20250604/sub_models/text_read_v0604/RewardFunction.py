@@ -51,27 +51,8 @@ class RewardFunction():
         coverage_rate = num_sentences_read / num_sentences
 
         # NOTE: linear reward: linear scaling for the comprehension performance
-        # final_reward = 100 * self._coefficeint_comprehension * overall_comprehension_scalar * coverage_factor
-        final_reward = 100 * (coverage_factor * coverage_rate + (1 - coverage_factor) * overall_comprehension_scalar)
+        # final_reward = 100 * self._coefficeint_comprehension * overall_comprehension_scalar * coverage_rate
+        final_reward = 100 * self._coefficeint_comprehension * overall_comprehension_scalar * (coverage_rate ** coverage_factor)
+        # final_reward = 100 * (coverage_factor * coverage_rate + (1 - coverage_factor) * overall_comprehension_scalar)
 
         return final_reward
-        
-        # # Compute geometric mean of word beliefs
-        # overall_comprehension_log = 0.0
-        # if len(valid_scores) > 0:
-        #     for a in valid_scores:
-        #         overall_comprehension_log += math.log(max(a, 1e-9))
-        #     # geometric mean
-        #     overall_comprehension_scalar = math.exp(overall_comprehension_log / len(valid_scores))
-        # else:
-        #     overall_comprehension_scalar = 0.0
-
-        # # Penalize for not finishing the sentence reading task
-        # if num_sentences_read < num_sentences:
-        #     reading_progress_ratio = num_sentences_read / num_sentences
-        #     unfinished_reading_reward = 10 * reading_progress_ratio * self._coefficeint_comprehension * overall_comprehension_scalar
-        #     return unfinished_reading_reward
-        # else:
-        #     # NOTE: linear reward: linear scaling for the comprehension performance
-        #     reading_finished_reward = 100 * self._coefficeint_comprehension * overall_comprehension_scalar
-        #     return reading_finished_reward

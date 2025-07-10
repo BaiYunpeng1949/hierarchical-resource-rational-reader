@@ -173,11 +173,12 @@ class TextReadingUnderTimePressureEnv(Env):
         self._log_episodic_regression_rate_over_steps = 0
 
         # Initialize the tunable parameters
-        # Randomly sample a value from the range [0, 1], but discrete with a step of 0.1
-        self._free_param_coverage_factor = random.randint(0, 10) / 10
-
-        # TODO apply this parameter with a fixed value when testing
-        self._free_param_coverage_factor = 1.0
+        # Randomly sample a value from the range [1, 2], but discrete with a step of 0.1
+        self._free_param_coverage_factor = 1 + random.randint(0, 10) / 10       
+        # NOTE: now range from [1, 2], all over-weighting / encouraging the agent to read more sentences, 
+        #   maybe need to range from [0, 2] later, also consider different coverage factor for different texts
+        # # TODO apply this parameter with a fixed value when testing
+        # self._free_param_coverage_factor = 1.0
         
         return self._get_obs(), {}
     
@@ -366,7 +367,8 @@ class TextReadingUnderTimePressureEnv(Env):
         norm_remaining_time = self.normalise(self._remaining_time, 0, self._time_condition_value, 0, 1)
 
         # Concatenate the observations
-        stateful_obs = np.concatenate([padded_appraisals, [norm_current_position], [remaining_episode_length_awareness], [norm_remaining_sentence], [on_going_comprehension_log_scalar], [time_condition_awareness], [norm_remaining_time], [coverage_factor]])
+        stateful_obs = np.concatenate([padded_appraisals, [norm_current_position], [remaining_episode_length_awareness], [norm_remaining_sentence], 
+                                      [on_going_comprehension_log_scalar], [time_condition_awareness], [norm_remaining_time], [coverage_factor]])
 
         assert stateful_obs.shape[0] == self._num_stateful_obs, f"expected {self._num_stateful_obs} but got {stateful_obs.shape[0]}"
 
