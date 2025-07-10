@@ -189,6 +189,12 @@ Each simulation run generates:
   - torch
   - matplotlib
 
+## Reproduction
+Procedure
+1. To run simulation for batches (still developing) `cd step5/simulators/simulator_v20250604/`, then `python simulator.py`.
+2. Find the simulated results here: `/home/baiy4/reader-agent-zuco/step5/simulators/simulator_v20250604/simulated_results`, copy the folder name, e.g., `20250710_1023_trials1_stims9_conds3`.
+3. `cd step5/simulators/simulator_v20250604/utils/`, paste the folder name in `analyze_data.py`, then `python analyze_data.py`, find the plotted figures in the same copied folder.
+
 ## Troubleshooting
 
 Common issues and solutions:

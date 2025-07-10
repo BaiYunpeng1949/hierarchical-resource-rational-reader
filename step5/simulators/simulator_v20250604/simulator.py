@@ -14,6 +14,9 @@ from stable_baselines3 import PPO
 
 from sub_models.sentence_read_v0604.SentenceReadingEnv import SentenceReadingUnderTimePressureEnv
 from sub_models.text_read_v0604.TextReadEnv import TextReadingUnderTimePressureEnv
+from sub_models.text_read_v0604.Utilities import DictActionUnwrapper
+
+from utils.json_utils import np_to_native
 
 # Constants and Configurations
 CONFIG_PATH = "sub_models/config.yaml"
@@ -43,11 +46,15 @@ class TextReader:
         self._model_path = os.path.join("sub_models", "training", "saved_models", self._model_info["checkpoints_folder_name"], self._model_info["loaded_model_name"])
 
         # Initialize the environment
-        self.env = TextReadingUnderTimePressureEnv()
+        def make_env():
+            env = TextReadingUnderTimePressureEnv()
+            env = DictActionUnwrapper(env)
+            return env
+        self.env = make_env()
 
         # Load the pre-trained model
         try:
-            self._model = PPO.load(self._model_path, self.env, custom_objects={"observation_space": self.env.observation_space, "action_space": self.env.action_space})
+            self._model = PPO.load(self._model_path, self.env, custom_objects={"observation_space": self.env.observation_space, "action_space": self.env.action_space})       # TODO should I unwrap this?
         except (RuntimeError, TypeError) as e:
             warnings.warn(f"Could not deserialize object: {e}")
             raise e
@@ -92,7 +99,7 @@ class TextReader:
         self.action, self._states = self._model.predict(self._obs, deterministic=True)
         self._obs, self._reward, self.done, self._truncated, self._info = self.env.step(action=self.action, time_info=time_info)
         # Get the step-wise log
-        self.text_reading_logs = self.env.get_individual_step_log()
+        self.text_reading_logs = self.env.unwrapped.get_individual_step_log()
 
 
 class SentenceReader:
@@ -205,6 +212,7 @@ class ReaderAgent:
         # Logs
         self._episode_index = None
         self._stimulus_index = None
+        self._time_condition = None
         # NOTE: adhoc variables for now, will be revised later
     
     def reset(
@@ -227,6 +235,13 @@ class ReaderAgent:
 
         # Reset the time-related states
         self._time_condition = str(time_condition)
+
+        # TODO debug delete later
+        print("Get the reset conditions:")
+        print(f"The episode index is {self._episode_index}")
+        print(f"The stimulus index is {self._stimulus_index}")
+        print(f"The time condition is {self._time_condition}")
+        print()
 
         # Reset the time-related variables
         self._total_time = TIME_CONDITIONS[self._time_condition]
@@ -266,6 +281,7 @@ class ReaderAgent:
             "time_condition": self._time_condition,
             "get_data_from_agents": True,
         }
+
         self.text_reader.reset(inputs=inputs)          
 
         time_info = {
@@ -280,8 +296,8 @@ class ReaderAgent:
             self.text_reader.step(time_info=time_info)
 
             # UPDATE! Get the reading sentence index
-            self.current_sentence_index = self.text_reader.env.current_sentence_index
-            self.actual_reading_sentence_index = self.text_reader.env.actual_reading_sentence_index
+            self.current_sentence_index = self.text_reader.env.unwrapped.current_sentence_index
+            self.actual_reading_sentence_index = self.text_reader.env.unwrapped.actual_reading_sentence_index
 
             # Having the sentence index, read the sentence using the sentence reader, and update the time consumption (and maybe also the comprehension score)
             sentence_reading_time_consumed = self._simulate_sentence_reading()
@@ -308,6 +324,7 @@ class ReaderAgent:
             "sentence_id": self.actual_reading_sentence_index,
             "time_condition": self._time_condition,
         }
+
         self.sentence_reader.reset(inputs=inputs)
 
         # Reset the word index in the sentence
@@ -381,13 +398,13 @@ class ReaderAgent:
 
         # Save the logs to json files
         with open(os.path.join(simulation_folder_path, "text_reading_logs.json"), "w") as file:
-            json.dump(self._single_episode_logs, file, indent=4)
+            json.dump(self._single_episode_logs, file, indent=4, default=np_to_native)
         print(f"The text-level sim data logs are stored at: {os.path.join(simulation_folder_path, 'text_reading_logs.json')}")      
 
         # Save the metadata about the simulation configurations
         metadata_dict = self.config["simulate"]
         with open(os.path.join(simulation_folder_path, "metadata.json"), "w") as file:
-            json.dump(metadata_dict, file, indent=4)
+            json.dump(metadata_dict, file, indent=4, default=np_to_native)
         print(f"The metadata about the simulation configurations are stored at: {os.path.join(simulation_folder_path, 'metadata.json')}")
 
 
@@ -453,7 +470,7 @@ def run_batch_simulations(
     # Save all results to a single JSON file
     results_file = os.path.join(output_dir, "all_simulation_results.json")
     with open(results_file, "w") as file:
-        json.dump(all_results, file, indent=4)
+        json.dump(all_results, file, indent=4, default=np_to_native)
     print(f"\nAll simulation results have been saved to: {results_file}")
 
     # Save the metadata about the simulation configurations
@@ -467,7 +484,7 @@ def run_batch_simulations(
     })
     metadata_file = os.path.join(output_dir, "metadata.json")
     with open(metadata_file, "w") as file:
-        json.dump(metadata_dict, file, indent=4)
+        json.dump(metadata_dict, file, indent=4, default=np_to_native)
     print(f"Simulation metadata has been saved to: {metadata_file}")
 
     return {

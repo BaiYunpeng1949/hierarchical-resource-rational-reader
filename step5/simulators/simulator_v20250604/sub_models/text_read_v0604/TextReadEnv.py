@@ -79,7 +79,7 @@ class TextReadingUnderTimePressureEnv(Env):
         self.reward_function = RewardFunction()
 
         # Variables
-        self._sampled_text = None   # TODO to be extended later
+        self._sampled_text = None  
         self._num_sentences = None
         self._num_sentences_read = None
         self._num_remaining_sentence = None
@@ -107,14 +107,6 @@ class TextReadingUnderTimePressureEnv(Env):
         self._step_wise_logs = None
 
         # Action space
-        # 0 to MAX_NUM_SENTENCES, corresponding to valid sentence indexes for revisiting; max_num_sentences + 1 is the read next sentence action, max_num_sentences + 2 is the stop action
-        # self._REGRESS_PREVIOUS_SENTENCE_ACTION = 0
-        # self._READ_NEXT_SENTENCE_ACTION = 1
-        # self._STOP_ACTION = 2
-        # self.action_space = Discrete(3)      
-        # self._regress_proceed_division = 0.5
-        # self._stop_division = 0.5
-        # self.action_space = Box(low=0, high=1, shape=(3,))      # First action decides keeps reading or not; second acction decides where to regress to; third action decides whether to stop
         self.action_space = Dict({
             "action_type": Discrete(3),               # 0: read-next, 1: stop, 2: regress
             "regress_target": Discrete(Constants.MAX_NUM_SENTENCES) # Only used when action_type == 2
@@ -156,14 +148,10 @@ class TextReadingUnderTimePressureEnv(Env):
         self.current_sentence_index = -1
         self._num_sentences_read = 0
         self._regress_sentence_index = -1    # -1 means no regress# NOTE: if the agent does not learn, include this into the observation space
-        self.actual_reading_sentence_index = self.current_sentence_index         # TODO: the issue came from here? TODO check!
+        self.actual_reading_sentence_index = self.current_sentence_index         
         
         self._individual_step_log = {}
         self._step_wise_logs = []
-
-        # # TODO debug delete later
-        # print(f"Text ID sampled: {text_id}")
-        # print(f"Sampled text metadata: {self._sampled_text_metadata}")
 
         # Get the time condition
         self._time_condition, self._time_condition_value = self.time_condition_manager.reset(inputs=inputs)
@@ -191,10 +179,6 @@ class TextReadingUnderTimePressureEnv(Env):
         
         self._steps += 1
         reward = 0
-
-        # read_or_regress_action = action[0]
-        # raw_regress_sentence_value = action[1]
-        # continue_or_stop_action = action[2]
 
         ####################################################### Execute actions #######################################################
         if action_type == 0:   # READ NEXT SENTENCE
@@ -309,7 +293,7 @@ class TextReadingUnderTimePressureEnv(Env):
             # "raw_regress_sentence_value_raw_value": raw_regress_sentence_value,
             # "continue_or_stop_action_raw_value": continue_or_stop_action,
             "read_or_regress_action": "read" if action_type == 0 else "regress" if action_type == 2 else "stop",
-            "raw_regress_sentence_value": regress_target,     # TODO check this
+            "raw_regress_sentence_value": regress_target,     
             "continue_or_stop_action": "continue" if action_type != 1 else "stop",
         }
 
@@ -323,12 +307,8 @@ class TextReadingUnderTimePressureEnv(Env):
     
     @staticmethod
     def normalise(x, x_min, x_max, a, b):
-    # Normalise x (which is assumed to be in range [x_min, x_max]) to range [a, b]
+        """Normalise x (which is assumed to be in range [x_min, x_max]) to range [a, b]"""
         return (b - a) * ((x - x_min) / (x_max - x_min)) + a
-    
-    # def _get_regress_sentence_index(self, raw_regress_sentence_value):
-    #     regress_sentence_index = int(self.normalise(raw_regress_sentence_value, 0, 1, 0, self._num_sentences - 1))
-    #     return regress_sentence_index
     
     def _get_obs(self):
         """Get observation with simplified scalar signals"""
@@ -352,11 +332,6 @@ class TextReadingUnderTimePressureEnv(Env):
         # Get the on-going comprehension scalar
         on_going_comprehension_log_scalar = 0.0
         if len(valid_sentences_appraisals) > 0:
-            # overall_comprehension_log = 0.0
-            # for b in valid_sentences_appraisals:
-            #     overall_comprehension_log += math.log(max(b, 1e-9))
-            # # geometric mean
-            # on_going_comprehension_log_scalar = math.exp(overall_comprehension_log / len(valid_sentences_appraisals))
             on_going_comprehension_log_scalar = max(0, calc_dynamic_text_comprehension_score(valid_sentences_appraisals, mode=Constants.COMPREHENSION_SCORE_MODE, tau=Constants.TAU))
         else:
             on_going_comprehension_log_scalar = 0.0
@@ -394,7 +369,7 @@ class TextReadingUnderTimePressureEnv(Env):
             )
             num_words_in_sentence = None
 
-        ################## Update step-wise log here because some values are computed here ##################   TODO: check here and think about a reliable way to evaluate
+        ################## Update step-wise log here because some values are computed here ################## 
         self._individual_step_log = {
             "step": self._steps,
             "action_information": self._log_actions,

@@ -24,26 +24,6 @@ def calc_dynamic_text_comprehension_score(scores, mode="softmin", tau=0.1):
         return len(scores) / sum(1/s for s in scores)
     elif mode == "softmin":
         w = np.exp(-np.array(scores) / tau)
-
-        # # TODO debug delete later
-        # # Check whether the w.sum() is 0
-        # if w.sum() == 0:
-        #     print(f"Detect w.sum() == 0, w: {w}, scores: {scores}")
-        
-        # # TODO debug delete later
-        # # Check whether w is the nan or inf
-        # if np.isnan(w).any():
-        #     print(f"Detect nan in w, w: {w}, scores: {scores}")
-        # elif np.isinf(w).any():
-        #     print(f"Detect inf in w, w: {w}, scores: {scores}")
-        
-        # # TODO debug delete later
-        # # Check whether the scores are the nan or inf
-        # if np.isnan(scores).any():
-        #     print(f"Detect nan in scores, scores: {scores}")
-        # elif np.isinf(scores).any():
-        #     print(f"Detect inf in scores, scores: {scores}")
-
         return float((w * scores).sum() / w.sum())
     else:
         raise ValueError(f"Invalid mode: {mode}")
@@ -57,8 +37,12 @@ class DictActionUnwrapper(Wrapper):
         # Save structure
         self._action_type_n = env.action_space['action_type'].n
         self._regress_target_n = env.action_space['regress_target'].n
+    
+    def reset(self, *args, **kwargs):
+        """Forward reset arguments (e.g. inputs) to the underlying env."""
+        return self.env.reset(*args, **kwargs)
 
-    def step(self, action):
+    def step(self, action, **kwargs):
         # Unflatten
         action_type = action // self._regress_target_n
         regress_target = action % self._regress_target_n
@@ -66,7 +50,7 @@ class DictActionUnwrapper(Wrapper):
             'action_type': action_type,
             'regress_target': regress_target
         }
-        return self.env.step(action_dict)
+        return self.env.step(action_dict, **kwargs)
 
 
 if __name__ == "__main__":
