@@ -27,8 +27,8 @@ if not logger.handlers:               # avoid duplicate handlers when workers fo
     logger.addHandler(handler)
 
 
-DATA_SOURCE = "real_stimuli"
-# DATA_SOURCE = "generated_stimuli"    # NOTE: please set this when training the model
+# DATA_SOURCE = "real_stimuli"
+DATA_SOURCE = "generated_stimuli"    # NOTE: please set this when training the model
 
 
 class TextReadingUnderTimePressureEnv(Env):
@@ -114,7 +114,8 @@ class TextReadingUnderTimePressureEnv(Env):
 
 
         # Observation space - simplified to scalar signals
-        self._num_stateful_obs = Constants.MAX_NUM_SENTENCES + 3 + 2 + 1     # Distribution of the appraisal scores over the sentences, current sentence index, time awarenesss and remaining time, and the time awareness 
+        self._num_stateful_obs = Constants.MAX_NUM_SENTENCES + 3 + 2 + 1 + 1     
+        # Distribution of the appraisal scores over the sentences, current sentence index, time awarenesss and remaining time, and the time awareness, and the free parameters (coverage factor)
         self.observation_space = Box(low=-1, high=1, shape=(self._num_stateful_obs,))
 
         #########################################################   NOTE: log related variables
@@ -125,7 +126,10 @@ class TextReadingUnderTimePressureEnv(Env):
 
         ###################  Get data from the simulator or not  #######################
         self._get_data_from_other_agents = None
-        
+
+        ###################  Tunable parameter  #######################
+        self._free_param_coverage_factor = None       # A value ranges from 0 to 1
+
     def reset(self, seed=None, options=None, inputs: dict=None):                
         """Reset environment and initialize states"""
         super().reset(seed=seed)
@@ -167,6 +171,10 @@ class TextReadingUnderTimePressureEnv(Env):
         self._log_number_regressions = 0
         self._log_episodic_regression_rate_over_num_read_sentences = 0
         self._log_episodic_regression_rate_over_steps = 0
+
+        # Initialize the tunable parameters
+        # Randomly sample a value from the range [0, 1], but discrete with a step of 0.1
+        self._free_param_coverage_factor = random.randint(0, 10) / 10
         
         return self._get_obs(), {}
     
@@ -298,7 +306,7 @@ class TextReadingUnderTimePressureEnv(Env):
         }
 
         if self._terminate: 
-            reward = self.reward_function.compute_terminate_reward(self._num_sentences, self._num_sentences_read, self._already_read_sentences_appraisal_scores_distribution)
+            reward = self.reward_function.compute_terminate_reward(self._num_sentences, self._num_sentences_read, self._already_read_sentences_appraisal_scores_distribution, self._free_param_coverage_factor)
             info = self.get_episode_log()
         else:
             info = {}
@@ -347,11 +355,15 @@ class TextReadingUnderTimePressureEnv(Env):
             time_condition_awareness = 1
         else:
             raise ValueError(f"Invalid time condition: {self._time_condition}")
+
+        # Get the coverage factor
+        coverage_factor = self._free_param_coverage_factor
         
+        # Get the remaining time awareness
         norm_remaining_time = self.normalise(self._remaining_time, 0, self._time_condition_value, 0, 1)
 
         # Concatenate the observations
-        stateful_obs = np.concatenate([padded_appraisals, [norm_current_position], [remaining_episode_length_awareness], [norm_remaining_sentence], [on_going_comprehension_log_scalar], [time_condition_awareness], [norm_remaining_time]])
+        stateful_obs = np.concatenate([padded_appraisals, [norm_current_position], [remaining_episode_length_awareness], [norm_remaining_sentence], [on_going_comprehension_log_scalar], [time_condition_awareness], [norm_remaining_time], [coverage_factor]])
 
         assert stateful_obs.shape[0] == self._num_stateful_obs, f"expected {self._num_stateful_obs} but got {stateful_obs.shape[0]}"
 

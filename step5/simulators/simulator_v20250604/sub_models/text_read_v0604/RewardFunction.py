@@ -27,7 +27,7 @@ class RewardFunction():
         return -0.1 * self._coefficient_sentence_selection
     
     
-    def compute_terminate_reward(self, num_sentences: int, num_sentences_read: int, sentence_appraisal_scores_distribution: list[float]):
+    def compute_terminate_reward(self, num_sentences: int, num_sentences_read: int, sentence_appraisal_scores_distribution: list[float], coverage_factor: float):
         """
         Compute reward for terminating reading.
         Uses sigmoid saturation to encourage more human-like reading behavior.
@@ -48,10 +48,11 @@ class RewardFunction():
         # Since no unfinish penalty, need to tune the quality vs. quantity.
         # NOTE: METHOD 1 times a coverage factor; if it does not work so good, METHOD 2 do the reward shaping by adding the coverage portion.
         assert num_sentences_read == len(valid_scores), f"num_sentences_read={num_sentences_read} != len(valid_scores)={len(valid_scores)}"
-        coverage_factor = num_sentences_read / num_sentences
+        coverage_rate = num_sentences_read / num_sentences
 
         # NOTE: linear reward: linear scaling for the comprehension performance
-        final_reward = 100 * self._coefficeint_comprehension * overall_comprehension_scalar * coverage_factor
+        # final_reward = 100 * self._coefficeint_comprehension * overall_comprehension_scalar * coverage_factor
+        final_reward = 100 * (coverage_factor * coverage_rate + (1 - coverage_factor) * overall_comprehension_scalar)
 
         return final_reward
         
