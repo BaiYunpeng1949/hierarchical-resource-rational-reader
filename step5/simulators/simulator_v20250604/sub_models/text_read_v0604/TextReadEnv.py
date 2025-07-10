@@ -177,8 +177,8 @@ class TextReadingUnderTimePressureEnv(Env):
         self._free_param_coverage_factor = 1 + random.randint(0, 10) / 10       
         # NOTE: now range from [1, 2], all over-weighting / encouraging the agent to read more sentences, 
         #   maybe need to range from [0, 2] later, also consider different coverage factor for different texts
-        # # TODO apply this parameter with a fixed value when testing
-        # self._free_param_coverage_factor = 1.0
+        # TODO apply this parameter with a fixed value when testing
+        self._free_param_coverage_factor = 2            # Try ranges from [1, 2]
         
         return self._get_obs(), {}
     
