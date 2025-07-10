@@ -27,8 +27,8 @@ if not logger.handlers:               # avoid duplicate handlers when workers fo
     logger.addHandler(handler)
 
 
-DATA_SOURCE = "real_stimuli"
-# DATA_SOURCE = "generated_stimuli"    # NOTE: please set this when training the model
+# DATA_SOURCE = "real_stimuli"
+DATA_SOURCE = "generated_stimuli"    # NOTE: please set this when training the model
 
 
 class TextReadingUnderTimePressureEnv(Env):
@@ -67,10 +67,12 @@ class TextReadingUnderTimePressureEnv(Env):
             self._config = yaml.load(f, Loader=yaml.FullLoader)
         self._mode = self._config["rl"]["mode"]
         self.num_episodes = self._config["rl"]["test"]["num_episodes"]
+
+        # Make sure the DATA_SOURCE is set correctly when training the model
+        if self._mode == "train":
+            assert DATA_SOURCE == "generated_stimuli", f"Invalid DATA_SOURCE: {DATA_SOURCE}, should be 'generated_stimuli' when training the model!"
         
         print(f"Text Reading (Under Time Pressure) Environment V0604 -- Deploying in {self._mode} mode")
-        print(f" **************************************** NOTE: Set the DATA_SOURCE to 'generated_stimuli' when training the model !!!  ****************************************")
-        print(f"")
 
         # Initialize components
         self.text_manager = TextManager(data_source=DATA_SOURCE)
@@ -129,6 +131,8 @@ class TextReadingUnderTimePressureEnv(Env):
 
         ###################  Tunable parameter  #######################
         self._free_param_coverage_factor = None       # A value ranges from 0 to 1
+        self.MAX_COVERAGE_FACTOR = 3
+        self.MIN_COVERAGE_FACTOR = 0
 
     def reset(self, seed=None, options=None, inputs: dict=None):                
         """Reset environment and initialize states"""
@@ -174,11 +178,14 @@ class TextReadingUnderTimePressureEnv(Env):
 
         # Initialize the tunable parameters
         # Randomly sample a value from the range [1, 2], but discrete with a step of 0.1
-        self._free_param_coverage_factor = 1 + random.randint(0, 10) / 10       
+        if self._mode == "train" or self._mode == "continual_train" or self._mode == "debug":
+            self._free_param_coverage_factor = random.randint(self.MIN_COVERAGE_FACTOR * 10, self.MAX_COVERAGE_FACTOR * 10) / 10
+            # print(f"sampling coverage factor: {self._free_param_coverage_factor}")
+        else:
+            self._free_param_coverage_factor = 2
+            print(f"TODO: apply this parameter with a fixed value when testing")
         # NOTE: now range from [1, 2], all over-weighting / encouraging the agent to read more sentences, 
         #   maybe need to range from [0, 2] later, also consider different coverage factor for different texts
-        # TODO apply this parameter with a fixed value when testing
-        self._free_param_coverage_factor = 2            # Try ranges from [1, 2]
         
         return self._get_obs(), {}
     
@@ -361,14 +368,14 @@ class TextReadingUnderTimePressureEnv(Env):
             raise ValueError(f"Invalid time condition: {self._time_condition}")
 
         # Get the coverage factor
-        coverage_factor = self._free_param_coverage_factor
+        normalized_coverage_factor = self.normalise(self._free_param_coverage_factor, self.MIN_COVERAGE_FACTOR, self.MAX_COVERAGE_FACTOR, 0, 1)
         
         # Get the remaining time awareness
         norm_remaining_time = self.normalise(self._remaining_time, 0, self._time_condition_value, 0, 1)
 
         # Concatenate the observations
         stateful_obs = np.concatenate([padded_appraisals, [norm_current_position], [remaining_episode_length_awareness], [norm_remaining_sentence], 
-                                      [on_going_comprehension_log_scalar], [time_condition_awareness], [norm_remaining_time], [coverage_factor]])
+                                      [on_going_comprehension_log_scalar], [time_condition_awareness], [norm_remaining_time], [normalized_coverage_factor]])
 
         assert stateful_obs.shape[0] == self._num_stateful_obs, f"expected {self._num_stateful_obs} but got {stateful_obs.shape[0]}"
 
