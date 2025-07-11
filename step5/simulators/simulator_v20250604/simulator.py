@@ -198,6 +198,9 @@ class ReaderAgent:
         with open(CONFIG_PATH, "r") as f:
             self.config = yaml.load(f, Loader=yaml.FullLoader)
 
+        mode = self.config["rl"]["mode"]
+        assert mode == "simulate", f"Invalid mode: {mode}, should be 'simulate' when running the simulator!"
+
         # Initialize the readers
         self.text_reader = TextReader()
         self.sentence_reader = SentenceReader()

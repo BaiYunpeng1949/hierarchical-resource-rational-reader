@@ -27,8 +27,8 @@ if not logger.handlers:               # avoid duplicate handlers when workers fo
     logger.addHandler(handler)
 
 
-# DATA_SOURCE = "real_stimuli"
-DATA_SOURCE = "generated_stimuli"    # NOTE: please set this when training the model
+DATA_SOURCE = "real_stimuli"
+# DATA_SOURCE = "generated_stimuli"    # NOTE: please set this when training the model
 
 
 class TextReadingUnderTimePressureEnv(Env):
@@ -69,8 +69,10 @@ class TextReadingUnderTimePressureEnv(Env):
         self.num_episodes = self._config["rl"]["test"]["num_episodes"]
 
         # Make sure the DATA_SOURCE is set correctly when training the model
-        if self._mode == "train":
+        if self._mode == "train" or self._mode == "continual_train" or self._mode == "debug":
             assert DATA_SOURCE == "generated_stimuli", f"Invalid DATA_SOURCE: {DATA_SOURCE}, should be 'generated_stimuli' when training the model!"
+        elif self._mode == "simulate":
+            assert DATA_SOURCE == "real_stimuli", f"Invalid DATA_SOURCE: {DATA_SOURCE}, should be 'real_stimuli' when testing the model!"
         
         print(f"Text Reading (Under Time Pressure) Environment V0604 -- Deploying in {self._mode} mode")
 
@@ -182,7 +184,7 @@ class TextReadingUnderTimePressureEnv(Env):
             self._free_param_coverage_factor = random.randint(self.MIN_COVERAGE_FACTOR * 10, self.MAX_COVERAGE_FACTOR * 10) / 10
             # print(f"sampling coverage factor: {self._free_param_coverage_factor}")
         else:
-            self._free_param_coverage_factor = 2
+            self._free_param_coverage_factor = 3.0
             print(f"TODO: apply this parameter with a fixed value when testing")
         # NOTE: now range from [1, 2], all over-weighting / encouraging the agent to read more sentences, 
         #   maybe need to range from [0, 2] later, also consider different coverage factor for different texts
