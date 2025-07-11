@@ -139,8 +139,8 @@ class RL:
             )
 
         # Get the environment class
-        env_class = TextReadingUnderTimePressureEnv    
-        # env_class = SentenceReadingUnderTimePressureEnv
+        # env_class = TextReadingUnderTimePressureEnv    
+        env_class = SentenceReadingUnderTimePressureEnv
 
         # Read the total dataset if training the general oculomotor controller model.
         # if env_class == WordActivationRLEnv:        NOTE: uncomment this later if the word recognizer agent is needed
