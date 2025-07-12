@@ -22,8 +22,8 @@ SIXTY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED
 NINETY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED * 1.5
 
 # Dataset
-DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
-# DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
+# DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
+DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
 
 
 class SentenceReadingUnderTimePressureEnv(Env):
@@ -128,7 +128,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._w_comprehension_vs_reading_time = None    # NOTE: another parameter might be needed
         self._noisy_skipped_word_integration_prob_sigma = None  # NOTE: the sigma for the noisy skipped word integration probability, the tunable parameter
         self.MIN_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA = 0.0
-        self.MAX_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA = 0.2
+        self.MAX_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA = 0.6
 
         # Log variables
         self._log_individual_step_action = None
