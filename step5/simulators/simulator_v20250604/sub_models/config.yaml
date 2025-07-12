@@ -1,11 +1,11 @@
 simulator_name: 'step5'
 
 rl:
-  mode: simulate   # Options: train, continual_train, test, debug, simulate (run modules), and grid_test.
+  mode: train   # Options: train, continual_train, test, debug, simulate (run modules), and grid_test.
 
   train:
     total_timesteps: 200000000
-    checkpoints_folder_name: 0711_read_reading_under_time_pressure_v0604_01
+    checkpoints_folder_name: 0712_read_reading_under_time_pressure_v0604_02
     num_workers: 20   # Smaller than the server's number of processes: 16 - should not be the maximum capacity of the processors, otherwise the local memory will overflow.
     num_steps: 10000   # Don't change this parameter -- previously 5000
     batch_size: 1000  # We recommend using a `batch_size` that is a factor of `n_steps * n_envs` -- previously 500
