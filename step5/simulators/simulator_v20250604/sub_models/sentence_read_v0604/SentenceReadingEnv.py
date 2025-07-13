@@ -22,8 +22,8 @@ SIXTY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED
 NINETY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED * 1.5
 
 # Dataset
-# DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
-DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
+DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
+# DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
 
 
 class SentenceReadingUnderTimePressureEnv(Env):
@@ -195,7 +195,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         if self._mode == "train" or self._mode == "continual_train" or self._mode == "debug":
             self._noisy_skipped_word_integration_prob_sigma = random.randint(self.MIN_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA * 10, self.MAX_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA * 10) / 10
         elif self._mode == "simulate":
-            self._noisy_skipped_word_integration_prob_sigma = 0.2
+            self._noisy_skipped_word_integration_prob_sigma = 0.6
             print(f"NOTE: set the noisy skipped word integration probability sigma to a fixed valuewhen running the simulator!")
 
         # Initialize the log variables
