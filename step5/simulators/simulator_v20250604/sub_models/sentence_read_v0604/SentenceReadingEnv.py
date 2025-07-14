@@ -71,8 +71,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
         if self._mode == "simulate":
             assert DATASET == "Ours", f"Invalid dataset: {DATASET}, should be 'Ours' when running the simulator!"
         elif self._mode == "train" or self._mode == "continual_train" or self._mode == "debug":
-            assert DATASET == "ZuCo1.0", f"Invalid dataset: {DATASET}, should be 'ZuCo1.0' when training the model!"
-        
+            # assert DATASET == "ZuCo1.0", f"Invalid dataset: {DATASET}, should be 'ZuCo1.0' when training the model!"
+            pass
         print(f"Sentence Reading Under Time Pressure Environment V0604 -- Deploying in {self._mode} mode with the dataset {DATASET}")
 
         # Initialize components
