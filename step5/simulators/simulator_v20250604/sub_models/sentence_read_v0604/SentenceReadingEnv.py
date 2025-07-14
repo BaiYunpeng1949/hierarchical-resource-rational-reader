@@ -201,7 +201,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
             if self._mode == "debug":
                 print(f"The sampled skipping cost is {self._w_skipping_cost} now -----------------------------------------")
         elif self._mode == "simulate":
-            self._w_skipping_cost = 10.0
+            self._w_skipping_cost = 3.0
             print(f"NOTE: set the skipping cost to a fixed value when running the simulator! Now the skipping cost is {self._w_skipping_cost}")
 
         # # Initialize the noisy skipped word integration probability sigma
