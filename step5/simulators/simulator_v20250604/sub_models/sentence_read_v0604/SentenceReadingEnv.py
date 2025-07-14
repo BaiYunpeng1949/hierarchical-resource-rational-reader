@@ -127,7 +127,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._w_regression_cost = None          # NOTE: the most important parameter to tune for natural reading
         self._w_skipping_cost = None            # NOTE: maybe the most important parameter to tune for reading under time pressure
         self.MIN_W_SKIPPING_COST = 1.0
-        self.MAX_W_SKIPPING_COST = 10.0
+        self.MAX_W_SKIPPING_COST = 3.0
         self._w_comprehension_vs_reading_time = None    # NOTE: another parameter might be needed
         # self._noisy_skipped_word_integration_prob_sigma = None  # NOTE: the sigma for the noisy skipped word integration probability, the tunable parameter
         # self.MIN_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA = 0.0
@@ -196,8 +196,10 @@ class SentenceReadingUnderTimePressureEnv(Env):
 
         # Initialize the skipping cost
         if self._mode == "train" or self._mode == "continual_train" or self._mode == "debug":
-            self._w_skipping_cost = random.randint(self.MIN_W_SKIPPING_COST, self.MAX_W_SKIPPING_COST)
-            # print(f"The sampled skipping cost is {self._w_skipping_cost} now -----------------------------------------")
+            # self._w_skipping_cost = random.randint(self.MIN_W_SKIPPING_COST, self.MAX_W_SKIPPING_COST)
+            self._w_skipping_cost = random.uniform(self.MIN_W_SKIPPING_COST, self.MAX_W_SKIPPING_COST)
+            if self._mode == "debug":
+                print(f"The sampled skipping cost is {self._w_skipping_cost} now -----------------------------------------")
         elif self._mode == "simulate":
             self._w_skipping_cost = 10.0
             print(f"NOTE: set the skipping cost to a fixed value when running the simulator! Now the skipping cost is {self._w_skipping_cost}")
