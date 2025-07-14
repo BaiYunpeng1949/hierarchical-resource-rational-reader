@@ -40,11 +40,11 @@ class RewardFunction():
         """
         return -0.1 * self._coefficient_eye_movement_cost
     
-    def compute_skip_reward(self):
+    def compute_skip_reward(self, w_skipping_cost: float):
         """
         Compute the reward for the skip action
         """
-        return -0.1 * self._coefficient_eye_movement_cost
+        return -0.1 * self._coefficient_eye_movement_cost * w_skipping_cost
     
     def compute_terminate_reward(self, sentence_len: int, num_words_read: int, words_beliefs: list[float], remaining_time: float, expected_sentence_reading_time: float, w_comprehension_vs_reading_time: float):
         """

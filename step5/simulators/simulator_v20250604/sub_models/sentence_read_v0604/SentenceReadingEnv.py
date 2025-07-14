@@ -22,8 +22,8 @@ SIXTY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED
 NINETY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED * 1.5
 
 # Dataset
-DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
-# DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
+# DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
+DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
 
 
 class SentenceReadingUnderTimePressureEnv(Env):
@@ -125,10 +125,13 @@ class SentenceReadingUnderTimePressureEnv(Env):
 
         # Free parameters
         self._w_regression_cost = None          # NOTE: the most important parameter to tune for natural reading
+        self._w_skipping_cost = None            # NOTE: maybe the most important parameter to tune for reading under time pressure
+        self.MIN_W_SKIPPING_COST = 1.0
+        self.MAX_W_SKIPPING_COST = 10.0
         self._w_comprehension_vs_reading_time = None    # NOTE: another parameter might be needed
-        self._noisy_skipped_word_integration_prob_sigma = None  # NOTE: the sigma for the noisy skipped word integration probability, the tunable parameter
-        self.MIN_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA = 0.0
-        self.MAX_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA = 0.05
+        # self._noisy_skipped_word_integration_prob_sigma = None  # NOTE: the sigma for the noisy skipped word integration probability, the tunable parameter
+        # self.MIN_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA = 0.0
+        # self.MAX_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA = 0.05
 
         # Log variables
         self._log_individual_step_action = None
@@ -191,13 +194,21 @@ class SentenceReadingUnderTimePressureEnv(Env):
 
         self._w_comprehension_vs_reading_time = 1.0    # Start from a deterministic value
 
-        # Initialize the noisy skipped word integration probability sigma
+        # Initialize the skipping cost
         if self._mode == "train" or self._mode == "continual_train" or self._mode == "debug":
-            self._noisy_skipped_word_integration_prob_sigma = random.randint(self.MIN_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA * 100, self.MAX_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA * 100) / 100
-            # print(f"The sampled noisy skipped word integration probability sigma is {self._noisy_skipped_word_integration_prob_sigma} now")
+            self._w_skipping_cost = random.randint(self.MIN_W_SKIPPING_COST, self.MAX_W_SKIPPING_COST)
+            # print(f"The sampled skipping cost is {self._w_skipping_cost} now -----------------------------------------")
         elif self._mode == "simulate":
-            self._noisy_skipped_word_integration_prob_sigma = 0.05
-            print(f"NOTE: set the noisy skipped word integration probability sigma to a fixed valuewhen running the simulator!")
+            self._w_skipping_cost = 1.0
+            print(f"NOTE: set the skipping cost to a fixed value when running the simulator!")
+
+        # # Initialize the noisy skipped word integration probability sigma
+        # if self._mode == "train" or self._mode == "continual_train" or self._mode == "debug":
+        #     self._noisy_skipped_word_integration_prob_sigma = random.randint(self.MIN_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA * 100, self.MAX_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA * 100) / 100
+        #     # print(f"The sampled noisy skipped word integration probability sigma is {self._noisy_skipped_word_integration_prob_sigma} now")
+        # elif self._mode == "simulate":
+        #     self._noisy_skipped_word_integration_prob_sigma = 0.05
+        #     print(f"NOTE: set the noisy skipped word integration probability sigma to a fixed valuewhen running the simulator!")
 
         # Initialize the log variables
         self._log_elapsed_time_list_for_each_index = []
@@ -261,8 +272,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
                 else:
                     # If the skipped word has not been read before, use the pre-processed integration values
                     perfect_skipped_word_integration_prob = self._sentence_info['predicted_words_ranked_integration_probabilities_for_running_model'][skipped_word_index]
-                    noisy_skipped_word_integration_prob = np.clip(perfect_skipped_word_integration_prob + np.random.normal(0, self._noisy_skipped_word_integration_prob_sigma), 0, 1)
-                    self._word_beliefs[skipped_word_index] = noisy_skipped_word_integration_prob
+                    # noisy_skipped_word_integration_prob = np.clip(perfect_skipped_word_integration_prob + np.random.normal(0, self._noisy_skipped_word_integration_prob_sigma), 0, 1)
+                    self._word_beliefs[skipped_word_index] = perfect_skipped_word_integration_prob
                 
                 # If the skip destination word (the word after the skipped word) has been read before, use the original integration values
                 if self.current_word_index in self._read_words:
@@ -284,7 +295,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
 
                 self._log_num_skips += 1
 
-            reward = self.reward_function.compute_skip_reward()
+            reward = self.reward_function.compute_skip_reward(w_skipping_cost=self._w_skipping_cost)
         
         elif action == self._READ_ACTION:
             self.current_word_index, action_validity = (
@@ -385,7 +396,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
         
         # Weights
         norm_w_regression_cost = self.normalise(self._w_regression_cost, 0, 1, 0, 1)
-        norm_noisy_skipped_word_integration_prob_sigma = self.normalise(self._noisy_skipped_word_integration_prob_sigma, self.MIN_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA, self.MAX_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA, 0, 1)
+        norm_w_skipping_cost = self.normalise(self._w_skipping_cost, self.MIN_W_SKIPPING_COST, self.MAX_W_SKIPPING_COST, 0, 1)
+        # norm_noisy_skipped_word_integration_prob_sigma = self.normalise(self._noisy_skipped_word_integration_prob_sigma, self.MIN_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA, self.MAX_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA, 0, 1)
 
         # Time related variables
         if self._time_condition == "30s":
@@ -406,7 +418,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
             observed_next_word_predictability,
             on_going_comprehension_log_scalar,
             norm_w_regression_cost,
-            norm_noisy_skipped_word_integration_prob_sigma,
+            norm_w_skipping_cost,
             norm_time_condition,
             norm_remaining_time
         ])
