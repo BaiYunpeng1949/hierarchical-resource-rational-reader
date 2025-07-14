@@ -40,33 +40,58 @@ class RewardFunction():
         """
         return -0.1 * self._coefficient_eye_movement_cost
     
-    def compute_skip_reward(self, w_skipping_cost: float):
+    def compute_skip_reward(self):
         """
         Compute the reward for the skip action
         """
-        return -0.1 * self._coefficient_eye_movement_cost * w_skipping_cost
+        return -0.1 * self._coefficient_eye_movement_cost
     
-    def compute_terminate_reward(self, sentence_len: int, num_words_read: int, words_beliefs: list[float], remaining_time: float, expected_sentence_reading_time: float, w_comprehension_vs_reading_time: float):
+    def compute_terminate_reward(self, sentence_len: int, num_words_read: int, words_beliefs: list[float], remaining_time: float, expected_sentence_reading_time: float, w_comprehension_vs_time_pressure: float):
         """
         Compute reward for terminating reading.
         Uses sigmoid saturation to encourage more human-like reading behavior.
         """
-        # Penalize for not finishing the sentence reading task
-        if num_words_read < sentence_len:
-            penalty_for_unfinished_reading_and_wasting_time = -100 + (remaining_time / expected_sentence_reading_time) * 10
-            return -100
-        else:
-            # Compute geometric mean of word beliefs
-            overall_comprehension_log = 0.0
-            if len(words_beliefs) > 0:
-                for b in words_beliefs:
-                    overall_comprehension_log += math.log(max(b, 1e-9))
-                # geometric mean
-                overall_comprehension_scalar = math.exp(overall_comprehension_log / len(words_beliefs))
-            else:
-                overall_comprehension_scalar = 0.0
+        # # Penalize for not finishing the sentence reading task
+        # if num_words_read < sentence_len:
+        #     penalty_for_unfinished_reading_and_wasting_time = -100 + (remaining_time / expected_sentence_reading_time) * 10
+        #     return -100
+        # else:
+        #     # Compute geometric mean of word beliefs
+        #     overall_comprehension_log = 0.0
+        #     if len(words_beliefs) > 0:
+        #         for b in words_beliefs:
+        #             overall_comprehension_log += math.log(max(b, 1e-9))
+        #         # geometric mean
+        #         overall_comprehension_scalar = math.exp(overall_comprehension_log / len(words_beliefs))
+        #     else:
+        #         overall_comprehension_scalar = 0.0
 
-            # NOTE: linear reward: linear scaling for the comprehension performance
-            final_reward = 100 * self._coefficeint_comprehension * overall_comprehension_scalar + 10 * w_comprehension_vs_reading_time * (remaining_time / expected_sentence_reading_time)
+        #     # NOTE: linear reward: linear scaling for the comprehension performance
+        #     final_reward = 100 * self._coefficeint_comprehension * overall_comprehension_scalar + 10 * w_comprehension_vs_reading_time * (remaining_time / expected_sentence_reading_time)
                 
-            return final_reward
+        #     return final_reward
+        
+        # Compute geometric mean of word beliefs
+        overall_comprehension_log = 0.0
+        if len(words_beliefs) > 0:
+            for b in words_beliefs:
+                overall_comprehension_log += math.log(max(b, 1e-9))
+            # geometric mean
+            overall_comprehension_scalar = math.exp(overall_comprehension_log / len(words_beliefs))
+        else:
+            overall_comprehension_scalar = 0.0
+        
+        comprehension_reward = 100 * self._coefficeint_comprehension * overall_comprehension_scalar
+
+        if num_words_read < sentence_len:
+            # Consider cases where the sentence reading was finished out of expected time, wasting other sentences' time
+            penalty_for_wasting_time = -100 * (1 - (num_words_read / sentence_len))
+        else:
+            penalty_for_wasting_time = 0
+
+        # NOTE: linear reward: linear scaling for the comprehension performance
+        final_reward = comprehension_reward + w_comprehension_vs_time_pressure * penalty_for_wasting_time
+
+        # TODO maybe need to check the metrics -- how come the skipping rate is above 50%? Should not exceed that.
+            
+        return final_reward
