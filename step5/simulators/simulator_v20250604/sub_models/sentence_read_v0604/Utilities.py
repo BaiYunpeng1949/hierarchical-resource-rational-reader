@@ -5,6 +5,32 @@ from . import Constants
 import json
 import os
 from tqdm import tqdm
+import math
+import numpy as np
+
+
+def calc_dynamic_sentence_comprehension_score(scores, mode="softmin", tau=0.1):
+    """
+    Compute the dynamic sentence comprehension score
+
+    Args:
+        scores: list[float] -- the appraisal scores of the words in the sentence
+        mode: str
+        tau: float
+
+    Returns:
+        float
+    """
+    if mode == "geometric mean":
+        log_sum = sum(math.log(max(s, 1e-9)) for s in scores)
+        return math.exp(log_sum / len(scores))
+    elif mode == "harmonic mean":
+        return len(scores) / sum(1/s for s in scores)
+    elif mode == "softmin":
+        w = np.exp(-np.array(scores) / tau)
+        return float((w * scores).sum() / w.sum())
+    else:
+        raise ValueError(f"Invalid mode: {mode}")
 
 
 def compute_integration_difficulty(tokenizer, model, context: list[str], word: str, full_sentence: list[str], current_word_idx: int) -> tuple[float, float, float, float]:

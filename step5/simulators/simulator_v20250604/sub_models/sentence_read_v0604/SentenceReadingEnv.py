@@ -14,6 +14,7 @@ from .SentencesManager import SentencesManager
 from .TransitionFunction import TransitionFunction
 from .RewardFunction import RewardFunction
 from . import Constants
+from . import Utilities
 
 
 # Tunable parameters -- Units: words per second
@@ -22,8 +23,8 @@ SIXTY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED
 NINETY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED * 1.5
 
 # Dataset
-DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
-# DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
+# DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
+DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
 
 
 class SentenceReadingUnderTimePressureEnv(Env):
@@ -257,7 +258,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
 
             reward = self.reward_function.compute_regress_reward(w_regression_cost=self._w_regression_cost)
         
-        elif action == self._SKIP_ACTION:
+        elif action == self._SKIP_ACTION:     # NOTE: if still does not work with the softmin function, then try to apply degradations to the skippings;
             self.current_word_index, action_validity = (
                 self.transition_function.update_state_skip_next_word(
                     self.current_word_index,
@@ -372,7 +373,6 @@ class SentenceReadingUnderTimePressureEnv(Env):
         norm_previous_word_belief = np.clip(self._word_beliefs[self._previous_word_index], 0, 1) if self._previous_word_index is not None and 0 <= self._previous_word_index < self._sentence_len else 1
         norm_current_word_belief = np.clip(self._word_beliefs[self.current_word_index], 0, 1) if self.current_word_index is not None and 0 <= self.current_word_index < self._sentence_len else 1
         norm_next_word_predictability = np.clip(self._sentence_info['words_predictabilities_for_running_model'][self.current_word_index + 1], 0, 1) if self.current_word_index + 1 is not None and 0 <= self.current_word_index + 1 < self._sentence_len else 1
-        
 
         # Apply noisy observation for a more robust model -- compensation for the limited data
         # NOTE: the noisy observation is applied to the normalized values. 
@@ -384,11 +384,13 @@ class SentenceReadingUnderTimePressureEnv(Env):
         # on_going_comprehension_scalar = np.clip(math.prod(valid_words_beliefs), 0, 1)
         on_going_comprehension_log_scalar = 0.0
         if len(valid_words_beliefs) > 0:
-            overall_comprehension_log = 0.0
-            for b in valid_words_beliefs:
-                overall_comprehension_log += math.log(max(b, 1e-9))
-            # geometric mean
-            on_going_comprehension_log_scalar = math.exp(overall_comprehension_log / len(valid_words_beliefs))
+            # overall_comprehension_log = 0.0
+            # for b in valid_words_beliefs:
+            #     overall_comprehension_log += math.log(max(b, 1e-9))
+            # # geometric mean
+            # on_going_comprehension_log_scalar = math.exp(overall_comprehension_log / len(valid_words_beliefs))
+            # Apply the softmin function to calculate the sentence-appraisals, such to stress the importance of the accurate word understandings, i.e., higher appraisals
+            on_going_comprehension_log_scalar = Utilities.calc_dynamic_sentence_comprehension_score(valid_words_beliefs)
         else:
             on_going_comprehension_log_scalar = 0.0
         
