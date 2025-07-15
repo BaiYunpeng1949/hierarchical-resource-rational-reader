@@ -23,8 +23,8 @@ SIXTY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED
 NINETY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED * 1.5
 
 # Dataset
-# DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
-DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
+DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
+# DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
 
 
 class SentenceReadingUnderTimePressureEnv(Env):
@@ -213,7 +213,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
                 print(f"The initial remaining time is {self._sentence_wise_remaining_time_in_seconds}")
                 print(f"The sampled comprehension vs time pressure is {self._w_comprehension_vs_time_pressure} now -----------------------------------------")
         elif self._mode == "simulate":
-            self._w_comprehension_vs_time_pressure = 1.00
+            self._w_comprehension_vs_time_pressure = 0.50
             print(f"NOTE: set the comprehension vs time pressure to a fixed value when running the simulator! Now the comprehension vs time pressure is {self._w_comprehension_vs_time_pressure}")
 
         # Initialize the log variables
@@ -384,11 +384,6 @@ class SentenceReadingUnderTimePressureEnv(Env):
         # on_going_comprehension_scalar = np.clip(math.prod(valid_words_beliefs), 0, 1)
         on_going_comprehension_log_scalar = 0.0
         if len(valid_words_beliefs) > 0:
-            # overall_comprehension_log = 0.0
-            # for b in valid_words_beliefs:
-            #     overall_comprehension_log += math.log(max(b, 1e-9))
-            # # geometric mean
-            # on_going_comprehension_log_scalar = math.exp(overall_comprehension_log / len(valid_words_beliefs))
             # Apply the softmin function to calculate the sentence-appraisals, such to stress the importance of the accurate word understandings, i.e., higher appraisals
             on_going_comprehension_log_scalar = Utilities.calc_dynamic_sentence_comprehension_score(valid_words_beliefs)
         else:

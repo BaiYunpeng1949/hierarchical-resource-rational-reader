@@ -60,11 +60,6 @@ class RewardFunction():
             # Compute geometric mean of word beliefs
             overall_comprehension_log = 0.0
             if len(words_beliefs) > 0:
-                # for b in words_beliefs:
-                #     overall_comprehension_log += math.log(max(b, 1e-9))
-                # # geometric mean
-                # overall_comprehension_scalar = math.exp(overall_comprehension_log / len(words_beliefs))
-                
                 # Apply the softmin function to calculate the sentence-appraisals, such to stress the importance of the accurate word understandings, i.e., higher appraisals
                 overall_comprehension_scalar = Utilities.calc_dynamic_sentence_comprehension_score(words_beliefs)
             else:
