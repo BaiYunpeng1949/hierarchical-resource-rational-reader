@@ -16,6 +16,12 @@ class SentencesManager():
         self._dataset = dataset
         self._sentences_dataset = {}
         self._current_sentence_id = 0
+        self._text_word_count_for_all_stimuli_list = None
+        self._text_word_count = None
+        
+        # For the ZuCo dataset, the text length is 130 to 160 words, similar to the length distribution we used for our dataset
+        self._min_text_len = 130
+        self._max_text_len = 150
 
         if dataset == "Ours":
             # Read all stimulus
@@ -24,6 +30,14 @@ class SentencesManager():
             
             # Parse to sentences across different stimulus
             self._sentences_dataset = self._parse_stimulus_to_sentences(self._stimulus_dataset)
+
+            # Read the metadata of our dataset to get the full words
+            with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'metadata_sentence_indeces.json'), 'r') as f:
+                our_dataset_metadata = json.load(f)
+            # Get the text word count for each stimulus
+            self._text_word_count_for_all_stimuli_list = [stimulus_data["total_words"] for stimulus_data in our_dataset_metadata.values()]
+            # # TODO debug delete later
+            # print(f"The text word count for all stimuli is {self._text_word_count_for_all_stimuli_list}")
             
         elif dataset == "ZuCo1.0":
             # Read all the sentences from the assets/sentences_dataset.json
@@ -57,11 +71,15 @@ class SentencesManager():
             random_idx = random.randint(0, self._num_sentences - 1)
             sentence_idx = random_idx
             sentence_data = self._sentences_dataset[str(random_idx)]
+            # Randomize the text word count, similar to the length distribution we used for our dataset
+            self._text_word_count = random.randint(self._min_text_len, self._max_text_len)
         else:
             assert self._dataset == "Ours", "Only Ours dataset supports the feature of intact simulations."
             stimulus_id = inputs["stimulus_id"]
             sentence_idx = inputs["sentence_id"]
             sentence_data = self._stimulus_dataset[str(stimulus_id)]["sentences"][sentence_idx]
+            # Obtain the text word count according to the stimulus index (stimulus_id)
+            self._text_word_count = self._text_word_count_for_all_stimuli_list[stimulus_id]
             
         # Extract word-level information
         words_metadata = sentence_data["words"]
@@ -106,7 +124,7 @@ class SentencesManager():
             "individual_word_reading_time": Constants.READING_SPEED       # seconds/word
         }
         
-        return sentence_info
+        return sentence_info, self._text_word_count
     
     def _parse_stimulus_to_sentences(self, stimulus_dataset):
         """

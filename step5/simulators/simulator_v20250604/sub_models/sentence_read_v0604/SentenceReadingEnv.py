@@ -22,8 +22,8 @@ SIXTY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED
 NINETY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED * 1.5
 
 # Dataset
-DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
-# DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
+# DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
+DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
 
 
 class SentenceReadingUnderTimePressureEnv(Env):
@@ -81,7 +81,10 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self.transition_function = TransitionFunction()
         self.reward_function = RewardFunction()
 
-        # State tracking
+        # Text information (for the time pressure approximation)
+        self._text_word_count = None
+
+        # State tracking, mainly the sentence-level information
         self._sentence_info = None
         self._sentence_len = None
         self.current_word_index = None
@@ -100,9 +103,12 @@ class SentenceReadingUnderTimePressureEnv(Env):
         # Time tracking
         self._time_condition = None
         self._time_condition_value = None
+        self._baseline_time_needed_to_read_text = None
         self.elapsed_time = None
-        self._remaining_time = None
-        self._sentence_wise_expected_reading_time_in_seconds = None
+        self._sentence_wise_remaining_time_in_seconds = None
+        self._min_sentence_wise_remaining_time_in_seconds = None
+        self._time_pressure_scalar_for_the_sentence = None
+        self._sentence_wise_expected_time_pressure_in_seconds = None
 
         # Environment parameters
         self._steps = None
@@ -120,20 +126,15 @@ class SentenceReadingUnderTimePressureEnv(Env):
         
         # Observation space - simplified to scalar signals
         self._num_stateful_obs = 6 + 2 + 2      # +2 for the regression cost and the weighted skipped word integration probability sigma, +2 for the time condition and remaining time
-        self.observation_space = Box(low=0, high=1, shape=(self._num_stateful_obs,))
+        self.observation_space = Box(low=0, high=1, shape=(self._num_stateful_obs,))         # TODO: need to change these to -1 to 1, because sometimes the remaining time is negative, or change the specific observation!!!
         self._noisy_obs_sigma = Constants.NOISY_OBS_SIGMA
 
         # Free parameters
         self._w_regression_cost = None          # NOTE: the most important parameter to tune for natural reading
         self._w_skipping_cost = None            # NOTE: maybe the most important parameter to tune for reading under time pressure
-        # self.MIN_W_SKIPPING_COST = 1.0
-        # self.MAX_W_SKIPPING_COST = 3.0
         self._w_comprehension_vs_time_pressure = None    # NOTE: another parameter might be needed
         self.MIN_W_COMPREHENSION_VS_TIME_PRESSURE = 0.0
         self.MAX_W_COMPREHENSION_VS_TIME_PRESSURE = 1.0
-        # self._noisy_skipped_word_integration_prob_sigma = None  # NOTE: the sigma for the noisy skipped word integration probability, the tunable parameter
-        # self.MIN_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA = 0.0
-        # self.MAX_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA = 0.05
 
         # Log variables
         self._log_individual_step_action = None
@@ -157,7 +158,9 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._episode_id = inputs["episode_id"] if inputs is not None else 0
 
         # Get new sentence
-        self._sentence_info = self.sentences_manager.reset(inputs=inputs)
+        self._sentence_info, self._text_word_count = self.sentences_manager.reset(inputs=inputs)
+
+        # Get the sentence information
         self._sentence_len = len(self._sentence_info['words'])
 
         # Initialize word beliefs from pre-computed data
@@ -178,6 +181,10 @@ class SentenceReadingUnderTimePressureEnv(Env):
 
         # Reset the time related variables
         self._time_condition, self._time_condition_value = self.time_condition_manager.reset(inputs=inputs)
+        # Approximate the time pressure for each sentence # Get the text information, because need this to approximate the time pressure for each sentence
+        self._baseline_time_needed_to_read_text = self._text_word_count * Constants.READING_SPEED
+        # Get the time pressure for each sentence
+        self._time_pressure_scalar_for_the_sentence = self._time_condition_value / self._baseline_time_needed_to_read_text    # belongs to [0, infinity]
         # if self._time_condition == "30s":
         #     reading_speed = THIRTY_SECONDS_EXPECTED_READING_SPEED
         # elif self._time_condition == "60s":
@@ -188,35 +195,25 @@ class SentenceReadingUnderTimePressureEnv(Env):
         #     raise ValueError(f"Invalid time condition: {self._time_condition}")
         # NOTE: use only one rough reading speed, then cut-off the trial when the time is running out, but only for the training. For simulation, allow the agent to read as long as it wants.
         reading_speed = Constants.READING_SPEED
-        self._sentence_wise_expected_reading_time_in_seconds = reading_speed * self._sentence_len
+        self._sentence_wise_expected_time_pressure_in_seconds = reading_speed * self._sentence_len * self._time_pressure_scalar_for_the_sentence
         self.elapsed_time = 0
-        # self._remaining_time = self._sentence_wise_expected_reading_time_in_seconds - self.elapsed_time
-        self._remaining_time = self._time_condition_value - self.elapsed_time
+        self._sentence_wise_remaining_time_in_seconds = self._sentence_wise_expected_time_pressure_in_seconds - self.elapsed_time
+        self._min_sentence_wise_remaining_time_in_seconds = - self._sentence_wise_expected_time_pressure_in_seconds   # NOTE: empirically set a negative value, for tracking the exceeded time
 
         # Initialize a random regression cost
         # self._w_regression_cost = random.uniform(0, 1)   # NOTE: uncomment when training!!!!
         self._w_regression_cost = 1.0    # NOTE: uncomment when testing!!!!
-
-        # self._w_comprehension_vs_time_pressure = 1.0    # Start from a deterministic value
 
         # Initialize the skipping cost
         if self._mode == "train" or self._mode == "continual_train" or self._mode == "debug":
             # self._w_skipping_cost = random.randint(self.MIN_W_SKIPPING_COST, self.MAX_W_SKIPPING_COST)
             self._w_comprehension_vs_time_pressure = random.uniform(self.MIN_W_COMPREHENSION_VS_TIME_PRESSURE, self.MAX_W_COMPREHENSION_VS_TIME_PRESSURE)
             if self._mode == "debug":
-                print(f"The initial remaining time is {self._remaining_time}")
+                print(f"The initial remaining time is {self._sentence_wise_remaining_time_in_seconds}")
                 print(f"The sampled comprehension vs time pressure is {self._w_comprehension_vs_time_pressure} now -----------------------------------------")
         elif self._mode == "simulate":
             self._w_comprehension_vs_time_pressure = 0.75
             print(f"NOTE: set the comprehension vs time pressure to a fixed value when running the simulator! Now the comprehension vs time pressure is {self._w_comprehension_vs_time_pressure}")
-
-        # # Initialize the noisy skipped word integration probability sigma
-        # if self._mode == "train" or self._mode == "continual_train" or self._mode == "debug":
-        #     self._noisy_skipped_word_integration_prob_sigma = random.randint(self.MIN_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA * 100, self.MAX_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA * 100) / 100
-        #     # print(f"The sampled noisy skipped word integration probability sigma is {self._noisy_skipped_word_integration_prob_sigma} now")
-        # elif self._mode == "simulate":
-        #     self._noisy_skipped_word_integration_prob_sigma = 0.05
-        #     print(f"NOTE: set the noisy skipped word integration probability sigma to a fixed valuewhen running the simulator!")
 
         # Initialize the log variables
         self._log_elapsed_time_list_for_each_index = []
@@ -280,7 +277,6 @@ class SentenceReadingUnderTimePressureEnv(Env):
                 else:
                     # If the skipped word has not been read before, use the pre-processed integration values
                     perfect_skipped_word_integration_prob = self._sentence_info['predicted_words_ranked_integration_probabilities_for_running_model'][skipped_word_index]
-                    # noisy_skipped_word_integration_prob = np.clip(perfect_skipped_word_integration_prob + np.random.normal(0, self._noisy_skipped_word_integration_prob_sigma), 0, 1)
                     self._word_beliefs[skipped_word_index] = perfect_skipped_word_integration_prob
                 
                 # If the skip destination word (the word after the skipped word) has been read before, use the original integration values
@@ -333,27 +329,6 @@ class SentenceReadingUnderTimePressureEnv(Env):
 
         elif action == self._STOP_ACTION:
             self._terminate = True
-
-            # # Compute final comprehension reward
-            # valid_words_beliefs = [b for b in self._word_beliefs if b != -1]
-
-            # reward = self.reward_function.compute_terminate_reward(
-            #     sentence_len=self._sentence_len,
-            #     num_words_read=len(valid_words_beliefs),
-            #     words_beliefs=valid_words_beliefs,
-            #     remaining_time=self._remaining_time,
-            #     expected_sentence_reading_time=self._sentence_wise_expected_reading_time_in_seconds,
-            #     w_comprehension_vs_reading_time=self._w_comprehension_vs_time_pressure
-            # )
-        
-        # NOTE: different from the text-level reading, I do not cut down the reading time for the sentence. 
-        #       Because I hold the assumption that sentences could always be finished.
-        # NOTE: 0714 -- the sentence could be cut-off when the time is running out, but only for the training. For simulation, allow the agent to read as long as it wants.
-        if self._mode == "train" or self._mode == "continual_train" or self._mode == "debug":
-            if self._remaining_time <= 0:
-                self._terminate = True
-        elif self._mode == "simulate":
-            print(f"NOTE: the sentence is not cut-off when the time is running out in the simulation mode! Code to make it run. Manage the observation")
         
         # Check termination
         if self._steps >= self.ep_len:
@@ -369,8 +344,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
                 sentence_len=self._sentence_len,
                 num_words_read=len(valid_words_beliefs),
                 words_beliefs=valid_words_beliefs,
-                remaining_time=self._remaining_time,
-                expected_sentence_reading_time=self._time_condition_value, # self._sentence_wise_expected_reading_time_in_seconds,
+                remaining_time=self._sentence_wise_remaining_time_in_seconds,
+                expected_sentence_reading_time=self._sentence_wise_expected_time_pressure_in_seconds,
                 w_comprehension_vs_time_pressure=self._w_comprehension_vs_time_pressure
             )
         else:
@@ -434,8 +409,11 @@ class SentenceReadingUnderTimePressureEnv(Env):
             norm_time_condition = 1
         else:
             raise ValueError(f"Invalid time condition: {self._time_condition}")
-        clipped_remaining_time = np.clip(self._remaining_time, 0, self._time_condition_value)
-        norm_remaining_time = self.normalise(clipped_remaining_time, 0, self._time_condition_value, 0, 1)   
+        
+        min_remaining_time = self._min_sentence_wise_remaining_time_in_seconds
+        max_remaining_time = self._sentence_wise_expected_time_pressure_in_seconds
+        clipped_remaining_time = np.clip(self._sentence_wise_remaining_time_in_seconds, min_remaining_time, max_remaining_time)
+        norm_remaining_time = self.normalise(clipped_remaining_time, min_remaining_time, max_remaining_time, 0, 1)   
         # In the simulation mode, when the time is running out, or reading out of the sentence, the remaining time is negative. I clip it to 0.
 
         stateful_obs = np.array([
@@ -495,9 +473,9 @@ class SentenceReadingUnderTimePressureEnv(Env):
 
     def _update_time_related_variables(self):
         """Update the time related variables"""
-        self.elapsed_time, self._remaining_time = self.transition_function.update_state_time(
+        self.elapsed_time, self._sentence_wise_remaining_time_in_seconds = self.transition_function.update_state_time(
             elapsed_time=self.elapsed_time,
-            expected_sentence_reading_time=self._time_condition_value, # self._sentence_wise_expected_reading_time_in_seconds,
+            expected_sentence_reading_time=self._sentence_wise_expected_time_pressure_in_seconds,
             word_reading_time=self._sentence_info['individual_word_reading_time']
         )
         
@@ -542,7 +520,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
             "w_regression_cost": self._w_regression_cost,
             "w_comprehension_vs_reading_time": self._w_comprehension_vs_time_pressure,
             "elapsed_time": self.elapsed_time,
-            "remaining_time": self._remaining_time,
+            "remaining_time": self._sentence_wise_remaining_time_in_seconds,
         }
         return summarised_sentence_reading_logs
     
@@ -580,8 +558,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
             "time_condition": self._time_condition,
             "time_condition_value": self._time_condition_value,
             "elapsed_time": self.elapsed_time,
-            "remaining_time": self._remaining_time,
-            "sentence_wise_expected_reading_time_in_seconds": self._sentence_wise_expected_reading_time_in_seconds,
+            "remaining_time": self._sentence_wise_remaining_time_in_seconds,
+            "sentence_wise_expected_reading_time_in_seconds": self._sentence_wise_expected_time_pressure_in_seconds,
             "w_regression_cost": self._w_regression_cost,
             "w_comprehension_vs_reading_time": self._w_comprehension_vs_time_pressure,
             "num_steps": self._steps,
