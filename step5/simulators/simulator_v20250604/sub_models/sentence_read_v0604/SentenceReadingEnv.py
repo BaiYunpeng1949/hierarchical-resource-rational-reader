@@ -22,8 +22,8 @@ SIXTY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED
 NINETY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED * 1.5
 
 # Dataset
-# DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
-DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
+DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
+# DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
 
 
 class SentenceReadingUnderTimePressureEnv(Env):
@@ -207,7 +207,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
                 print(f"The initial remaining time is {self._remaining_time}")
                 print(f"The sampled comprehension vs time pressure is {self._w_comprehension_vs_time_pressure} now -----------------------------------------")
         elif self._mode == "simulate":
-            self._w_comprehension_vs_time_pressure = 1.0
+            self._w_comprehension_vs_time_pressure = 0.75
             print(f"NOTE: set the comprehension vs time pressure to a fixed value when running the simulator! Now the comprehension vs time pressure is {self._w_comprehension_vs_time_pressure}")
 
         # # Initialize the noisy skipped word integration probability sigma
