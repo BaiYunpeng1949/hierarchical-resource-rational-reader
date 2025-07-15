@@ -35,7 +35,7 @@ class SentencesManager():
             with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'metadata_sentence_indeces.json'), 'r') as f:
                 our_dataset_metadata = json.load(f)
             # Get the text word count for each stimulus
-            self._text_word_count_for_all_stimuli_list = [stimulus_data["total_words"] for stimulus_data in our_dataset_metadata.values()]
+            self._text_word_count_for_all_stimuli_list = [stimulus_data["total_words"] for stimulus_data in our_dataset_metadata]
             # # TODO debug delete later
             # print(f"The text word count for all stimuli is {self._text_word_count_for_all_stimuli_list}")
             

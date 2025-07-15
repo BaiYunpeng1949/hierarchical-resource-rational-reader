@@ -22,8 +22,8 @@ SIXTY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED
 NINETY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED * 1.5
 
 # Dataset
-# DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
-DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
+DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
+# DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
 
 
 class SentenceReadingUnderTimePressureEnv(Env):
@@ -212,7 +212,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
                 print(f"The initial remaining time is {self._sentence_wise_remaining_time_in_seconds}")
                 print(f"The sampled comprehension vs time pressure is {self._w_comprehension_vs_time_pressure} now -----------------------------------------")
         elif self._mode == "simulate":
-            self._w_comprehension_vs_time_pressure = 0.75
+            self._w_comprehension_vs_time_pressure = 1.00
             print(f"NOTE: set the comprehension vs time pressure to a fixed value when running the simulator! Now the comprehension vs time pressure is {self._w_comprehension_vs_time_pressure}")
 
         # Initialize the log variables
@@ -498,7 +498,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
             "current_word_index": self.current_word_index,
             "actual_reading_word_index": self.reading_sequence[-1],
             "elapsed_time": self.elapsed_time,
-            "remaining_time": self._remaining_time,
+            "remaining_time": self._sentence_wise_remaining_time_in_seconds,
         }
         return individual_step_log
     
@@ -516,7 +516,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
             "global_actual_fixation_sequence_in_text": self._get_global_actual_fixation_sequence_in_text(),
             "skipped_words_indexes": self._skipped_words_indexes.copy(),
             "regressed_words_indexes": self._regressed_words_indexes.copy(),
-            "sentence_wise_expected_reading_time_in_seconds": self._sentence_wise_expected_reading_time_in_seconds,
+            "sentence_wise_expected_reading_time_in_seconds": self._sentence_wise_expected_time_pressure_in_seconds,
             "w_regression_cost": self._w_regression_cost,
             "w_comprehension_vs_reading_time": self._w_comprehension_vs_time_pressure,
             "elapsed_time": self.elapsed_time,
