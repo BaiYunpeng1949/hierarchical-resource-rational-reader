@@ -66,7 +66,7 @@ class RewardFunction():
             overall_comprehension_log = 0.0
             if len(words_beliefs) > 0:
                 # Apply the softmin function to calculate the sentence-appraisals, such to stress the importance of the accurate word understandings, i.e., higher appraisals
-                overall_comprehension_scalar = Utilities.calc_dynamic_sentence_comprehension_score(words_beliefs)
+                overall_comprehension_scalar = Utilities.calc_dynamic_sentence_comprehension_score(words_beliefs, mode="mean")
             else:
                 overall_comprehension_scalar = 0.0
             

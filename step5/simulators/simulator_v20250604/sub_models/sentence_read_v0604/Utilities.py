@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from transformers import AutoModel, AutoTokenizer, AutoModelForMaskedLM
 from . import Constants
+# import Constants
 import json
 import os
 from tqdm import tqdm
@@ -29,6 +30,8 @@ def calc_dynamic_sentence_comprehension_score(scores, mode="softmin", tau=0.1):
     elif mode == "softmin":
         w = np.exp(-np.array(scores) / tau)
         return float((w * scores).sum() / w.sum())
+    elif mode == "mean":
+        return np.mean(scores)
     else:
         raise ValueError(f"Invalid mode: {mode}")
 
@@ -517,7 +520,29 @@ def process_dataset(input_path: str, output_path: str):
     print("Done! Dataset processed and saved with both integration difficulty and word prediction information.")
 
 if __name__ == "__main__":
-    # Process the dataset
-    input_path = os.path.join(os.path.dirname(__file__), "assets", "raw_sentences_dataset.json")
-    output_path = os.path.join(os.path.dirname(__file__), "assets", "sentences_dataset_processed.json")
-    process_dataset(input_path, output_path) 
+    # # Process the dataset
+    # input_path = os.path.join(os.path.dirname(__file__), "assets", "raw_sentences_dataset.json")
+    # output_path = os.path.join(os.path.dirname(__file__), "assets", "sentences_dataset_processed.json")
+    # process_dataset(input_path, output_path) 
+
+    scores = [0.30000000000000004,1.0,0.30000000000000004,1.0,0.30000000000000004,1.0,0.30000000000000004,1.0,0.30000000000000004,0.4,0.30000000000000004,1.0,0.30000000000000004,1.0,0.30000000000000004,1.0,0.6000000000000001,1.0]
+    print(scores)
+    print("--------------------------------")
+    print(calc_dynamic_sentence_comprehension_score(scores, mode="softmin", tau=0.1))
+    print(calc_dynamic_sentence_comprehension_score(scores, mode="geometric mean"))
+    print(calc_dynamic_sentence_comprehension_score(scores, mode="harmonic mean"))
+    print(calc_dynamic_sentence_comprehension_score(scores, mode="mean"))
+
+    score_2 = [0.30000000000000004,1.0,0.30000000000000004,1.0,0.30000000000000004,1.0,0.30000000000000004,1.0,0.30000000000000004,0.4,0.30000000000000004,1.0,0.30000000000000004,1.0,0.30000000000000004,1.0]
+    print("--------------------------------")
+    print(calc_dynamic_sentence_comprehension_score(score_2, mode="softmin", tau=0.1))
+    print(calc_dynamic_sentence_comprehension_score(score_2, mode="geometric mean"))
+    print(calc_dynamic_sentence_comprehension_score(score_2, mode="harmonic mean"))
+    print(calc_dynamic_sentence_comprehension_score(score_2, mode="mean"))
+
+    score_3 = [0.30000000000000004,1.0,0.30000000000000004,1.0,0.30000000000000004,1.0,0.30000000000000004,1.0,0.30000000000000004,0.4,0.30000000000000004,1.0,0.30000000000000004,1.0,1.0,1.0]
+    print("--------------------------------")
+    print(calc_dynamic_sentence_comprehension_score(score_3, mode="softmin", tau=0.1))
+    print(calc_dynamic_sentence_comprehension_score(score_3, mode="geometric mean"))
+    print(calc_dynamic_sentence_comprehension_score(score_3, mode="harmonic mean"))
+    print(calc_dynamic_sentence_comprehension_score(score_3, mode="mean"))

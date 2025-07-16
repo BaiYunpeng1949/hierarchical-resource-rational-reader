@@ -23,8 +23,8 @@ SIXTY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED
 NINETY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED * 1.5
 
 # Dataset
-DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
-# DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
+# DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
+DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
 
 
 class SentenceReadingUnderTimePressureEnv(Env):
@@ -140,7 +140,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._w_comprehension_vs_time_pressure = None    # NOTE: another parameter might be needed
         self._w_skip_degradation_factor = None
         self.MIN_W_SKIP_DEGRADATION_FACTOR = 0.25
-        self.MAX_W_SKIP_DEGRADATION_FACTOR = 0.75
+        self.MAX_W_SKIP_DEGRADATION_FACTOR = 1.00
 
         # Log variables
         self._log_individual_step_action = None
@@ -400,15 +400,6 @@ class SentenceReadingUnderTimePressureEnv(Env):
         # Get the on-going comprehension scalar
         # on_going_comprehension_scalar = np.clip(math.prod(valid_words_beliefs), 0, 1)
         self._ongoing_sentence_comprehension_score = self._compute_ongoing_sentence_comprehension_score(valid_words_beliefs)
-        # on_going_comprehension_log_scalar = 0.0
-        # if len(valid_words_beliefs) > 0:
-        #     # Apply the softmin function to calculate the sentence-appraisals, such to stress the importance of the accurate word understandings, i.e., higher appraisals
-        #     on_going_comprehension_log_scalar = Utilities.calc_dynamic_sentence_comprehension_score(valid_words_beliefs)
-        # else:
-        #     on_going_comprehension_log_scalar = 0.0
-        
-        # on_going_comprehension_log_scalar = np.clip(on_going_comprehension_log_scalar, 0, 1)
-        
         # Weights
         norm_w_regression_cost = self.normalise(self._w_regression_cost, 0, 1, 0, 1)
         # norm_w_skipping_cost = self.normalise(self._w_skipping_cost, self.MIN_W_SKIPPING_COST, self.MAX_W_SKIPPING_COST, 0, 1)
@@ -503,7 +494,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         """Compute the ongoing sentence comprehension score"""
         if len(valid_words_beliefs) > 0:
             # Apply the softmin function to calculate the sentence-appraisals, such to stress the importance of the accurate word understandings, i.e., higher appraisals
-            ongoing_sentence_comprehension_score = Utilities.calc_dynamic_sentence_comprehension_score(valid_words_beliefs)
+            ongoing_sentence_comprehension_score = Utilities.calc_dynamic_sentence_comprehension_score(valid_words_beliefs, mode="mean")
         else:
             ongoing_sentence_comprehension_score = 0.0
         
