@@ -75,6 +75,12 @@ class RewardFunction():
             # NOTE: linear reward: linear scaling for the comprehension performance
             final_reward = comprehension_reward + w_comprehension_vs_time_pressure * penalty_for_wasting_time
 
+            logs = {
+                "comprehension_reward": comprehension_reward,
+                "penalty_for_wasting_time": penalty_for_wasting_time,
+                "final_reward": final_reward,
+            }
+
             # TODO maybe need to check the metrics -- how come the skipping rate is above 50%? Should not exceed that.
                 
-            return final_reward
+            return final_reward, logs

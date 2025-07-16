@@ -23,8 +23,8 @@ SIXTY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED
 NINETY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED * 1.5
 
 # Dataset
-# DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
-DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
+DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
+# DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
 
 
 class SentenceReadingUnderTimePressureEnv(Env):
@@ -101,6 +101,10 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self.local_actual_fixation_sequence_in_sentence = None
         self.global_actual_fixation_sequence_in_text = None
 
+        # Comprehension score tracking
+        self._ongoing_sentence_comprehension_score = None
+        self._valid_words_beliefs = None
+
         # Time tracking
         self._time_condition = None
         self._time_condition_value = None
@@ -144,6 +148,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._log_remaining_time_list_for_each_index = None
         self._log_num_skips = None
         self._log_num_regressions = None
+        self._log_terminate_reward = None
+        self._log_terminate_reward_logs = None
         
     def reset(self, seed=42, inputs: dict=None):          # TODO do the resets later, get inputs to forcefully assign a sentence to read
         """
@@ -181,6 +187,10 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self.local_actual_fixation_sequence_in_sentence = []
         self.global_actual_fixation_sequence_in_text = []
 
+        # Reset the comprehension score tracking
+        self._ongoing_sentence_comprehension_score = 0.0
+        self._valid_words_beliefs = []
+
         # Reset the time related variables
         self._time_condition, self._time_condition_value = self.time_condition_manager.reset(inputs=inputs)
         # Approximate the time pressure for each sentence # Get the text information, because need this to approximate the time pressure for each sentence
@@ -215,7 +225,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
                 print(f"The initial remaining time is {self._sentence_wise_remaining_time_in_seconds}")
                 print(f"The sampled skip degradation factor is {self._w_skip_degradation_factor} now -----------------------------------------")
         elif self._mode == "simulate":
-            self._w_skip_degradation_factor = 0.50
+            self._w_skip_degradation_factor = 0.25
             print(f"NOTE: set the skip degradation factor to a fixed value when running the simulator! Now the skip degradation factor is {self._w_skip_degradation_factor}")
 
         # Initialize the log variables
@@ -223,6 +233,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._log_remaining_time_list_for_each_index = []
         self._log_num_skips = 0
         self._log_num_regressions = 0
+        self._log_terminate_reward = 0
 
         return self._get_obs(), {}
     
@@ -344,7 +355,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
             
             # Compute final comprehension reward
             valid_words_beliefs = [b for b in self._word_beliefs if b != -1]
-            reward = self.reward_function.compute_terminate_reward(
+            reward, self._log_terminate_reward_logs = self.reward_function.compute_terminate_reward(
                 sentence_len=self._sentence_len,
                 num_words_read=len(valid_words_beliefs),
                 words_beliefs=valid_words_beliefs,
@@ -352,6 +363,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
                 expected_sentence_reading_time=self._sentence_wise_expected_time_pressure_in_seconds,
                 w_comprehension_vs_time_pressure=self._w_comprehension_vs_time_pressure
             )
+            self._log_terminate_reward = reward
         else:
             info = {}
         
@@ -368,6 +380,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         current_position = self.normalise(self.current_word_index, 0, self._sentence_len - 1, 0, 1)
         
         valid_words_beliefs = [b for b in self._word_beliefs if b != -1]
+        self._valid_words_beliefs = valid_words_beliefs
 
         # Get remaining words (normalized)
         remaining_words = self.normalise(self._sentence_len - len(valid_words_beliefs), 0, self._sentence_len, 0, 1)
@@ -385,14 +398,15 @@ class SentenceReadingUnderTimePressureEnv(Env):
         observed_next_word_predictability = np.clip(norm_next_word_predictability + np.random.normal(0, self._noisy_obs_sigma), 0, 1)
         # Get the on-going comprehension scalar
         # on_going_comprehension_scalar = np.clip(math.prod(valid_words_beliefs), 0, 1)
-        on_going_comprehension_log_scalar = 0.0
-        if len(valid_words_beliefs) > 0:
-            # Apply the softmin function to calculate the sentence-appraisals, such to stress the importance of the accurate word understandings, i.e., higher appraisals
-            on_going_comprehension_log_scalar = Utilities.calc_dynamic_sentence_comprehension_score(valid_words_beliefs)
-        else:
-            on_going_comprehension_log_scalar = 0.0
+        self._ongoing_sentence_comprehension_score = self._compute_ongoing_sentence_comprehension_score(valid_words_beliefs)
+        # on_going_comprehension_log_scalar = 0.0
+        # if len(valid_words_beliefs) > 0:
+        #     # Apply the softmin function to calculate the sentence-appraisals, such to stress the importance of the accurate word understandings, i.e., higher appraisals
+        #     on_going_comprehension_log_scalar = Utilities.calc_dynamic_sentence_comprehension_score(valid_words_beliefs)
+        # else:
+        #     on_going_comprehension_log_scalar = 0.0
         
-        on_going_comprehension_log_scalar = np.clip(on_going_comprehension_log_scalar, 0, 1)
+        # on_going_comprehension_log_scalar = np.clip(on_going_comprehension_log_scalar, 0, 1)
         
         # Weights
         norm_w_regression_cost = self.normalise(self._w_regression_cost, 0, 1, 0, 1)
@@ -422,7 +436,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
             observed_previous_word_belief,
             observed_current_word_belief,
             observed_next_word_predictability,
-            on_going_comprehension_log_scalar,
+            self._ongoing_sentence_comprehension_score,
             norm_w_regression_cost,
             norm_w_skip_degradation_factor,
             norm_time_condition,
@@ -484,6 +498,19 @@ class SentenceReadingUnderTimePressureEnv(Env):
         degraded_skipped_word_integration_prob = perfect_skipped_word_integration_prob * self._w_skip_degradation_factor
         return degraded_skipped_word_integration_prob
     
+    def _compute_ongoing_sentence_comprehension_score(self, valid_words_beliefs):
+        """Compute the ongoing sentence comprehension score"""
+        if len(valid_words_beliefs) > 0:
+            # Apply the softmin function to calculate the sentence-appraisals, such to stress the importance of the accurate word understandings, i.e., higher appraisals
+            ongoing_sentence_comprehension_score = Utilities.calc_dynamic_sentence_comprehension_score(valid_words_beliefs)
+        else:
+            ongoing_sentence_comprehension_score = 0.0
+        
+        # Clip the ongoing sentence comprehension score to be in the range [0, 1]
+        ongoing_sentence_comprehension_score = np.clip(ongoing_sentence_comprehension_score, 0, 1)
+
+        return ongoing_sentence_comprehension_score
+    
     def get_individual_step_log(self) -> dict:
         """Get individual step log"""
         if self._log_individual_step_action == self._REGRESS_ACTION:
@@ -504,6 +531,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
             "actual_reading_word_index": self.reading_sequence[-1],
             "elapsed_time": self.elapsed_time,
             "remaining_time": self._sentence_wise_remaining_time_in_seconds,
+            "valid_words_beliefs": self._valid_words_beliefs.copy(),
+            "ongoing_sentence_comprehension_score": self._ongoing_sentence_comprehension_score,
         }
         return individual_step_log
     
@@ -512,6 +541,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         summarised_sentence_reading_logs = {
             "sentence_id": self._sentence_info['sentence_id'],
             "num_words_in_sentence": self._sentence_len, 
+            "original_words_intergration_values (beliefs)": self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'].copy(),
             "num_steps_or_fixations": self._steps,
             "num_regressions": self._log_num_regressions,
             "num_skips": self._log_num_skips,
@@ -526,6 +556,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
             "w_skip_degradation_factor": self._w_skip_degradation_factor,
             "elapsed_time": self.elapsed_time,
             "remaining_time": self._sentence_wise_remaining_time_in_seconds,
+            "sentence_terminate_reward": self._log_terminate_reward,
+            "sentence_terminate_reward_logs": self._log_terminate_reward_logs,
         }
         return summarised_sentence_reading_logs
     
