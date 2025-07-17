@@ -23,8 +23,8 @@ SIXTY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED
 NINETY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED * 1.5
 
 # Dataset
-DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
-# DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
+# DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
+DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
 
 
 class SentenceReadingUnderTimePressureEnv(Env):
@@ -139,7 +139,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._w_skipping_cost = None            # NOTE: maybe the most important parameter to tune for reading under time pressure
         self._w_comprehension_vs_time_pressure = None    # NOTE: another parameter might be needed
         self.MIN_W_COMPREHENSION_VS_TIME_PRESSURE = 0.0
-        self.MAX_W_COMPREHENSION_VS_TIME_PRESSURE = 0.10
+        self.MAX_W_COMPREHENSION_VS_TIME_PRESSURE = 0.5
         self._w_skip_degradation_factor = None
         self.MIN_W_SKIP_DEGRADATION_FACTOR = 0.25
         self.MAX_W_SKIP_DEGRADATION_FACTOR = 1.00
