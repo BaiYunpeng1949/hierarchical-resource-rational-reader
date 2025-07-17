@@ -23,8 +23,8 @@ SIXTY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED
 NINETY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED * 1.5
 
 # Dataset
-# DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
-DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
+DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
+# DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
 
 
 class SentenceReadingUnderTimePressureEnv(Env):
@@ -231,8 +231,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
                 print(f"The sampled comprehension vs time pressure is {self._w_comprehension_vs_time_pressure} now -----------------------------------------")
         elif self._mode == "simulate":
             # self._w_skip_degradation_factor = 1.00
-            self._w_comprehension_vs_time_pressure = 0.5
-            print(f"NOTE: set the skip degradation factor to a fixed value when running the simulator! Now the skip degradation factor is {self._w_skip_degradation_factor}")
+            self._w_comprehension_vs_time_pressure = 0.1
+            print(f"NOTE: set the comprehension vs time pressure to a fixed value when running the simulator! Now the comprehension vs time pressure is {self._w_comprehension_vs_time_pressure}")
 
         # Initialize the log variables
         self._log_elapsed_time_list_for_each_index = []
