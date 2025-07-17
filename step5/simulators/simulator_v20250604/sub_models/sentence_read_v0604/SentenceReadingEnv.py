@@ -23,8 +23,8 @@ SIXTY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED
 NINETY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED * 1.5
 
 # Dataset
-DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
-# DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
+# DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
+DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
 
 
 class SentenceReadingUnderTimePressureEnv(Env):
@@ -138,6 +138,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._w_regression_cost = None          # NOTE: the most important parameter to tune for natural reading
         self._w_skipping_cost = None            # NOTE: maybe the most important parameter to tune for reading under time pressure
         self._w_comprehension_vs_time_pressure = None    # NOTE: another parameter might be needed
+        self.MIN_W_COMPREHENSION_VS_TIME_PRESSURE = 0.0
+        self.MAX_W_COMPREHENSION_VS_TIME_PRESSURE = 0.10
         self._w_skip_degradation_factor = None
         self.MIN_W_SKIP_DEGRADATION_FACTOR = 0.25
         self.MAX_W_SKIP_DEGRADATION_FACTOR = 1.00
@@ -215,17 +217,21 @@ class SentenceReadingUnderTimePressureEnv(Env):
         # Initialize a random regression cost
         # self._w_regression_cost = random.uniform(0, 1)   # NOTE: uncomment when training!!!!
         self._w_regression_cost = 1.0    # NOTE: uncomment when testing!!!!
-        self._w_comprehension_vs_time_pressure = 1.0
+
+        self._w_skip_degradation_factor = 0.50
 
         # Initialize the skipping cost
         if self._mode == "train" or self._mode == "continual_train" or self._mode == "debug":
             # self._w_skipping_cost = random.randint(self.MIN_W_SKIPPING_COST, self.MAX_W_SKIPPING_COST)
-            self._w_skip_degradation_factor = random.uniform(self.MIN_W_SKIP_DEGRADATION_FACTOR, self.MAX_W_SKIP_DEGRADATION_FACTOR)
+            # self._w_skip_degradation_factor = random.uniform(self.MIN_W_SKIP_DEGRADATION_FACTOR, self.MAX_W_SKIP_DEGRADATION_FACTOR)
+            self._w_comprehension_vs_time_pressure = random.uniform(self.MIN_W_COMPREHENSION_VS_TIME_PRESSURE, self.MAX_W_COMPREHENSION_VS_TIME_PRESSURE)
             if self._mode == "debug":
-                print(f"The initial remaining time is {self._sentence_wise_remaining_time_in_seconds}")
-                print(f"The sampled skip degradation factor is {self._w_skip_degradation_factor} now -----------------------------------------")
+                # print(f"The initial remaining time is {self._sentence_wise_remaining_time_in_seconds}")
+                # print(f"The sampled skip degradation factor is {self._w_skip_degradation_factor} now -----------------------------------------")
+                print(f"The sampled comprehension vs time pressure is {self._w_comprehension_vs_time_pressure} now -----------------------------------------")
         elif self._mode == "simulate":
-            self._w_skip_degradation_factor = 1.00
+            # self._w_skip_degradation_factor = 1.00
+            self._w_comprehension_vs_time_pressure = 0.5
             print(f"NOTE: set the skip degradation factor to a fixed value when running the simulator! Now the skip degradation factor is {self._w_skip_degradation_factor}")
 
         # Initialize the log variables
@@ -404,7 +410,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
         norm_w_regression_cost = self.normalise(self._w_regression_cost, 0, 1, 0, 1)
         # norm_w_skipping_cost = self.normalise(self._w_skipping_cost, self.MIN_W_SKIPPING_COST, self.MAX_W_SKIPPING_COST, 0, 1)
         # norm_noisy_skipped_word_integration_prob_sigma = self.normalise(self._noisy_skipped_word_integration_prob_sigma, self.MIN_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA, self.MAX_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA, 0, 1)
-        norm_w_skip_degradation_factor = self.normalise(self._w_skip_degradation_factor, self.MIN_W_SKIP_DEGRADATION_FACTOR, self.MAX_W_SKIP_DEGRADATION_FACTOR, 0, 1)
+        # norm_w_skip_degradation_factor = self.normalise(self._w_skip_degradation_factor, self.MIN_W_SKIP_DEGRADATION_FACTOR, self.MAX_W_SKIP_DEGRADATION_FACTOR, 0, 1)
+        norm_w_comprehension_vs_time_pressure = self.normalise(self._w_comprehension_vs_time_pressure, self.MIN_W_COMPREHENSION_VS_TIME_PRESSURE, self.MAX_W_COMPREHENSION_VS_TIME_PRESSURE, 0, 1)
 
         # Time related variables
         if self._time_condition == "30s":
@@ -430,7 +437,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
             observed_next_word_predictability,
             self._ongoing_sentence_comprehension_score,
             norm_w_regression_cost,
-            norm_w_skip_degradation_factor,
+            # norm_w_skip_degradation_factor,
+            norm_w_comprehension_vs_time_pressure,
             norm_time_condition,
             norm_remaining_time
         ])
@@ -546,6 +554,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
             "sentence_wise_expected_reading_time_in_seconds": self._sentence_wise_expected_time_pressure_in_seconds,
             "w_regression_cost": self._w_regression_cost,
             "w_skip_degradation_factor": self._w_skip_degradation_factor,
+            "w_comprehension_vs_time_pressure": self._w_comprehension_vs_time_pressure,
             "elapsed_time": self.elapsed_time,
             "remaining_time": self._sentence_wise_remaining_time_in_seconds,
             "sentence_terminate_reward": self._log_terminate_reward,
