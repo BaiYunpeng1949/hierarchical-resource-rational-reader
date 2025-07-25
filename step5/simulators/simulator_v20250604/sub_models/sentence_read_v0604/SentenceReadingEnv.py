@@ -222,23 +222,25 @@ class SentenceReadingUnderTimePressureEnv(Env):
         # Initialize a random regression cost
         # self._w_regression_cost = random.uniform(0, 1)   # NOTE: uncomment when training!!!!
         self._w_regression_cost = 1.0    # NOTE: uncomment when testing!!!!
+        
+        # NOTE: The two tunable parameters, try, if identified, get it into the Bayesian optimization later
+        self._w_skip_degradation_factor = 0.5
+        self._w_comprehension_vs_time_pressure = 0.5
 
-        self._w_skip_degradation_factor = 1.0
-
-        # Initialize the skipping cost
-        if self._mode == "train" or self._mode == "continual_train" or self._mode == "debug":
-            # self._w_skipping_cost = random.randint(self.MIN_W_SKIPPING_COST, self.MAX_W_SKIPPING_COST)
-            # self._w_skip_degradation_factor = random.uniform(self.MIN_W_SKIP_DEGRADATION_FACTOR, self.MAX_W_SKIP_DEGRADATION_FACTOR)
-            # self._w_comprehension_vs_time_pressure = random.uniform(self.MIN_W_COMPREHENSION_VS_TIME_PRESSURE, self.MAX_W_COMPREHENSION_VS_TIME_PRESSURE)  # NOTE: abandon this amortised training
-            self._w_comprehension_vs_time_pressure = 0.5
-            if self._mode == "debug":
-                # print(f"The initial remaining time is {self._sentence_wise_remaining_time_in_seconds}")
-                # print(f"The sampled skip degradation factor is {self._w_skip_degradation_factor} now -----------------------------------------")
-                print(f"The sampled comprehension vs time pressure is {self._w_comprehension_vs_time_pressure} now -----------------------------------------")
-        elif self._mode == "simulate":
-            # self._w_skip_degradation_factor = 1.00
-            self._w_comprehension_vs_time_pressure = 0.5
-            print(f"NOTE: set the comprehension vs time pressure to a fixed value when running the simulator! Now the comprehension vs time pressure is {self._w_comprehension_vs_time_pressure}")
+        # # Initialize the skipping cost
+        # if self._mode == "train" or self._mode == "continual_train" or self._mode == "debug":
+        #     # self._w_skipping_cost = random.randint(self.MIN_W_SKIPPING_COST, self.MAX_W_SKIPPING_COST)
+        #     # self._w_skip_degradation_factor = random.uniform(self.MIN_W_SKIP_DEGRADATION_FACTOR, self.MAX_W_SKIP_DEGRADATION_FACTOR)
+        #     # self._w_comprehension_vs_time_pressure = random.uniform(self.MIN_W_COMPREHENSION_VS_TIME_PRESSURE, self.MAX_W_COMPREHENSION_VS_TIME_PRESSURE)  # NOTE: abandon this amortised training
+        #     self._w_comprehension_vs_time_pressure = 0.5
+        #     if self._mode == "debug":
+        #         # print(f"The initial remaining time is {self._sentence_wise_remaining_time_in_seconds}")
+        #         # print(f"The sampled skip degradation factor is {self._w_skip_degradation_factor} now -----------------------------------------")
+        #         print(f"The sampled comprehension vs time pressure is {self._w_comprehension_vs_time_pressure} now -----------------------------------------")
+        # elif self._mode == "simulate":
+        #     # self._w_skip_degradation_factor = 1.00
+        #     self._w_comprehension_vs_time_pressure = 0.5
+        #     print(f"NOTE: set the comprehension vs time pressure to a fixed value when running the simulator! Now the comprehension vs time pressure is {self._w_comprehension_vs_time_pressure}")
 
         # Initialize the log variables
         self._log_elapsed_time_list_for_each_index = []
