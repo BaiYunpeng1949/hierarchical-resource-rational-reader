@@ -17,14 +17,14 @@ from . import Constants
 from . import Utilities
 
 
-# Tunable parameters -- Units: words per second
-THIRTY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED / 2
-SIXTY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED
-NINETY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED * 1.5
+# # Tunable parameters -- Units: words per second
+# THIRTY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED / 2
+# SIXTY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED
+# NINETY_SECONDS_EXPECTED_READING_SPEED = Constants.READING_SPEED * 1.5
 
-# Dataset
-DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
-# DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
+# # Dataset
+# DATASET = "Ours"      # NOTE: I recommend using this dataset for testing
+# # DATASET = "ZuCo1.0"       # NOTE: I recommend using this dataset for training 
 
 
 class SentenceReadingUnderTimePressureEnv(Env):
@@ -33,6 +33,10 @@ class SentenceReadingUnderTimePressureEnv(Env):
         Create on 19 March 2025.
         This is the environment for the RL-based intermediate level -- sentence-level control agent: 
             it controls, word skippings, word revisits, and when to stop reading in a given sentence
+        Updated in July, 2025.
+            I tried to amortisely train the model, learn an agent that could adapt to different parameters. But did not go well.
+        Updated on 25 July, 2025.
+            I tried to use the Bayesian optimization to tune the parameters. Only one parameter to train at a time.
         
         Features: predict the word skipping and word revisiting decisions, and when to stop reading.
         Cognitive constraints: (limited time and cognitive resources) 
@@ -70,10 +74,11 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._mode = self._config["rl"]["mode"]
 
         if self._mode == "simulate":
+            DATASET = "Ours"
             assert DATASET == "Ours", f"Invalid dataset: {DATASET}, should be 'Ours' when running the simulator!"
         elif self._mode == "train" or self._mode == "continual_train" or self._mode == "debug":
+            DATASET = "ZuCo1.0"
             assert DATASET == "ZuCo1.0", f"Invalid dataset: {DATASET}, should be 'ZuCo1.0' when training the model!"
-            # pass
         print(f"Sentence Reading Under Time Pressure Environment V0604 -- Deploying in {self._mode} mode with the dataset {DATASET}")
 
         # Initialize components
@@ -218,13 +223,14 @@ class SentenceReadingUnderTimePressureEnv(Env):
         # self._w_regression_cost = random.uniform(0, 1)   # NOTE: uncomment when training!!!!
         self._w_regression_cost = 1.0    # NOTE: uncomment when testing!!!!
 
-        self._w_skip_degradation_factor = 0.50
+        self._w_skip_degradation_factor = 1.0
 
         # Initialize the skipping cost
         if self._mode == "train" or self._mode == "continual_train" or self._mode == "debug":
             # self._w_skipping_cost = random.randint(self.MIN_W_SKIPPING_COST, self.MAX_W_SKIPPING_COST)
             # self._w_skip_degradation_factor = random.uniform(self.MIN_W_SKIP_DEGRADATION_FACTOR, self.MAX_W_SKIP_DEGRADATION_FACTOR)
-            self._w_comprehension_vs_time_pressure = random.uniform(self.MIN_W_COMPREHENSION_VS_TIME_PRESSURE, self.MAX_W_COMPREHENSION_VS_TIME_PRESSURE)
+            # self._w_comprehension_vs_time_pressure = random.uniform(self.MIN_W_COMPREHENSION_VS_TIME_PRESSURE, self.MAX_W_COMPREHENSION_VS_TIME_PRESSURE)  # NOTE: abandon this amortised training
+            self._w_comprehension_vs_time_pressure = 0.5
             if self._mode == "debug":
                 # print(f"The initial remaining time is {self._sentence_wise_remaining_time_in_seconds}")
                 # print(f"The sampled skip degradation factor is {self._w_skip_degradation_factor} now -----------------------------------------")

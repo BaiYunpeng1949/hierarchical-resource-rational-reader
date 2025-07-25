@@ -55,12 +55,13 @@ class RewardFunction():
         """
         
         if num_words_read < sentence_len:   # If the agent did not finish the sentence reading, then the reward is 0
+            not_finished_penalty = -100
             logs = {
                 "comprehension_reward": 0,
                 "penalty_for_wasting_time": 0,
-                "final_reward": -100,
+                "final_reward": not_finished_penalty,
             }
-            return -100, logs
+            return not_finished_penalty, logs
         else:    # If the agent finished the sentence reading, then compute the reward
             # Compute geometric mean of word beliefs
             overall_comprehension_log = 0.0
@@ -70,10 +71,10 @@ class RewardFunction():
             else:
                 overall_comprehension_scalar = 0.0
             
-            comprehension_reward = 100 * self._coefficeint_comprehension * overall_comprehension_scalar
+            comprehension_reward = 10 * self._coefficeint_comprehension * overall_comprehension_scalar
 
             if remaining_time < 0:    # If the agent finished the sentence reading out of expected time, then apply some penalties
-                penalty_for_wasting_time = 100 * (remaining_time / expected_sentence_reading_time)    # NOTE: see if need a parameter to tune here later (re-use w_comprehension_vs_time_pressure)
+                penalty_for_wasting_time = 10 * (remaining_time / expected_sentence_reading_time)    # NOTE: see if need a parameter to tune here later (re-use w_comprehension_vs_time_pressure)
             else:
                 penalty_for_wasting_time = 0
 
