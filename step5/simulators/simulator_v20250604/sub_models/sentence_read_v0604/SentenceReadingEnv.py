@@ -225,7 +225,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         
         # NOTE: The two tunable parameters, try, if identified, get it into the Bayesian optimization later
         self._w_skip_degradation_factor = 0.5
-        self._w_comprehension_vs_time_pressure = 0.5
+        self._w_comprehension_vs_time_pressure = 0.1
 
         # # Initialize the skipping cost
         # if self._mode == "train" or self._mode == "continual_train" or self._mode == "debug":
