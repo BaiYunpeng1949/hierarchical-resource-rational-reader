@@ -225,7 +225,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         
         # NOTE: The two tunable parameters, try, if identified, get it into the Bayesian optimization later
         self._w_skip_degradation_factor = 0.5
-        self._w_comprehension_vs_time_pressure = 0.1
+        self._w_comprehension_vs_time_pressure = 0.5
 
         # Initialize the log variables
         self._log_elapsed_time_list_for_each_index = []
