@@ -224,7 +224,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._w_regression_cost = 1.0    # NOTE: uncomment when testing!!!!
         
         # NOTE: The two tunable parameters, try, if identified, get it into the Bayesian optimization later
-        self._w_skip_degradation_factor = 0.5
+        self._w_skip_degradation_factor = 1.0
         self._w_comprehension_vs_time_pressure = 0.5
 
         # Initialize the log variables
