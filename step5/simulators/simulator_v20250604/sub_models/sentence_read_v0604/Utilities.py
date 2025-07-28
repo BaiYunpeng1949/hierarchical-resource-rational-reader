@@ -22,18 +22,21 @@ def calc_dynamic_sentence_comprehension_score(scores, mode="softmin", tau=0.1):
     Returns:
         float
     """
-    if mode == "geometric mean":
-        log_sum = sum(math.log(max(s, 1e-9)) for s in scores)
-        return math.exp(log_sum / len(scores))
-    elif mode == "harmonic mean":
-        return len(scores) / sum(1/s for s in scores)
-    elif mode == "softmin":
-        w = np.exp(-np.array(scores) / tau)
-        return float((w * scores).sum() / w.sum())
-    elif mode == "mean":
-        return np.mean(scores)
+    if len(scores) == 0:
+        return 0
     else:
-        raise ValueError(f"Invalid mode: {mode}")
+        if mode == "geometric mean":
+            log_sum = sum(math.log(max(s, 1e-9)) for s in scores)
+            return math.exp(log_sum / len(scores))
+        elif mode == "harmonic mean":
+            return len(scores) / sum(1/s for s in scores)
+        elif mode == "softmin":
+            w = np.exp(-np.array(scores) / tau)
+            return float((w * scores).sum() / w.sum())
+        elif mode == "mean":
+            return np.mean(scores)
+        else:
+            raise ValueError(f"Invalid mode: {mode}")
 
 
 def compute_integration_difficulty(tokenizer, model, context: list[str], word: str, full_sentence: list[str], current_word_idx: int) -> tuple[float, float, float, float]:

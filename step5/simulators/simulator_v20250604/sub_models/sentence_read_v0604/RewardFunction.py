@@ -48,6 +48,16 @@ class RewardFunction():
         """
         return -0.1 * self._coefficient_eye_movement_cost
     
+    def compute_step_wise_comprehension_gain(self, w_comprehension_gain, old_beliefs, new_beliefs):
+        """
+        Compute the step-wise reward for the comprehension gain
+        """
+        # Make sure these beliefs are valid
+        valid_new_beliefs = [b for b in new_beliefs if b != -1]
+        valid_old_beliefs = [b for b in old_beliefs if b != -1]
+        comprehension_gain = Utilities.calc_dynamic_sentence_comprehension_score(valid_new_beliefs) - Utilities.calc_dynamic_sentence_comprehension_score(valid_old_beliefs)
+        return w_comprehension_gain * comprehension_gain
+    
     def compute_terminate_reward(self, sentence_len: int, num_words_read: int, words_beliefs: list[float], remaining_time: float, expected_sentence_reading_time: float, w_comprehension_vs_time_pressure: float):
         """
         Compute reward for terminating reading.
@@ -55,7 +65,7 @@ class RewardFunction():
         """
         
         if num_words_read < sentence_len:   # If the agent did not finish the sentence reading, then the reward is 0
-            not_finished_penalty = -100
+            not_finished_penalty = -10
             logs = {
                 "comprehension_reward": 0,
                 "penalty_for_wasting_time": 0,
@@ -63,6 +73,8 @@ class RewardFunction():
             }
             return not_finished_penalty, logs
         else:    # If the agent finished the sentence reading, then compute the reward
+            final_step_bonus_fundation_value = 1.0
+            
             # Compute geometric mean of word beliefs
             overall_comprehension_log = 0.0
             if len(words_beliefs) > 0:
@@ -71,10 +83,10 @@ class RewardFunction():
             else:
                 overall_comprehension_scalar = 0.0
             
-            comprehension_reward = 100* self._coefficeint_comprehension * overall_comprehension_scalar
+            comprehension_reward = final_step_bonus_fundation_value * overall_comprehension_scalar
 
             if remaining_time < 0:    # If the agent finished the sentence reading out of expected time, then apply some penalties
-                penalty_for_wasting_time = 100 * (remaining_time / expected_sentence_reading_time)    # NOTE: see if need a parameter to tune here later (re-use w_comprehension_vs_time_pressure)
+                penalty_for_wasting_time = final_step_bonus_fundation_value * (remaining_time / expected_sentence_reading_time)    # NOTE: see if need a parameter to tune here later (re-use w_comprehension_vs_time_pressure)
             else:
                 penalty_for_wasting_time = 0
 

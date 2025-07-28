@@ -135,7 +135,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self.action_space = Discrete(4)     
         
         # Observation space - simplified to scalar signals
-        self._num_stateful_obs = 6 + 2 + 2      # +2 for the regression cost and the weighted skipped word integration probability sigma, +2 for the time condition and remaining time
+        self._num_stateful_obs = 6 + 2      # +2 for the time condition and remaining time
         self.observation_space = Box(low=0, high=1, shape=(self._num_stateful_obs,))         # TODO: need to change these to -1 to 1, because sometimes the remaining time is negative, or change the specific observation!!!
         self._noisy_obs_sigma = Constants.NOISY_OBS_SIGMA
 
@@ -148,6 +148,9 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._w_skip_degradation_factor = None
         self.MIN_W_SKIP_DEGRADATION_FACTOR = 0.25
         self.MAX_W_SKIP_DEGRADATION_FACTOR = 1.00
+        self._w_step_wise_comprehension_gain = None
+        self.MIN_W_STEP_WISE_COMPREHENSION_GAIN = 0.0
+        self.MAX_W_STEP_WISE_COMPREHENSION_GAIN = 1.0
 
         # Log variables
         self._log_individual_step_action = None
@@ -204,15 +207,6 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._baseline_time_needed_to_read_text = self._text_word_count * Constants.READING_SPEED
         # Get the time pressure for each sentence
         self._time_pressure_scalar_for_the_sentence = self._time_condition_value / self._baseline_time_needed_to_read_text    # belongs to [0, infinity]
-        # if self._time_condition == "30s":
-        #     reading_speed = THIRTY_SECONDS_EXPECTED_READING_SPEED
-        # elif self._time_condition == "60s":
-        #     reading_speed = SIXTY_SECONDS_EXPECTED_READING_SPEED
-        # elif self._time_condition == "90s":
-        #     reading_speed = NINETY_SECONDS_EXPECTED_READING_SPEED
-        # else:
-        #     raise ValueError(f"Invalid time condition: {self._time_condition}")
-        # NOTE: use only one rough reading speed, then cut-off the trial when the time is running out, but only for the training. For simulation, allow the agent to read as long as it wants.
         reading_speed = Constants.READING_SPEED
         self._sentence_wise_expected_time_pressure_in_seconds = reading_speed * self._sentence_len * self._time_pressure_scalar_for_the_sentence
         self.elapsed_time = 0
@@ -226,6 +220,9 @@ class SentenceReadingUnderTimePressureEnv(Env):
         # NOTE: The two tunable parameters, try, if identified, get it into the Bayesian optimization later
         self._w_skip_degradation_factor = 0.8
         self._w_comprehension_vs_time_pressure = 0.5
+
+        # Tunable step-wise parameter
+        self._w_step_wise_comprehension_gain = 0.5
 
         # Initialize the log variables
         self._log_elapsed_time_list_for_each_index = []
@@ -242,6 +239,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         reward = 0
 
         self._log_individual_step_action = action
+        old_word_beliefs = self._word_beliefs.copy()
 
         if action == self._REGRESS_ACTION:
             self.current_word_index, action_validity = (
@@ -268,7 +266,11 @@ class SentenceReadingUnderTimePressureEnv(Env):
 
                 self._log_num_regressions += 1
 
-            reward = self.reward_function.compute_regress_reward(w_regression_cost=self._w_regression_cost)
+            reward = self.reward_function.compute_regress_reward(w_regression_cost=self._w_regression_cost) + self.reward_function.compute_step_wise_comprehension_gain(
+                w_comprehension_gain=self._w_step_wise_comprehension_gain, 
+                old_beliefs=old_word_beliefs, 
+                new_beliefs=self._word_beliefs.copy()
+                )
         
         elif action == self._SKIP_ACTION:
             self.current_word_index, action_validity = (
@@ -313,7 +315,11 @@ class SentenceReadingUnderTimePressureEnv(Env):
 
                 self._log_num_skips += 1
 
-            reward = self.reward_function.compute_skip_reward()
+            reward = self.reward_function.compute_skip_reward() + self.reward_function.compute_step_wise_comprehension_gain(
+                w_comprehension_gain=self._w_step_wise_comprehension_gain, 
+                old_beliefs=old_word_beliefs, 
+                new_beliefs=self._word_beliefs.copy()
+                )
         
         elif action == self._READ_ACTION:
             self.current_word_index, action_validity = (
@@ -339,7 +345,11 @@ class SentenceReadingUnderTimePressureEnv(Env):
                     # Update the time related variables
                     self._update_time_related_variables()
 
-            reward = self.reward_function.compute_read_reward()
+            reward = self.reward_function.compute_read_reward() + self.reward_function.compute_step_wise_comprehension_gain(
+                w_comprehension_gain=self._w_step_wise_comprehension_gain, 
+                old_beliefs=old_word_beliefs, 
+                new_beliefs=self._word_beliefs.copy()
+                )
 
         elif action == self._STOP_ACTION:
             self._terminate = True
@@ -391,20 +401,18 @@ class SentenceReadingUnderTimePressureEnv(Env):
         norm_next_word_predictability = np.clip(self._sentence_info['words_predictabilities_for_running_model'][self.current_word_index + 1], 0, 1) if self.current_word_index + 1 is not None and 0 <= self.current_word_index + 1 < self._sentence_len else 1
 
         # Apply noisy observation for a more robust model -- compensation for the limited data
-        # NOTE: the noisy observation is applied to the normalized values. 
-        # NOTE: if it is too small, no effect to model's stochasticity, if too large, the agent finds it hard to learn reasonable policy (no regression or skipping)
-        observed_previous_word_belief = np.clip(norm_previous_word_belief + np.random.normal(0, self._noisy_obs_sigma), 0, 1)
-        observed_current_word_belief = np.clip(norm_current_word_belief + np.random.normal(0, self._noisy_obs_sigma), 0, 1) 
-        observed_next_word_predictability = np.clip(norm_next_word_predictability + np.random.normal(0, self._noisy_obs_sigma), 0, 1)
+        observed_previous_word_belief = norm_previous_word_belief
+        observed_current_word_belief = norm_current_word_belief
+        observed_next_word_predictability = norm_next_word_predictability
         # Get the on-going comprehension scalar
         # on_going_comprehension_scalar = np.clip(math.prod(valid_words_beliefs), 0, 1)
         self._ongoing_sentence_comprehension_score = self._compute_ongoing_sentence_comprehension_score(valid_words_beliefs)
         # Weights
-        norm_w_regression_cost = self.normalise(self._w_regression_cost, 0, 1, 0, 1)
-        # norm_w_skipping_cost = self.normalise(self._w_skipping_cost, self.MIN_W_SKIPPING_COST, self.MAX_W_SKIPPING_COST, 0, 1)
-        # norm_noisy_skipped_word_integration_prob_sigma = self.normalise(self._noisy_skipped_word_integration_prob_sigma, self.MIN_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA, self.MAX_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA, 0, 1)
-        # norm_w_skip_degradation_factor = self.normalise(self._w_skip_degradation_factor, self.MIN_W_SKIP_DEGRADATION_FACTOR, self.MAX_W_SKIP_DEGRADATION_FACTOR, 0, 1)
-        norm_w_comprehension_vs_time_pressure = self.normalise(self._w_comprehension_vs_time_pressure, self.MIN_W_COMPREHENSION_VS_TIME_PRESSURE, self.MAX_W_COMPREHENSION_VS_TIME_PRESSURE, 0, 1)
+        # norm_w_regression_cost = self.normalise(self._w_regression_cost, 0, 1, 0, 1)
+        # # norm_w_skipping_cost = self.normalise(self._w_skipping_cost, self.MIN_W_SKIPPING_COST, self.MAX_W_SKIPPING_COST, 0, 1)
+        # # norm_noisy_skipped_word_integration_prob_sigma = self.normalise(self._noisy_skipped_word_integration_prob_sigma, self.MIN_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA, self.MAX_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA, 0, 1)
+        # # norm_w_skip_degradation_factor = self.normalise(self._w_skip_degradation_factor, self.MIN_W_SKIP_DEGRADATION_FACTOR, self.MAX_W_SKIP_DEGRADATION_FACTOR, 0, 1)
+        # norm_w_comprehension_vs_time_pressure = self.normalise(self._w_comprehension_vs_time_pressure, self.MIN_W_COMPREHENSION_VS_TIME_PRESSURE, self.MAX_W_COMPREHENSION_VS_TIME_PRESSURE, 0, 1)
 
         # Time related variables
         if self._time_condition == "30s":
@@ -429,9 +437,9 @@ class SentenceReadingUnderTimePressureEnv(Env):
             observed_current_word_belief,
             observed_next_word_predictability,
             self._ongoing_sentence_comprehension_score,
-            norm_w_regression_cost,
+            # norm_w_regression_cost,
             # norm_w_skip_degradation_factor,
-            norm_w_comprehension_vs_time_pressure,
+            # norm_w_comprehension_vs_time_pressure,
             norm_time_condition,
             norm_remaining_time
         ])
