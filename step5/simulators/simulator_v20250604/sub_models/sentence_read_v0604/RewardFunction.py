@@ -83,10 +83,10 @@ class RewardFunction():
             else:
                 overall_comprehension_scalar = 0.0
             
-            comprehension_reward = final_step_bonus_fundation_value * overall_comprehension_scalar
+            comprehension_reward = 50 * overall_comprehension_scalar
 
             if remaining_time < 0:    # If the agent finished the sentence reading out of expected time, then apply some penalties
-                penalty_for_wasting_time = final_step_bonus_fundation_value * (remaining_time / expected_sentence_reading_time)    # NOTE: see if need a parameter to tune here later (re-use w_comprehension_vs_time_pressure)
+                penalty_for_wasting_time = 10 * (remaining_time / expected_sentence_reading_time)    # NOTE: see if need a parameter to tune here later (re-use w_comprehension_vs_time_pressure)
             else:
                 penalty_for_wasting_time = 0
 
