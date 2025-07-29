@@ -214,13 +214,14 @@ class SentenceReadingUnderTimePressureEnv(Env):
         # Get the time pressure for each sentence
         self._time_pressure_scalar_for_the_sentence = self._time_condition_value / self._baseline_time_needed_to_read_text    # belongs to [0, infinity]
         
-        self._w_time_perception = 1.2          # Now I assume it is a tunable parameter
+        self._w_time_perception = 1.8          # Now I assume it is a tunable parameter
         granted_step_budget_factor = 1 - np.exp(-self._w_time_perception * self._time_pressure_scalar_for_the_sentence)     # '1 -' so that time conditions with higher value could have a higher grant factor
         # Granted step budget
         self._granted_step_budget = np.ceil(granted_step_budget_factor * self._sentence_len)      # This value is definitely smaller than the sentence lenght.
 
         # # TODO debug delete later
         # print(f"The time pressure scalar for the sentence is: {self._time_pressure_scalar_for_the_sentence}, the time condition is: {self._time_condition}, granted step budget factor: {granted_step_budget_factor}")
+        # print(f"The sentence length is: {self._sentence_len}, and the granted step budget is: {self._granted_step_budget}")
 
         reading_speed = Constants.READING_SPEED
         self._sentence_wise_expected_time_pressure_in_seconds = reading_speed * self._sentence_len * self._time_pressure_scalar_for_the_sentence
@@ -234,9 +235,9 @@ class SentenceReadingUnderTimePressureEnv(Env):
         
         # NOTE: The two tunable parameters, try, if identified, get it into the Bayesian optimization later
         self._w_skip_degradation_factor = 0.8
-        self._w_comprehension_vs_time_pressure = 0.5
+        self._w_comprehension_vs_time_pressure = 0.5    # TODO maybe delete
         # Tunable step-wise parameter
-        self._w_step_wise_comprehension_gain = 0.5
+        self._w_step_wise_comprehension_gain = 0.5      # TODO maybe delete
 
         # Initialize the log variables
         self._log_elapsed_time_list_for_each_index = []

@@ -85,11 +85,11 @@ class RewardFunction():
             overall_comprehension_log = 0.0
             if len(words_beliefs) > 0:
                 # Apply the softmin function to calculate the sentence-appraisals, such to stress the importance of the accurate word understandings, i.e., higher appraisals
-                overall_comprehension_scalar = Utilities.calc_dynamic_sentence_comprehension_score(words_beliefs, mode="mean")
+                overall_comprehension_scalar = Utilities.calc_dynamic_sentence_comprehension_score(words_beliefs, mode="aggregated_predictability")          # Previously set as 'mean'
             else:
                 overall_comprehension_scalar = 0.0
             
-            comprehension_reward = 50 * overall_comprehension_scalar
+            comprehension_reward = 1 * overall_comprehension_scalar
 
             if remaining_time < 0:    # If the agent finished the sentence reading out of expected time, then apply some penalties
                 penalty_for_wasting_time = 10 * (remaining_time / expected_sentence_reading_time)    # NOTE: see if need a parameter to tune here later (re-use w_comprehension_vs_time_pressure)
