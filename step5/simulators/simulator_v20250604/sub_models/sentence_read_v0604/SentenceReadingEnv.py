@@ -37,6 +37,9 @@ class SentenceReadingUnderTimePressureEnv(Env):
             I tried to amortisely train the model, learn an agent that could adapt to different parameters. But did not go well.
         Updated on 25 July, 2025.
             I tried to use the Bayesian optimization to tune the parameters. Only one parameter to train at a time.
+        Updated on 29 July, 2025.
+            I tried to tune the agent's perception of the time pressure directly, set it as a tunable parameter.
+            Change the structure to v1014. Grant some time, if exceeds, terminate.
         
         Features: predict the word skipping and word revisiting decisions, and when to stop reading.
         Cognitive constraints: (limited time and cognitive resources) 
@@ -123,6 +126,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         # Environment parameters
         self._steps = None
         self.ep_len = 2 * Constants.MAX_SENTENCE_LENGTH
+        self._granted_step_budget = None
         self._terminate = None
         self._truncated = None
         self._episode_id = None
@@ -135,7 +139,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self.action_space = Discrete(4)     
         
         # Observation space - simplified to scalar signals
-        self._num_stateful_obs = 6 + 2      # +2 for the time condition and remaining time
+        self._num_stateful_obs = 6 + 3      # +2 for the time condition and remaining granted steps and whether overtime or not
         self.observation_space = Box(low=0, high=1, shape=(self._num_stateful_obs,))         # TODO: need to change these to -1 to 1, because sometimes the remaining time is negative, or change the specific observation!!!
         self._noisy_obs_sigma = Constants.NOISY_OBS_SIGMA
 
@@ -151,6 +155,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._w_step_wise_comprehension_gain = None
         self.MIN_W_STEP_WISE_COMPREHENSION_GAIN = 0.0
         self.MAX_W_STEP_WISE_COMPREHENSION_GAIN = 1.0
+        
+        self._w_time_perception = None
 
         # Log variables
         self._log_individual_step_action = None
@@ -207,6 +213,15 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._baseline_time_needed_to_read_text = self._text_word_count * Constants.READING_SPEED
         # Get the time pressure for each sentence
         self._time_pressure_scalar_for_the_sentence = self._time_condition_value / self._baseline_time_needed_to_read_text    # belongs to [0, infinity]
+        
+        self._w_time_perception = 1.2          # Now I assume it is a tunable parameter
+        granted_step_budget_factor = 1 - np.exp(-self._w_time_perception * self._time_pressure_scalar_for_the_sentence)     # '1 -' so that time conditions with higher value could have a higher grant factor
+        # Granted step budget
+        self._granted_step_budget = np.ceil(granted_step_budget_factor * self._sentence_len)      # This value is definitely smaller than the sentence lenght.
+
+        # # TODO debug delete later
+        # print(f"The time pressure scalar for the sentence is: {self._time_pressure_scalar_for_the_sentence}, the time condition is: {self._time_condition}, granted step budget factor: {granted_step_budget_factor}")
+
         reading_speed = Constants.READING_SPEED
         self._sentence_wise_expected_time_pressure_in_seconds = reading_speed * self._sentence_len * self._time_pressure_scalar_for_the_sentence
         self.elapsed_time = 0
@@ -220,7 +235,6 @@ class SentenceReadingUnderTimePressureEnv(Env):
         # NOTE: The two tunable parameters, try, if identified, get it into the Bayesian optimization later
         self._w_skip_degradation_factor = 0.8
         self._w_comprehension_vs_time_pressure = 0.5
-
         # Tunable step-wise parameter
         self._w_step_wise_comprehension_gain = 0.5
 
@@ -354,6 +368,13 @@ class SentenceReadingUnderTimePressureEnv(Env):
         elif action == self._STOP_ACTION:
             self._terminate = True
         
+        #######################################################################################
+
+        # Check whether exceeds the allocated step numbers
+        if self._steps >= self._granted_step_budget:
+            # Apply small penalties
+            reward += self.reward_function.compute_step_wise_overtime_penalty()
+        
         # Check termination
         if self._steps >= self.ep_len:
             self._terminate = True
@@ -407,6 +428,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         # Get the on-going comprehension scalar
         # on_going_comprehension_scalar = np.clip(math.prod(valid_words_beliefs), 0, 1)
         self._ongoing_sentence_comprehension_score = self._compute_ongoing_sentence_comprehension_score(valid_words_beliefs)
+        
         # Weights
         # norm_w_regression_cost = self.normalise(self._w_regression_cost, 0, 1, 0, 1)
         # # norm_w_skipping_cost = self.normalise(self._w_skipping_cost, self.MIN_W_SKIPPING_COST, self.MAX_W_SKIPPING_COST, 0, 1)
@@ -424,11 +446,16 @@ class SentenceReadingUnderTimePressureEnv(Env):
         else:
             raise ValueError(f"Invalid time condition: {self._time_condition}")
         
-        min_remaining_time = self._min_sentence_wise_remaining_time_in_seconds
-        max_remaining_time = self._sentence_wise_expected_time_pressure_in_seconds
-        clipped_remaining_time = np.clip(self._sentence_wise_remaining_time_in_seconds, min_remaining_time, max_remaining_time)
-        norm_remaining_time = self.normalise(clipped_remaining_time, min_remaining_time, max_remaining_time, 0, 1)   
+        # min_remaining_time = self._min_sentence_wise_remaining_time_in_seconds
+        # max_remaining_time = self._sentence_wise_expected_time_pressure_in_seconds
+        # clipped_remaining_time = np.clip(self._sentence_wise_remaining_time_in_seconds, min_remaining_time, max_remaining_time)
+        # norm_remaining_time = self.normalise(clipped_remaining_time, min_remaining_time, max_remaining_time, 0, 1)   
         # In the simulation mode, when the time is running out, or reading out of the sentence, the remaining time is negative. I clip it to 0.
+
+        # Variables related to whether overtime or not in terms of the granted step budget
+        is_overtime = 1 if self._steps >= self._granted_step_budget else 0
+        clipped_remaining_granted_step = np.clip(self._granted_step_budget-self._steps, 0, self._granted_step_budget)
+        norm_remaining_granted_step_budget = self.normalise(clipped_remaining_granted_step, 0, self._granted_step_budget, 0, 1)
 
         stateful_obs = np.array([
             current_position,
@@ -441,7 +468,9 @@ class SentenceReadingUnderTimePressureEnv(Env):
             # norm_w_skip_degradation_factor,
             # norm_w_comprehension_vs_time_pressure,
             norm_time_condition,
-            norm_remaining_time
+            # norm_remaining_time
+            norm_remaining_granted_step_budget,
+            is_overtime
         ])
 
         assert stateful_obs.shape == (self._num_stateful_obs,)

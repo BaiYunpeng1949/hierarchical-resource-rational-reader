@@ -58,6 +58,12 @@ class RewardFunction():
         comprehension_gain = Utilities.calc_dynamic_sentence_comprehension_score(valid_new_beliefs) - Utilities.calc_dynamic_sentence_comprehension_score(valid_old_beliefs)
         return w_comprehension_gain * comprehension_gain
     
+    def compute_step_wise_overtime_penalty(self):
+        """
+        Compute the step-wise reward for the overtime penalty
+        """
+        return -1       # Empirically set for now
+    
     def compute_terminate_reward(self, sentence_len: int, num_words_read: int, words_beliefs: list[float], remaining_time: float, expected_sentence_reading_time: float, w_comprehension_vs_time_pressure: float):
         """
         Compute reward for terminating reading.
@@ -91,7 +97,8 @@ class RewardFunction():
                 penalty_for_wasting_time = 0
 
             # NOTE: linear reward: linear scaling for the comprehension performance
-            final_reward = comprehension_reward + w_comprehension_vs_time_pressure * penalty_for_wasting_time
+            # final_reward = comprehension_reward + w_comprehension_vs_time_pressure * penalty_for_wasting_time
+            final_reward = comprehension_reward
 
             logs = {
                 "comprehension_reward": comprehension_reward,
