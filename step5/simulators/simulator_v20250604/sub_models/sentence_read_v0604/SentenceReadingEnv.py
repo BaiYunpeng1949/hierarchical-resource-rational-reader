@@ -214,8 +214,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
         # Get the time pressure for each sentence
         self._time_pressure_scalar_for_the_sentence = self._time_condition_value / self._baseline_time_needed_to_read_text    # belongs to [0, infinity]
         
-        self._w_time_perception = 1.8          # Now I assume it is a tunable parameter
-        granted_step_budget_factor = 1 - np.exp(-self._w_time_perception * self._time_pressure_scalar_for_the_sentence)     # '1 -' so that time conditions with higher value could have a higher grant factor
+        self._w_time_perception = 0.3          # Now I assume it is a tunable parameter
+        granted_step_budget_factor = self.calc_time_pressure_to_factor(x=self._time_pressure_scalar_for_the_sentence, w=self._w_time_perception)
         # Granted step budget
         self._granted_step_budget = np.ceil(granted_step_budget_factor * self._sentence_len)      # This value is definitely smaller than the sentence lenght.
 
@@ -405,6 +405,14 @@ class SentenceReadingUnderTimePressureEnv(Env):
     def normalise(x, x_min, x_max, a, b):
     # Normalise x (which is assumed to be in range [x_min, x_max]) to range [a, b]
         return (b - a) * ((x - x_min) / (x_max - x_min)) + a
+    
+    @staticmethod
+    def calc_time_pressure_to_factor(x, w):
+        """
+        Use a linear or non-linear function to describe the perceived time pressure on each sentence, from allocated time
+        """
+        offset = 1.0
+        return 1.0 - w / (x + offset)
     
     def _get_obs(self):
         """Get observation with simplified scalar signals"""
