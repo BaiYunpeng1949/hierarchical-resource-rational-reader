@@ -79,33 +79,30 @@ class RewardFunction():
             }
             return not_finished_penalty, logs
         else:    # If the agent finished the sentence reading, then compute the reward
-            final_step_bonus_fundation_value = 1.0
             
             # Compute geometric mean of word beliefs
             overall_comprehension_log = 0.0
             if len(words_beliefs) > 0:
                 # Apply the softmin function to calculate the sentence-appraisals, such to stress the importance of the accurate word understandings, i.e., higher appraisals
-                overall_comprehension_scalar = Utilities.calc_dynamic_sentence_comprehension_score(words_beliefs, mode="aggregated_predictability")          # Previously set as 'mean'
+                overall_comprehension_scalar = Utilities.calc_dynamic_sentence_comprehension_score(words_beliefs, mode="deterministic_aggregated_predictability")          # Previously set as 'mean'
             else:
                 overall_comprehension_scalar = 0.0
             
             comprehension_reward = 1 * overall_comprehension_scalar
 
-            if remaining_time < 0:    # If the agent finished the sentence reading out of expected time, then apply some penalties
-                penalty_for_wasting_time = 10 * (remaining_time / expected_sentence_reading_time)    # NOTE: see if need a parameter to tune here later (re-use w_comprehension_vs_time_pressure)
-            else:
-                penalty_for_wasting_time = 0
+            # if remaining_time < 0:    # If the agent finished the sentence reading out of expected time, then apply some penalties
+            #     penalty_for_wasting_time = 10 * (remaining_time / expected_sentence_reading_time)    # NOTE: see if need a parameter to tune here later (re-use w_comprehension_vs_time_pressure)
+            # else:
+            #     penalty_for_wasting_time = 0
 
             # NOTE: linear reward: linear scaling for the comprehension performance
             # final_reward = comprehension_reward + w_comprehension_vs_time_pressure * penalty_for_wasting_time
             final_reward = comprehension_reward
 
             logs = {
-                "comprehension_reward": comprehension_reward,
-                "penalty_for_wasting_time": penalty_for_wasting_time,
+                # "comprehension_reward": comprehension_reward,
+                # "penalty_for_wasting_time": penalty_for_wasting_time,
                 "final_reward": final_reward,
             }
-
-            # TODO maybe need to check the metrics -- how come the skipping rate is above 50%? Should not exceed that.
                 
             return final_reward, logs

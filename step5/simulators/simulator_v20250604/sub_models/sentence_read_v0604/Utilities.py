@@ -35,13 +35,18 @@ def calc_dynamic_sentence_comprehension_score(scores, mode="softmin", tau=0.1):
             return float((w * scores).sum() / w.sum())
         elif mode == "mean":
             return np.mean(scores)
-        elif mode == "aggregated_predictability":
+        elif mode == "deterministic_aggregated_predictability":
             # Expected value of your ±1 Bernoulli experiment:
             #   P(correct)=p  →  +1
             #   P(incorrect)=1-p → -1
             #   E[value] = (1)(p) + (-1)(1-p) = 2p - 1
-            values = [2 * p_i - 1 for p_i in scores]   # each ∈ [‑1, +1]        # TODO change this to the random sample, frequency stuff, not probability stuff
+            values = [2 * p_i - 1 for p_i in scores]   # each ∈ [‑1, +1]
             return float(sum(values))
+        elif mode == "stochastic_aggregated_predictability":
+            # Stochastic explicit Bernoulli draw
+            samples = [np.random.binomial(1, p_i) for p_i in scores]
+            aggregated_predicted_values = sum([1 if sample == 1 else -1 for sample in samples])
+            return aggregated_predicted_values
         else:
             raise ValueError(f"Invalid mode: {mode}")
 

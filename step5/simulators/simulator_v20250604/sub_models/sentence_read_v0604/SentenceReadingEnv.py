@@ -47,28 +47,6 @@ class SentenceReadingUnderTimePressureEnv(Env):
             STM (so need to revisit sometimes, provide limited contextual predictability),
             attention resource (so need to skip the unnecessary words),
             Time pressure (so need to finish reading before time runs out)
-        
-        TODO: 1. change the POMDP to the time-pressured version
-        2. process the stimuli data to be used
-        3. train the model
-        4. tune the reward weights or change the reward function
-        5. plot results, especially the regression rate and the skipping rate
-        6. reiterate from 3 until results are satisfactory
-        7. if all works fine, then try to test on the dataset of our stimulus. (maybe just train based on our dataset, for safety)
-
-        NOTE: training method 1 and 2
-        For the training method 1: use three discrete time conditions: 30s, 60s, 90s, and manufacture the pressure;
-           Advantage: more controllable. A simplified version that treats the time pressure applied uniformly to every sentence.
-           Disadvantage: not realistic.
-        For the training method 2: use the real time left for a specific sentence, maybe range from 0s to 90s; then see whether the agent could learn to read adaptively, 
-           i.e., the agent would read slower, have more regressions and less skips when time is sufficient; and when time is running out, the agent would read faster.
-           Advantage: more realisitic.
-           Challenge: when human are reading, the time pressure might occur when reading the very first sentence, because human have a global estimation of the time. 
-           The pressure is not evenly applied to every sentence.
-           NOTE: how to solve that -- use some mathematical equation to regulate this perception of time. TODO: go check with GPT.
-        NOTE: apply the first method first, see results for quick results production.
-        
-
         """
         # Load configuration
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -86,7 +64,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
 
         # Initialize components
         self.time_condition_manager = TimeConditionManager()
-        self.sentences_manager = SentencesManager(dataset=DATASET)     # TODO set different modes to sample sentences
+        self.sentences_manager = SentencesManager(dataset=DATASET)
         self.transition_function = TransitionFunction()
         self.reward_function = RewardFunction()
 
@@ -140,7 +118,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         
         # Observation space - simplified to scalar signals
         self._num_stateful_obs = 6 + 3      # +2 for the time condition and remaining granted steps and whether overtime or not
-        self.observation_space = Box(low=0, high=1, shape=(self._num_stateful_obs,))         # TODO: need to change these to -1 to 1, because sometimes the remaining time is negative, or change the specific observation!!!
+        self.observation_space = Box(low=0, high=1, shape=(self._num_stateful_obs,))
         self._noisy_obs_sigma = Constants.NOISY_OBS_SIGMA
 
         # Free parameters
@@ -167,7 +145,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._log_terminate_reward = None
         self._log_terminate_reward_logs = None
         
-    def reset(self, seed=42, inputs: dict=None):          # TODO do the resets later, get inputs to forcefully assign a sentence to read
+    def reset(self, seed=42, inputs: dict=None):          
         """
         Reset environment and initialize states.
 
@@ -214,7 +192,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         # Get the time pressure for each sentence
         self._time_pressure_scalar_for_the_sentence = self._time_condition_value / self._baseline_time_needed_to_read_text    # belongs to [0, infinity]
         
-        self._w_time_perception = 0.35          # Now I assume it is a tunable parameter   # TODO try a new function that tear bigger gap between 30s and 60s conditions
+        self._w_time_perception = 0.35          # Now I assume it is a tunable parameter   # TODO try a new function that tear bigger gap between 30s and 60s conditions --> NOTE: try 0.5 later, where applies more time pressure perception
         granted_step_budget_factor = self.calc_time_pressure_to_factor(x=self._time_pressure_scalar_for_the_sentence, w=self._w_time_perception)
         # Granted step budget
         self._granted_step_budget = np.ceil(granted_step_budget_factor * self._sentence_len)      # This value is definitely smaller than the sentence lenght.
@@ -234,10 +212,10 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._w_regression_cost = 1.0    # NOTE: uncomment when testing!!!!
         
         # NOTE: The two tunable parameters, try, if identified, get it into the Bayesian optimization later
-        self._w_skip_degradation_factor = 0.8      # TODO try this with 1.0
-        self._w_comprehension_vs_time_pressure = 0.5    # TODO maybe delete
-        # Tunable step-wise parameter
-        self._w_step_wise_comprehension_gain = 0.5      # TODO maybe delete
+        # TODO: not useful parameters, maybe delete
+        self._w_skip_degradation_factor = 1.0
+        self._w_comprehension_vs_time_pressure = 0.5
+        self._w_step_wise_comprehension_gain = 0.5      # Tunable step-wise parameter
 
         # Initialize the log variables
         self._log_elapsed_time_list_for_each_index = []
