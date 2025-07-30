@@ -214,7 +214,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         # Get the time pressure for each sentence
         self._time_pressure_scalar_for_the_sentence = self._time_condition_value / self._baseline_time_needed_to_read_text    # belongs to [0, infinity]
         
-        self._w_time_perception = 0.3          # Now I assume it is a tunable parameter
+        self._w_time_perception = 0.35          # Now I assume it is a tunable parameter
         granted_step_budget_factor = self.calc_time_pressure_to_factor(x=self._time_pressure_scalar_for_the_sentence, w=self._w_time_perception)
         # Granted step budget
         self._granted_step_budget = np.ceil(granted_step_budget_factor * self._sentence_len)      # This value is definitely smaller than the sentence lenght.
