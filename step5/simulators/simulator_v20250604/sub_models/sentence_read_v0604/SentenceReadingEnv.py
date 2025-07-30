@@ -214,7 +214,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         # Get the time pressure for each sentence
         self._time_pressure_scalar_for_the_sentence = self._time_condition_value / self._baseline_time_needed_to_read_text    # belongs to [0, infinity]
         
-        self._w_time_perception = 0.35          # Now I assume it is a tunable parameter
+        self._w_time_perception = 0.35          # Now I assume it is a tunable parameter   # TODO try a new function that tear bigger gap between 30s and 60s conditions
         granted_step_budget_factor = self.calc_time_pressure_to_factor(x=self._time_pressure_scalar_for_the_sentence, w=self._w_time_perception)
         # Granted step budget
         self._granted_step_budget = np.ceil(granted_step_budget_factor * self._sentence_len)      # This value is definitely smaller than the sentence lenght.
@@ -234,7 +234,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._w_regression_cost = 1.0    # NOTE: uncomment when testing!!!!
         
         # NOTE: The two tunable parameters, try, if identified, get it into the Bayesian optimization later
-        self._w_skip_degradation_factor = 0.8
+        self._w_skip_degradation_factor = 0.8      # TODO try this with 1.0
         self._w_comprehension_vs_time_pressure = 0.5    # TODO maybe delete
         # Tunable step-wise parameter
         self._w_step_wise_comprehension_gain = 0.5      # TODO maybe delete
