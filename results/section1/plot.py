@@ -75,7 +75,7 @@ def compare_gaze_duration(
     plt.rc('ytick', labelsize=tick_size)
 
     # Plot 1: Regression lines with confidence bands
-    plt.figure(figsize=(PLOT_WIDTH, PLOT_HEIGHT))
+    plt.figure(figsize=(PLOT_WIDTH, PLOT_HEIGHT), constrained_layout=True)
     
     # Function to calculate regression stats and equation
     def get_regression_stats(df):
@@ -118,8 +118,8 @@ def compare_gaze_duration(
     plt.xlabel(x_label + (" (log scale for regression)" if use_log_x else ""), fontsize=font_size)
     if y_label is not None:
         plt.ylabel(y_label, fontsize=font_size)
-    if title is not None:
-        plt.title(title, fontsize=font_size+2)
+    # if title is not None:
+    #     plt.title(title, fontsize=font_size+2)
     
     # Create custom legend handles with dashed lines
     legend_elements = [
@@ -133,7 +133,7 @@ def compare_gaze_duration(
     
     base_name = os.path.splitext(output_filename)[0]
     regression_path = os.path.join(save_dir, f"{base_name}_regression.png")
-    plt.savefig(regression_path)
+    plt.savefig(regression_path, dpi=300, bbox_inches='tight', pad_inches=0.05)
     plt.close()
 
     # Plot 2: Connected points with confidence bands
@@ -158,8 +158,8 @@ def compare_gaze_duration(
     plt.xlabel(x_label, fontsize=font_size)
     if y_label is not None:
         plt.ylabel(y_label, fontsize=font_size)
-    if title is not None:
-        plt.title(title + " (Connected Points)", fontsize=font_size+2)
+    # if title is not None:
+    #     plt.title(title + " (Connected Points)", fontsize=font_size+2)
     plt.legend(fontsize=legend_size)
     plt.grid(True)
     
