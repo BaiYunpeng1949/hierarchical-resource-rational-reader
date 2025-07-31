@@ -229,10 +229,13 @@ sysinfo.txt
 /data_analysis/user_study_results_after_parameter_inference
 /baseline_models/DQ_scanpath/
 /_draft_files/
+/data/
 /cc.en.300.bin
 /results/section1/simulated_results/archives
 /data/human_data/read_under_time_pressure
 /step5/data/sim_results/word_activation/
 /step5/data/sim_results/sentence_reading/
+/step5/simulators/
+/step5/modules/rl_envs/text_comprehension_v0516/temp_sim_data/
 /results/section2/_raw_simulated_results/_archived
 /results/section2/processed_simulated_results/_archived

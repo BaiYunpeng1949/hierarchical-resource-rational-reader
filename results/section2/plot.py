@@ -6,6 +6,12 @@ from scipy import stats
 import os
 from matplotlib.lines import Line2D
 
+
+# NOTE: A unified configuration
+PLOT_WIDTH = 9 
+PLOT_HEIGHT = 6 
+
+
 def plot_comparison(x_human, y_human, x_sim, y_sim, x_name, y_name, output_dir, output_filename):
     """Plot regression lines with confidence bands for both human and simulated data, including binned regression lines"""
     try:
@@ -49,117 +55,125 @@ def plot_comparison(x_human, y_human, x_sim, y_sim, x_name, y_name, output_dir, 
         sim_bin_x, sim_bin_y = bin_data(x_sim, y_sim)
         human_bin_r2, human_bin_eq, human_bin_coeffs = get_regression_stats(human_bin_x, human_bin_y)
         sim_bin_r2, sim_bin_eq, sim_bin_coeffs = get_regression_stats(sim_bin_x, sim_bin_y)
-        
-        # Plot 1: Original regression plots with confidence bands
-        plt.figure(figsize=(8, 6))
-        
-        # Plot human data
-        human_plot = sns.regplot(x=x_human, y=y_human,
-                    scatter=True, color='blue', 
-                    label=f'Human (R²={human_r2:.2f}):\n{human_eq}',
-                    scatter_kws={'alpha': 0.1},
-                    line_kws={'linestyle': 'dashed', 'linewidth': 2})
 
-        # Plot simulated data
-        sim_plot = sns.regplot(x=x_sim, y=y_sim,
-                    scatter=True, color='red', 
-                    label=f'Simulation (R²={sim_r2:.2f}):\n{sim_eq}',
-                    scatter_kws={'alpha': 0.1},
-                    line_kws={'linestyle': 'dashed', 'linewidth': 2})
+        # Set the tick configurations
+        plt.rc('xtick', labelsize=20)
+        plt.rc('ytick', labelsize=20)
+        
+        # # Plot 1: Original regression plots with confidence bands
+        # plt.figure(figsize=(PLOT_WIDTH, PLOT_HEIGHT))
+        
+        # # Plot human data
+        # human_plot = sns.regplot(x=x_human, y=y_human,
+        #             scatter=True, color='blue', 
+        #             label=f'Human (R²={human_r2:.2f}):\n{human_eq}',
+        #             scatter_kws={'alpha': 0.1},
+        #             line_kws={'linestyle': 'dashed', 'linewidth': 2})
 
-        plt.xlabel(x_name, fontsize=12)
-        plt.ylabel(y_name, fontsize=12)
-        plt.title(f'{y_name} vs {x_name}', fontsize=14)
-        
-        # Create custom legend handles with dashed lines
-        legend_elements = [
-            Line2D([0], [0], color='blue', linestyle='dashed', linewidth=2,
-                   label=f'Human (R²={human_r2:.2f}):\n{human_eq}'),
-            Line2D([0], [0], color='red', linestyle='dashed', linewidth=2,
-                   label=f'Simulation (R²={sim_r2:.2f}):\n{sim_eq}')
-        ]
-        plt.legend(handles=legend_elements, fontsize=10)
-        plt.grid(True, alpha=0.3)
-        
-        # Save original regression plot
-        regression_path = os.path.join(output_dir, f"{output_filename}_regression.png")
-        plt.savefig(regression_path)
-        plt.close()
+        # # Plot simulated data
+        # sim_plot = sns.regplot(x=x_sim, y=y_sim,
+        #             scatter=True, color='red', 
+        #             label=f'Simulation (R²={sim_r2:.2f}):\n{sim_eq}',
+        #             scatter_kws={'alpha': 0.1},
+        #             line_kws={'linestyle': 'dashed', 'linewidth': 2})
 
-        # Plot 2: Binned regression plots with raw data
-        plt.figure(figsize=(10, 6))
+        # plt.xlabel(x_name, fontsize=12)
+        # plt.ylabel(y_name, fontsize=12)
+        # plt.title(f'{y_name} vs {x_name}', fontsize=14)
         
-        # Plot raw data points with low alpha
-        plt.scatter(x_human, y_human, color='blue', alpha=0.1, label='Human (raw)')
-        plt.scatter(x_sim, y_sim, color='red', alpha=0.1, label='Simulation (raw)')
+        # # Create custom legend handles with dashed lines
+        # legend_elements = [
+        #     Line2D([0], [0], color='blue', linestyle='dashed', linewidth=2,
+        #            label=f'Human (R²={human_r2:.2f}):\n{human_eq}'),
+        #     Line2D([0], [0], color='red', linestyle='dashed', linewidth=2,
+        #            label=f'Simulation (R²={sim_r2:.2f}):\n{sim_eq}')
+        # ]
+        # plt.legend(handles=legend_elements, fontsize=10)
+        # plt.grid(True, alpha=0.3)
         
-        # Plot raw data regression lines
-        x_range = np.linspace(min(min(x_human), min(x_sim)), max(max(x_human), max(x_sim)), 100)
-        plt.plot(x_range, np.polyval(human_coeffs, x_range), '--', color='blue', 
-                label=f'Human (raw, R²={human_r2:.2f}):\n{human_eq}')
-        plt.plot(x_range, np.polyval(sim_coeffs, x_range), '--', color='red',
-                label=f'Simulation (raw, R²={sim_r2:.2f}):\n{sim_eq}')
+        # # Save original regression plot
+        # regression_path = os.path.join(output_dir, f"{output_filename}_regression.png")
+        # plt.savefig(regression_path)
+        # plt.close()
+
+        # # Plot 2: Binned regression plots with raw data
+        # plt.figure(figsize=(10, 6))
         
-        # Plot binned data points with confidence bands
-        sns.regplot(x=human_bin_x, y=human_bin_y, color='blue', 
-                   scatter=True, scatter_kws={'s': 50}, 
-                   label=f'Human (binned fit, R²={human_bin_r2:.2f}):\n{human_bin_eq}')
-        sns.regplot(x=sim_bin_x, y=sim_bin_y, color='red', 
-                   scatter=True, scatter_kws={'s': 50},
-                   label=f'Simulation (binned fit, R²={sim_bin_r2:.2f}):\n{sim_bin_eq}')
+        # # Plot raw data points with low alpha
+        # plt.scatter(x_human, y_human, color='blue', alpha=0.1, label='Human (raw)')
+        # plt.scatter(x_sim, y_sim, color='red', alpha=0.1, label='Simulation (raw)')
         
-        plt.xlabel(x_name, fontsize=12)
-        plt.ylabel(y_name, fontsize=12)
-        plt.title(f'{y_name} vs {x_name} (Binned)', fontsize=14)
+        # # Plot raw data regression lines
+        # x_range = np.linspace(min(min(x_human), min(x_sim)), max(max(x_human), max(x_sim)), 100)
+        # plt.plot(x_range, np.polyval(human_coeffs, x_range), '--', color='blue', 
+        #         label=f'Human (raw, R²={human_r2:.2f}):\n{human_eq}')
+        # plt.plot(x_range, np.polyval(sim_coeffs, x_range), '--', color='red',
+        #         label=f'Simulation (raw, R²={sim_r2:.2f}):\n{sim_eq}')
         
-        # Create custom legend handles
-        legend_elements = [
-            Line2D([0], [0], color='blue', linestyle='--', linewidth=2,
-                   label=f'Human (raw, R²={human_r2:.2f}):\n{human_eq}'),
-            Line2D([0], [0], color='red', linestyle='--', linewidth=2,
-                   label=f'Simulation (raw, R²={sim_r2:.2f}):\n{sim_eq}'),
-            Line2D([0], [0], color='blue', linestyle='-', linewidth=2,
-                   label=f'Human (binned fit, R²={human_bin_r2:.2f}):\n{human_bin_eq}'),
-            Line2D([0], [0], color='red', linestyle='-', linewidth=2,
-                   label=f'Simulation (binned fit, R²={sim_bin_r2:.2f}):\n{sim_bin_eq}')
-        ]
-        plt.legend(handles=legend_elements, fontsize=10)
-        plt.grid(True, alpha=0.3)
+        # # Plot binned data points with confidence bands
+        # sns.regplot(x=human_bin_x, y=human_bin_y, color='blue', 
+        #            scatter=True, scatter_kws={'s': 50}, 
+        #            label=f'Human (binned fit, R²={human_bin_r2:.2f}):\n{human_bin_eq}')
+        # sns.regplot(x=sim_bin_x, y=sim_bin_y, color='red', 
+        #            scatter=True, scatter_kws={'s': 50},
+        #            label=f'Simulation (binned fit, R²={sim_bin_r2:.2f}):\n{sim_bin_eq}')
         
-        # Save binned regression plot with raw data
-        binned_path = os.path.join(output_dir, f"{output_filename}_binned_regression.png")
-        plt.savefig(binned_path)
-        plt.close()
+        # plt.xlabel(x_name, fontsize=12)
+        # plt.ylabel(y_name, fontsize=12)
+        # plt.title(f'{y_name} vs {x_name} (Binned)', fontsize=14)
+        
+        # # Create custom legend handles
+        # legend_elements = [
+        #     Line2D([0], [0], color='blue', linestyle='--', linewidth=2,
+        #            label=f'Human (raw, R²={human_r2:.2f}):\n{human_eq}'),
+        #     Line2D([0], [0], color='red', linestyle='--', linewidth=2,
+        #            label=f'Simulation (raw, R²={sim_r2:.2f}):\n{sim_eq}'),
+        #     Line2D([0], [0], color='blue', linestyle='-', linewidth=2,
+        #            label=f'Human (binned fit, R²={human_bin_r2:.2f}):\n{human_bin_eq}'),
+        #     Line2D([0], [0], color='red', linestyle='-', linewidth=2,
+        #            label=f'Simulation (binned fit, R²={sim_bin_r2:.2f}):\n{sim_bin_eq}')
+        # ]
+        # plt.legend(handles=legend_elements, fontsize=10)
+        # plt.grid(True, alpha=0.3)
+        
+        # # Save binned regression plot with raw data
+        # binned_path = os.path.join(output_dir, f"{output_filename}_binned_regression.png")
+        # plt.savefig(binned_path)
+        # plt.close()
 
         # Plot 3: Only binned data with confidence bands
-        plt.figure(figsize=(8, 6))
+        plt.figure(figsize=(PLOT_WIDTH, PLOT_HEIGHT), constrained_layout=True)
         
         # Plot binned data points with confidence bands
         sns.regplot(x=human_bin_x, y=human_bin_y, color='blue', 
                    scatter=True, scatter_kws={'s': 50}, 
                    label=f'Human (R²={human_bin_r2:.2f}):\n{human_bin_eq}')
-        sns.regplot(x=sim_bin_x, y=sim_bin_y, color='red', 
+        sns.regplot(x=sim_bin_x, y=sim_bin_y, color='green', 
                    scatter=True, scatter_kws={'s': 50},
                    label=f'Simulation (R²={sim_bin_r2:.2f}):\n{sim_bin_eq}')
         
-        plt.xlabel(x_name, fontsize=12)
-        plt.ylabel(y_name, fontsize=12)
+        plt.xlabel(x_name, fontsize=20)
+        plt.ylabel(y_name, fontsize=20)
         # plt.title(f'{y_name} vs {x_name} (Binned Only)', fontsize=14)
-        plt.title(f'{y_name} vs {x_name}', fontsize=14)
+        # plt.title(f'{y_name} vs {x_name}', fontsize=20)
         
         # Create custom legend handles
         legend_elements = [
             Line2D([0], [0], color='blue', linestyle='-', linewidth=2,
                    label=f'Human (R²={human_bin_r2:.2f}):\n{human_bin_eq}'),
-            Line2D([0], [0], color='red', linestyle='-', linewidth=2,
+            Line2D([0], [0], color='green', linestyle='-', linewidth=2,
                    label=f'Simulation (R²={sim_bin_r2:.2f}):\n{sim_bin_eq}')
         ]
-        plt.legend(handles=legend_elements, fontsize=10)
+        plt.legend(handles=legend_elements, fontsize=20)
         plt.grid(True, alpha=0.3)
         
         # Save binned-only regression plot
         binned_only_path = os.path.join(output_dir, f"{output_filename}_binned_only_regression.png")
-        plt.savefig(binned_only_path)
+        plt.savefig(binned_only_path, 
+                    dpi=300,                           # (or your preferred dpi)
+                    bbox_inches='tight',               # <─ NEW
+                    pad_inches=0.05
+                    )
         plt.close()
         
         print(f"Comparison plots saved at {regression_path}, {binned_path}, and {binned_only_path}")
@@ -198,7 +212,8 @@ def main():
         sim_data['log_frequency'],
         sim_data['skip_probability'],
         'Log Word Frequency',
-        'Skip Probability',
+        # 'Skip Probability',
+        '',
         output_dir,
         'skip_probability_vs_log_frequency'
     )
@@ -210,7 +225,8 @@ def main():
         sim_data['logit_predictability'],
         sim_data['skip_probability'],
         'Logit Predictability',
-        'Skip Probability',
+        # 'Skip Probability',
+        '',
         output_dir,
         'skip_probability_vs_logit_predictability'
     )
@@ -228,17 +244,17 @@ def main():
         'regression_probability_vs_difficulty'
     )
     
-    # 2. Regression prob vs skip prob
-    plot_comparison(
-        human_data['skip_probability'],
-        human_data['regression_probability'],
-        sim_data['skip_probability'],
-        sim_data['regression_probability'],
-        'Skip Probability',
-        'Regression Probability',
-        output_dir,
-        'regression_probability_vs_skip_probability'
-    )
+    # # 2. Regression prob vs skip prob
+    # plot_comparison(
+    #     human_data['skip_probability'],
+    #     human_data['regression_probability'],
+    #     sim_data['skip_probability'],
+    #     sim_data['regression_probability'],
+    #     'Skip Probability',
+    #     'Regression Probability',
+    #     output_dir,
+    #     'regression_probability_vs_skip_probability'
+    # )
     
     print(f"All plots have been saved to {output_dir}")
 
