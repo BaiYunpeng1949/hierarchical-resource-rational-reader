@@ -59,6 +59,16 @@ This environment simulates human-like word recognition behavior using a Bayesian
 
 
 # Run the code:
-python main.py
-copy paste csv files from prior_effects and word_length_effect into results/section1/simulated_results
-python plot.py
+`conda activate reader_agent`
+
+`cd step5`
+
+`python main.py`
+
+copy paste `csv` files from `prior_effects` and `word_length_effect` into `results/section1/simulated_results`
+
+`cd /home/baiy4/reader-agent-zuco/results/section1`
+
+`python plot.py`
+
+The figures could be found in `/home/baiy4/reader-agent-zuco/results/section1/figures`

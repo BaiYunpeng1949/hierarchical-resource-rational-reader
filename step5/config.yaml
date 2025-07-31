@@ -23,7 +23,7 @@ rl:
     save_freq: 10000000  # Save a checkpoint every 0.50 million steps
 
   test:
-    num_episodes: 100000
+    num_episodes: 10000
     loaded_model_name: 'rl_model_20000000_steps'
     continual_logs_name: 'PPO_18'
     dataset_for_testing: 'simulate'   # OPTIONS: 'test', 'train', 'simulate'
