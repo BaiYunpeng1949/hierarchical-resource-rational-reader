@@ -195,11 +195,11 @@ class TransitionFunction():
     @staticmethod
     def calc_fixation_duration_ms(
         entropy_diff: float,
-        t_processing_baseline: float = 60,
-        kappa: float = 35.0,
+        t_processing_baseline: float = 200,
+        kappa: float = 3.75,
         shape: float = 2.0,
-        v_min: float = 80.0,
-        v_max: float = 200.0
+        v_min: float = 200.0,
+        v_max: float = 250.0
     ) -> float:
         """
         Sample a single fixation duration (ms) from a Gamma distribution.
@@ -224,26 +224,11 @@ class TransitionFunction():
         float
             Fixation duration in milliseconds (includes visual processing +
             saccade motor-programming time, but **not** the eye-in-flight time).
-
-            TODO: gaze duration contains both visual/lexical processing + 40-50ms saccade planning, can we use entropy to encode the visual/lexical processing?
         """
-        # Method 1:
-        # # mean = t0 + kappa * abs(entropy_diff)      # additive difficulty cost
-        # mean = t0 + kappa * entropy_diff
-        # scale = mean / shape                       # Gamma: mean = k·θ
-        # return np.random.gamma(shape, scale)
-
-        # # Method 2:
-        # t_saccade_programming = 40      # [40, 50] ms, according to the empirical study
-        # t_visual_lexical_processing = np.clip((t_processing_baseline + kappa * abs(entropy_diff)), 110, 130)    # Clip to [110, 130] ms, according to the empirical study
-        # return t_saccade_programming + t_visual_lexical_processing
-
-        # Method 3:
-        mean_vis = np.clip(t_processing_baseline + kappa * entropy_diff, v_min, v_max)      # signed delta_H here!
+        mean_vis = np.clip(t_processing_baseline + kappa * entropy_diff, v_min, v_max)
         scale = mean_vis / shape
         t_visual_lex = np.random.gamma(shape, scale)
-        t_saccade_programming = 40      # [40, 50] ms, according to the empirical study
-        return t_saccade_programming + t_visual_lex
+        return t_visual_lex
     
     def calc_gaze_duration_ms(self, entropy_diffs, **fix_kwargs) -> float:
         """
@@ -265,6 +250,23 @@ class TransitionFunction():
 
         if len(entropy_diffs) > 0:
             return sum(self.calc_fixation_duration_ms(d, **fix_kwargs) for d in entropy_diffs)
+        else:
+            return 0
+    
+    def calc_individual_saccade_duration_ms(self) -> float:
+        """
+        Calculate the individual saccade duration in milliseconds.
+        Following EZReader's implementation, set it as a fixed value at 25 ms.
+        """
+        return 25
+    
+    def calc_total_saccade_duration_ms(self, entropy_diffs) -> float:
+        """
+        Calculate the total saccade duration in milliseconds.
+        It includes the number of fixations' saccade durations, one of them is leaving the word.
+        """
+        if len(entropy_diffs) > 0:
+            return sum(self.calc_individual_saccade_duration_ms() for _ in entropy_diffs)
         else:
             return 0
 
