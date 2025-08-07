@@ -41,10 +41,10 @@ simulate:
       env_name: SentenceReadingUnderTimePressureEnv           
       checkpoints_folder_name: '0730_sentence_reading_under_time_pressure_v0604_step_wise_comprehension_rewards_baysian_optimization_trial_param_14' # '0609_sentence_reading_under_time_pressure_v0604_01'
       loaded_model_name: 'rl_model_200000000_steps' # 'rl_model_100000000_steps'
-    word_recognizer:   # TODO determine to do later or not
-      env_name: NA     
-      checkpoints_folder_name: NA 
-      loaded_model_name: NA 
+    word_recognizer:
+      env_name: WordRecognitionEnv     
+      checkpoints_folder_name: '0804_word_activation_v0218_00' 
+      loaded_model_name: 'rl_model_200000000_steps' 
 
 llm:
   use_aalto_openai_api: True

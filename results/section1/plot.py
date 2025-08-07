@@ -6,16 +6,20 @@ from scipy.stats import linregress
 import seaborn as sns
 from matplotlib.lines import Line2D
 
+# NOTE: should be the universal configuration
+PLOT_WIDTH = 9
+PLOT_HEIGHT = 6
+
 def compare_gaze_duration(
     human_csv, 
     sim_csv, 
     x_col, 
     y_col, 
     x_label, 
-    y_label, 
-    title, 
-    save_dir, 
-    output_filename,
+    y_label=None, 
+    title=None, 
+    save_dir=None, 
+    output_filename=None,
     use_log_x=False,
     poly_degree=1,
     font_size=12,        # New parameter for base font size
@@ -71,7 +75,7 @@ def compare_gaze_duration(
     plt.rc('ytick', labelsize=tick_size)
 
     # Plot 1: Regression lines with confidence bands
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(PLOT_WIDTH, PLOT_HEIGHT), constrained_layout=True)
     
     # Function to calculate regression stats and equation
     def get_regression_stats(df):
@@ -101,25 +105,27 @@ def compare_gaze_duration(
     human_plot = sns.regplot(data=human_df, x=x_col, y=y_col,
                 scatter=True, color='blue', 
                 label=f'Human (R²={human_r2:.2f}):\n{human_eq}',
-                scatter_kws={'alpha': 0.2},
+                scatter_kws={'alpha': 1.0},
                 line_kws={'linestyle': 'dashed', 'linewidth': 2})
 
     # Plot regression with confidence bands for simulation data
     sim_plot = sns.regplot(data=sim_df, x=x_col, y=y_col,
-                scatter=True, color='red', 
+                scatter=True, color='green', 
                 label=f'Simulation (R²={sim_r2:.2f}):\n{sim_eq}',
-                scatter_kws={'alpha': 0.2},
+                scatter_kws={'alpha': 1.0},
                 line_kws={'linestyle': 'dashed', 'linewidth': 2})
 
     plt.xlabel(x_label + (" (log scale for regression)" if use_log_x else ""), fontsize=font_size)
-    plt.ylabel(y_label, fontsize=font_size)
-    plt.title(title, fontsize=font_size+2)
+    if y_label is not None:
+        plt.ylabel(y_label, fontsize=font_size)
+    # if title is not None:
+    #     plt.title(title, fontsize=font_size+2)
     
     # Create custom legend handles with dashed lines
     legend_elements = [
         Line2D([0], [0], color='blue', linestyle='dashed', linewidth=2,
                label=f'Human (R²={human_r2:.2f}):\n{human_eq}'),
-        Line2D([0], [0], color='red', linestyle='dashed', linewidth=2,
+        Line2D([0], [0], color='green', linestyle='dashed', linewidth=2,
                label=f'Simulation (R²={sim_r2:.2f}):\n{sim_eq}')
     ]
     plt.legend(handles=legend_elements, fontsize=legend_size)
@@ -127,7 +133,7 @@ def compare_gaze_duration(
     
     base_name = os.path.splitext(output_filename)[0]
     regression_path = os.path.join(save_dir, f"{base_name}_regression.png")
-    plt.savefig(regression_path)
+    plt.savefig(regression_path, dpi=300, bbox_inches='tight', pad_inches=0.05)
     plt.close()
 
     # Plot 2: Connected points with confidence bands
@@ -135,23 +141,25 @@ def compare_gaze_duration(
     
     # Plot human data points connected
     plt.plot(human_df[x_col], human_df[y_col], 
-            'o-', color='blue', label="Human Data", alpha=0.7)
+            'o-', color='blue', label="Human Data", alpha=1.0)
 
     # Plot simulation data points with confidence band
     plt.plot(sim_df[x_col], sim_df[y_col], 
-            'o-', color='red', label="Simulated Data", alpha=0.7)
+            'o-', color='green', label="Simulated Data", alpha=1.0)
     
     if all(col in sim_df.columns for col in ['ci_95_lower', 'ci_95_upper']):
         plt.fill_between(
             sim_df[x_col],
             sim_df['ci_95_lower'],
             sim_df['ci_95_upper'],
-            color='red', alpha=0.1, label='95% CI'
+            color='green', alpha=1.0, label='95% CI'
         )
 
     plt.xlabel(x_label, fontsize=font_size)
-    plt.ylabel(y_label, fontsize=font_size)
-    plt.title(title + " (Connected Points)", fontsize=font_size+2)
+    if y_label is not None:
+        plt.ylabel(y_label, fontsize=font_size)
+    # if title is not None:
+    #     plt.title(title + " (Connected Points)", fontsize=font_size+2)
     plt.legend(fontsize=legend_size)
     plt.grid(True)
     
@@ -167,11 +175,11 @@ if __name__ == "__main__":
     sim_data_dir = "simulated_results"
     save_dir = "figures"
 
-    # Plot configurations
+    # Plot configurations -- NOTE: these should be the universal setting
     poly_degree = 1
-    font_size = 15
-    tick_size = 15
-    legend_size = 15
+    font_size = 20
+    tick_size = 20
+    legend_size = 20
 
     compare_gaze_duration(
         human_csv=os.path.join(human_data_dir, "gaze_duration_vs_word_length.csv"),
@@ -180,7 +188,8 @@ if __name__ == "__main__":
         y_col="average_gaze_duration",
         x_label="Word Length",
         y_label="Average Gaze Duration (ms)",
-        title="Word Length's Effect on Gaze Duration",
+        # title="Word Length's Effect on Gaze Duration",
+        title = "",
         save_dir=save_dir,
         output_filename="word_length_comparison.png",
         use_log_x=False,
@@ -196,8 +205,10 @@ if __name__ == "__main__":
         x_col="log_frequency", 
         y_col="average_gaze_duration",
         x_label="Log Frequency",
-        y_label="Average Gaze Duration (ms)",
-        title="Frequency's Effect on Gaze Duration",
+        # y_label="Average Gaze Duration (ms)",
+        y_label="",
+        # title="Frequency's Effect on Gaze Duration",
+        title="",
         save_dir=save_dir,
         output_filename="log_frequency_binned_comparison.png",
         use_log_x=False,
@@ -213,8 +224,10 @@ if __name__ == "__main__":
         x_col="logit_predictability", 
         y_col="average_gaze_duration",
         x_label="Logit Predictability",
-        y_label="Average Gaze Duration (ms)",
-        title="Predictability's Effect on Gaze Duration",
+        # y_label="Average Gaze Duration (ms)",
+        y_label="",
+        # title="Predictability's Effect on Gaze Duration",
+        title="",
         save_dir=save_dir,
         output_filename="logit_predictability_binned_comparison.png",
         use_log_x=False,
@@ -223,4 +236,3 @@ if __name__ == "__main__":
         tick_size=tick_size,      # Slightly smaller tick labels
         legend_size=legend_size     # Legend font size
     )
-
