@@ -157,6 +157,7 @@ class WordActivationRLEnv(Env):
         self._previous_step_entropy = None
         self._current_step_entropy = None
         self._entropy_diff = None
+        self._entropy_diffs_list = None
 
         # Representations
         self._word_representation = self.transition_function.reset_state_word_representation()    # The word representation, it stores the sampled letters. Here is a vector of letters sampled from the ASCII space
@@ -240,6 +241,7 @@ class WordActivationRLEnv(Env):
 
         self._current_step_entropy = self._previous_step_entropy
         self._entropy_diff = 0
+        self._entropy_diffs_list = []
 
         # Reset the word representation
         self._word_representation = self.transition_function.reset_state_word_representation()
@@ -315,8 +317,8 @@ class WordActivationRLEnv(Env):
                 # Calculate the entropy change
                 self._calculate_entropy_diff()
 
-                # Get the fixation durations
-                self._calculate_gaze_duration()
+                # # Get the fixation durations
+                # self._calculate_gaze_duration()
 
                 # Get the reward
                 reward = self.reward_function.get_step_wise_effort_cost(is_action_valid=True)
@@ -327,6 +329,9 @@ class WordActivationRLEnv(Env):
 
         else:   # Stop the sampling and recognize the word
             reward, self._done = self._terminate_step()
+
+            # Get the total gaze duration
+            self._calc_gaze_duration()
 
         if self._steps >= self.ep_len:     # Truncation case
             reward, self._done = self._terminate_step()
@@ -384,22 +389,13 @@ class WordActivationRLEnv(Env):
         self._current_step_entropy = self._calculate_entropy(probability_distribution=self._normalized_belief_distribution_parallel_activation_with_k_words)
         self._entropy_diff = self._previous_step_entropy - self._current_step_entropy
         self._previous_step_entropy = self._current_step_entropy
+        self._entropy_diffs_list.append(self._entropy_diff)
 
-
-    def _calculate_gaze_duration(self):
+    def _calc_gaze_duration(self):
         """
         Calculate the gaze duration
         """
-        self._current_fixation_duration = self.transition_function.calculate_fixation_duration_in_ms_nonlinear(
-                    lamda=self._lamda, t0=self._t_0, entropy_diff=self._entropy_diff
-                )
-        self._individual_fixations_durations_list.append(self._current_fixation_duration)
-        # Get the saccade durations
-        self._current_saccade_duration = self.transition_function.calculate_saccade_duration_in_ms_emma()
-        self._individual_saccades_durations_list.append(self._current_saccade_duration)
-        # Update the gaze duration
-        segment_duration = self._current_fixation_duration + self._current_saccade_duration
-        self._gaze_duration += segment_duration
+        self._gaze_duration = self.transition_function.calc_gaze_duration_ms(entropy_diffs=self._entropy_diffs_list)
 
     
     def _get_logs(self, is_initialization=False, mode="train"):
