@@ -12,6 +12,7 @@ sys.path.append(os.path.join(current_file_dir, 'sub_models'))
 
 from stable_baselines3 import PPO
 
+from sub_models.word_recognition_v0807.WordRecognitionEnv import WordRecognitionEnv
 from sub_models.sentence_read_v0604.SentenceReadingEnv import SentenceReadingUnderTimePressureEnv
 from sub_models.text_read_v0604.TextReadEnv import TextReadingUnderTimePressureEnv
 from sub_models.text_read_v0604.Utilities import DictActionUnwrapper
@@ -166,7 +167,74 @@ class SentenceReader:
         self.action, self._states = self._model.predict(self._obs, deterministic=True)
         self._obs, self._reward, self.done, self._truncated, self._info = self.env.step(action=self.action)
         # Get the step-wise log
-        self.sentence_reading_logs = self.env.get_individual_step_log()        # TODO code in the original env
+        self.sentence_reading_logs = self.env.get_individual_step_log()        
+
+
+class WordRecognizer:
+
+    def __init__(self):
+        """
+        This is the word recognizer that recognizes a word, controls which letter to fixate on in a word. 
+        And it returns the reading progress and the reading time. Accumulated by saccades duration and gaze durations.
+        """
+        # Read the configuration file
+        with open(CONFIG_PATH, "r") as f:
+            self.config = yaml.load(f, Loader=yaml.FullLoader)
+
+        # Pre-trained model infomation
+        self._model_info = self.config["simulate"]["rl_models"]["word_recognizer"]
+
+        # Get the pre-trained model path
+        self._model_path = os.path.join("sub_models", "training", "saved_models", self._model_info["checkpoints_folder_name"], self._model_info["loaded_model_name"])
+
+        # Initialize the environment
+        self.env = WordRecognitionEnv()
+
+        # Load the pre-trained model
+        try:
+            self._model = PPO.load(self._model_path, self.env, custom_objects={"observation_space": self.env.observation_space, "action_space": self.env.action_space})
+        except (RuntimeError, TypeError) as e:
+            warnings.warn(f"Could not deserialize object: {e}")
+            raise e
+
+        print(f"{'='*50}\n"
+              f"Successfully loaded the pre-trained {self._model_info['env_name']} model from {self._model_path}.\n"
+              f"{'='*50}\n")
+            
+        # Initialize the rl-related variables that are necessary
+        self.action = None
+        self._states = None
+        self._reward = None
+        self._truncated = None
+        self._obs = None
+        self._info = None
+        self.done = None
+        self.score = None
+        self.word_recognition_steps = None
+        self.word_recognition_logs = None
+
+    def reset(self, inputs: dict = None):
+        """
+        Reset the environment for each allocated word.
+        """
+        # RL-related variables
+        self._obs, self._info = self.env.reset(inputs=inputs)
+        self.done = False
+        self.score = 0
+
+        # Environment-related variables
+        self.word_recognition_steps = 0
+        self.word_recognition_logs = {}
+    
+    def step(self):
+        """
+        Recognize the word (sample and activate), return corresponding states information.
+        """
+        self.word_recognition_steps += 1
+        self.action, self._states = self._model.predict(self._obs, deterministic=True)
+        self._obs, self._reward, self.done, self._truncated, self._info = self.env.step(action=self.action)
+        # Get the step-wise log
+        self.word_recognition_logs = self.env.get_individual_step_log()        # TODO code in the word recognition env
 
 
 class ReaderAgent:
@@ -182,7 +250,6 @@ class ReaderAgent:
                 And using the pseudo time consumption.
             Simulation objective: the main metrics: reading speed, regression rate, and skip rate; 
                 and comprehension metrics (including the comprehension score and the comprehension time) are compatible with human data.
-            NOTE: if want to compare the gaze duration vs. time conditions. Then I need to retrain that model to be time-awared, then integrate here to run simulations.
         
         Version 0612
             Based on the version 0612, but using the real reading time.
@@ -190,8 +257,11 @@ class ReaderAgent:
 
         Version 0617
             Using the real reading time done by the simulation.
-            TODO: train a faster reading speed.
             NOTE: try later -- use the handcrafted sentence comprehension to guide the text reader.
+        
+        Version 0808
+            Integrating the word recognizer to calculate the actual simulation reading time, instead of using a global constant.
+            Objective: 1. get the actual simulation word reading time; 2. enable drawing scanpath from the letter level.
         """
 
         # Read the configuration file
@@ -204,6 +274,7 @@ class ReaderAgent:
         # Initialize the readers
         self.text_reader = TextReader()
         self.sentence_reader = SentenceReader()
+        self.word_recognizer = WordRecognizer()
 
         # Time-related variables (states)
         self._total_time = None     # in seconds
@@ -239,12 +310,13 @@ class ReaderAgent:
         # Reset the time-related states
         self._time_condition = str(time_condition)
 
-        # TODO debug delete later
+        # TODO debug delete later ----------------------------------------------
         print("Get the reset conditions:")
         print(f"The episode index is {self._episode_index}")
         print(f"The stimulus index is {self._stimulus_index}")
         print(f"The time condition is {self._time_condition}")
         print()
+        # ----------------------------------------------------------------------
 
         # Reset the time-related variables
         self._total_time = TIME_CONDITIONS[self._time_condition]
@@ -342,21 +414,62 @@ class ReaderAgent:
             self.sentence_reader.step()
 
             # Get the reading word index
-            self.current_word_index = self.sentence_reader.env.current_word_index     # TODO need to differentiate from the word that is being actually read NOTE: the regressed and skipped words will not be tracked down; so better check the reading sequence
+            self.current_word_index = self.sentence_reader.env.current_word_index    
+            # TODO shouldn't this be the actual word being read? And check the metrics calculation, we should only note the actually read words; for the post-regression landing word, it is not re-read. So one time (step), one word.
+            # TODO need to differentiate from the word that is being actually read NOTE: the regressed and skipped words will not be tracked down; so better check the reading sequence -- need a separate function to manage this
+
+            # Get the word's meta-data for the word recognizer
+            current_word_metadata = {
+                'word': self.sentence_reader.env._sentence_info['words'][self.current_word_index],
+                'word_freq_prob': self.sentence_reader.env._sentence_info['word_frequencies_per_million_for_analysis'][self.current_word_index] / 1_000_000, 
+                'word_pred_prob': self.sentence_reader.env._sentence_info['word_predictabilities_for_analysis'][self.current_word_index],
+            }
+
+            # Call the word recognizer here for time consumption. NOTE the detailed inside word fixation actions are stored in word recognizer's log
+            word_recognition_elapsed_time_in_ms = self._simulate_word_recognition(inputs=current_word_metadata)
             
             # Update sentence logs
             self._update_sentence_reading_logs()        
-            # TODO I can do the cross validation using the reading_sequence and logs from that reader
-            # TODO check whether the index input is correct -- Error: list index out of range
+            # TODO I can do the cross validation using the reading_sequence and logs from that reader <<PLUS>> check whether the index input is correct -- Error: list index out of range
 
         # Return the time consumed by the sentence reading
-        return self.sentence_reader.env.elapsed_time
+        return self.sentence_reader.env.elapsed_time     # TODO use the word recognizer to compute this
+    
+    def _simulate_word_recognition(self, inputs: dict=None):
+        """
+        Simulate the word recognition
 
+        Two primary usage: 1. calculate reading time; 2. draw the scanpath from the letter level
+        """
+        # Reset the environment
+        self.word_recognizer.reset(inputs=inputs)
+
+        # Reset the letter index in the word? NOTE: check whether this is necessary (maybe yes, because we need to plot later)
+        self.current_letter_index = -1          # Always start from outside of the word
+
+        # Reset the individual word recognition logs
+        self._individual_word_recognition_logs = []
+
+        # Run the frozen controller
+        while not self.word_recognizer.done:
+
+            # Determine which letter to center in the foveal vision
+            self.word_recognizer.step()
+
+            # Get the letter index
+            self.current_letter_index, is_terminate = self.word_recognizer.env.get_current_letter_index()
+
+            # Update word logs
+            self._update_word_recognition_logs()
+        
+        # Return the consumed time
+        return self.word_recognizer.env.get_elapsed_time_in_ms()
 
     ########################################################## Helper functions ##########################################################
     def _init_logs(self):
         """
-        Initialize the data log dictionary.    NOTE: modify later if needed.
+        Initialize the data log dictionary.
+        Contains general information (metadata of the trial)
         """
         self._single_episode_logs = {
             "episode_index": self._episode_index,
@@ -383,7 +496,14 @@ class ReaderAgent:
         Update the sentence reading logs.
         """
         self._individual_sentence_reading_logs.append(self.sentence_reader.sentence_reading_logs)
-        # self._single_episode_logs["text_reading_logs"][text_reading_step]["sentence_reading_logs"].append(self.sentence_reader.sentence_reading_logs)     # TODO debug this later -- check whether the text_reading_step is correct
+        # self._single_episode_logs["text_reading_logs"][text_reading_step]["sentence_reading_logs"].append(self.sentence_reader.sentence_reading_logs)     
+        # TODO add word recognition data, both summaries and individual logs
+    
+    def _update_word_recognition_logs(self):
+        """
+        Update the word recognition logs.
+        """
+        self._individual_word_recognition_logs.append(self.word_recognizer.word_recognition_logs)          # TODO do this, check whether enough or not later
     
     def _save_data(self):
         """

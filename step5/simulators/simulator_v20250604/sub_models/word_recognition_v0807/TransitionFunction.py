@@ -233,7 +233,7 @@ class TransitionFunction():
         """
         return 25
     
-    def calc_individual_saccade_duration_ms(self, entropy_diffs) -> float:
+    def calc_total_saccades_duration_ms(self, entropy_diffs) -> float:
         """
         Calculate the total saccade duration in milliseconds.
         It includes the number of fixations' saccade durations, one of them is leaving the word.

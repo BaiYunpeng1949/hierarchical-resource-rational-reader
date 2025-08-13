@@ -167,11 +167,15 @@ class WordRecognitionEnv(Env):
         if self._mode == 'simulate':
         # if inputs is not None:
             self._word = inputs["word"]
-            word_freq = inputs["word_freq"]
-            word_pred = inputs["word_pred"]
+            word_freq_prob = inputs["word_freq_prob"]
+            word_pred_prob = inputs["word_pred_prob"]
             # self._word_prior_prob = self.lex_manager.prior_dict[self._word] 
-            self._word_prior_prob = word_freq       # NOTE: One of the assumption: we only use freq here. Or later we could find a way to integrate both the freq and pred into the prior
-            self._raw_occurance = 0   # NOTE: this seem to be not used when inputting words for simulation, thus set as 0
+            self._word_prior_prob = np.max(word_freq_prob, word_pred_prob)     # NOTE Justification: usually the pred prob is very small and neglectable, we use it only if it is dominating the freq
+            self._raw_occurance = word_freq_prob * 1_000_000   # NOTE: this seem to be not used when inputting words for simulation, thus set as 0
+            assert 0 <= self._word_prior_prob <= 1, (
+                f"Invalid word prior prob, should be within [0, 1]. "
+                f"Word freq prob is: {word_freq_prob} and word pred prob is: {word_pred_prob}."
+            )
             # Update the prior dict in the lexicon manager, register the target word there
             self.update_prior_dict(word_to_recognize=self._word, prior_prob=self._word_prior_prob)
         else:
@@ -292,6 +296,29 @@ class WordRecognitionEnv(Env):
         assert len(stateful_obs) == self._num_stateful_obs, f"expected {self._num_stateful_obs} but got {len(stateful_obs)}"
 
         return stateful_obs
+    
+    ############################################### Helper Functions ###############################################
+
+    def get_current_letter_index(self):
+        """
+        Get the current letter index that is fixated
+        """
+        if self._action >= self.MAX_WORD_LEM:
+            return (None, True)     # Terminate step: none of the fixation index, and True of termination
+        else:
+            if self._action <= self._word_len - 1:
+                return (self._action, False)    # Valid fixation, False of termination
+            else:
+                return (-1, False)      # Invalid fixation, False of termination
+    
+    def get_elapsed_time_in_ms(self):
+        """
+        Get the elapsed time, including the gaze duration (sum of the first-fixations) and total saccade durations
+        """
+        if len(self._entropy_diffs_list) == 0:
+            return 0        # No information sampling, just wasting steps
+        else:
+            return self._get_gaze_duration_for_this_word() + self._get_sum_saccade_duration_for_this_word()
 
     def _calculate_entropy_diff(self):
         """
@@ -312,7 +339,7 @@ class WordRecognitionEnv(Env):
         """
         Get the sum saccade duration for this word
         """
-        return self.transition_function.calc_total_saccade_duration_ms(entropy_diffs=self._entropy_diffs_list)
+        return self.transition_function.calc_total_saccades_duration_ms(entropy_diffs=self._entropy_diffs_list)
 
     def _get_logs(self, is_initialization=False, mode="train"):
         """
@@ -360,7 +387,16 @@ class WordRecognitionEnv(Env):
                     "accurate_recognition": self._word_to_activate == self._word if self._done else None
                 })
                 return self.log_cumulative_version
-            
+    
+    def get_individual_step_log(self):
+        """
+        Get individual step log for simulation documentation and data rolling.
+        """
+        logs = {
+
+        }
+        return logs
+        
 
 if __name__ == "__main__":
 
