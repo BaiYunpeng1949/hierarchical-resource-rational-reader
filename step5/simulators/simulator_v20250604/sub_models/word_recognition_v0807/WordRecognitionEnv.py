@@ -113,6 +113,7 @@ class WordRecognitionEnv(Env):
 
         # Define the logger:
         self.log_cumulative_version = None
+        self._log_valid_sampled_letters_indexes_list = None
     
     def reset(self, seed=None, inputs=None, ep_idx=None):
         """
@@ -189,6 +190,9 @@ class WordRecognitionEnv(Env):
         self._normalized_ground_truth_word_representation = self.transition_function.get_normalized_ground_truth_word_representation(target_word=self._word)
         # This is only used for identifying words and numerical computations
 
+        # Reset the log
+        self._log_valid_sampled_letters_indexes_list = []
+
         return self._get_obs(), self._get_logs(is_initialization=True, mode=self._mode)
 
     def step(self, action):
@@ -229,6 +233,9 @@ class WordRecognitionEnv(Env):
 
                 # Get the reward
                 reward = self.reward_function.get_step_wise_effort_cost(is_action_valid=True)
+
+                # Update the log
+                self._log_valid_sampled_letters_indexes_list.append(action)
             
             else:   # The action is invalid, sampling nothing, doing nothing, wasting time
                 
@@ -340,6 +347,18 @@ class WordRecognitionEnv(Env):
         Get the sum saccade duration for this word
         """
         return self.transition_function.calc_total_saccades_duration_ms(entropy_diffs=self._entropy_diffs_list)
+    
+    def get_recognized_word(self):
+        """
+        Get the recognized word str
+        """
+        return self._word_to_activate
+    
+    def get_valid_sampled_letters_indexes_list(self):
+        """
+        Get the valid sampled letters' indexes as a list
+        """
+        return self._log_valid_sampled_letters_indexes_list
 
     def _get_logs(self, is_initialization=False, mode="train"):
         """
@@ -403,12 +422,11 @@ class WordRecognitionEnv(Env):
                 action_information = "invalid sampling"
                 current_index_letter = -1
 
-        # TODO finish this later for data visualization and time computing, check how other models work
         individual_step_log = {
             "step": self._steps,
             "action": action_information,
             "current_letter_index": self._action,
-            "elapsed_time": self.get_elapsed_time_in_ms() / 1_000,
+            "elapsed_time": 'NOTE: sampled in the simulator', # self.get_elapsed_time_in_ms() / 1_000,
             "recognized_word_str": self._word_to_activate,
         }
         return individual_step_log

@@ -235,7 +235,7 @@ class WordRecognizer:
         self.action, self._states = self._model.predict(self._obs, deterministic=True)
         self._obs, self._reward, self.done, self._truncated, self._info = self.env.step(action=self.action)
         # Get the step-wise log
-        self.word_recognition_logs = self.env.get_individual_step_log()        # TODO code in the word recognition env
+        self.word_recognition_logs = self.env.get_individual_step_log()        
 
 
 class ReaderAgent:
@@ -421,20 +421,21 @@ class ReaderAgent:
             # Determine which word to read using the RL model
             self.sentence_reader.step()
 
-            # # Get the reading word index  TODO: should I set it as 'actual reading word index', and we need to apply two words reading here, because both words got reinforced; and now the current word index is 
-            # self.current_word_index = self.sentence_reader.env.current_word_index    
-            # # TODO shouldn't this be the actual word being read? And check the metrics calculation, we should only note the actually read words; for the post-regression landing word, it is not re-read. So one time (step), one word.
-            # # TODO need to differentiate from the word that is being actually read NOTE: the regressed and skipped words will not be tracked down; so better check the reading sequence -- need a separate function to manage this
-
             # Get the words indexes for those need to be read
             current_step_local_actual_fixation_sequence_in_sentence = self.sentence_reader.env.local_actual_fixation_sequence_in_sentence.copy()
             new_words_indexes_list = list_diff_preserve_order(a=previous_step_local_actual_fixation_sequence_in_sentence, b=current_step_local_actual_fixation_sequence_in_sentence)
+
+            # Reset the recognized words list
+            recognized_words_list = []
+
+            # Reset the sampled letters indexes dict
+            sampled_lettes_indexes_dict = {}
 
             # Reset the step-wise time consumption in second
             individual_step_reading_time_in_s = 0
 
             # Read word or words one by one
-            for new_reading_word_index in new_words_indexes_list:
+            for (i, new_reading_word_index) in enumerate(new_words_indexes_list):
 
                 # Get the word's meta-data for the word recognizer
                 current_word_metadata = {
@@ -444,7 +445,16 @@ class ReaderAgent:
                 }
 
                 # Call the word recognizer for time consumption
-                word_recognition_elapsed_time_in_ms = self._simulate_word_recognition(inputs=current_word_metadata)
+                word_recognition_elapsed_time_in_ms, recognized_word, valid_sampled_letters_indexes_list = self._simulate_word_recognition(inputs=current_word_metadata)
+
+                # Update the sampled letters indexes dict
+                sampled_lettes_indexes_dict[i] = {
+                    "sentence_local_word_index": new_reading_word_index,
+                    "letters_indexes": valid_sampled_letters_indexes_list,
+                }
+
+                # Update the recognized words list
+                recognized_words_list.append(recognized_word)
                 
                 # Update the individual step time consumption
                 individual_step_reading_time_in_s += word_recognition_elapsed_time_in_ms / 1_000
@@ -452,10 +462,14 @@ class ReaderAgent:
                 # Sum to the sentence reading time
                 sentence_reading_time_in_s += word_recognition_elapsed_time_in_ms / 1_000
             
-            # Feed back to the sentence reader to update time consumption
-            
             # Update sentence logs
-            self._update_sentence_reading_logs()    # NOTE NOT Pirority: I can do the cross validation using the reading_sequence and logs from that reader <<PLUS>> check whether the index input is correct -- Error: list index out of range
+            # NOTE NOT Pirority: I can do the cross validation using the reading_sequence and logs from that reader <<PLUS>> check whether the index input is correct -- Error: list index out of range
+            self._update_sentence_reading_logs(
+                num_words_read=len(new_words_indexes_list),
+                sampled_lettes_indexes_dict=sampled_lettes_indexes_dict,
+                total_elapsed_time_in_s=individual_step_reading_time_in_s,
+                recognized_words_list=recognized_words_list,
+            )    
             # Update the previous step local actual fixation sequence
             previous_step_local_actual_fixation_sequence_in_sentence = self.sentence_reader.env.local_actual_fixation_sequence_in_sentence.copy()
 
@@ -487,11 +501,17 @@ class ReaderAgent:
             # Get the letter index
             self.current_letter_index, is_terminate = self.word_recognizer.env.get_current_letter_index()
 
+            # Get the recognized word
+            recognized_word = self.word_recognizer.env.get_recognized_word()
+
+            # Get the valid sampled letters indexes list
+            valid_sampled_letters_indexes_list = self.word_recognizer.env.get_valid_sampled_letters_indexes_list()
+
             # Update word logs
             self._update_word_recognition_logs()
         
         # Return the consumed time
-        return self.word_recognizer.env.get_elapsed_time_in_ms()
+        return self.word_recognizer.env.get_elapsed_time_in_ms(), recognized_word, valid_sampled_letters_indexes_list
 
     ########################################################## Helper functions ##########################################################
     def _init_logs(self):
@@ -516,22 +536,29 @@ class ReaderAgent:
         self._single_episode_logs["text_reading_logs"].append(self.text_reader.text_reading_logs)    
         # Add the sentence reading summary
         self._single_episode_logs["text_reading_logs"][self.text_reader.text_reading_steps - 1]["sentence_reading_summary"] = self.sentence_reader.env.get_summarised_sentence_reading_logs()
-        # Add the words reading in the given sentence (the reading sequence)
+        # Add the words reading in the given sentence (the reading sequence) 
         self._single_episode_logs["text_reading_logs"][self.text_reader.text_reading_steps - 1]["sentence_reading_logs"] = self._individual_sentence_reading_logs
     
-    def _update_sentence_reading_logs(self):
+    def _update_sentence_reading_logs(self, num_words_read, sampled_lettes_indexes_dict, total_elapsed_time_in_s, recognized_words_list):
         """
         Update the sentence reading logs.
         """
         self._individual_sentence_reading_logs.append(self.sentence_reader.sentence_reading_logs)
-        # self._single_episode_logs["text_reading_logs"][text_reading_step]["sentence_reading_logs"].append(self.sentence_reader.sentence_reading_logs)     
-        # TODO add word recognition data, both summaries and individual logs
+        # Add the word recognition summary
+        self._individual_sentence_reading_logs[self.sentence_reader.sentence_reading_steps - 1]["word_recognition_summary"] = {
+            "num_words_read_this_step": num_words_read,
+            "sampled_letters_indexes_dict": sampled_lettes_indexes_dict,
+            "total_elapsed_time_in_s": total_elapsed_time_in_s,
+            "recognized_words_list": recognized_words_list,
+        }      
+        # Detailed logs NOTE: I feel this is not necessary
+        # self._individual_sentence_reading_logs[self.sentence_reader.sentence_reading_steps - 1]["word_recognition_logs"] = self._individual_word_recognition_logs
     
     def _update_word_recognition_logs(self):
         """
         Update the word recognition logs.
         """
-        self._individual_word_recognition_logs.append(self.word_recognizer.word_recognition_logs)          # TODO do this, check whether enough or not later
+        self._individual_word_recognition_logs.append(self.word_recognizer.word_recognition_logs)
     
     def _save_data(self):
         """

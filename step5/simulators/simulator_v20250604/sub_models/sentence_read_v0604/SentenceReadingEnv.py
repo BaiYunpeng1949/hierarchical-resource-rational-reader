@@ -553,6 +553,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
             "remaining_time": self._sentence_wise_remaining_time_in_seconds,
             "valid_words_beliefs": self._valid_words_beliefs.copy(),
             "ongoing_sentence_comprehension_score": self._ongoing_sentence_comprehension_score,
+            "word_recognition_summary": {},
+            "word_recognition_logs": [],
         }
         return individual_step_log
     
