@@ -27,19 +27,19 @@ class WordRecognitionEnv(Env):
     def __init__(self):
         
         # Get the current root directory
-        root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-        # Get the mode from the config yaml file
+        # Load configuration
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         with open(os.path.join(root_dir, "config.yaml")) as f:
             self._config = yaml.load(f, Loader=yaml.FullLoader)
-        
-        self._mode = self._config['rl']['mode']
+        self._mode = self._config["rl"]["mode"]
+
         assert self._mode in ['simulate', 'debug', 'test', 'train', 'continual_train'], f"Invalid mode: {self._mode} !!!!" 
 
         print(f"Word Activation (No Vision) Environment V0807 (orginated from V0218) -- Deploying the environment in the {self._config['rl']['mode']} mode.")
 
         # Define constants -- configurations
         # Define word lengths
-        self.MAX_WORD_LEN = Constants.MAX_WORD_LEM
+        self.MAX_WORD_LEN = Constants.MAX_WORD_LEN
         self.MIN_WORD_LEN = Constants.MIN_WORD_LEN
         # Define the top-k candidates when competing for recognition
         self._top_k = Constants.WORKING_MEMORY_SIZE     # Set as five for the STM buffer's limitation

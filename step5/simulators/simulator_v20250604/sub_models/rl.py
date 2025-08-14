@@ -32,6 +32,7 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
 # from modules.rl_envs.word_activation_v0218.WordActivationEnvV0218 import WordActivationRLEnv
+from word_recognition_v0807.WordRecognitionEnv import WordRecognitionEnv
 from sentence_read_v0604.SentenceReadingEnv import SentenceReadingUnderTimePressureEnv
 from text_read_v0604.TextReadEnv import TextReadingUnderTimePressureEnv
 from text_read_v0604.Utilities import DictActionUnwrapper
@@ -139,25 +140,24 @@ class RL:
             )
 
         # Get the environment class
-        # env_class = TextReadingUnderTimePressureEnv    
-        env_class = SentenceReadingUnderTimePressureEnv
+        env_class = WordRecognitionEnv          # Choose from WordRecognitionEnv, SentenceReadingUnderTimePressureEnv, TextReadingUnderTimePressureEnv
 
         # Read the total dataset if training the general oculomotor controller model.
-        # if env_class == WordActivationRLEnv:        NOTE: uncomment this later if the word recognizer agent is needed
-        #     self._env = WordActivationRLEnv()
-        #     def make_env():
-        #         env = WordActivationRLEnv()
-        #         # env = Monitor(env)
-        #         return env
-        #     # Initialise parallel environments
-        #     self._parallel_envs = make_vec_env(
-        #         env_id=make_env,
-        #         # env_id=self._env.__class__,
-        #         n_envs=self._config_rl['train']["num_workers"],
-        #         seed=42,
-        #         vec_env_cls=SubprocVecEnv,
-        #     )
-        if env_class == SentenceReadingUnderTimePressureEnv:
+        if env_class == WordRecognitionEnv:        
+            self._env = WordRecognitionEnv()
+            def make_env():
+                env = WordRecognitionEnv()
+                # env = Monitor(env)
+                return env
+            # Initialise parallel environments
+            self._parallel_envs = make_vec_env(
+                env_id=make_env,
+                # env_id=self._env.__class__,
+                n_envs=self._config_rl['train']["num_workers"],
+                seed=42,
+                vec_env_cls=SubprocVecEnv,
+            )
+        elif env_class == SentenceReadingUnderTimePressureEnv:
             self._env = SentenceReadingUnderTimePressureEnv()
             def make_env():
                 env = SentenceReadingUnderTimePressureEnv()
@@ -202,7 +202,7 @@ class RL:
             # Configure the model - HRL - Ocular motor control
             # if isinstance(self._env, SampleFixationVersion1) or isinstance(self._env, SampleFixationVersion2):
             # if isinstance(self._env, WordActivationRLEnv) or isinstance(self._env, SentenceReadingEnv) or isinstance(self._env, TextComprehensionEnv):      NOTE: uncomment this later if the word recognizer agent is needed
-            if isinstance(self._env, SentenceReadingUnderTimePressureEnv) or isinstance(self._env.unwrapped, TextReadingUnderTimePressureEnv):
+            if isinstance(self._env, WordRecognitionEnv) or isinstance(self._env, SentenceReadingUnderTimePressureEnv) or isinstance(self._env.unwrapped, TextReadingUnderTimePressureEnv):
                 policy_kwargs = dict(
                     features_extractor_class=StatefulInformationExtractor,       
                     features_extractor_kwargs=dict(features_dim=128),
@@ -332,9 +332,9 @@ class RL:
         elif self._mode == _MODES['continual_train']:
             self._continual_train()
         elif self._mode == _MODES['test'] or self._mode == _MODES['debug']:
-            # if isinstance(self._env, WordActivationRLEnv):    NOTE: uncomment this later if the word recognizer agent is needed
-            #     self._word_activation_test()
-            if isinstance(self._env, SentenceReadingUnderTimePressureEnv):
+            if isinstance(self._env, WordRecognitionEnv):    
+                self._word_recognition_test()
+            elif isinstance(self._env, SentenceReadingUnderTimePressureEnv):
                 self._sentence_reading_test()
             elif isinstance(self._env.unwrapped, TextReadingUnderTimePressureEnv):
                 self._text_comprehension_test()
@@ -342,6 +342,68 @@ class RL:
                 raise ValueError(f'Invalid environment {self._env}.')
         else:
             raise ValueError(f'Invalid mode {self._mode}.')
+    
+    def _word_recognition_test(self):
+        """
+        Test the word recognition environment.
+        """
+        
+        if self._mode == _MODES['debug']:
+            print('\nSimulation -- Debug mode: ')
+        elif self._mode == _MODES['test']:
+            print('\nSimulation -- Test mode: ')
+
+        # Start the timer
+        start_time = time.time()
+
+        # Prepare to collect logs
+        all_episode_logs = []
+
+        for episode in range(1, self._num_episodes + 1):
+            obs, info = self._env.reset()
+            done = False
+            score = 0
+
+            while not done:
+                if self._mode == _MODES['debug']:
+                    action = self._env.action_space.sample()
+                elif self._mode == _MODES['test']:
+                    action, _states = self._model.predict(obs, deterministic=True)
+                    # action, _states = self._model.predict(obs, deterministic=False)
+                else:
+                    raise ValueError(f'Invalid mode {self._mode}.')
+
+                obs, reward, done, truncated, info = self._env.step(action)
+                score += reward
+
+            print(
+                f'Episode:{episode}     Score:{score} \n'
+                f'{"-" * 50}\n'
+            )
+
+        #     # Collect episode log after each episode
+        #     episode_log = self._env.unwrapped.get_episode_log()
+        #     episode_log['score'] = score
+        #     all_episode_logs.append(episode_log)
+
+        # print(f'Time elapsed for running the DEBUG/TEST: {time.time() - start_time} seconds')
+
+        # # Save logs to JSON file in the specified folder structure
+        # # Folder: simulated_results/<checkpoint_folder>__<model_name>__<num_episodes>
+        # checkpoint_folder = self._checkpoints_folder_name if hasattr(self, '_checkpoints_folder_name') else 'unknown_checkpoint'
+        # model_name = self._loaded_model_name if hasattr(self, '_loaded_model_name') else 'unknown_model'
+        # num_episodes = self._num_episodes if hasattr(self, '_num_episodes') else 'unknown_episodes'
+        # results_dir = os.path.join(
+        #     os.path.dirname(os.path.abspath(__file__)),
+        #     'sentence_read_v0604',
+        #     'simulated_results',
+        #     f'{checkpoint_folder}__{model_name}__{num_episodes}'
+        # )
+        # os.makedirs(results_dir, exist_ok=True)
+        # results_path = os.path.join(results_dir, 'simulated_episode_logs.json')
+        # with open(results_path, 'w') as f:
+        #     json.dump(all_episode_logs, f, indent=2)
+        # print(f"Saved episode logs to {results_path}")
     
     def _sentence_reading_test(self):
         """

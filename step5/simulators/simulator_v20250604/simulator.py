@@ -55,14 +55,14 @@ class TextReader:
 
         # Load the pre-trained model
         try:
-            self._model = PPO.load(self._model_path, self.env, custom_objects={"observation_space": self.env.observation_space, "action_space": self.env.action_space})       # TODO should I unwrap this?
+            self._model = PPO.load(self._model_path, self.env, custom_objects={"observation_space": self.env.observation_space, "action_space": self.env.action_space})
         except (RuntimeError, TypeError) as e:
             warnings.warn(f"Could not deserialize object: {e}")
             raise e
 
-        print(f"{'='*50}\n" 
+        print(f"{'='*200}\n" 
               f"Successfully loaded the pre-trained {self._model_info['env_name']} model from {self._model_path}.\n"
-              f"{'='*50}\n")
+              f"{'='*200}\n")
             
         # Initialize the rl-related variables that are necessary
         self.action = None
@@ -130,9 +130,9 @@ class SentenceReader:
             warnings.warn(f"Could not deserialize object: {e}")
             raise e
 
-        print(f"{'='*50}\n"
+        print(f"{'='*200}\n"
               f"Successfully loaded the pre-trained {self._model_info['env_name']} model from {self._model_path}.\n"
-              f"{'='*50}\n")
+              f"{'='*200}\n")
             
         # Initialize the rl-related variables that are necessary
         self.action = None
@@ -197,9 +197,9 @@ class WordRecognizer:
             warnings.warn(f"Could not deserialize object: {e}")
             raise e
 
-        print(f"{'='*50}\n"
+        print(f"{'='*200}\n"
               f"Successfully loaded the pre-trained {self._model_info['env_name']} model from {self._model_path}.\n"
-              f"{'='*50}\n")
+              f"{'='*200}\n")
             
         # Initialize the rl-related variables that are necessary
         self.action = None
