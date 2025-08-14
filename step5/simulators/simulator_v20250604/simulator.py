@@ -18,6 +18,7 @@ from sub_models.text_read_v0604.TextReadEnv import TextReadingUnderTimePressureE
 from sub_models.text_read_v0604.Utilities import DictActionUnwrapper
 
 from utils.json_utils import np_to_native
+from utils.auxiliary_functions import list_diff_preserve_order
 
 # Constants and Configurations
 CONFIG_PATH = "sub_models/config.yaml"
@@ -94,7 +95,7 @@ class TextReader:
         Read the whole text, return corresponding states information.
         NOTE: might need to parse this reader into two parts, because I may use on-the-fly sentence reading content and comprehension score to evaluate the reading appraisals.
         But these are not good because they do not take the contextual information.
-        TODO: needs to be separated because the time needs to be returned by the lower-level agent.
+        TODO: needs to be separated because the time needs to be returned by the lower-level agent --> NOT Priority, postpone to later
         """
         self.text_reading_steps += 1
         self.action, self._states = self._model.predict(self._obs, deterministic=True)
@@ -310,11 +311,13 @@ class ReaderAgent:
         # Reset the time-related states
         self._time_condition = str(time_condition)
 
-        # TODO debug delete later ----------------------------------------------
+        # ----------------------------------------------
+        print(f"{'-'*100}")
         print("Get the reset conditions:")
         print(f"The episode index is {self._episode_index}")
         print(f"The stimulus index is {self._stimulus_index}")
         print(f"The time condition is {self._time_condition}")
+        print(f"{'-'*100}")
         print()
         # ----------------------------------------------------------------------
 
@@ -405,35 +408,60 @@ class ReaderAgent:
         # Reset the word index in the sentence
         self.current_word_index = -1          # Always start from the first word when running the simulation
 
+        # Reset the setence reading time in ms
+        sentence_reading_time_in_s = 0
+
         # Reset the individual sentence reading logs
         self._individual_sentence_reading_logs = []
+        # Reset the prevoius step's reading words; use this to determine the newly reading words (the number of words is 1 for forward reading and skipping, but for regression it is 2)
+        previous_step_local_actual_fixation_sequence_in_sentence = []
 
         while not self.sentence_reader.done:
 
             # Determine which word to read using the RL model
             self.sentence_reader.step()
 
-            # Get the reading word index
-            self.current_word_index = self.sentence_reader.env.current_word_index    
-            # TODO shouldn't this be the actual word being read? And check the metrics calculation, we should only note the actually read words; for the post-regression landing word, it is not re-read. So one time (step), one word.
-            # TODO need to differentiate from the word that is being actually read NOTE: the regressed and skipped words will not be tracked down; so better check the reading sequence -- need a separate function to manage this
+            # # Get the reading word index  TODO: should I set it as 'actual reading word index', and we need to apply two words reading here, because both words got reinforced; and now the current word index is 
+            # self.current_word_index = self.sentence_reader.env.current_word_index    
+            # # TODO shouldn't this be the actual word being read? And check the metrics calculation, we should only note the actually read words; for the post-regression landing word, it is not re-read. So one time (step), one word.
+            # # TODO need to differentiate from the word that is being actually read NOTE: the regressed and skipped words will not be tracked down; so better check the reading sequence -- need a separate function to manage this
 
-            # Get the word's meta-data for the word recognizer
-            current_word_metadata = {
-                'word': self.sentence_reader.env._sentence_info['words'][self.current_word_index],
-                'word_freq_prob': self.sentence_reader.env._sentence_info['word_frequencies_per_million_for_analysis'][self.current_word_index] / 1_000_000, 
-                'word_pred_prob': self.sentence_reader.env._sentence_info['word_predictabilities_for_analysis'][self.current_word_index],
-            }
+            # Get the words indexes for those need to be read
+            current_step_local_actual_fixation_sequence_in_sentence = self.sentence_reader.env.local_actual_fixation_sequence_in_sentence.copy()
+            new_words_indexes_list = list_diff_preserve_order(a=previous_step_local_actual_fixation_sequence_in_sentence, b=current_step_local_actual_fixation_sequence_in_sentence)
 
-            # Call the word recognizer here for time consumption. NOTE the detailed inside word fixation actions are stored in word recognizer's log
-            word_recognition_elapsed_time_in_ms = self._simulate_word_recognition(inputs=current_word_metadata)
+            # Reset the step-wise time consumption in second
+            individual_step_reading_time_in_s = 0
+
+            # Read word or words one by one
+            for new_reading_word_index in new_words_indexes_list:
+
+                # Get the word's meta-data for the word recognizer
+                current_word_metadata = {
+                    'word': self.sentence_reader.env._sentence_info['words'][new_reading_word_index],
+                    'word_freq_prob': self.sentence_reader.env._sentence_info['word_frequencies_per_million_for_analysis'][new_reading_word_index] / 1_000_000, 
+                    'word_pred_prob': self.sentence_reader.env._sentence_info['word_predictabilities_for_analysis'][new_reading_word_index],
+                }
+
+                # Call the word recognizer for time consumption
+                word_recognition_elapsed_time_in_ms = self._simulate_word_recognition(inputs=current_word_metadata)
+                
+                # Update the individual step time consumption
+                individual_step_reading_time_in_s += word_recognition_elapsed_time_in_ms / 1_000
+
+                # Sum to the sentence reading time
+                sentence_reading_time_in_s += word_recognition_elapsed_time_in_ms / 1_000
+            
+            # Feed back to the sentence reader to update time consumption
             
             # Update sentence logs
-            self._update_sentence_reading_logs()        
-            # TODO I can do the cross validation using the reading_sequence and logs from that reader <<PLUS>> check whether the index input is correct -- Error: list index out of range
+            self._update_sentence_reading_logs()    # NOTE NOT Pirority: I can do the cross validation using the reading_sequence and logs from that reader <<PLUS>> check whether the index input is correct -- Error: list index out of range
+            # Update the previous step local actual fixation sequence
+            previous_step_local_actual_fixation_sequence_in_sentence = self.sentence_reader.env.local_actual_fixation_sequence_in_sentence.copy()
 
         # Return the time consumed by the sentence reading
-        return self.sentence_reader.env.elapsed_time     # TODO use the word recognizer to compute this
+        # return self.sentence_reader.env.elapsed_time     # TODO use the word recognizer to compute this --> TODO change to sentence_reading_time_in_ms, check the original elapsed time, what it is
+        return sentence_reading_time_in_s
     
     def _simulate_word_recognition(self, inputs: dict=None):
         """

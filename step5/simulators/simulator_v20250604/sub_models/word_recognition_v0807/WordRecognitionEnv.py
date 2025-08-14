@@ -170,14 +170,14 @@ class WordRecognitionEnv(Env):
             word_freq_prob = inputs["word_freq_prob"]
             word_pred_prob = inputs["word_pred_prob"]
             # self._word_prior_prob = self.lex_manager.prior_dict[self._word] 
-            self._word_prior_prob = np.max(word_freq_prob, word_pred_prob)     # NOTE Justification: usually the pred prob is very small and neglectable, we use it only if it is dominating the freq
+            self._word_prior_prob = max(word_freq_prob, word_pred_prob)     # NOTE Justification: usually the pred prob is very small and neglectable, we use it only if it is dominating the freq
             self._raw_occurance = word_freq_prob * 1_000_000   # NOTE: this seem to be not used when inputting words for simulation, thus set as 0
             assert 0 <= self._word_prior_prob <= 1, (
                 f"Invalid word prior prob, should be within [0, 1]. "
                 f"Word freq prob is: {word_freq_prob} and word pred prob is: {word_pred_prob}."
             )
             # Update the prior dict in the lexicon manager, register the target word there
-            self.update_prior_dict(word_to_recognize=self._word, prior_prob=self._word_prior_prob)
+            self.lex_manager.update_prior_dict(word_to_recognize=self._word, prior_prob=self._word_prior_prob)
         else:
             self._word, self._word_prior_prob, self._raw_occurance = self.lex_manager.get_a_generated_word()
 
@@ -303,7 +303,7 @@ class WordRecognitionEnv(Env):
         """
         Get the current letter index that is fixated
         """
-        if self._action >= self.MAX_WORD_LEM:
+        if self._action >= self.MAX_WORD_LEN:
             return (None, True)     # Terminate step: none of the fixation index, and True of termination
         else:
             if self._action <= self._word_len - 1:
@@ -392,10 +392,26 @@ class WordRecognitionEnv(Env):
         """
         Get individual step log for simulation documentation and data rolling.
         """
-        logs = {
+        if self._action >= self.MAX_WORD_LEN:
+            action_information = "activate"
+            current_letter_index = None
+        else:
+            if self._action <= self._word_len - 1:
+                action_information = "sampling"
+                current_index_letter = self._action
+            else:
+                action_information = "invalid sampling"
+                current_index_letter = -1
 
+        # TODO finish this later for data visualization and time computing, check how other models work
+        individual_step_log = {
+            "step": self._steps,
+            "action": action_information,
+            "current_letter_index": self._action,
+            "elapsed_time": self.get_elapsed_time_in_ms() / 1_000,
+            "recognized_word_str": self._word_to_activate,
         }
-        return logs
+        return individual_step_log
         
 
 if __name__ == "__main__":

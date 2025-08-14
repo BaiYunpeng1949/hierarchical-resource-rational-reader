@@ -84,8 +84,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._skipped_words_indexes = None      
         self._regressed_words_indexes = None
         self.reading_sequence = None
-        self.local_actual_fixation_sequence_in_sentence = None
-        self.global_actual_fixation_sequence_in_text = None
+        self.local_actual_fixation_sequence_in_sentence = None      # Local means within the sentence
+        self.global_actual_fixation_sequence_in_text = None         # Global means outside of the sentence, but within the text
 
         # Comprehension score tracking
         self._ongoing_sentence_comprehension_score = None
@@ -253,6 +253,9 @@ class SentenceReadingUnderTimePressureEnv(Env):
                 # Lower the cost of regression: jump to the last and AUTOMATICALLY jump back. Objective: see whether the agent would try regressions more often
                 self.current_word_index += 1     # Jump back to the last word read before
                 self._previous_word_index = self.current_word_index - 1
+                # Because both words are reinforced, so we read the word after the regressed word as well.
+                self.reading_sequence.append(self.current_word_index)
+                self.local_actual_fixation_sequence_in_sentence.append(self.current_word_index)
 
                 # Update the time related variables
                 self._update_time_related_variables()      
@@ -507,7 +510,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self.elapsed_time, self._sentence_wise_remaining_time_in_seconds = self.transition_function.update_state_time(
             elapsed_time=self.elapsed_time,
             expected_sentence_reading_time=self._sentence_wise_expected_time_pressure_in_seconds,
-            word_reading_time=self._sentence_info['individual_word_reading_time']
+            word_reading_time=self._sentence_info['individual_word_reading_time']   # NOTE NOT Priority: I will not apply the real words' reading time here for now. Implement when needed later, or too much nuances
         )
         
     def _get_noisy_skipped_word_integration_prob(self, perfect_skipped_word_integration_prob):
