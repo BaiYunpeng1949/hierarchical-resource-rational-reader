@@ -44,7 +44,7 @@ simulate:
     word_recognizer:
       env_name: WordRecognitionEnv     
       checkpoints_folder_name: '0814_word_recognition_v0807' 
-      loaded_model_name: 'rl_model_80000000_steps' 
+      loaded_model_name: 'rl_model_200000000_steps' 
 
 llm:
   use_aalto_openai_api: True

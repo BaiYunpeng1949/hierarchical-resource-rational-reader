@@ -1,4 +1,4 @@
-import os
+import os, sys
 import re
 import cv2
 import json
@@ -12,7 +12,18 @@ from matplotlib import pyplot as plt
 # from psychopy import visual, core
 
 from step5.utils import auxiliaries as aux
+# from step5.utils import constants as cons
+
+import inspect, importlib.util, sys
 from step5.utils import constants as cons
+
+print(f"NOTE: Please run this as a module !!! python -m step5.generator.general_image_generator")
+
+print("cons module name:", cons.__name__)
+print("cons package    :", cons.__package__)
+print("cons file       :", cons.__file__)                    # <- absolute path to the constants.py in use
+print("find_spec origin:", importlib.util.find_spec('step5.utils.constants').origin)
+print("sys.modules path:", sys.modules['step5.utils.constants'].__file__)
 
 
 def pull_words():
@@ -200,6 +211,7 @@ class ImageGenerator:
             corpus_sentences_dict: dict = None,
             corpus_sentences_file_name: str = None,
             set_full_sentences: bool = False,
+            enable_vision_arrays: bool = False,
     ):
         self._lexicon_file_name = lexicon_file_name
         self._image_size = image_size
@@ -230,6 +242,7 @@ class ImageGenerator:
         self._set_full_sentences = set_full_sentences
         # Create a dictionary as a logger, which is going to store occurrences of words with different lengths
         self.gen_word_lengths_dist_dict = {str(i): [] for i in range(1, cons.MAX_WORD_LEN + 1)}
+        self._enable_vision_arrays=enable_vision_arrays
 
     def _create_directories(self, base_dir):
         current_date_time = datetime.datetime.now().strftime("%m_%d_%H_%M")
@@ -637,20 +650,23 @@ class ImageGenerator:
             # Generate and store foveal patch and masked and downsampled peripheral view for each word after all words have been drawn
             for word_meta in words_metadata:
                 word_bbox = word_meta[cons.md["word_bbox"]]
+
                 # Generate and store foveal patch for this word
-                foveal_patch, relative_bbox = self._generate_foveal_patches(img, word_bbox)
-                word_meta[cons.md["normalised_foveal_patch"]] = foveal_patch.tolist()
-                word_meta[cons.md["relative_bbox_foveal_patch"]] = list(relative_bbox)
-                # Generate and store masked and downsampled peripheral view for this word
-                masked_peripheral_view = self._generate_masked_and_downsampled_peripheral_view(
-                    np.array(img), word_bbox, self._training_foveal_and_peripheral_size[0],
-                    self._training_foveal_and_peripheral_size[1]
-                )
-                masked_peripheral_view = self._generate_masked_and_downsampled_plain_peripheral_view(
-                    np.array(img), word_bbox, self._training_foveal_and_peripheral_size[0],
-                    self._training_foveal_and_peripheral_size[1]
-                )
-                word_meta[cons.md["normalised_masked_downsampled_peripheral_view"]] = masked_peripheral_view.tolist()
+                if self._enable_vision_arrays:
+                    foveal_patch, relative_bbox = self._generate_foveal_patches(img, word_bbox)
+                    word_meta[cons.md["normalised_foveal_patch"]] = foveal_patch.tolist()
+                    word_meta[cons.md["relative_bbox_foveal_patch"]] = list(relative_bbox)
+                
+                    # Generate and store masked and downsampled peripheral view for this word
+                    masked_peripheral_view = self._generate_masked_and_downsampled_peripheral_view(
+                        np.array(img), word_bbox, self._training_foveal_and_peripheral_size[0],
+                        self._training_foveal_and_peripheral_size[1]
+                    )
+                    masked_peripheral_view = self._generate_masked_and_downsampled_plain_peripheral_view(
+                        np.array(img), word_bbox, self._training_foveal_and_peripheral_size[0],
+                        self._training_foveal_and_peripheral_size[1]
+                    )
+                    word_meta[cons.md["normalised_masked_downsampled_peripheral_view"]] = masked_peripheral_view.tolist()
 
             # Save the image
             # Apply color to the image while still in 'L' mode
@@ -670,7 +686,10 @@ class ImageGenerator:
                 img_bbox.save(save_bbox_filename)
 
             # Store the original image pixels in the metadata
-            normalized_image_pixels = aux.normalise(np.array(img), 0, 255, -1, 1).tolist()  # Normalize the image pixels
+            if self._enable_vision_arrays:
+                normalized_image_pixels = aux.normalise(np.array(img), 0, 255, -1, 1).tolist()  # Normalize the image pixels
+            else:
+                normalized_image_pixels = None
 
             # # TODO debug delete later
             # # original_image_pixels = np.array(img).tolist()  # Convert image to list and store in metadata
@@ -807,6 +826,9 @@ if __name__ == "__main__":
     _img_dir = os.path.join(_root_dir, "data", "gen_envs")
     _json_dir = os.path.join(_root_dir, "data", "gen_envs")
 
+    # TODO debug delete later
+    print(f'The variable of num_images is: {cons.config["concrete_configs"]["num_images"]}')
+
     # Initialize the generator
     generator = ImageGenerator(
         lexicon_file_name=_lex_file_name,
@@ -829,6 +851,7 @@ if __name__ == "__main__":
         corpus_sentences_dict=_sentences_w_punctuation_marks_and_upper_cases,
         corpus_sentences_file_name=_corpus_filename,
         set_full_sentences=cons.config["concrete_configs"]["corpus"],
+        enable_vision_arrays=False,
     )
     # Generate images
     generator.generate_data()

@@ -1,0 +1,169 @@
+# Visualize Scanpaths
+
+Utilities to (1) convert simulation logs into **image‑aligned fixation coordinates**, and (2) **plot** scanpaths for both human and simulation data with color‑coded saccades (forward / skip / regression).
+
+---
+
+## Folder structure
+
+```
+visualize_scanpaths/
+├─ assets/
+│  ├─ <images_dir>/                      # stimulus images, filenames: 0.png, 1.png, ... (jpg/jpeg/webp also OK)
+│  ├─ metadata.json                      # stimulus metadata used to map word/letter → pixel coords
+│  ├─ 11_18_17_40_integrated_corrected_human_scanpath.json  # human scanpaths (list of trials)
+│  └─ simulation_scanpaths.json          # simulation scanpaths (list of trials) — produced by process_sim_results.py
+├─ vis/
+│  ├─ human/                             # rendered human plots (created automatically)
+│  └─ simulation/                        # rendered simulation plots (created automatically)
+├─ process_sim_results.py                # convert sim logs → image-aligned scanpath JSON
+├─ plot_scanpaths.py                     # plot scanpaths over images; colors forward/skip/regression
+└─ README.md
+```
+
+---
+
+## What each file does
+
+### `process_sim_results.py`
+Converts simulation output (with sentence/word/letter indices) into a **plot‑ready JSON** with fixation coordinates on the stimulus image.
+
+- **Inputs**:  
+  - `all_simulation_results.json` (your raw sim output)  
+  - `metadata.json` (stimulus words + letters + image size)
+
+- **Output**: `simulation_scanpaths.json` (a list of trials). Each trial has:
+  ```json
+  {
+    "stimulus_index": 0,
+    "participant": "simulation",
+    "time_constraint": 30,
+    "fixation_data": [
+      {
+        "fix_x": 650.5,
+        "fix_y": 382.0,
+        "norm_fix_x": 0.339,
+        "norm_fix_y": 0.354,
+        "fix_duration": 270.0,           // milliseconds
+        "word_index": 42,                 // global word index in text
+        "recognized_word": "example",     // first recognized (may be null)
+        "recognized_words": ["example"]   // full list (may be empty)
+      }
+      // ...
+    ]
+  }
+  ```
+
+- **Coordinate rule** (per fixation):  
+  1) If **exactly one** sampled letter → use **that letter center**.  
+  2) If **multiple** letters → average their centers.  
+  3) If none/invalid → fall back to **word bbox center**.
+
+
+### `plot_scanpaths.py`
+Plots scanpaths on top of the stimulus image and writes **one PNG per trial**.
+
+- **Coloring rules** (computed from `word_index` per fixation):
+  - **Red line** = normal forward/adjacent/refixation
+  - **Blue line** = **skip** (forward jump > 1 word)
+  - **Green line** = **regression** (`next_word_index < furthest_word_seen_so_far`)
+  - **Green dot** = destination fixation of a regressive saccade  
+    (the first fixation is always red)
+- **Transparency / size** are configurable so text remains readable.
+- **Output directories** are split automatically for human vs simulation and files are **overwritten** if they already exist.
+
+---
+
+## Data origins
+
+- **`metadata.json`** should come from your stimulus builder. It must include, for each stimulus:
+  - image size (`config["img size"]`),
+  - per‑word entries with `"word_bbox"`,
+  - per‑letter entries with `"letters metadata" → "letter boxes"` (left/right/top/bottom).
+- **Human scanpaths**: a JSON list of trials matching the schema above (`participant: "human"` is preferred).  
+- **Images**: place under `assets/<images_dir>/` with filenames `0.png, 1.png, ...` (or `.jpg/.jpeg/.webp`).
+
+> If you need to regenerate `metadata.json`, use your stimulus generation pipeline (not covered here). The plotting script only reads it indirectly via the already processed simulation JSON.
+
+---
+
+## Setup
+
+- **Python**: 3.9+
+- **Packages**:
+  ```bash
+  pip install pillow matplotlib
+  ```
+  (`process_sim_results.py` uses only the standard library; `plot_scanpaths.py` needs Pillow + Matplotlib.)
+
+---
+
+## How to replicate
+
+### 1) Convert simulation logs → plot‑ready JSON
+```bash
+python process_sim_results.py \
+  --simulation assets/all_simulation_results.json \
+  --metadata   assets/metadata.json \
+  --out_json   assets/simulation_scanpaths.json
+```
+- Produces `assets/simulation_scanpaths.json` (list of trials).
+
+### 2) Plot scanpaths
+
+**Simulation only** (to a dedicated folder):
+```bash
+python plot_scanpaths.py \
+  --images_dir assets/08_15_09_07_10_images_W1920H1080WS16_LS40_MARGIN400 \
+  --out_root vis \
+  --sim_out_dir vis/simulation \
+  --dot_size 90 --alpha_dots 0.55 --alpha_lines 0.55 \
+  assets/simulation_scanpaths.json
+```
+
+**Human only** (separate destination):
+```bash
+python plot_scanpaths.py \
+  --images_dir assets/08_15_09_07_10_images_W1920H1080WS16_LS40_MARGIN400 \
+  --out_root vis \
+  --human_out_dir vis/human \
+  --dot_size 90 --alpha_dots 0.55 --alpha_lines 0.55 \
+  assets/11_18_17_40_integrated_corrected_human_scanpath.json
+```
+
+**Both**, auto‑split under `vis/`:
+```bash
+python plot_scanpaths.py \
+  --images_dir assets/08_15_09_07_10_images_W1920H1080WS16_LS40_MARGIN400 \
+  --out_root vis \
+  assets/11_18_17_40_integrated_corrected_human_scanpath.json \
+  assets/simulation_scanpaths.json
+```
+
+**Output names** look like:
+```
+vis/simulation/stim0_simulation_time30s.png
+vis/human/stim0_human_time30s.png
+```
+
+### CLI options (plotting)
+- `--dot_size` (default `90.0`) — fixation dot size  
+- `--line_width` (default `2.0`) — saccade line width  
+- `--alpha_dots` (default `0.5`) — dot transparency
+- `--alpha_lines` (default `0.5`) — line transparency
+- `--sim_out_dir` / `--human_out_dir` — custom output dirs (defaults to `out_root/simulation` and `out_root/human`)
+- `--default_participant` — fallback label if a trial misses `participant`
+
+---
+
+## Notes & troubleshooting
+
+- **Coloring depends on `word_index`** per fixation. If your human JSON lacks it or uses another name, add the field or tell the plotting script how to find it. (It already tries `word_index` or `global_word_index`.)
+- **Regressions** are detected against the **furthest‑so‑far** word index. If you want *first‑pass‑only* skip logic, we can add a flag to restrict skip detection to unseen words.
+- If plots look too opaque, lower `--alpha_dots` and `--alpha_lines` (e.g., `0.4`).
+- If you have higher‑res images, you may want larger `--dot_size` (e.g., `120`).
+
+---
+
+## License
+Internal research tooling. Adapt as needed for your pipeline.

@@ -1,7 +1,7 @@
 # Constants
 # FONT_PATH = r"C:\\Windows\\Fonts\\Arial.ttf"
 # FONT_PATH = r"C:\\Windows\\Fonts\\COUR.TTF"
-FONT_PATH = "/home/baiy4/reading-model/step5/data/assets/fonts/cour.ttf"
+FONT_PATH = "/home/baiy4/reader-agent-zuco/step5/data/assets/fonts/cour.ttf"
 RED_TO_GRAY = 0.299
 GREEN_TO_GRAY = 0.587
 BLUE_TO_GRAY = 0.114
@@ -120,7 +120,7 @@ config = {
         "parafoveal_size": (int(160), int(45)),
         "peripheral_size": (int(1920), int(1080)),
         "training_foveal_and_peripheral_size": (int(80), int(45)),  # This is the size of the image that will be used for training the model
-        "num_images": 100,
+        "num_images": 10,
         "num_words": 100,
         "random num_words": True,
         "corpus": False,
@@ -302,4 +302,4 @@ WORDS_INTEREST_RANGE = 1
 
 # MCQ metadata file path
 # ----------------------------------------------------------------------------------------------------------------------
-MCQ_METADATA_PATH = "/home/baiy4/reading-model/step5/data/assets/MCQ/mcq_metadata.json"
+MCQ_METADATA_PATH = "/home/baiy4/reader-agent-zuco/step5/data/assets/MCQ/mcq_metadata.json"

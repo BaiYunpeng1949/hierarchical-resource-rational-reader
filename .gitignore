@@ -250,4 +250,6 @@ sysinfo.txt
 /step5/simulators/simulator_v20250604/sub_models/sentence_read_v0604/utils/temp_subtlex
 /step5/simulators/simulator_v20250604/simulated_results
 /step5/simulators/simulator_v20250604/custom_simulation_results
-step5/modules/rl_envs/text_comprehension_v0516/temp_sim_data
+/step5/modules/rl_envs/text_comprehension_v0516/temp_sim_data
+/step5/simulators/simulator_v20250604/utils/visualize_scanpaths/vis
+**/simulate/metadata.json
