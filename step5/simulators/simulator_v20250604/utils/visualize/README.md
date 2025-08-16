@@ -162,3 +162,61 @@ scanpaths/human/stim0_human_time30s.png
 
 ## License
 Internal research tooling. Adapt as needed for your pipeline.
+---
+
+## Heatmap plotting (`plot_heatmaps.py`)
+
+Create **duration‑weighted gaze heatmaps** over each stimulus image.
+Each fixation contributes a Gaussian kernel centered at `(fix_x, fix_y)` with weight = `fix_duration` (milliseconds).
+If `fix_duration` is missing, weight defaults to `1`.
+
+### Inputs
+- One or more JSON files (each a **list of trials** with `fixation_data`).
+- A directory of stimulus images (`--images_dir`). The script matches `0.png`, `image_0.png`, `stim0.jpg`, etc.
+
+### Outputs
+- PNGs written to `heatmap_plots/human/` and `heatmap_plots/simulation/` (or custom dirs).
+- Filenames: `stim{index}_{label}_time{tc}.png` (e.g., `stim7_human-23_time90.png`, `stim0_simulation-0_time30.png`).
+
+### Global vs per‑image color scaling
+By default each image is normalized to its **own** maximum ("per‑image"), which makes
+30s and 90s trials look similarly saturated.
+To compare images fairly across **different time budgets**, use **fixed** normalization.
+
+- **Fixed 90 s ceiling** (recommended for parallel comparisons):
+  ```bash
+  python plot_heatmaps.py     --images_dir assets/<images_dir>     --out_root heatmap_plots     --norm_mode fixed --vmax_ms 90000     assets/simulation_scanpaths.json
+  ```
+  Any pixel with ≥90,000 ms accumulated dwell will hit full saturation; lower values scale proportionally.
+
+- If 90 s is too high/low, pick another unified ceiling, e.g. **60 s** or **45 s**:
+  ```bash
+  --norm_mode fixed --vmax_ms 60000   # 60 s
+  --norm_mode fixed --vmax_ms 45000   # 45 s
+  ```
+
+### Examples
+
+**Only simulation trials**:
+```bash
+python plot_heatmaps.py   --out_root heatmap_plots   --only simulation   --norm_mode fixed --vmax_ms 90000   assets/simulation_scanpaths.json
+```
+
+**Only human trials**:
+```bash
+python plot_heatmaps.py   --out_root heatmap_plots   --only human   --norm_mode fixed --vmax_ms 90000   assets/11_18_17_40_integrated_corrected_human_scanpath.json
+```
+
+**Both (auto‑split to subfolders)**:
+```bash
+python plot_heatmaps.py   --out_root heatmap_plots   --norm_mode per-image   assets/11_18_17_40_integrated_corrected_human_scanpath.json   assets/simulation_scanpaths.json
+```
+
+### Useful flags
+- `--sigma_px` (default **60**) — Gaussian spread per fixation in pixels (larger → smoother heatmap)
+- `--alpha_max` (default **0.65**) — maximum overlay opacity
+- `--gamma` (default **0.6**) — opacity curve; lower boosts mid‑range intensity
+- `--cmap` (default **RdBu_r**) — colormap (`RdBu_r` = blue high / red low)
+- `--only {human|simulation}` / `--exclude {human|simulation}` — filter which trials to render
+- `--verbose` — print which image file was matched; helpful if names vary
+
