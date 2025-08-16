@@ -6,7 +6,7 @@ Output schema (list of trials):
 [
   {
     "stimulus_index": int,
-    "participant": "simulation",
+    "participant_index": "simulation",
     "time_constraint": int | null,
     "fixation_data": [
        {
@@ -73,12 +73,13 @@ def build_trials(sim: list, meta: dict) -> list:
     trials = []
 
     for episode in sim:
+        episode_index = episode.get("episode_index", 0)
         stimulus_index = episode.get("stimulus_index", 0)
         words_meta = images[stimulus_index]["words metadata"]
 
         trial = {
             "stimulus_index": stimulus_index,
-            "participant": "simulation",
+            "participant_index": episode_index,
             "time_constraint": episode.get("time_condition", None),
             "fixation_data": []
         }
@@ -169,3 +170,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# TODO: change the simulation's episode index -- to trail index, then generate the participant_index as simulation-ID, and name the plots properly.
