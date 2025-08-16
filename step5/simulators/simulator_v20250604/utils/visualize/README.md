@@ -103,10 +103,10 @@ Plots scanpaths on top of the stimulus image and writes **one PNG per trial**.
 ### 1) Convert simulation logs → plot‑ready JSON
 ```bash
 python process_sim_results.py \
-  --simulation assets/all_simulation_results.json \
-  --metadata   assets/metadata.json \
+  --simulation 20250814_1555_trials1_stims9_conds3 \
   --out_json   assets/simulation_scanpaths.json
 ```
+- Inputs only the folder name is enough. Folders are in `/step5/simulators/simulator_v20250604/simulated_results/`
 - Produces `assets/simulation_scanpaths.json` (list of trials).
 
 ### 2) Plot scanpaths
@@ -114,36 +114,31 @@ python process_sim_results.py \
 **Simulation only** (to a dedicated folder):
 ```bash
 python plot_scanpaths.py \
-  --images_dir assets/08_15_09_07_10_images_W1920H1080WS16_LS40_MARGIN400 \
-  --out_root vis \
-  --sim_out_dir vis/simulation \
-  --dot_size 90 --alpha_dots 0.55 --alpha_lines 0.55 \
+  --out_root scanpaths \
+  --sim_out_dir scanpaths/simulation \
   assets/simulation_scanpaths.json
 ```
 
 **Human only** (separate destination):
 ```bash
 python plot_scanpaths.py \
-  --images_dir assets/08_15_09_07_10_images_W1920H1080WS16_LS40_MARGIN400 \
-  --out_root vis \
-  --human_out_dir vis/human \
-  --dot_size 90 --alpha_dots 0.55 --alpha_lines 0.55 \
+  --out_root scanpaths \
+  --human_out_dir scanpaths/human \
   assets/11_18_17_40_integrated_corrected_human_scanpath.json
 ```
 
 **Both**, auto‑split under `vis/`:
 ```bash
 python plot_scanpaths.py \
-  --images_dir assets/08_15_09_07_10_images_W1920H1080WS16_LS40_MARGIN400 \
-  --out_root vis \
+  --out_root scanpaths \
   assets/11_18_17_40_integrated_corrected_human_scanpath.json \
   assets/simulation_scanpaths.json
 ```
 
 **Output names** look like:
 ```
-vis/simulation/stim0_simulation_time30s.png
-vis/human/stim0_human_time30s.png
+scanpaths/simulation/stim0_simulation_time30s.png
+scanpaths/human/stim0_human_time30s.png
 ```
 
 ### CLI options (plotting)
