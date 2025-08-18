@@ -30,14 +30,38 @@ def find_image(images_dir: Path, stimulus_index: int) -> Optional[Path]:
     return None
 
 def trial_participant(trial: Dict[str, Any], default_participant: Optional[str]) -> str:
+    """
+    Decide whether this trial is from 'human', 'simulation', or 'unknown'.
+
+    Priority:
+      1) Explicit 'participant' field if present and non-empty.
+      2) Caller-provided default_participant.
+      3) Inspect common ID fields; if any string value starts with 'simulation',
+         treat as simulation. If numeric-only IDs and no strong signal, keep 'unknown'
+         (caller can still filter via --default_participant or filename inference).
+    """
     p = trial.get("participant")
     if p is not None and str(p).strip():
         return str(p)
+
     if default_participant:
         return default_participant
-    # Heuristic: if a participant index/id exists, assume human
-    if "participant_index" in trial or "participant_id" in trial or "subject_id" in trial:
-        return "human"
+
+    # Inspect common id fields to infer type
+    for key in ("participant_index","participant_id","participantID","participantId","subject_id","subject","user_id","user","id"):
+        v = trial.get(key)
+        if v is None:
+            continue
+        s = str(v).strip().lower()
+        if not s:
+            continue
+        if s.startswith("simulation"):
+            return "simulation"
+        # If it's a clearly non-simulation string ID, we tentatively mark human.
+        # But if it's purely numeric (common in sims), avoid forcing 'human'.
+        if s not in ("human","simulation","unknown") and not s.isdigit():
+            return "human"
+
     return "unknown"
 
 def trial_time_constraint(trial: Dict[str, Any]) -> str:
@@ -51,20 +75,32 @@ def _sanitize_id(text: str) -> str:
     return "".join(ch if (ch.isalnum() or ch in "-_") else "_" for ch in str(text))
 
 def trial_participant_label(trial: Dict[str, Any], inferred: Optional[str]) -> str:
-    """Return a participant label for filenames.
+    """
+    Return a participant label for filenames.
 
-    For human trials, prefer a concrete participant ID if present and not just the string 'human'.
-    Keys we try (first non-empty wins): participant_index, participant_id, participantID, participantId, subject_id, subject, user_id, user, id, participant.
+    - For simulation trials with IDs like 'simulation-0', use that as-is (sanitized).
+    - For human trials with a concrete ID, use 'human-<id>'.
+    - Otherwise, fall back to the inferred base ('human'/'simulation'/'unknown').
     """
     base = trial_participant(trial, inferred)
-    # search for a real id
-    for key in ("participant_index", "participant_id","participantID","participantId","subject_id","subject","user_id","user","id","participant"):
+
+    def _sanitize_id(text: str) -> str:
+        return "".join(ch if (str(ch).isalnum() or ch in "-_") else "_" for ch in str(text))
+
+    for key in ("participant_index","participant_id","participantID","participantId","subject_id","subject","user_id","user","id","participant"):
         v = trial.get(key)
-        if v is not None:
-            s = str(v).strip()
-            if s and s.lower() not in ("human","simulation","unknown"):
-                label_base = base if base.lower() not in ("unknown", "") else "human"
-                return f"{label_base}-{_sanitize_id(s)}"
+        if v is None:
+            continue
+        s = str(v).strip()
+        if not s:
+            continue
+        low = s.lower()
+        if low.startswith("simulation"):
+            return _sanitize_id(s)
+        if low not in ("human","simulation","unknown"):
+            label_base = base if base.lower() not in ("unknown","") else "human"
+            return f"{label_base}-{_sanitize_id(s)}"
+
     return base
 
 def extract_fixations(trial: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -130,6 +166,8 @@ def classify_saccades_by_rules(fixations: List[Dict[str, Any]]) -> Tuple[List[st
 def plot_trial_on_image(trial: Dict[str, Any],
                         img_path: Path,
                         out_path: Path,
+                        participant: str,
+                        label: str,
                         dot_size: float,
                         line_width: float,
                         alpha_dots: float,
@@ -187,9 +225,12 @@ def plot_trial_on_image(trial: Dict[str, Any],
                 ax.scatter(xs_reg, ys_reg, s=dot_size, color="green", alpha=alpha_dots, edgecolors="none", zorder=4)
 
     stim = trial.get("stimulus_index", "NA")
-    participant = trial_participant(trial, None)
-    label = trial_participant_label(trial, participant)
+    # participant = trial_participant(trial, None)
+    # label = trial_participant_label(trial, participant)
+    participant = participant
+    label = label
     tc = trial_time_constraint(trial)
+
     ax.set_title(f"Stim {stim} | {label} | time={tc}", fontsize=10)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -244,7 +285,7 @@ def main():
 
             try:
                 plot_trial_on_image(
-                    trial, img_path, out_path,
+                    trial, img_path, out_path, participant, label,
                     dot_size=90,
                     line_width=2,
                     alpha_dots=0.3,

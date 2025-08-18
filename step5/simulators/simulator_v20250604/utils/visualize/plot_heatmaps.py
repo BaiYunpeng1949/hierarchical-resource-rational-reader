@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import re
 import json
 import argparse
 from pathlib import Path
@@ -69,16 +70,20 @@ def trial_participant(trial: Dict[str, Any], default_participant: Optional[str])
         return default_participant
 
     # Inspect common id fields to infer type
-    for key in ("participant_index","participant_id","participantID","participantId"):
+    for key in ("participant_index","participant_id","participantID","participantId","subject_id","subject","user_id","user","id"):
         v = trial.get(key)
-        if v is not None:
-            s = str(v).strip().lower()
-            if s.startswith("simulation"):
-                return "simulation"
+        if v is None:
+            continue
+        s = str(v).strip().lower()
+        if not s:
+            continue
+        if s.startswith("simulation"):
+            return "simulation"
+        # If it's a clearly non-simulation string (not purely numeric), assume human.
+        if s not in ("human","simulation","unknown") and not s.isdigit():
             return "human"
-    for key in ("subject_id","subject","user_id","user","id"):
-        if trial.get(key) is not None:
-            return "human"
+
+    # No strong signal → unknown (lets caller/filename inference decide later)
     return "unknown"
 
 def _sanitize_id(text: str) -> str:
@@ -112,6 +117,44 @@ def trial_time_constraint(trial: Dict[str, Any]) -> str:
     if tc is None or (isinstance(tc, str) and not tc.strip()):
         return "NA"
     return str(tc)
+
+def parse_time_constraint_ms(tc_str: str) -> Optional[float]:
+    """
+    Parse a time constraint like '30s', '60', '90000ms', '90 s' into milliseconds.
+    Returns None if it can't parse.
+    """
+    if tc_str is None:
+        return None
+    s = str(tc_str).strip().lower()
+    if not s or s == "na":
+        return None
+    try:
+        # if it's a plain number, assume seconds (common in your JSONs)
+        if s.replace(".", "", 1).isdigit():
+            return float(s) * 1000.0
+    except Exception:
+        pass
+
+    # extract number
+    m = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*(ms|millisecond|milliseconds|s|sec|secs|second|seconds)?", s)
+    if not m:
+        return None
+    val = float(m.group(1))
+    unit = (m.group(2) or "s").lower()
+    if unit.startswith("ms"):
+        return val
+    # default seconds
+    return val * 1000.0
+
+def sum_fix_duration_ms(trial: Dict[str, Any]) -> float:
+    total = 0.0
+    for row in trial.get("fixation_data", []):
+        dur = row.get("fix_duration", None)
+        try:
+            total += float(dur) if dur is not None else 0.0
+        except Exception:
+            pass
+    return float(total)
 
 def choose_out_dir(base_out: Path, sim_out: Optional[Path], human_out: Optional[Path], participant: str) -> Path:
     part = (participant or "").lower()
@@ -205,15 +248,26 @@ def overlay_heatmap_on_image(img: Image.Image,
 
 # ---------------- Main plotting ----------------
 
+# module-level toggles set by main()
+PLOT_SHOW_TOTALS = False
+PLOT_NORM_TO_TC = False
+
 def plot_heat_for_trial(trial: Dict[str, Any],
                         images_dir: Path,
                         out_path: Path,
+                        participant:str,
+                        label:str,
                         sigma_px: float,
                         alpha_max: float,
                         gamma: float,
                         cmap_name: str,
                         vmax_ms: float = None,
                         verbose: bool=False):
+
+    # reflect CLI toggles
+    plot_heat_for_trial._show_totals_flag = PLOT_SHOW_TOTALS
+    plot_heat_for_trial._norm_to_tc_flag = PLOT_NORM_TO_TC
+    
     stim_idx = trial.get("stimulus_index")
     img_path = find_image(images_dir, stim_idx, verbose=verbose) if stim_idx is not None else None
     if img_path is None:
@@ -222,15 +276,62 @@ def plot_heat_for_trial(trial: Dict[str, Any],
     img = Image.open(img_path).convert("RGB")
     W, H = img.size
 
+    # fixes = extract_fixations_for_heat(trial)
+    # heat = compute_heatmap(W, H, fixes, sigma_px=sigma_px)
+
+    # fig, ax = overlay_heatmap_on_image(img, heat, alpha_max=alpha_max, gamma=gamma, cmap_name=cmap_name, vmax_ms=vmax_ms)
+
+    # # participant = trial_participant(trial, None)
+    # # label = trial_participant_label(trial, participant)
+    # participant = participant
+    # label = label
+    # tc = trial_time_constraint(trial)
+    # ax.set_title(f"Stim {stim_idx} | {label} | time={tc}", fontsize=10)
+
+    # out_path.parent.mkdir(parents=True, exist_ok=True)
+    # if out_path.exists():
+    #     out_path.unlink()
+    # fig.savefig(out_path, bbox_inches="tight", pad_inches=0.0)
+    # plt.close(fig)
+
     fixes = extract_fixations_for_heat(trial)
+
+    # --- totals and optional normalization-to-constraint ---
+    tc = trial_time_constraint(trial)
+    target_ms = parse_time_constraint_ms(tc)
+    total_ms = sum(w for (_, _, w) in fixes) if fixes else 0.0
+
+    scale_info = ""
+    if target_ms and total_ms > 0:
+        if hasattr(plt, "rcParams"):  # just to keep import order safe
+            pass
+        if hasattr(plt, "rcParams"):
+            pass
+        if normalize_to := getattr(plot_heat_for_trial, "_norm_to_tc", None):
+            pass  # placeholder, not used
+
+    # If caller wants normalization: scale all weights so sum == target_ms
+    if target_ms is not None and total_ms > 0 and getattr(plot_heat_for_trial, "_norm_to_tc_flag", False):
+        scale = target_ms / total_ms
+        fixes = [(x, y, w * scale) for (x, y, w) in fixes]
+        scale_info = f" | normalized→{int(target_ms)} ms (×{scale:.2f})"
+
     heat = compute_heatmap(W, H, fixes, sigma_px=sigma_px)
 
-    fig, ax = overlay_heatmap_on_image(img, heat, alpha_max=alpha_max, gamma=gamma, cmap_name=cmap_name, vmax_ms=vmax_ms)
+    fig, ax = overlay_heatmap_on_image(
+        img, heat,
+        alpha_max=alpha_max, gamma=gamma,
+        cmap_name=cmap_name,
+        vmax_ms=vmax_ms
+    )
 
-    participant = trial_participant(trial, None)
-    label = trial_participant_label(trial, participant)
-    tc = trial_time_constraint(trial)
-    ax.set_title(f"Stim {stim_idx} | {label} | time={tc}", fontsize=10)
+    # Title: include participant label, time constraint, totals, and vmax if fixed
+    title_bits = [f"Stim {stim_idx}", f"{label}", f"time={tc}"]
+    if getattr(plot_heat_for_trial, "_show_totals_flag", False):
+        title_bits.append(f"sum={int(total_ms)} ms{scale_info}")
+    if vmax_ms is not None:
+        title_bits.append(f"vmax={int(vmax_ms)} ms")
+    ax.set_title(" | ".join(title_bits), fontsize=10)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     if out_path.exists():
@@ -255,7 +356,15 @@ def main():
     ap.add_argument("--verbose", action="store_true", help="Verbose logging (image matching).")
     ap.add_argument("json_files", nargs="+", type=Path, help="One or more JSON files (each a list of trials).")
     ap.add_argument("--default_participant", type=str, default=None, help="Fallback participant label if missing in trials.")
+    ap.add_argument("--show_totals", action="store_true", help="Show total fixation duration (and normalization info) in plot titles.")
+    ap.add_argument("--norm_to_tc", action="store_true", help="Normalize fixation weights so their sum equals the trial's time constraint (e.g., 30s).")
+
     args = ap.parse_args()
+
+    global PLOT_SHOW_TOTALS, PLOT_NORM_TO_TC
+    PLOT_SHOW_TOTALS = bool(args.show_totals)
+    PLOT_NORM_TO_TC = bool(args.norm_to_tc)
+
 
     images_dir = Path(os.path.join("assets", "08_15_09_07_10_images_W1920H1080WS16_LS40_MARGIN400", "simulate"))
 
@@ -293,6 +402,8 @@ def main():
                     trial=trial,
                     images_dir=images_dir,
                     out_path=out_path,
+                    participant=participant,
+                    label=label,
                     sigma_px=args.sigma_px,
                     alpha_max=args.alpha_max,
                     gamma=args.gamma,

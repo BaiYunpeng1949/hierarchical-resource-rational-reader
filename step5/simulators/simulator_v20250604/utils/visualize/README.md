@@ -116,6 +116,7 @@ python process_sim_results.py \
 python plot_scanpaths.py \
   --out_root scanpaths \
   --sim_out_dir scanpaths/simulation \
+  --default_participant simulation \
   assets/simulation_scanpaths.json
 ```
 
@@ -124,6 +125,7 @@ python plot_scanpaths.py \
 python plot_scanpaths.py \
   --out_root scanpaths \
   --human_out_dir scanpaths/human \
+  --default_participant human \
   assets/11_18_17_40_integrated_corrected_human_scanpath.json
 ```
 
@@ -199,12 +201,12 @@ To compare images fairly across **different time budgets**, use **fixed** normal
 
 **Only simulation trials**:
 ```bash
-python plot_heatmaps.py   --out_root heatmap_plots   --only simulation   --norm_mode fixed --vmax_ms 90000   assets/simulation_scanpaths.json
+python plot_heatmaps.py   --out_root heatmap_plots   --only simulation   --norm_mode fixed --vmax_ms 3000   --show_totals   --norm_to_tc   assets/simulation_scanpaths.json
 ```
 
 **Only human trials**:
 ```bash
-python plot_heatmaps.py   --out_root heatmap_plots   --only human   --norm_mode fixed --vmax_ms 90000   assets/11_18_17_40_integrated_corrected_human_scanpath.json
+python plot_heatmaps.py   --out_root heatmap_plots   --only human   --norm_mode fixed --vmax_ms 3000   --show_totals   --norm_to_tc   assets/11_18_17_40_integrated_corrected_human_scanpath.json
 ```
 
 **Both (auto‑split to subfolders)**:
