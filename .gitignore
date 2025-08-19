@@ -253,6 +253,6 @@ sysinfo.txt
 /step5/modules/rl_envs/text_comprehension_v0516/temp_sim_data
 /step5/simulators/simulator_v20250604/utils/visualize_scanpaths/vis
 **/experiment/**/simulate/metadata.json
-/step5/simulators/simulator_v20250604/utils/visualize/scanpaths
-/step5/simulators/simulator_v20250604/utils/visualize/heatmap_plots
-/step5/simulators/simulator_v20250604/utils/visualize/letter_index_plots
+/step5/simulators/simulator_v20250604/results/visualize_fixations/scanpaths
+/step5/simulators/simulator_v20250604/results/visualize_fixations/heatmap_plots
+/step5/simulators/simulator_v20250604/results/visualize_fixations/letter_index_plots

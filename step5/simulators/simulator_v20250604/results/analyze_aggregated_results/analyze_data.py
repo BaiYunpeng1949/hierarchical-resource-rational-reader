@@ -345,10 +345,10 @@ def process_fixation_sequences_to_metrics(input_file: str, output_file: str):
 
 if __name__ == "__main__":
     # Get the current directory
-    current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    current_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
     # File name
-    file_name = "20250814_1409_trials1_stims9_conds3"
+    file_name = "20250819_0856_trials1_stims9_conds3"
 
     input_file = os.path.join(current_dir, "simulated_results", file_name, "all_simulation_results.json")
     output_file = os.path.join(current_dir, "simulated_results", file_name, "processed_reading_metrics.json")
