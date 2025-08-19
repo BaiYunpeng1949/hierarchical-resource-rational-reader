@@ -477,8 +477,6 @@ class ReaderAgent:
             # Update the previous step local actual fixation sequence
             previous_step_local_actual_fixation_sequence_in_sentence = self.sentence_reader.env.local_actual_fixation_sequence_in_sentence.copy()
 
-        # Return the time consumed by the sentence reading
-        # return self.sentence_reader.env.elapsed_time     # TODO use the word recognizer to compute this --> TODO change to sentence_reading_time_in_ms, check the original elapsed time, what it is
         return sentence_reading_time_in_s
     
     def _simulate_word_recognition(self, inputs: dict=None):

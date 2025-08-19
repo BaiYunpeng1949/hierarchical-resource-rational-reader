@@ -197,10 +197,6 @@ class SentenceReadingUnderTimePressureEnv(Env):
         # Granted step budget
         self._granted_step_budget = np.ceil(granted_step_budget_factor * self._sentence_len)      # This value is definitely smaller than the sentence lenght.
 
-        # # TODO debug delete later
-        # print(f"The time pressure scalar for the sentence is: {self._time_pressure_scalar_for_the_sentence}, the time condition is: {self._time_condition}, granted step budget factor: {granted_step_budget_factor}")
-        # print(f"The sentence length is: {self._sentence_len}, and the granted step budget is: {self._granted_step_budget}")
-
         reading_speed = Constants.READING_SPEED
         self._sentence_wise_expected_time_pressure_in_seconds = reading_speed * self._sentence_len * self._time_pressure_scalar_for_the_sentence
         self.elapsed_time = 0
@@ -531,6 +527,29 @@ class SentenceReadingUnderTimePressureEnv(Env):
 
         return ongoing_sentence_comprehension_score
     
+    def _get_actually_sampled_words_in_sentence(self) -> list:
+        """
+        Get the words actually sampled from the sentence
+        Includes: 1. actually read or regressed words; and 2. skipped words, represented by their predictions
+        """
+        sampled_words = []
+
+        for word_index in self.reading_sequence.copy():
+            if word_index in self._skipped_words_indexes.copy():    # If this was an skipped word
+                # NOTE: predicted words start from the 2nd in the sentence, i.e., the first word in the sentence does not have a prediction.
+                skipped_word_index = word_index - 1
+                if skipped_word_index >= 0:
+                    predicted_word = self._sentence_info['predicted_words_for_running_model'][skipped_word_index]
+                    sampled_words.append(predicted_word)
+                else:
+                    sampled_words.append('')
+            # elif word_index in self.local_actual_fixation_sequence_in_sentence.copy():   
+            else:           # If this is a normally fixated word
+                sampled_words.append(self._sentence_info['words'][word_index])
+        
+        return sampled_words
+
+    
     def get_individual_step_log(self) -> dict:
         """Get individual step log"""
         if self._log_individual_step_action == self._REGRESS_ACTION:
@@ -563,6 +582,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         summarised_sentence_reading_logs = {
             "sentence_id": self._sentence_info['sentence_id'],
             "num_words_in_sentence": self._sentence_len, 
+            "sampled_words_in_sentence": self._get_actually_sampled_words_in_sentence(),
             "original_words_intergration_values (beliefs)": self._sentence_info['words_ranked_word_integration_probabilities_for_running_model'].copy(),
             "num_steps_or_fixations": self._steps,
             "num_regressions": self._log_num_regressions,
