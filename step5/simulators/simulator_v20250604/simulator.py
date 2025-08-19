@@ -437,9 +437,11 @@ class ReaderAgent:
             # Read word or words one by one
             for (i, new_reading_word_index) in enumerate(new_words_indexes_list):
 
+                word_gt = self.sentence_reader.env._sentence_info['words'][new_reading_word_index]
+
                 # Get the word's meta-data for the word recognizer
                 current_word_metadata = {
-                    'word': self.sentence_reader.env._sentence_info['words'][new_reading_word_index],
+                    'word': word_gt,
                     'word_freq_prob': self.sentence_reader.env._sentence_info['word_frequencies_per_million_for_analysis'][new_reading_word_index] / 1_000_000, 
                     'word_pred_prob': self.sentence_reader.env._sentence_info['word_predictabilities_for_analysis'][new_reading_word_index],
                 }
@@ -451,6 +453,8 @@ class ReaderAgent:
                 sampled_lettes_indexes_dict[i] = {
                     "sentence_local_word_index": new_reading_word_index,
                     "letters_indexes": valid_sampled_letters_indexes_list,
+                    "word": word_gt,
+                    "word_len": len(word_gt),
                 }
 
                 # Update the recognized words list

@@ -255,3 +255,4 @@ sysinfo.txt
 **/experiment/**/simulate/metadata.json
 /step5/simulators/simulator_v20250604/utils/visualize/scanpaths
 /step5/simulators/simulator_v20250604/utils/visualize/heatmap_plots
+/step5/simulators/simulator_v20250604/utils/visualize/letter_index_plots

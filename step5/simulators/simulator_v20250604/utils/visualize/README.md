@@ -13,11 +13,16 @@ visualize_scanpaths/
 │  ├─ metadata.json                      # stimulus metadata used to map word/letter → pixel coords
 │  ├─ 11_18_17_40_integrated_corrected_human_scanpath.json  # human scanpaths (list of trials)
 │  └─ simulation_scanpaths.json          # simulation scanpaths (list of trials) — produced by process_sim_results.py
-├─ vis/
-│  ├─ human/                             # rendered human plots (created automatically)
-│  └─ simulation/                        # rendered simulation plots (created automatically)
+├─ scanpaths/
+│  ├─ human/                             # rendered human scanpath plots (created automatically)
+│  └─ simulation/                        # rendered simulation scanpath plots (created automatically)
+├─ heatmap_plots/
+|  ├─ human/                             # rendered human heatmap plots (created automatically)
+|  └─ simulation/                        # rendered simulation heatmap plots (created automatically)
 ├─ process_sim_results.py                # convert sim logs → image-aligned scanpath JSON
 ├─ plot_scanpaths.py                     # plot scanpaths over images; colors forward/skip/regression
+├─ plot_heatmaps.py                      # Plot heatmaps over images; color denotes the gaze durations
+├─ plot_letter_index_fix_distribution.py # Plot absolute and normalized within word fixations (letter indexes) distribution, as a demonstration that our model could deal with within word fixations. Not like human data only shows merged fixations per word.      
 └─ README.md
 ```
 
@@ -222,3 +227,38 @@ python plot_heatmaps.py   --out_root heatmap_plots   --norm_mode per-image   ass
 - `--only {human|simulation}` / `--exclude {human|simulation}` — filter which trials to render
 - `--verbose` — print which image file was matched; helpful if names vary
 
+---
+
+## Letter index distribution (`plot_letter_index_fix_distribution.py`)
+
+Analyze **where within words** the simulator sampled letters during recognition.
+
+The script walks your simulation log (`all_simulation_results.json`) and reads
+`word_recognition_summary.sampled_letters_indexes_dict` for each step. For every sampled word it collects:
+- `word_len` — the word's length
+- `letters_indexes` — the concrete letter index(es) sampled on that step (0-based)
+
+It then produces two figures:
+
+1. **Absolute letter index distribution** for a chosen word length `L`  
+   (counts per index `0..L-1`, using only words with length exactly `L`).
+2. **Normalized letter position distribution** across **all** word lengths, mapping each index to `[0,1]`.
+
+### Usage
+
+```bash
+# Absolute distribution for 12-letter words + normalized distribution across all words
+python plot_letter_index_fix_distribution.py   20250819_0856_trials1_stims9_conds3   --out_dir letter_index_plots   --word_length 12   --norm_bins 20   --norm_divisor Lminus1
+```
+Feel free to change the simulation folder: `20250819_0856_trials1_stims9_conds3`
+
+### Options
+- `--word_length` (default **12**) — which word length to use for the absolute histogram
+- `--norm_bins` (default **20**) — number of bins for the normalized histogram
+- `--norm_divisor` — how to map indices to `[0,1]`:
+  - `Lminus1` (default): `i / max(L-1, 1)` ⇒ first letter = 0, **last letter = 1**
+  - `L`          : `i / L`                 ⇒ last letter < 1 by `1/L`
+
+### Outputs
+- `letter_index_plots/abs_letter_index_len{L}.png` — absolute counts for length `L`
+- `letter_index_plots/norm_letter_index_{DIV}_bins{B}.png` — normalized distribution
