@@ -86,6 +86,7 @@ A minimal CLI runner is included in earlier examples (`run_ci_from_json.py`), bu
 ### 4.1 Parsing
 - **LLM-assisted**: `PropositionParser` calls `llm.get_micro_structural_propositions(...)` with a strict output format; we parse lines like `predicate(arg1, arg2)`.  
 - **Heuristic fallback**: an SVO-ish extractor (`_heuristic_propositions`) to keep cycles robust if the LLM is disabled.
+- **Proposition cache**: Cache sentence parses so the same sentence (within a run) always yields the exact same propositions, preventing GPT variation on re-reads or repeated mentions.
 
 **Variables**
 - `llm_agent`: your `LLMAgent` instance from `gpt-api.py`.

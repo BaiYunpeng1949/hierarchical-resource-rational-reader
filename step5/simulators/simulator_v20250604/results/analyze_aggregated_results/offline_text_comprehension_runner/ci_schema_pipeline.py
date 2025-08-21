@@ -108,7 +108,9 @@ def _heuristic_propositions(sent: str, sent_id: int) -> List[Proposition]:
 # --------------------------- GPT interface ---------------------------
 
 class PropositionParser:
-    """Wrapper around your LLM agent; falls back to heuristic extractor."""
+    """Wrapper around your LLM agent; falls back to heuristic extractor.
+       Adds a deterministic cache: the same sentence string -> same proposition set.
+    """
 
     def __init__(self, llm_agent=None, role: str = "", use_llm: bool = True,
                  logger: Optional[logging.Logger] = None):
@@ -117,15 +119,39 @@ class PropositionParser:
         self.use_llm = (llm_agent is not None) and use_llm
         self.logger = logger
         self.last_method = "heuristic"
+        # sentence -> List[Tuple[predicate, Tuple[args...]]]
+        self._cache: Dict[str, List[Tuple[str, Tuple[str, ...]]]] = {}
+        self.cache_hits: int = 0
+        self.cache_misses: int = 0
+
+    @staticmethod
+    def _sent_key(s: str) -> str:
+        return re.sub(r"\s+", " ", s.strip()).lower()
 
     def parse(self, sent: str, sent_id: int) -> List[Proposition]:
+        key = self._sent_key(sent)
+        if key in self._cache:
+            self.cache_hits += 1
+            self.last_method = "cache"
+            if self.logger and self.logger.level <= logging.DEBUG:
+                self.logger.debug(f"  CACHE hit for sentence: {sent[:80]}")
+            return [Proposition(pred, args, sent_id, (0, len(sent))) for (pred, args) in self._cache[key]]
+
+        self.cache_misses += 1
         self.last_method = "heuristic"
+        props: Optional[List[Proposition]] = None
         if self.use_llm:
             props = self._parse_with_llm(sent, sent_id)
             if props:
                 self.last_method = "llm"
-                return props
-        return _heuristic_propositions(sent, sent_id)
+        if not props:
+            props = _heuristic_propositions(sent, sent_id)
+
+        self._cache[key] = [(p.predicate, p.args) for p in props]
+        if self.logger and self.logger.level <= logging.DEBUG:
+            self.logger.debug(f"  CACHE store ({len(props)} props) for sentence: {sent[:80]}")
+
+        return [Proposition(p.predicate, p.args, sent_id, (0, len(sent))) for p in props]
 
     def _parse_with_llm(self, sent: str, sent_id: int) -> Optional[List[Proposition]]:
         try:
@@ -147,19 +173,16 @@ class PropositionParser:
                     if pred:
                         props.append(Proposition(pred, args, sent_id, (0, len(sent))))
 
-            # dedupe
             uniq, seen = [], set()
             for p in props:
                 sig = (p.predicate, p.args, p.sent_id)
                 if sig not in seen:
-                    uniq.append(p)
-                    seen.add(sig)
+                    uniq.append(p); seen.add(sig)
             return uniq
         except Exception as e:
             if self.logger:
                 self.logger.debug(f"LLM parse failed; fallback to heuristic. Reason: {e}")
             return None
-
 
 # --------------------------- CI integration ---------------------------
 
@@ -474,5 +497,6 @@ def run_pipeline(json_path: str,
         results[key] = [asdict(c) for c in cycles]
         # include episode-level LTM summary
         results[key + "__LTM"] = {"p_store": p_store, "items": ltm_store.as_dict()}
+        logger.info(f"{tag} CACHE stats: hits={parser.cache_hits}, misses={parser.cache_misses}, size={len(parser._cache)}")
 
     return results
