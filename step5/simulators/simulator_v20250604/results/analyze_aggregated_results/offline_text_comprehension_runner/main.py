@@ -33,7 +33,14 @@ if __name__ == "__main__":
     )
 
     # write outputs to a compact JSON for analysis/plots
-    output_filepatn = os.path.join('..', 'assets','comprehension_results','simulation','ci_gist_outputs.json')    
-    with open(output_filepatn,"w",encoding="utf-8") as f:
+    output_logs_filepatn = os.path.join('..', 'assets','comprehension_results','simulation','ci_memory_comprehension_logs.json')    
+    with open(output_logs_filepatn,"w",encoding="utf-8") as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
-    print("Saved -> ci_gist_outputs.json")
+    print("Saved -> ci_memory_comprehension_logs.json")
+    
+    # Write only ltm gists to a folder for further processing
+    ltm_preserved = {k: v for k, v in results.items() if k.endswith("__LTM")}
+    ltm_filepath = os.path.join('..', 'assets','comprehension_results','simulation','sim_ltm_gists.json')
+    with open(ltm_filepath,"w",encoding="utf-8") as f:
+        json.dump(ltm_preserved, f, ensure_ascii=False, indent=2)
+    print("Saved -> sim_ltm_gists.json")
