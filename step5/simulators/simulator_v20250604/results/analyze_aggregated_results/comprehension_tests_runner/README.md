@@ -120,3 +120,42 @@ python main.py --mode llm --max_props 100 --verbose 1 --fr_score_mode embedding 
   `../assets/comprehension_results/simulation/sim_ltm_gists.json` exists with keys like `episode_0_stim_0_30s__LTM`.
 - **Auth/gateway issues**: confirm environment key, or test pipeline end‑to‑end with `--mode heuristic`.
 - **Empty CSV**: check `mcq_metadata.json` contains MCQs for those `stimulus_index` values (missing MCQs are skipped).
+
+## Plotting MCQ & Free Recall (30s / 60s / 90s)
+
+This pipeline plots **two grouped bar charts** (Human vs Simulation) for **MCQ accuracy** and **Free Recall** and also produces a **side-by-side combined image**. The color scheme matches our earlier plots: **Human = blue**, **Simulation = green** (error bars in black).
+
+### Inputs
+Two CSV files:
+- `comprehension_test_results.csv` — simulation/agent results
+- `processed_mcq_freerecall_scores_p1_to_p32.csv` — human results
+
+Both CSVs should contain columns:
+- `time_constraint` ∈ {`30`, `60`, `90`}
+- `MCQ Accuracy` ∈ [0,1]
+- `Free Recall Score` ∈ [0,1]
+
+### Script
+Run the plotting script (creates individual figures and a stitched, side-by-side image):
+```bash
+python plot.py   --out_dir figure
+```
+
+### Outputs
+- `/mnt/data/mcq_by_time.png` – MCQ grouped bar chart (Human vs Simulation)
+- `/mnt/data/free_recall_by_time.png` – Free Recall grouped bar chart (Human vs Simulation)
+- `/mnt/data/mcq_fr_side_by_side.png` – **combined** image (MCQ left, Free Recall right)
+- `/mnt/data/aggregated_mcq_fr_by_time.csv` – per-time-condition means & stds used for plotting
+
+### Dependencies
+- `pandas`, `numpy`, `matplotlib`, `Pillow`
+
+### Notes
+- Charts show **mean** with **STD** error bars; annotations display `mean (std)` on each bar.
+- Times are ordered as `30s`, `60s`, `90s`.
+- To adjust colors, edit the constants at the top of `plot_mcq_fr.py`:
+  ```python
+  HUMAN_COLOR = "blue"
+  SIM_COLOR = "green"
+  ERR_COLOR = "black"
+  ```
