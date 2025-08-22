@@ -109,7 +109,7 @@ Reference text for scoring is chosen by `--fr_reference`:
 `gpt_comprehension_answer.py` expects an Aalto OpenAI key in the environment:
 ```bash
 export AALTO_OPENAI_API_KEY="xxxxx-your-key-xxxxx"
-python main.py --mode llm --max_props 100 --verbose 1 --fr_score_mode heuristic --fr_reference stimulus
+python main.py --mode llm --max_props 100 --verbose 1 --fr_score_mode embedding --fr_reference stimulus
 ```
 
 ---

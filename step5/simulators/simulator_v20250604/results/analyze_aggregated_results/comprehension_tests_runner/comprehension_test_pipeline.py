@@ -75,12 +75,50 @@ def _blend_similarity(a: str, b: str) -> float:
     d = _difflib_ratio(a, b)
     return 0.6 * d + 0.4 * j
 
+def _cosine_bow_similarity(a: str, b: str) -> float:
+    """Cosine similarity between two texts using CountVectorizer TF features.
+    Falls back to a pure-Python bag-of-words cosine if scikit-learn is unavailable.
+    Returns a float in [0,1]."""
+    a = _normalize_text(a or "")
+    b = _normalize_text(b or "")
+    if not a or not b:
+        return 0.0
+    try:
+        # Prefer the exact approach the user requested.
+        from sklearn.feature_extraction.text import CountVectorizer  # type: ignore
+        from sklearn.metrics.pairwise import cosine_similarity  # type: ignore
+        vectorizer = CountVectorizer().fit([a, b])
+        vectors = vectorizer.transform([a, b])
+        sim = float(cosine_similarity(vectors[0], vectors[1])[0][0])
+        # Clamp to [0,1] just in case of tiny numerical drift
+        return max(0.0, min(1.0, sim))
+    except Exception:
+        # Pure-Python fallback: token counts + cosine
+        from collections import Counter
+        ta = a.split()
+        tb = b.split()
+        ca = Counter(ta)
+        cb = Counter(tb)
+        vocab = set(ca) | set(cb)
+        if not vocab:
+            return 0.0
+        dot = sum(ca[w] * cb[w] for w in vocab)
+        na = sum(v*v for v in ca.values()) ** 0.5
+        nb = sum(v*v for v in cb.values()) ** 0.5
+        if na == 0.0 or nb == 0.0:
+            return 0.0
+        sim = dot / (na * nb)
+        return max(0.0, min(1.0, float(sim)))
+
+
 def _score_free_recall(reference_text: str, recall_text: str, mode: str = "heuristic") -> float:
     if not reference_text or not recall_text:
         return 0.0
     mode = (mode or "heuristic").lower()
     if mode == "embedding":
-        return _jaccard(reference_text, recall_text)
+        # Use cosine similarity over CountVectorizer TF features (bag-of-words),
+        # matching calculate_metrics_for_user_study.py::compute_free_recall_score.
+        return _cosine_bow_similarity(reference_text, recall_text)
     if mode == "llm":
         try:
             from openai import OpenAI
@@ -105,6 +143,7 @@ def _score_free_recall(reference_text: str, recall_text: str, mode: str = "heuri
                     return val
         except Exception:
             pass
+    # Heuristic fallback: blend of difflib ratio and Jaccard
     return _blend_similarity(reference_text, recall_text)
 
 
@@ -421,7 +460,7 @@ def main(
     ap.add_argument("--max_props", type=int, default=40, help="Clamp number of LTM propositions per prompt")
     ap.add_argument("--participant_id", type=int, default=0, help="Participant ID to put in results (if unknown)")
     ap.add_argument("--verbose", type=int, default=1, help="0=silent, 1=high-level, 2=step-by-step")
-    ap.add_argument("--fr_score_mode", choices=["heuristic","embedding","llm"], default="heuristic", help="How to score free recall")
+    ap.add_argument("--fr_score_mode", choices=["heuristic","embedding","llm"], default="heuristic", help="How to score free recall: embedding=cosine(CountVectorizer TF), heuristic=blend(difflib+Jaccard), llm=graded by LLM")
     ap.add_argument("--stimuli_text_json", default=None, help="Optional JSON mapping stimulus_index -> original passage text")
     ap.add_argument("--fr_reference", choices=["gist","stimulus"], default="gist", help="What to compare free recall against for scoring")
     args = ap.parse_args()
