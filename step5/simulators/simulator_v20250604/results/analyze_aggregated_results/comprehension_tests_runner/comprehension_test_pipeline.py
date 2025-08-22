@@ -47,6 +47,67 @@ from dataclasses import dataclass, asdict
 import re
 from typing import Dict, List, Tuple, Any
 
+def _normalize_text(s: str) -> str:
+    import re
+    if not s:
+        return ""
+    s = s.lower()
+    s = re.sub(r"[^a-z0-9\s]+", " ", s)
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
+def _tokenize(s: str):
+    return [t for t in _normalize_text(s).split() if t]
+
+def _jaccard(a: str, b: str) -> float:
+    A, B = set(_tokenize(a)), set(_tokenize(b))
+    if not A and not B: return 0.0
+    inter = len(A & B)
+    union = len(A | B)
+    return inter / union if union else 0.0
+
+def _difflib_ratio(a: str, b: str) -> float:
+    import difflib
+    return difflib.SequenceMatcher(None, _normalize_text(a), _normalize_text(b)).ratio()
+
+def _blend_similarity(a: str, b: str) -> float:
+    j = _jaccard(a, b)
+    d = _difflib_ratio(a, b)
+    return 0.6 * d + 0.4 * j
+
+def _score_free_recall(reference_text: str, recall_text: str, mode: str = "heuristic") -> float:
+    if not reference_text or not recall_text:
+        return 0.0
+    mode = (mode or "heuristic").lower()
+    if mode == "embedding":
+        return _jaccard(reference_text, recall_text)
+    if mode == "llm":
+        try:
+            from openai import OpenAI
+            client = OpenAI()
+            prompt = (
+                "You are a strict grader. Compare the ORIGINAL PASSAGE to the FREE RECALL.\n"
+                "Return ONLY a float between 0 and 1 with 2 decimals; content-faithfulness only.\n\n"
+                f"ORIGINAL PASSAGE:\n{reference_text}\n\nFREE RECALL:\n{recall_text}\n\nSCORE:"
+            )
+            resp = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role":"user","content":prompt}],
+                temperature=0.0,
+                max_tokens=8
+            )
+            raw = resp.choices[0].message.content.strip()
+            import re as _re
+            m = _re.search(r"([01](?:\.\d+)?|\.\d+)", raw)
+            if m:
+                val = float(m.group(1))
+                if 0.0 <= val <= 1.0:
+                    return val
+        except Exception:
+            pass
+    return _blend_similarity(reference_text, recall_text)
+
+
 # Allow imports from the same directory or explicit path (e.g., /mnt/data)
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 if SCRIPT_DIR not in sys.path:
@@ -188,6 +249,7 @@ def make_free_recall_from_props(ltm_props: List[str], max_sentences: int = 4) ->
     return " ".join(chunks)
 
 
+
 def run_pipeline(ltm_path: str,
                  mcq_path: str,
                  out_json: str,
@@ -196,27 +258,32 @@ def run_pipeline(ltm_path: str,
                  sort_by: str = "last_relevance",
                  max_props: int = 40,
                  participant_id_default: int = 0,
-                 verbose: int = 1) -> Dict[str, Any]:
+                 verbose: int = 1,
+                 fr_score_mode: str = "heuristic",
+                 stimuli_text_json: str = None,
+                 fr_reference: str = "gist") -> Dict[str, Any]:
 
     def vprint(level, *args, **kwargs):
         if verbose >= level:
             print(*args, **kwargs)
 
     vprint(1, f"[INIT] mode={mode} sort_by={sort_by} max_props={max_props}")
-    vprint(2, f"[PATHS] LTM={ltm_path}\n[PATHS] MCQ={mcq_path}")
+    vprint(2, f"[PATHS] LTM={ltm_path}")
+    vprint(2, f"[PATHS] MCQ={mcq_path}")
 
     ltm = load_json(ltm_path)
     mcq = load_json(mcq_path)
     trials = extract_trials(ltm)
     vprint(1, f"[LOAD] Extracted {len(trials)} trial(s) from LTM store.")
 
-    agent = None
-    if mode == "llm":
-        if LLMAgent is None:
-            raise RuntimeError("LLMAgent not importable; cannot run in 'llm' mode.")
-        vprint(1, "[LLM] Initializing LLMAgent (gpt-4o)...")
-        agent = LLMAgent(model_name="gpt-4o", api_key=None)  # key handled inside class
-        vprint(1, "[LLM] LLMAgent ready.")
+    # Optional: stimuli text for FR scoring reference
+    stim_texts = None
+    if stimuli_text_json:
+        try:
+            stim_texts = load_json(stimuli_text_json)
+            vprint(1, f"[LOAD] Loaded stimuli text map from {stimuli_text_json}.")
+        except Exception as e:
+            vprint(1, f"[WARN] Could not load stimuli_text_json: {e}")
 
     results = []
 
@@ -224,10 +291,18 @@ def run_pipeline(ltm_path: str,
     total_correct = 0
 
     for i, (tk, payload) in enumerate(trials, start=1):
-        print(f"[TRIAL {i}/{len(trials)}] episode={tk.episode_index} stim={tk.stimulus_index} time={tk.time_condition}") if verbose>=1 else None
+        vprint(1, f"[TRIAL {i}/{len(trials)}] episode={tk.episode_index} stim={tk.stimulus_index} time={tk.time_condition}")
         items = payload.get("items", {})
         ltm_props = rank_propositions(items, sort_by=sort_by, max_props=max_props)
-        print(f"  └─ selected {len(ltm_props)} proposition(s) for prompting") if verbose>=2 else None
+        vprint(2, f"  └─ selected {len(ltm_props)} proposition(s) for prompting")
+
+        # Fresh LLMAgent per trial if using LLM mode
+        agent = None
+        if mode == "llm":
+            if LLMAgent is None:
+                raise RuntimeError("LLMAgent not importable; cannot run in 'llm' mode.")
+            vprint(2, "  [LLM] Spawning fresh LLMAgent for this trial...")
+            agent = LLMAgent(model_name="gpt-4o", api_key=None)
 
         # Collect MCQ logs
         mcq_logs = []
@@ -242,13 +317,14 @@ def run_pipeline(ltm_path: str,
                 ans = ans if ans in ["A","B","C","D","E"] else "E"
             elif mode == "gold":
                 ans = correct
-            else:  # heuristic
+            else:
                 ans = heuristic_answer(ltm_props, q, options)
 
             is_correct = (ans == correct)
             total_mcq += 1
             total_correct += int(is_correct)
-            print(f"    [MCQ {j}/{len(stim_mcqs)}] idx={mcq_idx} ans={ans} correct={correct} ✓" if is_correct else f"    [MCQ {j}/{len(stim_mcqs)}] idx={mcq_idx} ans={ans} correct={correct} ✗") if verbose>=2 else None
+            if verbose >= 2:
+                print(f"    [MCQ {j}/{len(stim_mcqs)}] idx={mcq_idx} ans={ans} correct={correct} {'✓' if is_correct else '✗'}")
 
             mcq_logs.append({
                 "mcq_idx": str(mcq_idx),
@@ -258,22 +334,33 @@ def run_pipeline(ltm_path: str,
 
         # Free recall
         if mode == "llm":
-            print("    [FR] Generating free recall via LLM...") if verbose>=2 else None
+            vprint(2, "    [FR] Generating free recall via LLM...")
             free_recall = agent.get_free_recall(ltm_gist=ltm_props)
         else:
-            print("    [FR] Generating heuristic free recall...") if verbose>=2 else None
+            vprint(2, "    [FR] Generating heuristic free recall...")
             free_recall = make_free_recall_from_props(ltm_props)
-        print(f"    [FR] length={len((free_recall or '').split())} words") if verbose>=2 else None
+        vprint(2, f"    [FR] length={len((free_recall or '').split())} words")
 
-        # Build result entry (template-compatible)
+        # Decide FR reference text and score
+        if fr_reference == "stimulus" and stim_texts is not None:
+            fr_reference_text = str(stim_texts.get(str(tk.stimulus_index), ""))
+            if not fr_reference_text:
+                vprint(2, "    [FR] No stimulus text found; falling back to gist for scoring.")
+                fr_reference_text = " ".join(ltm_props)
+        else:
+            fr_reference_text = " ".join(ltm_props)
+
+        fr_score = _score_free_recall(fr_reference_text, free_recall, mode=("llm" if (mode=="llm" and fr_score_mode=="llm") else fr_score_mode))
+        vprint(2, f"    [FR] score={fr_score:.3f} (ref={fr_reference})")
+
+        # Build result entry
         entry = {
             "episodic_info": {
                 "episode_index": tk.episode_index,
                 "participant_id": participant_id_default,
-                "trial_condition": tk.time_condition.replace("s",""),  # "30", "60", "90"
+                "trial_condition": tk.time_condition.replace("s",""),
                 "stimulus": {
                     "stimulus_index": tk.stimulus_index,
-                    # We don't have the full passage text here; keep fields minimal
                     "words_in_section": "",
                     "stimulus_width": None,
                     "stimulus_height": None
@@ -283,7 +370,8 @@ def run_pipeline(ltm_path: str,
                     "task_type": "comprehension"
                 },
                 "mcq_logs": mcq_logs,
-                "free_recall_answer": free_recall
+                "free_recall_answer": free_recall,
+                "free_recall_score": fr_score
             }
         }
         results.append(entry)
@@ -291,29 +379,26 @@ def run_pipeline(ltm_path: str,
     # Save JSON
     with open(out_json, "w", encoding="utf-8") as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
-    print(f"[SAVE] JSON → {out_json}") if verbose>=1 else None
+    vprint(1, f"[SAVE] JSON → {out_json}")
 
-    # Optional CSV summary
+    # CSV in template format
     if out_csv:
         with open(out_csv, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
-            writer.writerow([
-                "episode_index", "stimulus_index", "trial_condition",
-                "num_mcq", "num_correct", "mcq_accuracy",
-                "free_recall_word_count"
-            ])
+            writer.writerow(["participant_index", "stimulus_index", "time_constraint", "MCQ Accuracy", "Free Recall Score"])
             for row in results:
                 info = row["episodic_info"]
                 mcqs = info["mcq_logs"]
                 num = len(mcqs)
                 correct = sum(1 for m in mcqs if m["answer"] == m["correct_answer"])
                 acc = (correct / num) if num > 0 else 0.0
-                fr_wc = len((info.get("free_recall_answer") or "").split())
+                frs = float(info.get("free_recall_score", 0.0))
                 writer.writerow([
-                    info["episode_index"],
+                    info["participant_id"],
                     info["stimulus"]["stimulus_index"],
-                    info["trial_condition"],
-                    num, correct, round(acc, 3), fr_wc
+                    int(info["trial_condition"]),
+                    round(acc, 3),
+                    round(frs, 3)
                 ])
 
     run_summary = {
@@ -322,13 +407,13 @@ def run_pipeline(ltm_path: str,
         "out_csv": out_csv
     }
     if total_mcq > 0:
-        print(f"[DONE] Trials={len(results)} | MCQs={total_mcq} | Overall acc={total_correct/total_mcq:.3f}") if verbose>=1 else None
+        vprint(1, f"[DONE] Trials={len(results)} | MCQs={total_mcq} | Overall acc={total_correct/total_mcq:.3f}")
     else:
-        print(f"[DONE] Trials={len(results)} | MCQs=0") if verbose>=1 else None
+        vprint(1, f"[DONE] Trials={len(results)} | MCQs=0")
     return run_summary
 
-
-def main():
+def main(
+):
     ap = argparse.ArgumentParser()
     ap.add_argument("--mode", choices=["llm","heuristic","gold"], default="heuristic",
                     help="llm: call OpenAI via LLMAgent; heuristic: offline keyword; gold: use correct answers")
@@ -336,6 +421,9 @@ def main():
     ap.add_argument("--max_props", type=int, default=40, help="Clamp number of LTM propositions per prompt")
     ap.add_argument("--participant_id", type=int, default=0, help="Participant ID to put in results (if unknown)")
     ap.add_argument("--verbose", type=int, default=1, help="0=silent, 1=high-level, 2=step-by-step")
+    ap.add_argument("--fr_score_mode", choices=["heuristic","embedding","llm"], default="heuristic", help="How to score free recall")
+    ap.add_argument("--stimuli_text_json", default=None, help="Optional JSON mapping stimulus_index -> original passage text")
+    ap.add_argument("--fr_reference", choices=["gist","stimulus"], default="gist", help="What to compare free recall against for scoring")
     args = ap.parse_args()
 
     ltm_path = os.path.join('..', 'assets', 'comprehension_results', 'simulation', 'sim_ltm_gists.json')
@@ -352,7 +440,10 @@ def main():
         sort_by=args.sort_by,
         max_props=args.max_props,
         participant_id_default=args.participant_id,
-        verbose=args.verbose
+        verbose=args.verbose,
+        fr_score_mode=args.fr_score_mode,
+        stimuli_text_json=args.stimuli_text_json,
+        fr_reference=args.fr_reference
     )
     print(json.dumps(stats, indent=2))
 
