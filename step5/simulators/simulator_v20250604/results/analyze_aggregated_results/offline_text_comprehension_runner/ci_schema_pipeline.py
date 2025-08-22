@@ -11,6 +11,8 @@ from typing import Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 
+# TODO: maybe resume the function of using re-generated gpt propositions, to show that after re-reading, new details are gained. NOTE: only do this if we find the comprehension results are too far away from the human data.
+
 
 # --------------------------- Logging ---------------------------
 
