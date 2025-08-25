@@ -50,11 +50,11 @@ python main.py   --mode heuristic   --verbose 2   --fr_score_mode heuristic   --
 ### 2) Full LLM run (Aalto gateway)
 Creates a **new GPT agent per trial** for MCQ + free recall.
 ```bash
-# LLM for QA, score free recall vs gist with heuristic scorer
+# LLM for QA, score free recall vs gist with heuristic scorer (DO NOT USE THIS, JUST SHOWCASE)
 python main.py   --mode llm   --verbose 1   --fr_score_mode heuristic   --fr_reference gist
 
-# LLM for QA and LLM‑judge scoring vs original stimulus text
-python main.py   --mode llm   --verbose 1   --fr_score_mode llm   --fr_reference stimulus   --stimuli_text_json ../assets/comprehension_results/simulation/simulation_read_contents.json
+# LLM for QA and LLM‑judge scoring vs original stimulus text (DO NOT USE THIS, JUST SHOWCASE)
+python main.py   --mode llm   --verbose 1   --fr_score_mode llm   --fr_reference stimulus   --stimuli_text_json ../assets/comprehension_results/mcq_metadata.json
 ```
 
 ---

@@ -13,6 +13,7 @@ if __name__ == "__main__":
     ap.add_argument("--start", type=int, default=0, help="Start offset for episodes")
     ap.add_argument("--wm_buffer", type=int, default=5)
     ap.add_argument("--log_every", type=int, default=1)
+    ap.add_argument("--allow_reparse", type=bool, default=True)
     ap.add_argument("--verbose", default="INFO", choices=["DEBUG","INFO","WARNING","ERROR"])
     args = ap.parse_args()
 
@@ -30,6 +31,7 @@ if __name__ == "__main__":
         # llm_role="You are a reader with no prior knowledge about the reading content.",
         verbose=args.verbose,
         p_store=0.35,       # per-cycle consolidation prob for recall proxy
+        allow_reparse=True
     )
 
     # write outputs to a compact JSON for analysis/plots

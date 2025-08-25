@@ -6,7 +6,7 @@ This repository implements a **Kintsch-style Construction–Integration (CI)** p
 > - `ci_schema_pipeline.py` – main pipeline (schema + WM + LTM + logs).
 > - `gpt-api.py` – your LLM wrapper (optional; pipeline falls back to heuristic parsing).
 > - `simulation_read_contents.json` – episode-wise input logs of what the agent read.
-> - (optional runner) `run_ci_from_json.py` – simple CLI runner (see Usage).
+> - (optional runner) `main.py` – simple CLI runner (see Usage).
 
 ---
 

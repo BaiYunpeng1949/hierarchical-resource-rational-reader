@@ -115,11 +115,13 @@ class PropositionParser:
     """
 
     def __init__(self, llm_agent=None, role: str = "", use_llm: bool = True,
-                 logger: Optional[logging.Logger] = None):
+                 logger: Optional[logging.Logger] = None,
+                 allow_reparse: bool = False):
         self.llm = llm_agent
         self.role = role
         self.use_llm = (llm_agent is not None) and use_llm
         self.logger = logger
+        self.allow_reparse = bool(allow_reparse)
         self.last_method = "heuristic"
         # sentence -> List[Tuple[predicate, Tuple[args...]]]
         self._cache: Dict[str, List[Tuple[str, Tuple[str, ...]]]] = {}
@@ -132,23 +134,35 @@ class PropositionParser:
 
     def parse(self, sent: str, sent_id: int) -> List[Proposition]:
         key = self._sent_key(sent)
-        if key in self._cache:
+        # If re-parsing is NOT allowed and we have a cache entry, return it.
+        if (not self.allow_reparse) and (key in self._cache):
             self.cache_hits += 1
             self.last_method = "cache"
             if self.logger and self.logger.level <= logging.DEBUG:
                 self.logger.debug(f"  CACHE hit for sentence: {sent[:80]}")
             return [Proposition(pred, args, sent_id, (0, len(sent))) for (pred, args) in self._cache[key]]
 
-        self.cache_misses += 1
-        self.last_method = "heuristic"
+        # Either cache miss or forced fresh parse
+        if key in self._cache:
+            # We deliberately bypass the cache but still track as a 'reparse'
+            self.last_method = "reparse"
+        else:
+            self.cache_misses += 1
+            self.last_method = "heuristic"
+
         props: Optional[List[Proposition]] = None
         if self.use_llm:
             props = self._parse_with_llm(sent, sent_id)
             if props:
-                self.last_method = "llm"
+                self.last_method = "llm" if self.last_method != "reparse" else "reparse-llm"
         if not props:
             props = _heuristic_propositions(sent, sent_id)
+            if self.last_method.startswith("reparse"):
+                self.last_method = "reparse-heuristic"
+            else:
+                self.last_method = "heuristic"
 
+        # Update/overwrite cache with latest parse (useful for auditing)
         self._cache[key] = [(p.predicate, p.args) for p in props]
         if self.logger and self.logger.level <= logging.DEBUG:
             self.logger.debug(f"  CACHE store ({len(props)} props) for sentence: {sent[:80]}")
@@ -470,8 +484,26 @@ def run_pipeline(json_path: str,
                  start: int = 0,
                  log_every: int = 1,
                  verbose: str = "INFO",
-                 p_store: float = 0.35) -> Dict:
-    """Run CI+Schema over episodes with rich logging, WM/LTM tracking."""
+                 p_store: float = 0.35,
+                 allow_reparse: bool = False) -> Dict:
+    """Run CI+Schema over episodes with rich logging, WM/LTM tracking.
+
+    Args:
+        json_path: Path to episodes JSON.
+        llm_agent: Optional LLM agent used for proposition parsing.
+        llm_role: System prompt for LLM.
+        use_llm: If False, fall back to heuristic parser.
+        wm_buffer: Working-memory buffer size.
+        limit_episodes: Optional limit on number of episodes.
+        start: Start index in episodes.
+        log_every: Log frequency (in steps).
+        verbose: Logging level.
+        p_store: Base probability of storing a proposition to LTM.
+        allow_reparse: If True, bypass the sentence cache and re-parse the same
+            sentence on each visit (useful for testing whether multiple parses
+            yield additional details). If False (default), the parser caches
+            and reuses propositions for identical sentence strings.
+    """
     logger = setup_logger(verbose)
     with open(json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -480,7 +512,7 @@ def run_pipeline(json_path: str,
     data_slice = data[start:start + limit_episodes] if limit_episodes is not None else data[start:]
     logger.info(f"Loaded {len(data)} episodes; processing {len(data_slice)} (start={start}).")
 
-    parser = PropositionParser(llm_agent=llm_agent, role=llm_role, use_llm=use_llm, logger=logger)
+    parser = PropositionParser(llm_agent=llm_agent, role=llm_role, use_llm=use_llm, logger=logger, allow_reparse=allow_reparse)
 
     results: Dict[str, List[Dict]] = {}
     for idx, ep in enumerate(data_slice, start=1):
