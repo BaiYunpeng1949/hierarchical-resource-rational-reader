@@ -14,6 +14,7 @@ if __name__ == "__main__":
     ap.add_argument("--wm_buffer", type=int, default=5)
     ap.add_argument("--log_every", type=int, default=1)
     ap.add_argument("--allow_reparse", type=bool, default=True)
+    ap.add_argument("--mode", default="ci_schema", choices=["ci_schema", "none"], help="Integration mode: 'ci_schema' for handcrafted CI+schema; 'none' to bypass and store all props")
     ap.add_argument("--verbose", default="INFO", choices=["DEBUG","INFO","WARNING","ERROR"])
     args = ap.parse_args()
 
@@ -31,7 +32,8 @@ if __name__ == "__main__":
         # llm_role="You are a reader with no prior knowledge about the reading content.",
         verbose=args.verbose,
         p_store=0.35,       # per-cycle consolidation prob for recall proxy
-        allow_reparse=True
+        allow_reparse=True,
+        mode=args.mode,
     )
 
     # write outputs to a compact JSON for analysis/plots

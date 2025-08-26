@@ -401,7 +401,8 @@ def process_episode(ep: Dict,
                     episode_tag: str = "",
                     log_every: int = 1,
                     ltm_store: Optional[LTMStore] = None,
-                    p_store: float = 0.35) -> List[CycleOutput]:
+                    p_store: float = 0.35,
+                    mode: str = "ci_schema") -> List[CycleOutput]:
 
     if schema is None:
         schema = Schema()
@@ -431,8 +432,16 @@ def process_episode(ep: Dict,
         strength = apply_visit_gain(visit_counter[sent_id])
 
         # 3) schema update + 4) macroselection (WM/gist of this cycle)
-        schema.update_from_props(props, strength=strength)
-        wm_props, keep_scores = macroselect_gist(props, schema, buffer_size=wm_buffer)
+        if mode == "none":
+            # --- BYPASS: no schema learning, no macroselection, no CI coherence ---
+            wm_props = props[:]  # keep EVERYTHING in WM/gist for this cycle
+            keep_scores = {p.signature(): 0.0 for p in wm_props}  # default zeros
+        else:
+            # --- Original CI+Schema path ---
+            schema.update_from_props(props, strength=strength)
+            wm_props, keep_scores = macroselect_gist(props, schema, buffer_size=wm_buffer)
+        # schema.update_from_props(props, strength=strength)
+        # wm_props, keep_scores = macroselect_gist(props, schema, buffer_size=wm_buffer)
 
         # WM dynamics vs previous cycle
         wm_now = [p.signature() for p in wm_props]
@@ -442,8 +451,11 @@ def process_episode(ep: Dict,
         wm_dropped = sorted(list(set_prev - set_now))
 
         # 5) local CI integration (optional coherence boost)
-        net = build_network(props)
-        integrate(net)
+        # net = build_network(props)
+        # integrate(net)
+        if mode == "ci_schema":
+            net = build_network(props)
+            integrate(net)
 
         # 6) LTM update (per-prop)
         ltm_updates = ltm_store.update(selected=wm_now, step=k, strength=strength, relevance_map=keep_scores)
@@ -505,7 +517,8 @@ def run_pipeline(json_path: str,
                  log_every: int = 1,
                  verbose: str = "INFO",
                  p_store: float = 0.35,
-                 allow_reparse: bool = False) -> Dict:
+                 allow_reparse: bool = False,
+                 mode: str = "ci_schema") -> Dict:
     """Run CI+Schema over episodes with rich logging, WM/LTM tracking.
 
     Args:
@@ -545,7 +558,7 @@ def run_pipeline(json_path: str,
 
         cycles = process_episode(ep, parser, schema=schema, wm_buffer=wm_buffer,
                                  logger=logger, episode_tag=tag, log_every=log_every,
-                                 ltm_store=ltm_store, p_store=p_store)
+                                 ltm_store=ltm_store, p_store=p_store, mode=mode)
 
         # per-cycle details (backward compatible shape + new fields)
         results[key] = [asdict(c) for c in cycles]

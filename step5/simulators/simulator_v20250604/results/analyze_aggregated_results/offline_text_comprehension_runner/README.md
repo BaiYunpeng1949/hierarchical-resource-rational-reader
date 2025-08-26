@@ -225,9 +225,14 @@ WM=5 [ret 3, +2, -2] | LTM+=5 (top: skip(readers, words), install(stations, new)
 
 3) **Run**  
    - Minimal Python script (see code above), or use your CLI runner with flags. Note that `--episodes` number determines how many trials to cover. Set `1` for a smoking check.
+   - CI schema integration on:
      ```bash
-     python main.py --episodes 1 --log_every 1 --verbose DEBUG
+     python main.py --episodes 1 --log_every 1 --mode ci_schema --verbose DEBUG
      ```
+    - CI schema integration off (for testing and comparisons):
+      ```bash
+      python main.py --episodes 1 --log_every 1 --mode none --verbose DEBUG
+      ```
 
 4) **Inspect results**  
    - Open the generated JSON; check `wm_*` fields and `ltm_updates` for each step.  
