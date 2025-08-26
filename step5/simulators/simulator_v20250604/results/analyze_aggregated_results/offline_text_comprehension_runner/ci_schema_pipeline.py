@@ -11,8 +11,6 @@ from typing import Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 
-# TODO: maybe resume the function of using re-generated gpt propositions, to show that after re-reading, new details are gained. NOTE: only do this if we find the comprehension results are too far away from the human data.
-
 
 # --------------------------- Logging ---------------------------
 
@@ -263,6 +261,47 @@ def integrate(net: CINetwork, iters: int = 12, leak: float = 0.10, beta: float =
         net.nodes[i].activation = float(val)
 
 
+# --------------------------- Sentence-Ordered Memory (SOM) ---------------------------
+
+@dataclass
+class GistBoard:
+    per_sent: Dict[int, List[str]] = field(default_factory=dict)
+    order: List[int] = field(default_factory=list)
+    per_sent_limit: int = 12
+    update_policy: str = "replace"   # "replace" or "merge_topk"
+
+    def update(self, sent_id: int, props: List[str], scores: Optional[Dict[str, float]] = None):
+        # de-dup while preserving order
+        seen = set(); uniq = []
+        for p in props:
+            if p not in seen:
+                uniq.append(p); seen.add(p)
+
+        # rank (if scores provided)
+        if scores:
+            uniq = sorted(uniq, key=lambda x: scores.get(x, 0.0), reverse=True)
+
+        if self.update_policy == "replace":
+            selected = uniq[: self.per_sent_limit]
+        else:  # merge_topk
+            prev = self.per_sent.get(sent_id, [])
+            merged = prev + [p for p in uniq if p not in prev]
+            if scores:
+                merged = sorted(merged, key=lambda x: scores.get(x, 0.0), reverse=True)
+            selected = merged[: self.per_sent_limit]
+
+        if sent_id not in self.order:
+            self.order.append(sent_id)
+        self.per_sent[sent_id] = selected
+
+    def flatten(self) -> List[str]:
+        # return all propositions in sentence order
+        out = []
+        for sid in sorted(self.order):
+            out.extend(self.per_sent.get(sid, []))
+        return out
+
+
 # --------------------------- Dynamic schema + macrorules ---------------------------
 
 @dataclass
@@ -402,7 +441,9 @@ def process_episode(ep: Dict,
                     log_every: int = 1,
                     ltm_store: Optional[LTMStore] = None,
                     p_store: float = 0.35,
-                    mode: str = "ci_schema") -> List[CycleOutput]:
+                    mode: str = "ci_schema",
+                    som_limit: int = 12,
+                    som_policy: str = "replace") -> Tuple[List[CycleOutput], GistBoard]:
 
     if schema is None:
         schema = Schema()
@@ -415,6 +456,9 @@ def process_episode(ep: Dict,
     prev_wm: List[str] = []
 
     t_ep0 = time.perf_counter()
+
+    gist_board = GistBoard(per_sent_limit=som_limit, update_policy=som_policy)
+
     for k, log in enumerate(ep["text_reading_logs"], start=1):
         t0 = time.perf_counter()
 
@@ -436,10 +480,15 @@ def process_episode(ep: Dict,
             # --- BYPASS: no schema learning, no macroselection, no CI coherence ---
             wm_props = props[:]  # keep EVERYTHING in WM/gist for this cycle
             keep_scores = {p.signature(): 0.0 for p in wm_props}  # default zeros
+            # store all propositions for this sentence (ordered), no scores
+            wm_now = [p.signature() for p in wm_props]
+            gist_board.update(sent_id, wm_now, keep_scores)
         else:
             # --- Original CI+Schema path ---
             schema.update_from_props(props, strength=strength)
             wm_props, keep_scores = macroselect_gist(props, schema, buffer_size=wm_buffer)
+            # store the selected WM items with scores
+            gist_board.update(sent_id, wm_now, keep_scores)
         # schema.update_from_props(props, strength=strength)
         # wm_props, keep_scores = macroselect_gist(props, schema, buffer_size=wm_buffer)
 
@@ -502,7 +551,8 @@ def process_episode(ep: Dict,
 
     if logger:
         logger.info(f"{episode_tag} DONE in {time.perf_counter() - t_ep0:.2f}s | LTM size={len(ltm_store.db)}")
-    return out
+    
+    return out, gist_board
 
 
 # --------------------------- Entry ---------------------------
@@ -518,7 +568,10 @@ def run_pipeline(json_path: str,
                  verbose: str = "INFO",
                  p_store: float = 0.35,
                  allow_reparse: bool = False,
-                 mode: str = "ci_schema") -> Dict:
+                 mode: str = "ci_schema",
+                 som_limit: int = 12,
+                 som_policy: str = "replace"
+                 ) -> Dict:
     """Run CI+Schema over episodes with rich logging, WM/LTM tracking.
 
     Args:
@@ -556,14 +609,18 @@ def run_pipeline(json_path: str,
         schema = Schema()
         ltm_store = LTMStore(p_store=p_store)
 
-        cycles = process_episode(ep, parser, schema=schema, wm_buffer=wm_buffer,
-                                 logger=logger, episode_tag=tag, log_every=log_every,
-                                 ltm_store=ltm_store, p_store=p_store, mode=mode)
+        cycles, gist_board = process_episode(ep, parser, schema=schema, wm_buffer=wm_buffer, logger=logger, episode_tag=tag, log_every=log_every, 
+            ltm_store=ltm_store, p_store=p_store, mode=mode, som_limit=som_limit, som_policy=som_policy,)
 
         # per-cycle details (backward compatible shape + new fields)
         results[key] = [asdict(c) for c in cycles]
         # include episode-level LTM summary
         results[key + "__LTM"] = {"p_store": p_store, "items": ltm_store.as_dict()}
+        results[key + "__SOM"] = {
+            "policy": som_policy,
+            "per_sentence": {str(sid): gist_board.per_sent[sid] for sid in sorted(gist_board.order)},
+            "flat": gist_board.flatten()
+        }
         logger.info(f"{tag} CACHE stats: hits={parser.cache_hits}, misses={parser.cache_misses}, size={len(parser._cache)}")
 
     return results

@@ -16,6 +16,8 @@ if __name__ == "__main__":
     ap.add_argument("--allow_reparse", type=bool, default=True)
     ap.add_argument("--mode", default="ci_schema", choices=["ci_schema", "none"], help="Integration mode: 'ci_schema' for handcrafted CI+schema; 'none' to bypass and store all props")
     ap.add_argument("--verbose", default="INFO", choices=["DEBUG","INFO","WARNING","ERROR"])
+    ap.add_argument("--som_limit", type=int, default=20, help="Max propositions per sentence slot in the ordered gist")
+    ap.add_argument("--som_policy", default="replace", choices=["replace","merge_topk"], help="How to update a sentence slot on revisits")
     args = ap.parse_args()
 
     # init your agent (uses your Aalto gateway per your file)
@@ -34,6 +36,8 @@ if __name__ == "__main__":
         p_store=0.35,       # per-cycle consolidation prob for recall proxy
         allow_reparse=True,
         mode=args.mode,
+        som_limit=args.som_limit,      
+        som_policy=args.som_policy,   
     )
 
     # write outputs to a compact JSON for analysis/plots
@@ -43,7 +47,8 @@ if __name__ == "__main__":
     print("Saved -> ci_memory_comprehension_logs.json")
     
     # Write only ltm gists to a folder for further processing
-    ltm_preserved = {k: v for k, v in results.items() if k.endswith("__LTM")}
+    # ltm_preserved = {k: v for k, v in results.items() if k.endswith("__LTM")}
+    ltm_preserved = {k: v for k, v in results.items() if k.endswith("__SOM")}
     ltm_filepath = os.path.join('..', 'assets','comprehension_results','simulation','sim_ltm_gists.json')
     with open(ltm_filepath,"w",encoding="utf-8") as f:
         json.dump(ltm_preserved, f, ensure_ascii=False, indent=2)

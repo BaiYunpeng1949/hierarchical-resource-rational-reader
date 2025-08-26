@@ -175,29 +175,49 @@ def load_json(path: str) -> Any:
 
 def parse_trial_key(key: str) -> TrialKey:
     """
-    Expect keys like 'episode_0_stim_0_30s__LTM'.
+    Accept keys like 'episode_0_stim_0_30s__LTM' or '__SOM'.
+    Returns (TrialKey, suffix) where suffix in {"LTM","SOM"}.
     """
-    m = re.match(r"episode_(\d+)_stim_(\d+)_(\d+)(s)__LTM", key)
+    m = re.match(r"episode_(\d+)_stim_(\d+)_(\d+)(s)__(LTM|SOM)$", key)
     if not m:
         raise ValueError(f"Unrecognized trial key format: {key}")
-    return TrialKey(episode_index=int(m.group(1)),
-                    stimulus_index=int(m.group(2)),
-                    time_condition=m.group(3) + m.group(4))
+    tk = TrialKey(episode_index=int(m.group(1)),
+                  stimulus_index=int(m.group(2)),
+                  time_condition=m.group(3) + m.group(4))
+    return tk, m.group(5)
 
 
-def extract_trials(ltm_json: Dict[str, Any]) -> List[Tuple[TrialKey, Dict[str, Any]]]:
+def extract_trials(ltm_json: Dict[str, Any], suffix: str) -> List[Tuple[TrialKey, Dict[str, Any]]]:
+    suffix = (suffix or "LTM").upper()
     trials = []
     for k, v in ltm_json.items():
-        if k.endswith("__LTM"):
-            try:
-                tk = parse_trial_key(k)
+        if not k.endswith(f"__{suffix}"):
+            continue
+        try:
+            tk, suf = parse_trial_key(k)
+            if suf == suffix:
                 trials.append((tk, v))
-            except Exception as e:
-                # Skip anything that doesn't match the expected pattern
-                continue
-    # sort by (episode, stim, time)
+        except Exception:
+            continue
     trials.sort(key=lambda kv: (kv[0].episode_index, kv[0].stimulus_index, kv[0].time_condition))
     return trials
+
+
+def props_from_som(per_sentence: Dict[str, List[str]],
+                   max_props: int,
+                   per_sent_limit: int = 12) -> List[str]:
+    """Return propositions in sentence order, capping per sentence, de-duplicated."""
+    ordered_sids = sorted((int(s) for s in per_sentence.keys()))
+    out, seen = [], set()
+    for sid in ordered_sids:
+        props = per_sentence[str(sid)][:per_sent_limit]
+        for p in props:
+            if p not in seen:
+                out.append(p)
+                seen.add(p)
+            if len(out) >= max_props:
+                return out
+    return out
 
 
 def rank_propositions(items: Dict[str, Dict[str, float]], sort_by: str, max_props: int) -> List[str]:
@@ -296,6 +316,8 @@ def run_pipeline(ltm_path: str,
                  mode: str = "llm",
                  sort_by: str = "last_relevance",
                  max_props: int = 40,
+                 source: str = "LTM",
+                 som_per_sent_limit: int = 12,
                  participant_id_default: int = 0,
                  verbose: int = 1,
                  fr_score_mode: str = "heuristic",
@@ -312,8 +334,11 @@ def run_pipeline(ltm_path: str,
 
     ltm = load_json(ltm_path)
     mcq = load_json(mcq_path)
-    trials = extract_trials(ltm)
-    vprint(1, f"[LOAD] Extracted {len(trials)} trial(s) from LTM store.")
+    # trials = extract_trials(ltm)
+    # vprint(1, f"[LOAD] Extracted {len(trials)} trial(s) from LTM store.")
+    source = (source or "LTM").upper()
+    trials = extract_trials(ltm, suffix=source)
+    vprint(1, f"[LOAD] Extracted {len(trials)} trial(s) from {source}.")
 
     # Optional: stimuli text for FR scoring reference
     stim_texts = None
@@ -330,9 +355,16 @@ def run_pipeline(ltm_path: str,
     total_correct = 0
 
     for i, (tk, payload) in enumerate(trials, start=1):
-        vprint(1, f"[TRIAL {i}/{len(trials)}] episode={tk.episode_index} stim={tk.stimulus_index} time={tk.time_condition}")
-        items = payload.get("items", {})
-        ltm_props = rank_propositions(items, sort_by=sort_by, max_props=max_props)
+        if source == "SOM":
+            per_sentence = payload.get("per_sentence", {})
+            ltm_props = props_from_som(per_sentence, max_props=max_props, per_sent_limit=som_per_sent_limit)
+        else:
+            vprint(1, f"[TRIAL {i}/{len(trials)}] episode={tk.episode_index} stim={tk.stimulus_index} time={tk.time_condition}")
+            items = payload.get("items", {})
+            ltm_props = rank_propositions(items, sort_by=sort_by, max_props=max_props)
+        # vprint(1, f"[TRIAL {i}/{len(trials)}] episode={tk.episode_index} stim={tk.stimulus_index} time={tk.time_condition}")
+        # items = payload.get("items", {})
+        # ltm_props = rank_propositions(items, sort_by=sort_by, max_props=max_props)
         vprint(2, f"  └─ selected {len(ltm_props)} proposition(s) for prompting")
 
         # Fresh LLMAgent per trial if using LLM mode
@@ -454,10 +486,11 @@ def run_pipeline(ltm_path: str,
 def main(
 ):
     ap = argparse.ArgumentParser()
-    ap.add_argument("--mode", choices=["llm","heuristic","gold"], default="heuristic",
-                    help="llm: call OpenAI via LLMAgent; heuristic: offline keyword; gold: use correct answers")
+    ap.add_argument("--mode", choices=["llm","heuristic","gold"], default="heuristic", help="llm: call OpenAI via LLMAgent; heuristic: offline keyword; gold: use correct answers")
     ap.add_argument("--sort_by", choices=["last_relevance","total_strength","visits"], default="last_relevance")
     ap.add_argument("--max_props", type=int, default=40, help="Clamp number of LTM propositions per prompt")
+    ap.add_argument("--source", choices=["LTM","SOM"], default="SOM", help="Read gists from '__LTM' (metadata-ranked) or '__SOM' (sentence-ordered).")
+    ap.add_argument("--som_per_sent_limit", type=int, default=20, help="Max propositions to take per sentence when --source SOM.")
     ap.add_argument("--participant_id", type=int, default=0, help="Participant ID to put in results (if unknown)")
     ap.add_argument("--verbose", type=int, default=1, help="0=silent, 1=high-level, 2=step-by-step")
     ap.add_argument("--fr_score_mode", choices=["heuristic","embedding","llm"], default="heuristic", help="How to score free recall: embedding=cosine(CountVectorizer TF), heuristic=blend(difflib+Jaccard), llm=graded by LLM")
@@ -478,6 +511,8 @@ def main(
         mode=args.mode,
         sort_by=args.sort_by,
         max_props=args.max_props,
+        source=args.source,
+        som_per_sent_limit=args.som_per_sent_limit,
         participant_id_default=args.participant_id,
         verbose=args.verbose,
         fr_score_mode=args.fr_score_mode,
