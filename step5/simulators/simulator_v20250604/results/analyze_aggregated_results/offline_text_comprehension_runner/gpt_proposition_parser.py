@@ -115,11 +115,30 @@ if __name__ == "__main__":
     response = llm_agent.get_micro_structural_propositions(
         role="You are a reader with **high prior knowledge** about **heart disease**. ",
         # role="You are a reader with **low prior knowledge** about **heart disease**. ",
-        prompt=(
-            f"Now please parse the given sentence into micro-structural propositions that matches Kintsch's model of text comprehension. \n\n The sentence is: {sentence}.\n\n"
-            f"The propositions should be in the following format: \n\n"
-            f"A(B, C), or nested A(B, C(D, E))."
-            f"Please output the propositions only, no other text, separated by comma."
+        # prompt=(
+        #     f"Now please parse the given sentence into micro-structural propositions that matches Kintsch's model of text comprehension. \n\n The sentence is: {sentence}.\n\n"
+        #     f"The propositions should be in the following format: \n\n"
+        #     f"A(B, C), or nested A(B, C(D, E))."
+        #     f"Please output the propositions only, no other text, separated by comma."
+        # )
+        prompt = (
+            "Parse this sentence into micro-structural propositions (Kintsch-style).\n"
+            "STRICT OUTPUT: comma-separated propositions only; NO extra text.\n"
+            "Each proposition must be of the form A(B, C) or nested A(B, C(D)).\n\n"
+            "Coverage requirements — be EXHAUSTIVE but avoid duplicates:\n"
+            "- Actions/events: use predicates like do(agent, action(object)), event(subject, object)\n"
+            "- Attributives/modifiers: has_attr(entity, attribute)\n"
+            "- Numbers/measurements: quantity(entity, value unit)\n"
+            "- Time/temporal: time_at(event_or_state, time_expr)\n"
+            "- Location: location(entity_or_event, place)\n"
+            "- Causal/conditional: cause(x, y), condition(x, y)\n"
+            "- Purpose/goal: purpose(x, y)\n"
+            "- Membership/part-whole: part_of(x, y)\n"
+            "- Coreference: coref(mention, canonical_entity)\n"
+            "- Negation: negate(proposition_signature, reason)\n\n"
+            "Prefer canonical nouns/verbs; keep arguments short and consistent.\n"
+            "Aim for 8-15 propositions if the sentence is information rich.\n"
+            f"Sentence: {sent}"
         )
     )
 

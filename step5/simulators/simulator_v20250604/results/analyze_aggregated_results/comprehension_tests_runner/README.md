@@ -138,7 +138,7 @@ Both CSVs should contain columns:
 ### Script
 Run the plotting script (creates individual figures and a stitched, side-by-side image):
 ```bash
-python plot.py   --out_dir figure
+python plot.py   --out_dir figures
 ```
 
 ### Outputs

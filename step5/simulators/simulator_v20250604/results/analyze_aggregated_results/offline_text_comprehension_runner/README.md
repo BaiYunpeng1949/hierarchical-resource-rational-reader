@@ -224,7 +224,7 @@ WM=5 [ret 3, +2, -2] | LTM+=5 (top: skip(readers, words), install(stations, new)
    - To disable LLM parsing, call with `use_llm=False` (heuristic fallback is deterministic).
 
 3) **Run**  
-   - Minimal Python script (see code above), or use your CLI runner with flags:
+   - Minimal Python script (see code above), or use your CLI runner with flags. Note that `--episodes` number determines how many trials to cover. Set `1` for a smoking check.
      ```bash
      python main.py --episodes 1 --log_every 1 --verbose DEBUG
      ```

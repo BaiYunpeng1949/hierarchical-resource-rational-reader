@@ -171,11 +171,31 @@ class PropositionParser:
 
     def _parse_with_llm(self, sent: str, sent_id: int) -> Optional[List[Proposition]]:
         try:
+            # prompt = (
+            #     "Parse this sentence into micro-structural propositions per Kintsch.\n"
+            #     "Format strictly as A(B, C) or nested A(B, C(D)). Only propositions, comma-separated; no extra text.\n"
+            #     f"Sentence: {sent}"
+            # )
             prompt = (
-                "Parse this sentence into micro-structural propositions per Kintsch.\n"
-                "Format strictly as A(B, C) or nested A(B, C(D)). Only propositions, comma-separated; no extra text.\n"
+                "Parse this sentence into micro-structural propositions (Kintsch-style).\n"
+                "STRICT OUTPUT: comma-separated propositions only; NO extra text.\n"
+                "Each proposition must be of the form A(B, C) or nested A(B, C(D)).\n\n"
+                "Coverage requirements — be EXHAUSTIVE but avoid duplicates:\n"
+                "- Actions/events: use predicates like do(agent, action(object)), event(subject, object)\n"
+                "- Attributives/modifiers: has_attr(entity, attribute)\n"
+                "- Numbers/measurements: quantity(entity, value unit)\n"
+                "- Time/temporal: time_at(event_or_state, time_expr)\n"
+                "- Location: location(entity_or_event, place)\n"
+                "- Causal/conditional: cause(x, y), condition(x, y)\n"
+                "- Purpose/goal: purpose(x, y)\n"
+                "- Membership/part-whole: part_of(x, y)\n"
+                "- Coreference: coref(mention, canonical_entity)\n"
+                "- Negation: negate(proposition_signature, reason)\n\n"
+                "Prefer canonical nouns/verbs; keep arguments short and consistent.\n"
+                "Aim for 8-15 propositions if the sentence is information rich.\n"
                 f"Sentence: {sent}"
             )
+
             groups = self.llm.get_micro_structural_propositions(role=self.role, prompt=prompt)
 
             props: List[Proposition] = []
