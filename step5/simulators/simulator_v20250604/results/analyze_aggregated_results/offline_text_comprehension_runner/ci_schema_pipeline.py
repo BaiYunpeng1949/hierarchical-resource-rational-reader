@@ -464,7 +464,7 @@ def process_episode(ep: Dict,
     for k, log in enumerate(ep["text_reading_logs"], start=1):
         t0 = time.perf_counter()
 
-        sent_id = log["current_sentence_index"]
+        sent_id = log["actual_reading_sentence_index"]
         visit_counter[sent_id] = visit_counter.get(sent_id, 0) + 1
 
         sent = _clean_join(log["sampled_words_in_sentence"])

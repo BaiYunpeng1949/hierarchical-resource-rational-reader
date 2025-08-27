@@ -299,4 +299,3 @@ WM=5 [ret 3, +2, -2] | LTM+=5 (top: skip(readers, words), install(stations, new)
 ## 12. Reference
 
 - Kintsch, W., & van Dijk, T. A. (1978). *Toward a model of text comprehension and production*. **Psychological Review**, 85(5), 363–394.
-
