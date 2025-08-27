@@ -233,6 +233,10 @@ WM=5 [ret 3, +2, -2] | LTM+=5 (top: skip(readers, words), install(stations, new)
       ```bash
       python main.py --episodes 1 --log_every 1 --mode none --som_policy merge_topk --verbose INFO
       ```
+    - CI schema integartion off, and use the raw sentences as propositions (other wise, use LLM to process, choose `--parse_mode llm`). Do this for comparison tets. All 27 trials (3 conditions * 9 stimuli)
+      ```bash
+      python main.py --episodes 27 --log_every 1 --parse_mode raw --mode none --som_policy merge_topk --verbose INFO
+      ```
 
 4) **Inspect results**  
    - Open the generated JSON; check `wm_*` fields and `ltm_updates` for each step.  

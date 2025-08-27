@@ -443,7 +443,9 @@ def process_episode(ep: Dict,
                     p_store: float = 0.35,
                     mode: str = "ci_schema",
                     som_limit: int = 12,
-                    som_policy: str = "replace") -> Tuple[List[CycleOutput], GistBoard]:
+                    som_policy: str = "replace",
+                    parse_mode: str = "llm",
+                    ) -> Tuple[List[CycleOutput], GistBoard]:
 
     if schema is None:
         schema = Schema()
@@ -468,32 +470,44 @@ def process_episode(ep: Dict,
         sent = _clean_join(log["sampled_words_in_sentence"])
         if not sent:
             continue
-
-        # 1) parse micro-props
-        props = parser.parse(sent, sent_id=sent_id)
-
-        # 2) re-read gain
-        strength = apply_visit_gain(visit_counter[sent_id])
-
-        # 3) schema update + 4) macroselection (WM/gist of this cycle)
-        if mode == "none":
-            # --- BYPASS: no schema learning, no macroselection, no CI coherence ---
-            wm_props = props[:]  # keep EVERYTHING in WM/gist for this cycle
-            keep_scores = {p.signature(): 0.0 for p in wm_props}  # default zeros
-            # store all propositions for this sentence (ordered), no scores
-            wm_now = [p.signature() for p in wm_props]
+        
+        if parse_mode == "raw":
+            # No micro-propositions; keep the exact sentence text as the single “item”
+            props: List[Proposition] = []
+            wm_props: List[Proposition] = []
+            keep_scores: Dict[str, float] = {}
+            wm_now = [sent]                       # one item per sentence
+            # Strength still depends on revisits
+            strength = apply_visit_gain(visit_counter[sent_id])
+            # Update SOM directly with the raw sentence
             gist_board.update(sent_id, wm_now, keep_scores)
+        
         else:
-            # --- Original CI+Schema path ---
-            schema.update_from_props(props, strength=strength)
-            wm_props, keep_scores = macroselect_gist(props, schema, buffer_size=wm_buffer)
-            # store the selected WM items with scores
-            gist_board.update(sent_id, wm_now, keep_scores)
-        # schema.update_from_props(props, strength=strength)
-        # wm_props, keep_scores = macroselect_gist(props, schema, buffer_size=wm_buffer)
+            # 1) parse micro-props
+            props = parser.parse(sent, sent_id=sent_id)
 
-        # WM dynamics vs previous cycle
-        wm_now = [p.signature() for p in wm_props]
+            # 2) re-read gain
+            strength = apply_visit_gain(visit_counter[sent_id])
+
+            # 3) schema update + 4) macroselection (WM/gist of this cycle)
+            if mode == "none":
+                # --- BYPASS: no schema learning, no macroselection, no CI coherence ---
+                wm_props = props[:]  # keep EVERYTHING in WM/gist for this cycle
+                keep_scores = {p.signature(): 0.0 for p in wm_props}  # default zeros
+                # store all propositions for this sentence (ordered), no scores
+                wm_now = [p.signature() for p in wm_props]
+                gist_board.update(sent_id, wm_now, keep_scores)
+            else:
+                # --- Original CI+Schema path ---
+                schema.update_from_props(props, strength=strength)
+                wm_props, keep_scores = macroselect_gist(props, schema, buffer_size=wm_buffer)
+                # store the selected WM items with scores
+                gist_board.update(sent_id, wm_now, keep_scores)
+
+            # WM dynamics vs previous cycle
+            wm_now = [p.signature() for p in wm_props]
+        
+        # ------------------ end parsing modes -------------------
         set_prev, set_now = set(prev_wm), set(wm_now)
         wm_retained = sorted(set_prev & set_now)
         wm_added = sorted(list(set_now - set_prev))
@@ -502,7 +516,7 @@ def process_episode(ep: Dict,
         # 5) local CI integration (optional coherence boost)
         # net = build_network(props)
         # integrate(net)
-        if mode == "ci_schema":
+        if mode == "ci_schema" and parse_mode != "raw":
             net = build_network(props)
             integrate(net)
 
@@ -514,13 +528,13 @@ def process_episode(ep: Dict,
             step=log["step"],
             sent_id=sent_id,
             sentence_text=sent,
-            propositions=[p.signature() for p in props],
+            propositions=( [p.signature() for p in props] if parse_mode != "raw" else wm_now ),
             wm_kept=wm_now,
             wm_retained=wm_retained,
             wm_added=wm_added,
             wm_dropped=wm_dropped,
             ltm_updates=ltm_updates,
-            schema_snapshot=dict(sorted(schema.weights.items(), key=lambda x: -x[1])[:32])
+            schema_snapshot=(dict(sorted(schema.weights.items(), key=lambda x: -x[1])[:32]) if parse_mode != "raw" else {})
         ))
 
         # logs
@@ -570,7 +584,8 @@ def run_pipeline(json_path: str,
                  allow_reparse: bool = False,
                  mode: str = "ci_schema",
                  som_limit: int = 12,
-                 som_policy: str = "replace"
+                 som_policy: str = "replace",
+                 parse_mode: str = "llm",
                  ) -> Dict:
     """Run CI+Schema over episodes with rich logging, WM/LTM tracking.
 
@@ -598,7 +613,9 @@ def run_pipeline(json_path: str,
     data_slice = data[start:start + limit_episodes] if limit_episodes is not None else data[start:]
     logger.info(f"Loaded {len(data)} episodes; processing {len(data_slice)} (start={start}).")
 
-    parser = PropositionParser(llm_agent=llm_agent, role=llm_role, use_llm=use_llm, logger=logger, allow_reparse=allow_reparse)
+    # Build parser. Only use LLM when parse_mode == "llm"
+    effective_use_llm = (parse_mode == "llm")
+    parser = PropositionParser(llm_agent=llm_agent, role=llm_role, use_llm=effective_use_llm, logger=logger, allow_reparse=allow_reparse)
 
     results: Dict[str, List[Dict]] = {}
     for idx, ep in enumerate(data_slice, start=1):
@@ -610,7 +627,7 @@ def run_pipeline(json_path: str,
         ltm_store = LTMStore(p_store=p_store)
 
         cycles, gist_board = process_episode(ep, parser, schema=schema, wm_buffer=wm_buffer, logger=logger, episode_tag=tag, log_every=log_every, 
-            ltm_store=ltm_store, p_store=p_store, mode=mode, som_limit=som_limit, som_policy=som_policy,)
+            ltm_store=ltm_store, p_store=p_store, mode=mode, som_limit=som_limit, som_policy=som_policy, parse_mode=parse_mode)
 
         # per-cycle details (backward compatible shape + new fields)
         results[key] = [asdict(c) for c in cycles]
