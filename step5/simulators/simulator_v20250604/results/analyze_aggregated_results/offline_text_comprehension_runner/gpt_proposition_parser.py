@@ -94,6 +94,17 @@ class LLMAgent:
                 proposition_groups.append(group)
 
         return proposition_groups
+    
+    def get_facet_summaries(self, role, prompt):
+
+        if self.use_aalto_openai_api:
+            messages = [{"role":"system","content":role},{"role":"user","content":prompt}]
+            completion = self._client.chat.completions.create(model="no_effect", messages=messages)
+            text = completion.choices[0].message.content or ""
+            # one facet per non-empty line; NO comma splitting
+            return [ln.strip() for ln in text.split("\n") if ln.strip()]
+        else:
+            raise ValueError(f"Please use an institute API, e.g., Aalto's.")
 
 def update_base_url(request: httpx.Request) -> None:
         if request.url.path == "/chat/completions":

@@ -18,7 +18,7 @@ if __name__ == "__main__":
     ap.add_argument("--verbose", default="INFO", choices=["DEBUG","INFO","WARNING","ERROR"])
     ap.add_argument("--som_limit", type=int, default=20, help="Max propositions per sentence slot in the ordered gist")
     ap.add_argument("--som_policy", default="replace", choices=["replace","merge_topk"], help="How to update a sentence slot on revisits")
-    ap.add_argument("--parse_mode", default="llm", choices=["llm","heuristic","raw"], help="llm=LLM micro-props; heuristic=rule fallback; raw=store original sentences")
+    ap.add_argument("--parse_mode", default="llm", choices=["llm","facets","raw"], help="llm=LLM micro-props; heuristic=rule fallback; raw=store original sentences")
     args = ap.parse_args()
 
     # init your agent (uses your Aalto gateway per your file)

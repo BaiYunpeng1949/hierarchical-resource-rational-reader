@@ -237,6 +237,10 @@ WM=5 [ret 3, +2, -2] | LTM+=5 (top: skip(readers, words), install(stations, new)
       ```bash
       python main.py --episodes 27 --log_every 1 --parse_mode raw --mode none --som_policy merge_topk --verbose INFO
       ```
+    - CI schema integration off, use 'Facet Summaries' as propositions, instead of strict A(B, C)'s kintsch's propositions, which was over-fragmenting and loses too much information.
+      ```bash
+      python main.py --episodes 3 --log_every 1 --parse_mode facets --mode none --som_policy merge_topk --verbose INFO
+      ```
 
 4) **Inspect results**  
    - Open the generated JSON; check `wm_*` fields and `ltm_updates` for each step.  

@@ -217,6 +217,34 @@ class PropositionParser:
             if self.logger:
                 self.logger.debug(f"LLM parse failed; fallback to heuristic. Reason: {e}")
             return None
+    
+    def parse_facets(self, sent: str, sent_id: int) -> List[str]:
+        # LLM facets; fall back to the whole sentence if anything fails
+        try:
+            # prompt = FACET_PROMPT_TEMPLATE.format(SENTENCE=sent)
+            prompt = (
+                "You are a careful reader building sentence-level memory.\n"
+                "Task: Convert the input sentence into concise facet summaries that together preserve all meaning.\n"
+                "**Requirements**:\n"
+                " - Write 3-8 facets (more if the sentence is information-dense).\n"
+                " - One facet per line, plain text. No commas, bullets, or numbering.\n"
+                " - Keep named entities, numbers, dates, units exactly as given.\n"
+                " - Prefer base-form verbs (announce, expand, include).\n"
+                " - Capture: actor, action, object/topic, purpose/reason, time, place, quantities, conditions/contrast, outcome, negation/modality if present.\n"
+                " - Use short, declarative fragments (≈ 5-12 words).\n"
+                " - Do not invent information or resolve ambiguities; use “unspecified” when missing.\n"
+                " - Output only the facets; no explanations.\n"
+                f"**Sentence**: {sent}"
+            )
+            lines = self.llm.get_facet_summaries(self.role, prompt)
+            # de-dup but keep order
+            out, seen = [], set()
+            for s in lines:
+                if s not in seen:
+                    out.append(s); seen.add(s)
+            return out or [sent]
+        except Exception:
+            return [sent] 
 
 # --------------------------- CI integration ---------------------------
 
@@ -461,6 +489,8 @@ def process_episode(ep: Dict,
 
     gist_board = GistBoard(per_sent_limit=som_limit, update_policy=som_policy)
 
+    micro_prop_mode = parse_mode in ("llm")
+
     for k, log in enumerate(ep["text_reading_logs"], start=1):
         t0 = time.perf_counter()
 
@@ -471,7 +501,14 @@ def process_episode(ep: Dict,
         if not sent:
             continue
         
-        if parse_mode == "raw":
+        if parse_mode == "facets":
+            strength = apply_visit_gain(visit_counter[sent_id])
+            wm_now = parser.parse_facets(sent, sent_id)              # list[str]
+            keep_scores = {}                                         # no schema scores
+            props = []                                               # avoid UnboundLocalError
+            wm_props = []
+            gist_board.update(sent_id, wm_now, keep_scores)          # all facets go to this sentence slot
+        elif parse_mode == "raw":
             # No micro-propositions; keep the exact sentence text as the single “item”
             props: List[Proposition] = []
             wm_props: List[Proposition] = []
@@ -502,6 +539,7 @@ def process_episode(ep: Dict,
                 schema.update_from_props(props, strength=strength)
                 wm_props, keep_scores = macroselect_gist(props, schema, buffer_size=wm_buffer)
                 # store the selected WM items with scores
+                wm_now = [p.signature() for p in wm_props] 
                 gist_board.update(sent_id, wm_now, keep_scores)
 
             # WM dynamics vs previous cycle
@@ -516,7 +554,7 @@ def process_episode(ep: Dict,
         # 5) local CI integration (optional coherence boost)
         # net = build_network(props)
         # integrate(net)
-        if mode == "ci_schema" and parse_mode != "raw":
+        if mode == "ci_schema" and micro_prop_mode:
             net = build_network(props)
             integrate(net)
 
@@ -528,7 +566,7 @@ def process_episode(ep: Dict,
             step=log["step"],
             sent_id=sent_id,
             sentence_text=sent,
-            propositions=( [p.signature() for p in props] if parse_mode != "raw" else wm_now ),
+            propositions=( [p.signature() for p in props] if micro_prop_mode else wm_now ),
             wm_kept=wm_now,
             wm_retained=wm_retained,
             wm_added=wm_added,
@@ -542,12 +580,20 @@ def process_episode(ep: Dict,
             dt = time.perf_counter() - t0
             top_now = ltm_store.topk(k=3)
             top_keys = [key for key, _ in top_now]
+            items_count = len(wm_now) if not micro_prop_mode else len(wm_props)
+            method_tag = parser.last_method if micro_prop_mode else ("facets" if parse_mode=="facets" else "raw")
             logger.info(
                 f"{episode_tag} step {k}/{total_steps} | sent={sent_id} visit={visit_counter[sent_id]} | "
-                f"{len(props)} props ({parser.last_method}), WM={len(wm_now)} [ret {len(wm_retained)}, +{len(wm_added)}, -{len(wm_dropped)}] | "
+                f"{items_count} items ({method_tag}), WM={len(wm_now)} [ret {len(wm_retained)}, +{len(wm_added)}, -{len(wm_dropped)}] | "
                 f"LTM+={len(ltm_updates)} (top: {', '.join(top_keys) if top_keys else '-'}) | "
                 f"{dt:.2f}s"
             )
+            # logger.info(
+            #     f"{episode_tag} step {k}/{total_steps} | sent={sent_id} visit={visit_counter[sent_id]} | "
+            #     f"{len(props)} props ({parser.last_method}), WM={len(wm_now)} [ret {len(wm_retained)}, +{len(wm_added)}, -{len(wm_dropped)}] | "
+            #     f"LTM+={len(ltm_updates)} (top: {', '.join(top_keys) if top_keys else '-'}) | "
+            #     f"{dt:.2f}s"
+            # )
             if logger.level <= logging.DEBUG:
                 if wm_now:
                     logger.debug("  WM now: " + " | ".join(wm_now[:5]))
