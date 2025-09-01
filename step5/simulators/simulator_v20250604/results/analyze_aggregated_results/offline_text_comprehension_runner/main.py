@@ -14,7 +14,7 @@ if __name__ == "__main__":
     ap.add_argument("--wm_buffer", type=int, default=5)
     ap.add_argument("--log_every", type=int, default=1)
     ap.add_argument("--allow_reparse", type=bool, default=True)
-    ap.add_argument("--mode", default="ci_schema", choices=["ci_schema", "none"], help="Integration mode: 'ci_schema' for handcrafted CI+schema; 'none' to bypass and store all props")
+    ap.add_argument("--mode", default="ci_schema", choices=["llm_schema", "ci_schema", "none"], help="Integration mode: 'ci_schema' for handcrafted CI+schema; 'none' to bypass and store all props")
     ap.add_argument("--verbose", default="INFO", choices=["DEBUG","INFO","WARNING","ERROR"])
     ap.add_argument("--som_limit", type=int, default=20, help="Max propositions per sentence slot in the ordered gist")
     ap.add_argument("--som_policy", default="replace", choices=["replace","merge_topk"], help="How to update a sentence slot on revisits")

@@ -237,9 +237,14 @@ WM=5 [ret 3, +2, -2] | LTM+=5 (top: skip(readers, words), install(stations, new)
       ```bash
       python main.py --episodes 27 --log_every 1 --parse_mode raw --mode none --som_policy merge_topk --verbose INFO
       ```
-    - CI schema integration off, use 'Facet Summaries' as propositions, instead of strict A(B, C)'s kintsch's propositions, which was over-fragmenting and loses too much information.
+    - CI schema integration off, use 'Facet Summaries' as propositions, instead of strict A(B, C)'s kintsch's propositions, which was over-fragmenting and loses too much information. Problem: (1) Too many near-duplicates: paraphrases pile up and pollute recall / MCQ prompts; (2) No stable buckets: re-visits don’t strengthen the same idea; they just add more variants.
       ```bash
       python main.py --episodes 3 --log_every 1 --parse_mode facets --mode none --som_policy merge_topk --verbose INFO
+      ```
+    
+    - An improvement version: we use llm to summarise schemas.
+      ```bash
+      python main.py --episodes 3 --log_every 1 --parse_mode facets --mode llm_schema --som_policy merge_topk --verbose INFO
       ```
 
 4) **Inspect results**  

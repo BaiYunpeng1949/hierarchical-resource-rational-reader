@@ -105,6 +105,19 @@ class LLMAgent:
             return [ln.strip() for ln in text.split("\n") if ln.strip()]
         else:
             raise ValueError(f"Please use an institute API, e.g., Aalto's.")
+    
+    def get_schema_assignments(self, role: str, prompt: str):
+        """Return a Python object parsed from the model's JSON output."""
+        messages=[{"role":"system","content":role},{"role":"user","content":prompt}]
+        comp = self._client.chat.completions.create(model="no_effect", messages=messages)
+        txt = comp.choices[0].message.content or "[]"
+        # robust JSON load
+        try:
+            return json.loads(txt)
+        except Exception:
+            # if the model wrapped JSON in code fences, strip them
+            m = re.search(r"\{.*\}|\[.*\]", txt, flags=re.DOTALL)
+            return json.loads(m.group(0)) if m else []
 
 def update_base_url(request: httpx.Request) -> None:
         if request.url.path == "/chat/completions":

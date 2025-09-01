@@ -7,7 +7,7 @@ import logging
 import re
 import time
 from dataclasses import dataclass, field, asdict
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple, Any
 
 import numpy as np
 
@@ -103,6 +103,116 @@ def _heuristic_propositions(sent: str, sent_id: int) -> List[Proposition]:
             out.append(p)
             seen.add(sig)
     return out
+
+
+# --------------------------- LLM Schema Grouper ---------------------------
+
+@dataclass
+class Cluster:
+    name: str
+    exemplars: List[str] = field(default_factory=list)
+    member_counts: Dict[str, int] = field(default_factory=dict)
+
+class LLMSchemaGrouper:
+    def __init__(self, llm_agent, role: str, logger: Optional[logging.Logger] = None, max_report_clusters: int = 24):
+        self.llm = llm_agent
+        self.role = role
+        self.logger = logger
+        self.max_report_clusters = max_report_clusters
+        self.clusters: Dict[str, Cluster] = {}
+
+    def _brief(self) -> List[Dict[str, str]]:
+        items = []
+        for name, cl in self.clusters.items():
+            if cl.member_counts:
+                rep = max(cl.member_counts, key=cl.member_counts.get)
+            elif cl.exemplars:
+                rep = cl.exemplars[0]
+            else:
+                rep = name
+            items.append({"name": name, "rep": rep})
+        return items[: self.max_report_clusters]
+
+    def assign(self, sentence: str, facets: List[str]) -> Dict[str, List[str]]:
+        """
+        Ask LLM to (a) assign each facet to an existing/new bucket name,
+        (b) return a canonical phrasing for that facet.
+        """
+        try:
+            brief = self._brief()
+            prompt = (
+                "You organize short facets into stable schema buckets while reading.\n"
+                "Existing buckets (name -> representative):\n"
+                f"{json.dumps(brief, ensure_ascii=False)}\n\n"
+                "Assign EACH of the following facets to a bucket. Use an EXISTING bucket name if appropriate; "
+                "otherwise CREATE a concise new bucket name (2–5 words). Also provide a CANONICAL phrasing for the facet "
+                "(normalize near-duplicates into one phrasing; keep entities/numbers).\n\n"
+                "Return ONLY JSON as a list of objects with keys: facet, bucket, canonical.\n"
+                f"Facets: {json.dumps(facets, ensure_ascii=False)}"
+            )
+            assignments = self.llm.get_schema_assignments(self.role, prompt)  # expects a list[dict]
+        except Exception as e:
+            if self.logger:
+                self.logger.debug(f"LLM schema assignment failed, fallback. Reason: {e}")
+            assignments = [{"facet": f, "bucket": "Misc", "canonical": f} for f in facets]
+
+        per_bucket: Dict[str, List[str]] = {}
+        for obj in assignments:
+            b = (obj.get("bucket") or "Misc").strip()
+            can = (obj.get("canonical") or obj.get("facet") or "").strip()
+            if not can:
+                continue
+            cl = self.clusters.setdefault(b, Cluster(name=b))
+            cl.member_counts[can] = cl.member_counts.get(can, 0) + 1
+            if can not in cl.exemplars:
+                cl.exemplars.append(can)
+            per_bucket.setdefault(b, []).append(can)
+        return per_bucket
+
+    def sentence_reps(self, per_bucket: Dict[str, List[str]], limit: int) -> List[str]:
+        """Pick one representative per activated bucket, rank by GLOBAL counts, cap to limit."""
+        reps = []
+        for b, items in per_bucket.items():
+            # pick the locally most frequent canonical
+            local_counts = {}
+            for it in items:
+                local_counts[it] = local_counts.get(it, 0) + 1
+            local_rep = max(local_counts, key=local_counts.get)
+            reps.append(local_rep)
+
+        def global_count(s: str) -> int:
+            return max((cl.member_counts.get(s, 0) for cl in self.clusters.values()), default=0)
+
+        reps = sorted(set(reps), key=global_count, reverse=True)
+        return reps[:limit]
+
+    # def export(self) -> Dict[str, Any]:
+    #     out = []
+    #     for name, cl in self.clusters.items():
+    #         rep = max(cl.member_counts, key=cl.member_counts.get) if cl.member_counts else (cl.exemplars[0] if cl.exemplars else name)
+    #         out.append({
+    #             "name": name,
+    #             "representative": rep,
+    #             "counts": dict(sorted(cl.member_counts.items(), key=lambda kv: -kv[1]))[:50],
+    #             "exemplars": cl.exemplars[:10]
+    #         })
+    #     return {"clusters": out}
+    def export(self) -> Dict[str, Any]:
+        out = []
+        for name, cl in self.clusters.items():
+            rep = (max(cl.member_counts, key=cl.member_counts.get)
+                if cl.member_counts
+                else (cl.exemplars[0] if cl.exemplars else name))
+            # slice the sorted list, then convert to dict
+            counts_sorted = sorted(cl.member_counts.items(), key=lambda kv: -kv[1])[:50]
+            out.append({
+                "name": name,
+                "representative": rep,
+                "counts": dict(counts_sorted),      # <-- safe
+                "exemplars": cl.exemplars[:10]
+            })
+        return {"clusters": out}
+
 
 
 # --------------------------- GPT interface ---------------------------
@@ -473,6 +583,7 @@ def process_episode(ep: Dict,
                     som_limit: int = 12,
                     som_policy: str = "replace",
                     parse_mode: str = "llm",
+                    schema_grouper: Optional[LLMSchemaGrouper] = None,
                     ) -> Tuple[List[CycleOutput], GistBoard]:
 
     if schema is None:
@@ -489,7 +600,8 @@ def process_episode(ep: Dict,
 
     gist_board = GistBoard(per_sent_limit=som_limit, update_policy=som_policy)
 
-    micro_prop_mode = parse_mode in ("llm")
+    # micro_prop_mode = parse_mode in ("llm")
+    micro_prop_mode = parse_mode in ("llm", "heuristic")
 
     for k, log in enumerate(ep["text_reading_logs"], start=1):
         t0 = time.perf_counter()
@@ -501,113 +613,140 @@ def process_episode(ep: Dict,
         if not sent:
             continue
         
-        if parse_mode == "facets":
-            strength = apply_visit_gain(visit_counter[sent_id])
-            wm_now = parser.parse_facets(sent, sent_id)              # list[str]
-            keep_scores = {}                                         # no schema scores
-            props = []                                               # avoid UnboundLocalError
-            wm_props = []
-            gist_board.update(sent_id, wm_now, keep_scores)          # all facets go to this sentence slot
-        elif parse_mode == "raw":
-            # No micro-propositions; keep the exact sentence text as the single “item”
-            props: List[Proposition] = []
-            wm_props: List[Proposition] = []
-            keep_scores: Dict[str, float] = {}
-            wm_now = [sent]                       # one item per sentence
-            # Strength still depends on revisits
-            strength = apply_visit_gain(visit_counter[sent_id])
-            # Update SOM directly with the raw sentence
-            gist_board.update(sent_id, wm_now, keep_scores)
+        # if parse_mode == "facets":
+        #     strength = apply_visit_gain(visit_counter[sent_id])
+        #     wm_now = parser.parse_facets(sent, sent_id)              # list[str]
+        #     keep_scores = {}                                         # no schema scores
+        #     props = []                                               # avoid UnboundLocalError
+        #     wm_props = []
+        #     gist_board.update(sent_id, wm_now, keep_scores)          # all facets go to this sentence slot
+        # elif parse_mode == "raw":
+        #     # No micro-propositions; keep the exact sentence text as the single “item”
+        #     props: List[Proposition] = []
+        #     wm_props: List[Proposition] = []
+        #     keep_scores: Dict[str, float] = {}
+        #     wm_now = [sent]                       # one item per sentence
+        #     # Strength still depends on revisits
+        #     strength = apply_visit_gain(visit_counter[sent_id])
+        #     # Update SOM directly with the raw sentence
+        #     gist_board.update(sent_id, wm_now, keep_scores)
         
-        else:
-            # 1) parse micro-props
-            props = parser.parse(sent, sent_id=sent_id)
+        # else:
+        #     # 1) parse micro-props
+        #     props = parser.parse(sent, sent_id=sent_id)
 
-            # 2) re-read gain
-            strength = apply_visit_gain(visit_counter[sent_id])
+        #     # 2) re-read gain
+        #     strength = apply_visit_gain(visit_counter[sent_id])
 
-            # 3) schema update + 4) macroselection (WM/gist of this cycle)
-            if mode == "none":
-                # --- BYPASS: no schema learning, no macroselection, no CI coherence ---
-                wm_props = props[:]  # keep EVERYTHING in WM/gist for this cycle
-                keep_scores = {p.signature(): 0.0 for p in wm_props}  # default zeros
-                # store all propositions for this sentence (ordered), no scores
-                wm_now = [p.signature() for p in wm_props]
-                gist_board.update(sent_id, wm_now, keep_scores)
+        #     # 3) schema update + 4) macroselection (WM/gist of this cycle)
+        #     if mode == "none":
+        #         # --- BYPASS: no schema learning, no macroselection, no CI coherence ---
+        #         wm_props = props[:]  # keep EVERYTHING in WM/gist for this cycle
+        #         keep_scores = {p.signature(): 0.0 for p in wm_props}  # default zeros
+        #         # store all propositions for this sentence (ordered), no scores
+        #         wm_now = [p.signature() for p in wm_props]
+        #         gist_board.update(sent_id, wm_now, keep_scores)
+        #     else:
+        #         # --- Original CI+Schema path ---
+        #         schema.update_from_props(props, strength=strength)
+        #         wm_props, keep_scores = macroselect_gist(props, schema, buffer_size=wm_buffer)
+        #         # store the selected WM items with scores
+        #         wm_now = [p.signature() for p in wm_props] 
+        #         gist_board.update(sent_id, wm_now, keep_scores)
+
+        #     # WM dynamics vs previous cycle
+        #     wm_now = [p.signature() for p in wm_props]
+        
+        # # ------------------ end parsing modes -------------------
+        # set_prev, set_now = set(prev_wm), set(wm_now)
+        # wm_retained = sorted(set_prev & set_now)
+        # wm_added = sorted(list(set_now - set_prev))
+        # wm_dropped = sorted(list(set_prev - set_now))
+
+        # # 5) local CI integration (optional coherence boost)
+        # # net = build_network(props)
+        # # integrate(net)
+        # if mode == "ci_schema" and micro_prop_mode:
+        #     net = build_network(props)
+        #     integrate(net)
+
+        # # 6) LTM update (per-prop)
+        # ltm_updates = ltm_store.update(selected=wm_now, step=k, strength=strength, relevance_map=keep_scores)
+
+        # # record
+        # out.append(CycleOutput(
+        #     step=log["step"],
+        #     sent_id=sent_id,
+        #     sentence_text=sent,
+        #     propositions=( [p.signature() for p in props] if micro_prop_mode else wm_now ),
+        #     wm_kept=wm_now,
+        #     wm_retained=wm_retained,
+        #     wm_added=wm_added,
+        #     wm_dropped=wm_dropped,
+        #     ltm_updates=ltm_updates,
+        #     schema_snapshot=(dict(sorted(schema.weights.items(), key=lambda x: -x[1])[:32]) if parse_mode != "raw" else {})
+        # ))
+
+        # # logs
+        # if logger and (k % log_every == 0 or k == total_steps):
+        #     dt = time.perf_counter() - t0
+        #     top_now = ltm_store.topk(k=3)
+        #     top_keys = [key for key, _ in top_now]
+        #     items_count = len(wm_now) if not micro_prop_mode else len(wm_props)
+        #     method_tag = parser.last_method if micro_prop_mode else ("facets" if parse_mode=="facets" else "raw")
+        #     logger.info(
+        #         f"{episode_tag} step {k}/{total_steps} | sent={sent_id} visit={visit_counter[sent_id]} | "
+        #         f"{items_count} items ({method_tag}), WM={len(wm_now)} [ret {len(wm_retained)}, +{len(wm_added)}, -{len(wm_dropped)}] | "
+        #         f"LTM+={len(ltm_updates)} (top: {', '.join(top_keys) if top_keys else '-'}) | "
+        #         f"{dt:.2f}s"
+        #     )
+        #     if logger.level <= logging.DEBUG:
+        #         if wm_now:
+        #             logger.debug("  WM now: " + " | ".join(wm_now[:5]))
+        #         if wm_retained or wm_added or wm_dropped:
+        #             logger.debug(f"  WM retained: {', '.join(wm_retained[:5])}")
+        #             logger.debug(f"  WM added:    {', '.join(wm_added[:5])}")
+        #             logger.debug(f"  WM dropped:  {', '.join(wm_dropped[:5])}")
+        #         if ltm_updates:
+        #             lines = []
+        #             for u in ltm_updates[:5]:
+        #                 lines.append(f"{u['proposition']} (visits={u['visits']}, est_recall~{u['est_recall']:.2f}, rel~{u['last_relevance']:.3f})")
+        #             logger.debug("  LTM updates: " + " | ".join(lines))
+
+        # prev_wm = wm_now  # carry WM to next cycle
+
+        if mode == "llm_schema":
+            # 1) Get facets (parse_mode facets preferred)
+            if parse_mode == "facets":
+                facets = parser.parse_facets(sent, sent_id)
+            elif parse_mode == "raw":
+                facets = [sent]
             else:
-                # --- Original CI+Schema path ---
-                schema.update_from_props(props, strength=strength)
-                wm_props, keep_scores = macroselect_gist(props, schema, buffer_size=wm_buffer)
-                # store the selected WM items with scores
-                wm_now = [p.signature() for p in wm_props] 
-                gist_board.update(sent_id, wm_now, keep_scores)
+                # if you still want to support micro-props here, you could map them to short phrases
+                facets = [p.signature() for p in parser.parse(sent, sent_id=sent_id)]
 
-            # WM dynamics vs previous cycle
-            wm_now = [p.signature() for p in wm_props]
-        
-        # ------------------ end parsing modes -------------------
-        set_prev, set_now = set(prev_wm), set(wm_now)
-        wm_retained = sorted(set_prev & set_now)
-        wm_added = sorted(list(set_now - set_prev))
-        wm_dropped = sorted(list(set_prev - set_now))
+            # 2) Assign to schema buckets and canonicalize
+            per_bucket = schema_grouper.assign(sent, facets)
 
-        # 5) local CI integration (optional coherence boost)
-        # net = build_network(props)
-        # integrate(net)
-        if mode == "ci_schema" and micro_prop_mode:
-            net = build_network(props)
-            integrate(net)
+            # 3) Pick one representative per activated bucket for this sentence's SOM slot
+            wm_now = schema_grouper.sentence_reps(per_bucket, limit=som_limit)
+            keep_scores = {}  # counts are kept internally; we don't need scores here
+            gist_board.update(sent_id, wm_now, keep_scores)
 
-        # 6) LTM update (per-prop)
-        ltm_updates = ltm_store.update(selected=wm_now, step=k, strength=strength, relevance_map=keep_scores)
+            # 4) LTM update with canonical reps (counts accumulate inside the grouper across the episode)
+            ltm_updates = ltm_store.update(selected=wm_now, step=k, strength=apply_visit_gain(visit_counter[sent_id]), relevance_map=keep_scores)
 
-        # record
-        out.append(CycleOutput(
-            step=log["step"],
-            sent_id=sent_id,
-            sentence_text=sent,
-            propositions=( [p.signature() for p in props] if micro_prop_mode else wm_now ),
-            wm_kept=wm_now,
-            wm_retained=wm_retained,
-            wm_added=wm_added,
-            wm_dropped=wm_dropped,
-            ltm_updates=ltm_updates,
-            schema_snapshot=(dict(sorted(schema.weights.items(), key=lambda x: -x[1])[:32]) if parse_mode != "raw" else {})
-        ))
-
-        # logs
-        if logger and (k % log_every == 0 or k == total_steps):
-            dt = time.perf_counter() - t0
-            top_now = ltm_store.topk(k=3)
-            top_keys = [key for key, _ in top_now]
-            items_count = len(wm_now) if not micro_prop_mode else len(wm_props)
-            method_tag = parser.last_method if micro_prop_mode else ("facets" if parse_mode=="facets" else "raw")
-            logger.info(
-                f"{episode_tag} step {k}/{total_steps} | sent={sent_id} visit={visit_counter[sent_id]} | "
-                f"{items_count} items ({method_tag}), WM={len(wm_now)} [ret {len(wm_retained)}, +{len(wm_added)}, -{len(wm_dropped)}] | "
-                f"LTM+={len(ltm_updates)} (top: {', '.join(top_keys) if top_keys else '-'}) | "
-                f"{dt:.2f}s"
-            )
-            # logger.info(
-            #     f"{episode_tag} step {k}/{total_steps} | sent={sent_id} visit={visit_counter[sent_id]} | "
-            #     f"{len(props)} props ({parser.last_method}), WM={len(wm_now)} [ret {len(wm_retained)}, +{len(wm_added)}, -{len(wm_dropped)}] | "
-            #     f"LTM+={len(ltm_updates)} (top: {', '.join(top_keys) if top_keys else '-'}) | "
-            #     f"{dt:.2f}s"
-            # )
-            if logger.level <= logging.DEBUG:
-                if wm_now:
-                    logger.debug("  WM now: " + " | ".join(wm_now[:5]))
-                if wm_retained or wm_added or wm_dropped:
-                    logger.debug(f"  WM retained: {', '.join(wm_retained[:5])}")
-                    logger.debug(f"  WM added:    {', '.join(wm_added[:5])}")
-                    logger.debug(f"  WM dropped:  {', '.join(wm_dropped[:5])}")
-                if ltm_updates:
-                    lines = []
-                    for u in ltm_updates[:5]:
-                        lines.append(f"{u['proposition']} (visits={u['visits']}, est_recall~{u['est_recall']:.2f}, rel~{u['last_relevance']:.3f})")
-                    logger.debug("  LTM updates: " + " | ".join(lines))
-
-        prev_wm = wm_now  # carry WM to next cycle
+            # 5) Record cycle
+            out.append(CycleOutput(
+                step=log["step"], sent_id=sent_id, sentence_text=sent,
+                propositions=wm_now, wm_kept=wm_now,
+                wm_retained=sorted(set(prev_wm) & set(wm_now)),
+                wm_added=sorted(list(set(wm_now) - set(prev_wm))),
+                wm_dropped=sorted(list(set(prev_wm) - set(wm_now))),
+                ltm_updates=ltm_updates, schema_snapshot={}
+            ))
+            prev_wm = wm_now
+            continue  # go to next step
 
     if logger:
         logger.info(f"{episode_tag} DONE in {time.perf_counter() - t_ep0:.2f}s | LTM size={len(ltm_store.db)}")
@@ -672,8 +811,11 @@ def run_pipeline(json_path: str,
         schema = Schema()
         ltm_store = LTMStore(p_store=p_store)
 
-        cycles, gist_board = process_episode(ep, parser, schema=schema, wm_buffer=wm_buffer, logger=logger, episode_tag=tag, log_every=log_every, 
-            ltm_store=ltm_store, p_store=p_store, mode=mode, som_limit=som_limit, som_policy=som_policy, parse_mode=parse_mode)
+        grouper = LLMSchemaGrouper(llm_agent=llm_agent, role=llm_role, logger=logger)
+        # cycles, gist_board = process_episode(ep, parser, schema=schema, wm_buffer=wm_buffer, logger=logger, episode_tag=tag, log_every=log_every, 
+        #     ltm_store=ltm_store, p_store=p_store, mode=mode, som_limit=som_limit, som_policy=som_policy, parse_mode=parse_mode)
+        cycles, gist_board = process_episode(ep, parser, schema=schema, wm_buffer=wm_buffer, logger=logger, episode_tag=tag, log_every=log_every,
+            ltm_store=ltm_store, p_store=p_store, mode=mode, som_limit=som_limit, som_policy=som_policy, parse_mode=parse_mode, schema_grouper=grouper)
 
         # per-cycle details (backward compatible shape + new fields)
         results[key] = [asdict(c) for c in cycles]
@@ -684,6 +826,17 @@ def run_pipeline(json_path: str,
             "per_sentence": {str(sid): gist_board.per_sent[sid] for sid in sorted(gist_board.order)},
             "flat": gist_board.flatten()
         }
+        if mode == "llm_schema":
+            results[key + "__SCHEMA"] = grouper.export()
         logger.info(f"{tag} CACHE stats: hits={parser.cache_hits}, misses={parser.cache_misses}, size={len(parser._cache)}")
 
     return results
+
+
+# TODO: issue: sometimes the agent performs much worse on 90s condition, because there are disorganized parsed propositions stacking together, ruining the logics.
+    # TODO the solution would be dynamic ltm gist integration, as last year's version.
+# NOTE: when using the LLM to answer questions, even when the given ltm is the same, generated comprehension tests could be different.
+
+# TODO: and when generating the free recalls, do not generate other shit and non-sense words
+
+# NOTE: some nice arguments are:
