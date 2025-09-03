@@ -3,6 +3,9 @@ import openai
 import time
 import os
 import httpx
+import json
+from typing import List
+    
 
 class LLMAgent:
 
@@ -95,29 +98,26 @@ class LLMAgent:
 
         return proposition_groups
     
-    def get_facet_summaries(self, role, prompt):
-
-        if self.use_aalto_openai_api:
-            messages = [{"role":"system","content":role},{"role":"user","content":prompt}]
-            completion = self._client.chat.completions.create(model="no_effect", messages=messages)
-            text = completion.choices[0].message.content or ""
-            # one facet per non-empty line; NO comma splitting
-            return [ln.strip() for ln in text.split("\n") if ln.strip()]
-        else:
-            raise ValueError(f"Please use an institute API, e.g., Aalto's.")
     
+    def get_facet_summaries(self, role: str, prompt: str) -> List[str]:
+        # returns list[str], one facet per line
+        messages=[{"role":"system","content":role},{"role":"user","content":prompt}]
+        comp = self._client.chat.completions.create(model="no_effect", messages=messages)
+        text = comp.choices[0].message.content or ""
+        lines = [ln.strip() for ln in text.split("\n") if ln.strip()]
+        return lines
+
     def get_schema_assignments(self, role: str, prompt: str):
-        """Return a Python object parsed from the model's JSON output."""
+        # returns a python list[dict], each dict {facet,bucket,canonical}
         messages=[{"role":"system","content":role},{"role":"user","content":prompt}]
         comp = self._client.chat.completions.create(model="no_effect", messages=messages)
         txt = comp.choices[0].message.content or "[]"
-        # robust JSON load
         try:
             return json.loads(txt)
         except Exception:
-            # if the model wrapped JSON in code fences, strip them
+            import re, json as _json
             m = re.search(r"\{.*\}|\[.*\]", txt, flags=re.DOTALL)
-            return json.loads(m.group(0)) if m else []
+            return _json.loads(m.group(0)) if m else []
 
 def update_base_url(request: httpx.Request) -> None:
         if request.url.path == "/chat/completions":

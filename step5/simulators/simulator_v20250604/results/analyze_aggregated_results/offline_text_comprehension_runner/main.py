@@ -2,7 +2,7 @@ import json
 import os
 import argparse
 
-from gpt_proposition_parser import LLMAgent
+from llm_agent import LLMAgent
 from ci_schema_pipeline import run_pipeline
 
 if __name__ == "__main__":
