@@ -188,9 +188,6 @@ def run_comprehension(
         # ref = source_by_stim.get(stim_idx, outline)
         ref = stimuli_by_stim.get(stim_idx)
 
-        # TODO debug delete later
-        print(f"The reference is: {ref}")
-
         fr_score = _free_recall_score(fr_text, ref)
         frs_by_time[time_cond].append(fr_score)
 
