@@ -886,9 +886,9 @@ class LLMWorkingMemory:
 
         print(f"{const.LV_TWO_DASHES}LLM Text Comprehend -- Initialize the LLM Text Comprehend module.")
 
-        # Read the configuration file
-        with open(config, 'r') as stream:
-            self._config = yaml.load(stream, Loader=yaml.FullLoader)
+        # # Read the configuration file
+        # with open(config, 'r') as stream:
+        #     self._config = yaml.load(stream, Loader=yaml.FullLoader)
         
         # self.use_aalto_openai_api = self._config['llm']['use_aalto_openai_api']
         self.use_aalto_openai_api = True
@@ -1112,6 +1112,9 @@ class LLMWorkingMemory:
                 f"Do **NOT** add any additional information, interpretations, or inferences. "
                 f"Ensure that every detail in your summary directly corresponds to information explicitly stated in the LTM content.\n"
             )
+
+            # TODO debug delete later
+            print(f"For the free recall question answering, the ltm_gists used were: {ltm_gists}")
 
         else:
             raise ValueError(f"Invalid question type: {question_type}")
