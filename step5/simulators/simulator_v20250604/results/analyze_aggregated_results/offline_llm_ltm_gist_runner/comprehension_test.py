@@ -53,6 +53,18 @@ def _gather_source_texts_by_stimulus(sim_read_contents_path: Optional[str]) -> D
                 by_idx[stim_idx].append(" ".join(words))
     return {k: " ".join(v) for k, v in by_idx.items()}
 
+def _gather_stimuli_texts(stimuli_json_path: Optional[str]) -> Dict[int, str]:
+    """Load {stimulus_index: full_original_text} from stimuli_texts.json."""
+    if not stimuli_json_path or not os.path.exists(stimuli_json_path):
+        return {}
+    data = _load_json(stimuli_json_path)  # keys are "0","1",...
+    out = {}
+    for k, v in data.items():
+        try:
+            out[int(k)] = v
+        except Exception:
+            pass
+    return out
 
 def _load_optional_json(path: Optional[str]) -> Optional[Dict[str, Any]]:
     if not path:
@@ -69,7 +81,8 @@ def _safe_const(path_name: str, fallback: Optional[str] = None) -> Optional[str]
     return getattr(const, path_name, fallback)
 
 def _now_tag() -> str:
-    return time.strftime("%Y%m%d-%H%M%S", time.gmtime())
+    # return time.strftime("%Y%m%d-%H%M%S", time.gmtime())
+    return time.strftime("%Y%m%d-%H%M%S", time.localtime())
 
 def run_comprehension(
     ltm_gists_json: str,
@@ -79,6 +92,7 @@ def run_comprehension(
     sim_read_contents_json: Optional[str] = None,
     human_metrics_json: Optional[str] = None,
     ltm_md_path: Optional[str] = None,
+    stimuli_json: Optional[str] = None,
 ) -> Tuple[str, str]:
     """
     Returns (results_json_path, metrics_json_path)
@@ -110,7 +124,8 @@ def run_comprehension(
     mcq_metadata: Dict[str, Any] = _load_json(mcq_metadata_path)
 
     # Optional: source texts for free recall scoring
-    source_by_stim = _gather_source_texts_by_stimulus(sim_read_contents_json)
+    # source_by_stim = _gather_source_texts_by_stimulus(sim_read_contents_json)
+    stimuli_by_stim = _gather_stimuli_texts(stimuli_json) 
 
     wm = LLMWorkingMemory(config=_safe_const("CONFIG_PATH", "config.yaml"))  # will use your Aalto setup
     wm.reset()
@@ -170,7 +185,12 @@ def run_comprehension(
             question_type=const.QUESTION_TYPES["FRS"], ltm_gists=outline
         )
         # Scoring target: prefer true source text; otherwise fall back to outline
-        ref = source_by_stim.get(stim_idx, outline)
+        # ref = source_by_stim.get(stim_idx, outline)
+        ref = stimuli_by_stim.get(stim_idx)
+
+        # TODO debug delete later
+        print(f"The reference is: {ref}")
+
         fr_score = _free_recall_score(fr_text, ref)
         frs_by_time[time_cond].append(fr_score)
 
@@ -244,6 +264,8 @@ def _main():
     ap.add_argument("--input_json", default=None, help="Optional simulation_read_contents.json for FR scoring")
     ap.add_argument("--human_metrics", default=None, help="Optional JSON file with human benchmark metrics to compare against")
     ap.add_argument("--ltm_md_path", default=None, help="Optional path to Markdown LTM gists (preferred if provided)")
+    ap.add_argument("--stimuli_json", default=None, help="Path to stimuli_texts.json (maps stimulus_index -> original passage)")
+
     args = ap.parse_args()
 
     results_path, metrics_path = run_comprehension(
@@ -254,6 +276,7 @@ def _main():
         sim_read_contents_json=args.input_json,
         human_metrics_json=args.human_metrics,
         ltm_md_path=args.ltm_md_path,
+        stimuli_json=args.stimuli_json,
     )
     print(f"Saved detailed results to: {results_path}")
     print(f"Saved metrics to: {metrics_path}")

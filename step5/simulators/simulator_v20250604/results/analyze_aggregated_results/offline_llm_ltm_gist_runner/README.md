@@ -19,7 +19,7 @@ And it is worthy noting that the current version takes a long time to fninsh.
 ## Test comprehension performance
 
 ```bash
-python -m offline_llm_ltm_gist_runner.comprehension_test --ltm_gists_json assets/comprehension_results/simulation/ltm/ltm_gists_20250904-035909.json --output_dir assets/comprehension_results/simulation/comprehension_performance --max_episodes 3 --mcq_metadata assets/comprehension_results/mcq_metadata.json --input_json assets/comprehension_results/simulation/simulation_read_contents.json --ltm_md_path assets//comprehension_results/simulation/ltm/ltm_gists_20250904-035909.md
+python -m offline_llm_ltm_gist_runner.comprehension_test --ltm_gists_json assets/comprehension_results/simulation/ltm/ltm_gists_20250904-035909.json --output_dir assets/comprehension_results/simulation/comprehension_performance --max_episodes 3 --mcq_metadata assets/comprehension_results/mcq_metadata.json --input_json assets/comprehension_results/simulation/simulation_read_contents.json --ltm_md_path assets//comprehension_results/simulation/ltm/ltm_gists_20250904-035909.md --stimuli_json assets/comprehension_results/stimuli_texts.json
 ```
 
 ## Input format

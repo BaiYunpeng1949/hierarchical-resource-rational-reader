@@ -1093,28 +1093,37 @@ class LLMWorkingMemory:
 
         # Get the prompt based on the question type
         if question_type == const.QUESTION_TYPES['MCQ']:
+            # prompt = (
+            #     f"Based **EXCLUSIVELY** on the following LTM content: '{ltm_gists}', "
+            #     f"answer the question: '{question}' "
+            #     f"from the options: {options}. "
+            #     f"Respond with the letter of the correct answer ('A', 'B', 'C', or 'D') only. "
+            #     f"If the correct answer is not **explicitly stated** in the LTM content, or if you are unsure, respond with 'E'. "
+            #     f"Do **NOT** provide any explanations or additional text. "
+            #     f"Do **NOT** use any outside knowledge or make any inferences. "
+            #     f"Your answer should be based **solely** on the information provided above."
+            # )
+            role = "You are a careful exam-taker. Use only the provided context. Pick exactly one option. Reply with a single uppercase letter and nothing else."
+            letters = "(A, B, C, D, E)"
             prompt = (
-            f"Based **EXCLUSIVELY** on the following LTM content: '{ltm_gists}', "
-            f"answer the question: '{question}' "
-            f"from the options: {options}. "
-            f"Respond with the letter of the correct answer ('A', 'B', 'C', or 'D') only. "
-            f"If the correct answer is not **explicitly stated** in the LTM content, or if you are unsure, respond with 'E'. "
-            f"Do **NOT** provide any explanations or additional text. "
-            f"Do **NOT** use any outside knowledge or make any inferences. "
-            f"Your answer should be based **solely** on the information provided above."
-        )
-
-        elif question_type == const.QUESTION_TYPES['FRS']:
-            prompt = (
-                f"Based **ONLY** on the Long-term Memory (LTM) content: '{ltm_gists}', "
-                f"please provide a narrative summary in the form of a continuous paragraph. "
-                f"Do not use bullet points, lists, or any other formatting. "
-                f"Do **NOT** add any additional information, interpretations, or inferences. "
-                f"Ensure that every detail in your summary directly corresponds to information explicitly stated in the LTM content.\n"
+                f"Context: {ltm_gists}, Question:{question} from options: {options}."
+                f"Choose the single best answer strictly from [{letters}]. Reply with exactly one letter from [{letters}] and nothing else."
             )
 
-            # TODO debug delete later
-            print(f"For the free recall question answering, the ltm_gists used were: {ltm_gists}")
+        elif question_type == const.QUESTION_TYPES['FRS']:
+            # prompt = (
+            #     f"Based **ONLY** on the Long-term Memory (LTM) content: '{ltm_gists}', "
+            #     f"please provide a narrative summary in the form of a continuous paragraph. "
+            #     f"Do not use bullet points, lists, or any other formatting. "
+            #     f"Do **NOT** add any additional information, interpretations, or inferences. "
+            #     f"Ensure that every detail in your summary directly corresponds to information explicitly stated in the LTM content.\n"
+            # )
+            
+            # v0904_01
+            role = "You write summaries as free recall testing. Use only the provided content. No speculation."
+            prompt = (
+                f"Content: {ltm_gists}, please write one coherent paragraph that narratively summarizes the content.."
+            )
 
         else:
             raise ValueError(f"Invalid question type: {question_type}")
@@ -1124,7 +1133,7 @@ class LLMWorkingMemory:
             try:
 
                 raw_response = self._get_response(
-                    role="Please answer the question based strictly on the provided Long-term Memory (LTM) content.",
+                    role=role,
                     prompt=prompt,
                 )
 
