@@ -136,11 +136,12 @@ class LLMLongTermMemory:
         self.main_schemas = []
         self._schema_frequency = {}
         self._macrostructure_in_LTM = MacrostructureNode(content='[Root]', schemas=self.main_schemas.copy())
-        # TODO debug delete later
-        print(f"Initialization\n"
+        
+        print()
+        print(f"Initialization a trial\n"
               f"The macrostructure content is: {self._macrostructure_in_LTM.content}\n"
-              f"The main schemas are: {self.main_schemas}"
-              f"The chirldren are: {self._macrostructure_in_LTM.children}")
+              f"The main schemas are: {self.main_schemas}\n"
+              f"The chirldren are: {self._macrostructure_in_LTM.children}\n")
 
     def activate_schemas(self, raw_sentence: str) -> list:
         """
@@ -151,26 +152,30 @@ class LLMLongTermMemory:
         :return: A list of activated schemas.
         """
 
-        # # TODO debug delete later
-        # print(f"----------------------------------- DEBUG ------------------------------------")
-        # print(f"The raw sentence is: {raw_sentence}")
-        # print(f"----------------------------------- DEBUG ------------------------------------")
-
         for attempt in range(self._max_num_requests):
             try:
-                schema_raw_response = self._get_response(
-                    role="You are a cognitive agent extracting themes from content.",
-                    prompt=(
-                        f"Read the following content and identify the main schemas or themes it relates to.\n"
-                        f"Content: '{raw_sentence}'\n\n"
-                        f"Instructions:\n"
-                        f"- List up to 3 schemas or themes that are relevant to the content.\n"  # Limit the number of schemas
-                        f"- Focus on general concepts or categories.\n"
-                        f"- Each schema should be no more than 3 words.\n"  # Limit words per schema
-                        f"- Provide the schemas as a comma-separated list.\n"
-                        f"- **Do not** include any additional explanation or information."
-                    )
+                # schema_raw_response = get_response(
+                #     role="You are a cognitive agent extracting themes from content.",
+                #     prompt=(
+                #         f"Read the following content and identify the main schemas or themes it relates to.\n"
+                #         f"Content: '{raw_sentence}'\n\n"
+                #         f"Instructions:\n"
+                #         f"- List up to 3 schemas or themes that are relevant to the content.\n"  # Limit the number of schemas
+                #         f"- Focus on general concepts or categories.\n"
+                #         f"- Each schema should be no more than 3 words.\n"  # Limit words per schema
+                #         f"- Provide the schemas as a comma-separated list.\n"
+                #         f"- **Do not** include any additional explanation or information."
+                #     )
+                # )
+
+                # Version 0905
+                schema_raw_response = self.get_response(
+                    role="Extract the following sentence's themes (as activated schemas). Comma-separated List only.",
+                    prompt= f"Sentence: {raw_sentence}"
                 )
+
+                # TODO debug delete later
+                print(f"The generated raw schemas are: {schema_raw_response}")
 
                 if schema_raw_response:
                     # Process the response
@@ -207,42 +212,55 @@ class LLMLongTermMemory:
         # Combine all activated schemas into a single string
         all_schemas_text = ', '.join(self.all_activated_schemas)
 
-        for attempt in range(self._max_num_requests):
-            try:
-                main_schemas_raw_response = self._get_response(
-                    role="You are a cognitive agent identifying main themes from a list of schemas.",
-                    prompt=(
-                        f"Given the following list of schemas activated so far:\n"
-                        f"{all_schemas_text}\n\n"
-                        f"Instructions:\n"
-                        f"- Identify up to 5 main schemas or themes that represent the overall content.\n"
-                        f"- Focus on the most frequently occurring or central concepts.\n"
-                        f"- Each schema should be no more than 3 words.\n"
-                        f"- Provide the main schemas as a comma-separated list.\n"
-                        f"- **Do not** include any additional explanation or information."
-                    )
-                )
+        # Old version
+        # role = "You are a cognitive agent identifying main themes from a list of schemas."
+        # prompt = (
+        #     f"Given the following list of schemas activated so far:\n"
+        #     f"{all_schemas_text}\n\n"
+        #     f"Instructions:\n"
+        #     f"- Identify up to 5 main schemas or themes that represent the overall content.\n"
+        #     f"- Focus on the most frequently occurring or central concepts.\n"
+        #     f"- Each schema should be no more than 3 words.\n"
+        #     f"- Provide the main schemas as a comma-separated list.\n"
+        #     f"- **Do not** include any additional explanation or information."
+        # )
 
-                if main_schemas_raw_response:
-                    # Process the response
-                    main_schemas = [schema.strip() for schema in main_schemas_raw_response.strip().split(',')]
-                    # Remove any empty strings
-                    main_schemas = [schema for schema in main_schemas if schema]
+        # for attempt in range(self._max_num_requests):
+        #     try:
+        #         main_schemas_raw_response = self.get_response(
+        #             role=role,
+        #             prompt=prompt
+        #         )
 
-                    # Update the main schemas
-                    self.main_schemas = main_schemas
+        #         if main_schemas_raw_response:
+        #             # Process the response
+        #             main_schemas = [schema.strip() for schema in main_schemas_raw_response.strip().split(',')]
+        #             # Remove any empty strings
+        #             main_schemas = [schema for schema in main_schemas if schema]
 
-                    # # Debug print
-                    # print(f"The main schemas are now: {self.main_schemas}\n")
+        #             # Update the main schemas
+        #             self.main_schemas = main_schemas
 
-                    return
+        #             return
 
-            except Exception as e:
-                print(f"Update main schemas -- Attempt {attempt} failed with error: {e}")
-                time.sleep(self._retry_delay)
+        #     except Exception as e:
+        #         print(f"Update main schemas -- Attempt {attempt} failed with error: {e}")
+        #         time.sleep(self._retry_delay)
 
-        print("Failed to update main schemas after maximum attempts")
-        self.main_schemas = []  # Reset main schemas if failed
+        # print("Failed to update main schemas after maximum attempts")
+        # self.main_schemas = []  # Reset main schemas if failed
+
+        # Version 0905-01, directly update top K frequent schemas as in the list
+        # K = 10
+        # self.main_schemas = [
+        #     s for s, _ in sorted(self._schema_frequency.items(), key=lambda x: (-x[1], x[0]))
+        # ][:K]
+
+        # Version 0905-02, use all activated schemas directly
+        self.main_schemas = self.all_activated_schemas
+
+        # TODO debug delete later
+        print(f"The all activated schemas are: {self.all_activated_schemas}")
 
     def _determine_relevance(self, stm_chunk, main_schemas):
         """
@@ -263,7 +281,7 @@ class LLMLongTermMemory:
         )
         for attempt in range(self._max_num_requests):
             try:
-                raw_response = self._get_response(
+                raw_response = self.get_response(
                     role=f"You are an assistant evaluating the relevance of information. When given a task, you should only output {const.HIGH_RELEVANCE} or {const.LOW_RELEVANCE}, and nothing else. Do not provide any explanations or additional text.",
                     prompt=prompt
                 )
@@ -294,29 +312,40 @@ class LLMLongTermMemory:
         # Contents of relevant STM chunks
         new_information = [chunk[const.CONTENT] for chunk in relevant_stm_chunks]
 
-        # Adjust the prompt for the LLM
-        prompt = (
-                f"Update the existing hierarchical gist with the following new information.\n"
-                f"Existing Gist:\n{current_gist}\n\n"
-                f"New Information:\n" + "\n".join(f"- {info}" for info in new_information) + "\n\n"
-                f"Instructions:\n"
-                f"- Integrate the new information into the existing gist hierarchically.\n"
-                f"- Update the root node to reflect the overarching theme or general idea based on the new information.\n"
-                f"- Organize the main themes at the top level, with supporting details beneath.\n"
-                f"- Use an indented outline format to represent the hierarchy.\n"
-                f"- Each line should start with '-' followed by the content.\n"
-                f"- Indent child nodes with 2 spaces per level.\n"
-                f"- Ensure the updated gist remains coherent and focused on the main themes.\n"
-                f"- Use clear and concise language.\n"
-                f"- Do **not** include irrelevant details."
-                f"- Do **not** improvise or add anything beyond the input new information.\n"
-                f"- Do **not** include a '[Root]' node or duplicate existing nodes in your output.\n"
+        # # Adjust the prompt for the LLM
+        # role = "You are summarizing and updating a hierarchical gist with new information."
+        # prompt = (
+        #         f"Update the existing hierarchical gist with the following new information.\n"
+        #         f"Existing Gist:\n{current_gist}\n\n"
+        #         f"New Information:\n" + "\n".join(f"- {info}" for info in new_information) + "\n\n"
+        #         f"Instructions:\n"
+        #         f"- Integrate the new information into the existing gist hierarchically.\n"
+        #         f"- Update the root node to reflect the overarching theme or general idea based on the new information.\n"
+        #         f"- Organize the main themes at the top level, with supporting details beneath.\n"
+        #         f"- Use an indented outline format to represent the hierarchy.\n"
+        #         f"- Each line should start with '-' followed by the content.\n"
+        #         f"- Indent child nodes with 2 spaces per level.\n"
+        #         f"- Ensure the updated gist remains coherent and focused on the main themes.\n"
+        #         f"- Use clear and concise language.\n"
+        #         f"- Do **not** include irrelevant details."
+        #         f"- Do **not** improvise or add anything beyond the input new information.\n"
+        #         f"- Do **not** include a '[Root]' node or duplicate existing nodes in your output.\n"
+        # )
+
+        # Version 0905
+        role = "You merge bullets into a concise outline."
+        prompt = prompt = (
+            "Merge new bullets into the existing outline. "
+            "Output hyphen bullets, 2-space indents. No root label. No extra text.\n\n"
+            f"Existing:\n{current_gist}\n\n"
+            f"New:\n" + "\n".join(f"- {info}" for info in new_information)
         )
+
 
         for attempt in range(self._max_num_requests):
             try:
-                raw_response = self._get_response(
-                    role="You are summarizing and updating a hierarchical gist with new information.",
+                raw_response = self.get_response(
+                    role=role,
                     prompt=prompt
                 )
                 if raw_response:
@@ -348,23 +377,28 @@ class LLMLongTermMemory:
         :param gists: List of new information chunks.
         :return: A summary string representing the overarching theme.
         """
-        summary_prompt_template = (
-            f"Please summarize the following points into a single overarching theme or main idea:\n"
-            f"{{content}}\n"
-            f"Instructions:\n"
-            f"- Focus on the main idea that ties these points together.\n"
-            f"- Include both the existing gist and the new information.\n"
-            f"- Ensure the summary is concise and within 10 words.\n"
-            f"- Use clear and concise language."
-        )
+        # role = "You are summarizing information."
+        # summary_prompt_template = (
+        #     f"Please summarize the following points into a single overarching theme or main idea:\n"
+        #     f"{{content}}\n"
+        #     f"Instructions:\n"
+        #     f"- Focus on the main idea that ties these points together.\n"
+        #     f"- Include both the existing gist and the new information.\n"
+        #     f"- Ensure the summary is concise and within 10 words.\n"
+        #     f"- Use clear and concise language."
+        # )
+
+        # Version 0905
+        role="Return a ≤10-word title. Plain text only."
+        prompt=f"Bullet outline:\n{gists}\n\nTitle:",
 
         # Attempt to generate a summary multiple times
         for attempt in range(self._max_num_requests):
             try:
-                summary_prompt = summary_prompt_template.format(content=gists)
-                raw_summary = self._get_response(
-                    role="You are summarizing information.",
-                    prompt=summary_prompt
+                # summary_prompt = summary_prompt_template.format(content=gists)
+                raw_summary = self.get_response(
+                    role=role,
+                    prompt=prompt
                 )
                 if raw_summary:
                     return raw_summary.strip()
@@ -439,7 +473,9 @@ class LLMLongTermMemory:
         for chunk in stm.values():  # Use stm.values() to iterate over chunks
             if chunk['content'] == const.MEMORY_LOSS_MARK:
                 continue  # Skip forgotten chunks
-            relevance = self._determine_relevance(chunk, self.main_schemas)
+            # relevance = self._determine_relevance(chunk, self.main_schemas)
+            # Version 0905, disable the relevance determination by llm. Treat all the same.
+            relevance = const.HIGH_RELEVANCE
             if relevance == const.HIGH_RELEVANCE:
                 relevant_stm_chunks.append(chunk)
 
@@ -447,42 +483,65 @@ class LLMLongTermMemory:
         if relevant_stm_chunks:
             self._update_macrostructure(relevant_stm_chunks)
 
-    def _get_response(self, role, prompt):
+    # def _get_response(self, role, prompt):
         
-        if self.use_aalto_openai_api:
-            messages=[
-                {
-                    "role": "system",
-                    "content": f""" {role} """
-                },
-                {
-                    "role": "user",
-                    "content": f"""{prompt} """
-                }
-            ]
-            completion = self._client.chat.completions.create(
-                model="no_effect", # the model variable must be set, but has no effect, model selection done with URL
-                messages=messages,
-            )
-        else:
-            completion = self._client.chat.completions.create(
-                model=self._gpt_model,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": f""" {role} """
-                    },
-                    {
-                        "role": "user",
-                        "content": f"""{prompt} """
-                    }
-                ],
-                temperature=.25,
-                max_tokens=1000,
-                top_p=1,
-                frequency_penalty=0,
-                presence_penalty=0
-            )
+    #     if self.use_aalto_openai_api:
+    #         messages=[
+    #             {
+    #                 "role": "system",
+    #                 "content": f""" {role} """
+    #             },
+    #             {
+    #                 "role": "user",
+    #                 "content": f"""{prompt} """
+    #             }
+    #         ]
+    #         completion = self._client.chat.completions.create(
+    #             model="no_effect", # the model variable must be set, but has no effect, model selection done with URL
+    #             messages=messages,
+    #         )
+    #     else:
+    #         completion = self._client.chat.completions.create(
+    #             model=self._gpt_model,
+    #             messages=[
+    #                 {
+    #                     "role": "system",
+    #                     "content": f""" {role} """
+    #                 },
+    #                 {
+    #                     "role": "user",
+    #                     "content": f"""{prompt} """
+    #                 }
+    #             ],
+    #             temperature=.25,
+    #             max_tokens=1000,
+    #             top_p=1,
+    #             frequency_penalty=0,
+    #             presence_penalty=0
+    #         )
+    #     return completion.choices[0].message.content
+
+    def get_response(self, role, prompt):
+    
+        messages=[
+            {
+                "role": "system",
+                "content": f""" {role} """
+            },
+            {
+                "role": "user",
+                "content": f"""{prompt} """
+            }
+        ]
+        completion = self._client.chat.completions.create(
+            model="no_effect", # the model variable must be set, but has no effect, model selection done with URL
+            messages=messages,
+            temperature=.25,
+            # max_tokens=max_tokens,
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0,
+        )
         return completion.choices[0].message.content
 
     def finalize_gists(self):
@@ -668,44 +727,48 @@ class LLMShortTermMemory:
         activated_schemas = activated_schemas
         main_schemas = main_schemas
 
-        # Adjust the prompt based on activated schemas
-        schemas_text = ""
-        if activated_schemas:
-            schemas_text += f"You have the following schemas activated by the current sentence:\n{', '.join(activated_schemas)}\n\n"
-        if main_schemas:
-            schemas_text += f"Additionally, consider the main schemas identified so far:\n{', '.join(main_schemas)}\n\n"
+        # # Adjust the prompt based on activated schemas
+        # schemas_text = ""
+        # if activated_schemas:
+        #     schemas_text += f"You have the following schemas activated by the current sentence:\n{', '.join(activated_schemas)}\n\n"
+        # if main_schemas:
+        #     schemas_text += f"Additionally, consider the main schemas identified so far:\n{', '.join(main_schemas)}\n\n"
 
-        if not schemas_text:
-            schemas_text = "No specific schemas are activated. Interpret the sentence based on its content.\n\n"
+        # if not schemas_text:
+        #     schemas_text = "No specific schemas are activated. Interpret the sentence based on its content.\n\n"
 
-        prompt = (
-            f"Read the following sentence and create a memory chunk that captures its main idea:\n"
-            f"Sentence: '{raw_sentence}'\n\n"
-            f"{schemas_text}"
-            f"Instructions:\n"
-            f"- Use these schemas to interpret and summarize the sentence.\n"
-            f"- **Focus on one key idea or concept.**\n"
-            f"- **Keep the chunk to a maximum of 10 words.**\n"
-            f"- Use simple language.\n"
-            f"- Do not add any information not present in the sentence.\n"
-            f"- Imagine you're storing this chunk in your short-term memory to recall it later."
-        )
+        # prompt = (
+        #     f"Read the following sentence and create a memory chunk that captures its main idea:\n"
+        #     f"Sentence: '{raw_sentence}'\n\n"
+        #     f"{schemas_text}"
+        #     f"Instructions:\n"
+        #     f"- Use these schemas to interpret and summarize the sentence.\n"
+        #     f"- **Focus on one key idea or concept.**\n"
+        #     f"- **Keep the chunk to a maximum of 10 words.**\n"
+        #     f"- Use simple language.\n"
+        #     f"- Do not add any information not present in the sentence.\n"
+        #     f"- Imagine you're storing this chunk in your short-term memory to recall it later."
+        # )
+
+        # Version 0905 -- simple micro-proposition generation (only parsing and summarising facets), not using schema
+        role = "Summarize the key information (who, what, when, how) in the sentence in plain text."
+        prompt = f"Sentence: '{raw_sentence}'"
 
         micro_gist_content = ""     # NOTE this should be the micro-structural proposition. Not micro-gist.
         # Run LLM API for the micro-gist extraction with multiple attempts
         for attempt in range(self._max_num_requests):
             try:
-                print(f"(STM Micro-gists) Attempt {attempt + 1}/{self._max_num_requests}: Generating micro-gist for STM.")
+                print(f"(Micro-structural) Attempt {attempt + 1}/{self._max_num_requests}: Generating micro-gist for STM.")
 
-                raw_response = self._get_response(
-                    role="You are a reader processing information into short-term memory chunks.",
+                raw_response = self.get_response(
+                    role=role,
                     prompt=prompt
                 )
 
                 if raw_response:
                     micro_gist_content = raw_response.strip()
                     if isinstance(micro_gist_content, str) and micro_gist_content != "":
-                        print(f"STM generation succeeded. The micro_gist_content is: {micro_gist_content}\n")
+                        print(f"Micro-structural proposition generation succeeded. The micro_gist_content is: {micro_gist_content}\n")
                         break  # Successful response obtained
                     else:
                         print("Invalid response format. Retrying...")
@@ -730,7 +793,7 @@ class LLMShortTermMemory:
             # Update the content and appraisal
             stm_chunk[const.CONTENT] = micro_gist_content
             stm_chunk[const.APPRAISAL] = self._calculate_appraisal(reading_strategy, stm_chunk[const.VISIT_COUNT], stm_chunk[const.APPRAISAL])
-            print(f"(STM) Reinforced and updated existing STM chunk for sentence {spatial_info}.")
+            print(f"(Micro-structural) Reinforced and updated existing STM chunk for sentence {spatial_info}.")
         else:
             # Create a new chunk
             stm_chunk = {
@@ -743,7 +806,7 @@ class LLMShortTermMemory:
             }
             # Add the new chunk to STM -- guarantee the order of the STM by using OrderedDict
             self.STM[spatial_info] = stm_chunk
-            print(f"(STM) Added new STM chunk for sentence {spatial_info}.")
+            print(f"(Micro-structural) Added new STM chunk for sentence {spatial_info}.")
 
         # Move the chunk to the end to mark it as most recently used
         self.STM.move_to_end(spatial_info)
@@ -818,43 +881,68 @@ class LLMShortTermMemory:
 
         return appraisal_score
 
-    def _get_response(self, role, prompt):
+    # def _get_response(self, role, prompt):
     
-        if self.use_aalto_openai_api:
-            messages=[
-                {
-                    "role": "system",
-                    "content": f""" {role} """
-                },
-                {
-                    "role": "user",
-                    "content": f"""{prompt} """
-                }
-            ]
-            completion = self._client.chat.completions.create(
-                model="no_effect", # the model variable must be set, but has no effect, model selection done with URL
-                messages=messages,
-            )
-        else:
-            completion = self._client.chat.completions.create(
-                model=self._gpt_model,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": f""" {role} """
-                    },
-                    {
-                        "role": "user",
-                        "content": f"""{prompt} """
-                    }
-                ],
-                temperature=.25,
-                max_tokens=1000,
-                top_p=1,
-                frequency_penalty=0,
-                presence_penalty=0
-            )
+    #     if self.use_aalto_openai_api:
+    #         messages=[
+    #             {
+    #                 "role": "system",
+    #                 "content": f""" {role} """
+    #             },
+    #             {
+    #                 "role": "user",
+    #                 "content": f"""{prompt} """
+    #             }
+    #         ]
+    #         completion = self._client.chat.completions.create(
+    #             model="no_effect", # the model variable must be set, but has no effect, model selection done with URL
+    #             messages=messages,
+    #         )
+    #     else:
+    #         completion = self._client.chat.completions.create(
+    #             model=self._gpt_model,
+    #             messages=[
+    #                 {
+    #                     "role": "system",
+    #                     "content": f""" {role} """
+    #                 },
+    #                 {
+    #                     "role": "user",
+    #                     "content": f"""{prompt} """
+    #                 }
+    #             ],
+    #             temperature=.25,
+    #             max_tokens=1000,
+    #             top_p=1,
+    #             frequency_penalty=0,
+    #             presence_penalty=0
+    #         )
+    #     return completion.choices[0].message.content
+
+
+    def get_response(self, role, prompt):
+    
+        messages=[
+            {
+                "role": "system",
+                "content": f""" {role} """
+            },
+            {
+                "role": "user",
+                "content": f"""{prompt} """
+            }
+        ]
+        completion = self._client.chat.completions.create(
+            model="no_effect", # the model variable must be set, but has no effect, model selection done with URL
+            messages=messages,
+            temperature=.25,
+            # max_tokens=max_tokens,
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0,
+        )
         return completion.choices[0].message.content
+
 
     @staticmethod
     def _memory_decay(delta_time: float) -> float:
@@ -1034,15 +1122,19 @@ class LLMWorkingMemory:
         # Run GPT API for the macro-operator
         for attempt in range(self._max_num_requests):
             try:
-                prompt = (
-                    f"Based on the following Long-term Memory (LTM) content:\n\n{ltm_gists}\n\n"
-                    f"Evaluate how understandable and coherent the following sentence is considering the LTM context. "
-                    f"Provide a score between 0 and 1 (inclusive), where 0 means not understandable at all, and 1 means completely understandable and coherent. "
-                    f"Respond with a JSON object containing the score, like '{{\"score\": 0.75}}', and do **not** include any additional text.\n\nSentence:\n{sampled_sentence_content}\n\nScore:"
-                )
+                # role = "Please evaluate the appraisal level/understanding of the given sentence regarding the LTM content."
+                # prompt = (
+                #     f"Based on the following Long-term Memory (LTM) content:\n\n{ltm_gists}\n\n"
+                #     f"Evaluate how understandable and coherent the following sentence is considering the LTM context. "
+                #     f"Provide a score between 0 and 1 (inclusive), where 0 means not understandable at all, and 1 means completely understandable and coherent. "
+                #     f"Respond with a JSON object containing the score, like '{{\"score\": 0.75}}', and do **not** include any additional text.\n\nSentence:\n{sampled_sentence_content}\n\nScore:"
+                # )
 
-                raw_response = self._get_response(
-                    role="Please evaluate the appraisal level/understanding of the given sentence regarding the LTM content.",
+                role = 'Return {"score": x} only.'
+                prompt = f"Context:\n{ltm_gists}\n\nSentence:\n{sampled_sentence_content}\n\nScore JSON:"
+
+                raw_response = self.get_response(
+                    role=role,
                     prompt=prompt,
                 )
 
@@ -1103,12 +1195,18 @@ class LLMWorkingMemory:
             #     f"Do **NOT** use any outside knowledge or make any inferences. "
             #     f"Your answer should be based **solely** on the information provided above."
             # )
-            role = "You are a careful exam-taker. Use only the provided context. Pick exactly one option. Reply with a single uppercase letter and nothing else."
-            letters = "(A, B, C, D, E)"
-            prompt = (
-                f"Context: {ltm_gists}, Question:{question} from options: {options}."
-                f"Choose the single best answer strictly from [{letters}]. Reply with exactly one letter from [{letters}] and nothing else."
-            )
+
+            # Version 0904
+            # role = "You are a careful exam-taker. Use only the provided context. Pick exactly one option. Reply with a single uppercase letter and nothing else."
+            # letters = "(A, B, C, D, E)"
+            # prompt = (
+            #     f"Context: {ltm_gists}, Question:{question} from options: {options}."
+            #     f"Choose the single best answer strictly from [{letters}]. Reply with exactly one letter from [{letters}] and nothing else."
+            # )
+
+            # Version 0905
+            role = "Use only the context. Reply with one letter A/B/C/D/E."
+            prompt = f"Context:\n{ltm_gists}\n\nQ: {question}\nOptions: {options}\nAnswer:"
 
         elif question_type == const.QUESTION_TYPES['FRS']:
             # prompt = (
@@ -1119,11 +1217,15 @@ class LLMWorkingMemory:
             #     f"Ensure that every detail in your summary directly corresponds to information explicitly stated in the LTM content.\n"
             # )
             
-            # v0904_01
-            role = "You write summaries as free recall testing. Use only the provided content. No speculation."
-            prompt = (
-                f"Content: {ltm_gists}, please write one coherent paragraph that narratively summarizes the content.."
-            )
+            # Version 0904
+            # role = "You write summaries as free recall testing. Use only the provided content. No speculation."
+            # prompt = (
+            #     f"Content: {ltm_gists}, please write one coherent paragraph that narratively summarizes the content.."
+            # )
+
+            # Version 0905
+            role = "Write one paragraph using only the context. No lists."
+            prompt = f"Context:\n{ltm_gists}\n\nParagraph:"
 
         else:
             raise ValueError(f"Invalid question type: {question_type}")
@@ -1132,7 +1234,7 @@ class LLMWorkingMemory:
         for attempt in range(self._max_num_requests):
             try:
 
-                raw_response = self._get_response(
+                raw_response = self.get_response(
                     role=role,
                     prompt=prompt,
                 )
@@ -1170,44 +1272,68 @@ class LLMWorkingMemory:
         print("Failed to generate a valid single memory retrieval after maximum attempts")
         return "Failed to answer. Please try again."
     
-    def _get_response(self, role, prompt):
+    # def _get_response(self, role, prompt):
         
-        if self.use_aalto_openai_api:
-            messages=[
-                {
-                    "role": "system",
-                    "content": f""" {role} """
-                },
-                {
-                    "role": "user",
-                    "content": f"""{prompt} """
-                }
-            ]
-            completion = self._client.chat.completions.create(
-                model="no_effect", # the model variable must be set, but has no effect, model selection done with URL
-                messages=messages,
-            )
-        else:
-            completion = self._client.chat.completions.create(
-                model=self._gpt_model,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": f""" {role} """
-                    },
-                    {
-                        "role": "user",
-                        "content": f"""{prompt} """
-                    }
-                ],
-                temperature=.25,
-                max_tokens=1000,
-                top_p=1,
-                frequency_penalty=0,
-                presence_penalty=0
-            )
-        return completion.choices[0].message.content
+    #     if self.use_aalto_openai_api:
+    #         messages=[
+    #             {
+    #                 "role": "system",
+    #                 "content": f""" {role} """
+    #             },
+    #             {
+    #                 "role": "user",
+    #                 "content": f"""{prompt} """
+    #             }
+    #         ]
+    #         completion = self._client.chat.completions.create(
+    #             model="no_effect", # the model variable must be set, but has no effect, model selection done with URL
+    #             messages=messages,
+    #         )
+    #     else:
+    #         completion = self._client.chat.completions.create(
+    #             model=self._gpt_model,
+    #             messages=[
+    #                 {
+    #                     "role": "system",
+    #                     "content": f""" {role} """
+    #                 },
+    #                 {
+    #                     "role": "user",
+    #                     "content": f"""{prompt} """
+    #                 }
+    #             ],
+    #             temperature=.25,
+    #             max_tokens=1000,
+    #             top_p=1,
+    #             frequency_penalty=0,
+    #             presence_penalty=0
+    #         )
+    #     return completion.choices[0].message.content
+
+    def get_response(self, role, prompt):
     
+        messages=[
+            {
+                "role": "system",
+                "content": f""" {role} """
+            },
+            {
+                "role": "user",
+                "content": f"""{prompt} """
+            }
+        ]
+        completion = self._client.chat.completions.create(
+            model="no_effect", # the model variable must be set, but has no effect, model selection done with URL
+            messages=messages,
+            temperature=.25,
+            # max_tokens=max_tokens,
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0,
+        )
+        return completion.choices[0].message.content
+
+
 def update_base_url(request: httpx.Request) -> None:
         if request.url.path == "/chat/completions":
             # request.url = request.url.copy_with(path="/v1/chat") # chat/gpt4-8k /chat

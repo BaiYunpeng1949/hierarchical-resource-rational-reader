@@ -71,7 +71,7 @@ def run_trial_from_logs(config_path: str, trial: Dict[str, Any], max_steps: Opti
         pipe.process_sentence_cycle(
             sentence=sentence,
             # sentence_id=rec.get("current_sentence_index", i),
-            sentece_id=rec.get("actual_reading_sentence_index", i),
+            sentence_id=rec.get("actual_reading_sentence_index", i),
             reading_strategy=const.READ_STRATEGIES.get("normal", "normal")
         )
 

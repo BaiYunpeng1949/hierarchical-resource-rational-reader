@@ -2,6 +2,7 @@
 import argparse
 import json
 import os
+import time
 from datetime import datetime
 from typing import Any, Dict, List
 
@@ -35,7 +36,8 @@ def main():
     for t in trials:
         results.append(run_trial_from_logs(args.config, t, max_steps=args.max_steps))
 
-    ts = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+    # ts = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+    ts = time.strftime("%Y%m%d-%H%M%S", time.localtime())
     out_json = os.path.join(args.output_dir, f"ltm_gists_{ts}.json")
     with open(out_json, "w") as f:
         json.dump({"created_utc": ts, "results": results}, f, indent=2)
