@@ -139,9 +139,9 @@ class LLMLongTermMemory:
         
         print()
         print(f"Initialization a trial\n"
-              f"The macrostructure content is: {self._macrostructure_in_LTM.content}\n"
-              f"The main schemas are: {self.main_schemas}\n"
-              f"The chirldren are: {self._macrostructure_in_LTM.children}\n")
+              f"    The macrostructure content is: {self._macrostructure_in_LTM.content}\n"
+              f"    The main schemas are: {self.main_schemas}\n"
+              f"    The chirldren are: {self._macrostructure_in_LTM.children}\n")
 
     def activate_schemas(self, raw_sentence: str) -> list:
         """
@@ -174,8 +174,7 @@ class LLMLongTermMemory:
                     prompt= f"Sentence: {raw_sentence}"
                 )
 
-                # TODO debug delete later
-                print(f"The generated raw schemas are: {schema_raw_response}")
+                print(f"(Schemas) The generated raw schemas are: {schema_raw_response}")
 
                 if schema_raw_response:
                     # Process the response
@@ -259,8 +258,7 @@ class LLMLongTermMemory:
         # Version 0905-02, use all activated schemas directly
         self.main_schemas = self.all_activated_schemas
 
-        # TODO debug delete later
-        print(f"The all activated schemas are: {self.all_activated_schemas}")
+        print(f"(Schemas) The all activated schemas are: {self.all_activated_schemas}")
 
     def _determine_relevance(self, stm_chunk, main_schemas):
         """
@@ -766,9 +764,9 @@ class LLMShortTermMemory:
                 )
 
                 if raw_response:
-                    micro_gist_content = raw_response.strip()
-                    if isinstance(micro_gist_content, str) and micro_gist_content != "":
-                        print(f"Micro-structural proposition generation succeeded. The micro_gist_content is: {micro_gist_content}\n")
+                    micro_structural_propositions = raw_response.strip()
+                    if isinstance(micro_structural_propositions, str) and micro_structural_propositions != "":
+                        print(f"Micro-structural proposition generation succeeded. The proposition is: {micro_structural_propositions}\n")
                         break  # Successful response obtained
                     else:
                         print("Invalid response format. Retrying...")

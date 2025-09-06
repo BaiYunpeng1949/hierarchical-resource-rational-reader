@@ -15,12 +15,14 @@ def main():
     parser = argparse.ArgumentParser(description="Offline LTM gist runner (calls _LLMMemories directly)")
     parser.add_argument("--input_json", type=str, default="simulation_read_contents.json")
     parser.add_argument("--output_dir", type=str, default="outputs")
-    parser.add_argument("--config", type=str, default="/home/baiy4/reading-model/step5/config.yaml",
-                        help="Path to the same config.yaml used by the simulator/_LLMMemories")
+    parser.add_argument("--config", type=str, default="/home/baiy4/reading-model/step5/config.yaml", help="Path to the same config.yaml used by the simulator/_LLMMemories")
     parser.add_argument("--max_steps", type=int, default=None, help="Cap steps per episode (trial)")
     parser.add_argument("--max_episodes", type=int, default=None, help="Process only the first N episodes (after offset)")
     parser.add_argument("--episode_offset", type=int, default=0, help="Skip this many episodes before processing")
     args = parser.parse_args()
+
+    # Start
+    start_time = datetime.now()
 
     os.makedirs(args.output_dir, exist_ok=True)
 
@@ -47,7 +49,12 @@ def main():
         for r in results:
             f.write(f"### Episode {r['episode_index']} | Stimulus {r['stimulus_index']} | {r['time_condition']} ({r['total_time']}s)\n\n")
             f.write(r["outline"] + "\n\n")
+    
+    # End
+    end_time = datetime.now()
 
+    print()
+    print(f"Time elapsed: {end_time-start_time}")
     print(f"Saved: {out_json}\nSaved: {out_md}")
 
 if __name__ == "__main__":

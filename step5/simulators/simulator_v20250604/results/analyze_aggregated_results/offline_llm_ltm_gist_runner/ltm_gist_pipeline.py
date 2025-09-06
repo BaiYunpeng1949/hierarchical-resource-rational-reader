@@ -64,6 +64,8 @@ class LTMPipelineByMemories:
 def run_trial_from_logs(config_path: str, trial: Dict[str, Any], max_steps: Optional[int] = None) -> Dict[str, Any]:
     pipe = LTMPipelineByMemories(config_path=config_path)
 
+    # TODO need to check whether we are running from a new agent every time, need to be a new agent
+
     logs = trial.get("text_reading_logs", [])
     for i, rec in enumerate(logs[: (max_steps or len(logs))]):
         # Reconstruct the sentence hypothesis from sampled tokens

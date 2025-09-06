@@ -15,20 +15,85 @@ from . import constants as const
 from .ltm_loader import load_ltm_from_md, build_ltm_index, select_ltm, build_prompt_from_ltm
 
 
-# ---- Free recall scoring (bag-of-words cosine) ----
-def _free_recall_score(pred: str, ref: str) -> float:
-    """Compute a very simple cosine similarity on token counts."""
-    from sklearn.feature_extraction.text import CountVectorizer
-    from sklearn.metrics.pairwise import cosine_similarity
-    cv = CountVectorizer(ngram_range=(1, 2), lowercase=True, stop_words="english")
-    X = cv.fit_transform([pred or "", ref or ""])
-    if X.shape[0] < 2:
-        return 0.0
-    sim = cosine_similarity(X[0], X[1])[0, 0]
+# ---- Free recall scoring (USE -> fallback to bag-of-words) ----
+_USE_MODEL = None
+
+def _get_use_model():
+    """
+    Lazy-load the Universal Sentence Encoder from TF Hub.
+    Returns the model callable or None if unavailable.
+    """
+    global _USE_MODEL
+    if _USE_MODEL is not None:
+        return _USE_MODEL
     try:
+        import tensorflow_hub as hub
+        # You can switch to '/4' if you prefer the (smaller) standard model:
+        # url = "https://tfhub.dev/google/universal-sentence-encoder/4"
+        url = "https://tfhub.dev/google/universal-sentence-encoder-large/5"
+        _USE_MODEL = hub.load(url)
+        return _USE_MODEL
+    except Exception:
+        _USE_MODEL = None
+        return None
+
+def _cosine_sim(a, b):
+    import numpy as np
+    from numpy.linalg import norm
+    if a is None or b is None:
+        return 0.0
+    denom = (norm(a) * norm(b))
+    if denom == 0.0:
+        return 0.0
+    s = float(np.dot(a, b) / denom)
+    # Clip to [0,1] since we interpret this as an accuracy-like score
+    return max(0.0, min(1.0, s))
+
+def _free_recall_score(pred: str, ref: str) -> float:
+    """
+    Prefer semantic similarity via USE embeddings; fallback to the previous
+    bag-of-words cosine if USE cannot be loaded. Signature kept identical.
+    """
+    pred = pred or ""
+    ref = ref or ""
+    # Try USE
+    use = _get_use_model()
+    if use is not None:
+        try:
+            import numpy as np
+            emb = use([pred, ref]).numpy()
+            return _cosine_sim(emb[0], emb[1])
+        except Exception:
+            pass  # fall through to BoW
+
+    # ---- Fallback: your original bag-of-words cosine (unchanged) ----
+    try:
+        from sklearn.feature_extraction.text import CountVectorizer
+        from sklearn.metrics.pairwise import cosine_similarity
+        cv = CountVectorizer(ngram_range=(1, 2), lowercase=True, stop_words="english")
+        X = cv.fit_transform([pred, ref])
+        if X.shape[0] < 2:
+            return 0.0
+        sim = cosine_similarity(X[0], X[1])[0, 0]
+        import numpy as np
         return float(np.clip(sim, 0.0, 1.0))
     except Exception:
         return 0.0
+
+# # ---- Free recall scoring (bag-of-words cosine) ----
+# def _free_recall_score(pred: str, ref: str) -> float:
+#     """Compute a very simple cosine similarity on token counts."""
+#     from sklearn.feature_extraction.text import CountVectorizer
+#     from sklearn.metrics.pairwise import cosine_similarity
+#     cv = CountVectorizer(ngram_range=(1, 2), lowercase=True, stop_words="english")
+#     X = cv.fit_transform([pred or "", ref or ""])
+#     if X.shape[0] < 2:
+#         return 0.0
+#     sim = cosine_similarity(X[0], X[1])[0, 0]
+#     try:
+#         return float(np.clip(sim, 0.0, 1.0))
+#     except Exception:
+#         return 0.0
 
 def _load_json(path: str):
     with open(path, "r") as f:

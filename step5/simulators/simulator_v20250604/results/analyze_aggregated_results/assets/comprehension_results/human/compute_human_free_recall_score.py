@@ -1,5 +1,3 @@
-
-#!/usr/bin/env python3
 """
 Compute human free-recall scores using the SAME method as comprehension_test.py.
 
@@ -25,6 +23,61 @@ import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
+# Replace the old free_recall_score_same_method with a USE-first scorer.
+_USE_MODEL = None
+
+def _get_use_model():
+    """Lazy-load USE from TF Hub; return callable or None if unavailable."""
+    global _USE_MODEL
+    if _USE_MODEL is not None:
+        return _USE_MODEL
+    try:
+        import tensorflow_hub as hub
+        url = "https://tfhub.dev/google/universal-sentence-encoder-large/5"
+        _USE_MODEL = hub.load(url)
+        return _USE_MODEL
+    except Exception:
+        _USE_MODEL = None
+        return None
+
+def _cosine_sim(a, b):
+    import numpy as np
+    from numpy.linalg import norm
+    if a is None or b is None:
+        return 0.0
+    denom = (norm(a) * norm(b))
+    if denom == 0.0:
+        return 0.0
+    s = float(np.dot(a, b) / denom)
+    return max(0.0, min(1.0, s))
+
+def free_recall_score_same_method(pred: str, ref: str) -> float:
+    """
+    USE-first semantic similarity between recall and reference.
+    Falls back to the original bag-of-words cosine if USE isn't available.
+    """
+    pred = pred or ""
+    ref = ref or ""
+
+    # Try USE embeddings
+    use = _get_use_model()
+    if use is not None:
+        try:
+            emb = use([pred, ref]).numpy()
+            return _cosine_sim(emb[0], emb[1])
+        except Exception:
+            pass  # fallback if any runtime error
+
+    # Fallback: original CountVectorizer(1,2)-cosine to preserve previous behavior
+    try:
+        cv = CountVectorizer(ngram_range=(1, 2), lowercase=True, stop_words="english")
+        X = cv.fit_transform([pred, ref])
+        if X.shape[0] < 2:
+            return 0.0
+        sim = cosine_similarity(X[0], X[1])[0, 0]
+        return float(np.clip(sim, 0.0, 1.0))
+    except Exception:
+        return 0.0
 
 def normalize_text(s: Optional[str]) -> str:
     """Light cleanup for odd punctuation/Unicode while preserving words."""
@@ -46,15 +99,14 @@ def normalize_text(s: Optional[str]) -> str:
     s = re.sub(r"\s+", " ", s).strip()
     return s
 
-
-def free_recall_score_same_method(pred: str, ref: str) -> float:
-    """Exactly the vectorizer/cosine setup used in comprehension_test.py."""
-    cv = CountVectorizer(ngram_range=(1, 2), lowercase=True, stop_words="english")
-    X = cv.fit_transform([pred or "", ref or ""])
-    if X.shape[0] < 2:
-        return 0.0
-    sim = cosine_similarity(X[0], X[1])[0, 0]
-    return float(np.clip(sim, 0.0, 1.0))
+# def free_recall_score_same_method(pred: str, ref: str) -> float:
+#     """Exactly the vectorizer/cosine setup used in comprehension_test.py."""
+#     cv = CountVectorizer(ngram_range=(1, 2), lowercase=True, stop_words="english")
+#     X = cv.fit_transform([pred or "", ref or ""])
+#     if X.shape[0] < 2:
+#         return 0.0
+#     sim = cosine_similarity(X[0], X[1])[0, 0]
+#     return float(np.clip(sim, 0.0, 1.0))
 
 
 def load_stimuli(stimuli_json: Optional[str]) -> Dict[int, str]:
@@ -183,7 +235,6 @@ if __name__ == "__main__":
     NOTE: the running commands:
     python compute_human_free_recall_score.py --human_csv comprehension_raw_data_p1_to_p32.csv --stimuli_json ../stimuli_texts.json --out_dir _new_free_recall_scores --save_row_csv --csv_stim_ids_are_one_based true
     """
-
 
     main()
 
