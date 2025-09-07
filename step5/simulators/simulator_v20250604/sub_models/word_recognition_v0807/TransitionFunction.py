@@ -230,8 +230,11 @@ class TransitionFunction():
         """
         Calculate the individual saccade duration in milliseconds.
         Following EZReader's implementation, set it as a fixed value at 25 ms.
+
+        Update on 0907: 25ms is too small, try it bigger as the upper bound of 50ms.
         """
         return 25
+        # return 50
     
     def calc_total_saccades_duration_ms(self, entropy_diffs) -> float:
         """

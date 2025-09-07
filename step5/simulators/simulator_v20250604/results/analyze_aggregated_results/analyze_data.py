@@ -274,6 +274,11 @@ def plot_metrics_comparison(human_data_path: str, sim_data: List[Dict], output_p
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
 
+    # Print out dir
+    print()
+    print(f"The figures are saved at: {output_path}")
+    print()
+
 def process_fixation_sequences_to_metrics(input_file: str, output_file: str):
     """
     Process fixation sequences to calculate metrics for each episode.
@@ -348,7 +353,8 @@ if __name__ == "__main__":
     current_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
     # File name
-    file_name = "20250819_0856_trials1_stims9_conds3"
+    # file_name = "20250819_1700_trials1_stims9_conds3"
+    file_name = "20250907_0607_trials1_stims9_conds3"
 
     input_file = os.path.join(current_dir, "simulated_results", file_name, "all_simulation_results.json")
     output_file = os.path.join(current_dir, "simulated_results", file_name, "processed_reading_metrics.json")
