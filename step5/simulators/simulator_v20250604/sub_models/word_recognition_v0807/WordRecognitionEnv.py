@@ -283,7 +283,7 @@ class WordRecognitionEnv(Env):
         done = True
 
         # Get the durations: gaze duration and sum saccade duration
-        self._gaze_duration_for_this_word = self._get_gaze_duration_for_this_word()
+        self._gaze_duration_for_this_word = self.get_gaze_duration_for_this_word()
         self._sum_saccade_duration_for_this_word = self._get_sum_saccade_duration_for_this_word()
         self._total_time_cost_for_this_word = self._get_total_time_cost_for_this_word()
 
@@ -348,7 +348,7 @@ class WordRecognitionEnv(Env):
         self._previous_step_entropy = self._current_step_entropy
         self._entropy_diffs_list.append(self._entropy_diff)
 
-    def _get_gaze_duration_for_this_word(self):
+    def get_gaze_duration_for_this_word(self):
         """
         Calculate the gaze duration
         """

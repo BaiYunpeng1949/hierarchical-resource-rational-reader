@@ -99,7 +99,8 @@ def build_trials(sim: list, meta: dict) -> list:
                 step = fix_steps[i]
                 wrs = step["word_recognition_summary"]
 
-                gaze_ms = float(wrs.get("total_elapsed_time_in_s", 0.0)) * 1000.0
+                # gaze_ms = float(wrs.get("total_elapsed_time_in_s", 0.0)) * 1000.0
+                gaze_ms = float(wrs.get("individual_step_gaze_duration_in_s", 0.0)) * 1000.0
                 gwi = int(global_fix_seq[i])
 
                 # recognized words (list) and first recognized word (if any)

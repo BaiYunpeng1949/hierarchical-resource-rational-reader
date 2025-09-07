@@ -111,7 +111,7 @@ python process_sim_results.py \
   --simulation 20250814_1555_trials1_stims9_conds3 \
   --out_json   assets/simulation_scanpaths.json
 ```
-- Inputs only the folder name is enough. Folders are in `/step5/simulators/simulator_v20250604/simulated_results/`
+- Modify and input only the folder name (`20250814_1555_trials1_stims9_conds3`) is enough. Folders are in `/step5/simulators/simulator_v20250604/simulated_results/`
 - Produces `assets/simulation_scanpaths.json` (list of trials).
 
 ### 2) Plot scanpaths
