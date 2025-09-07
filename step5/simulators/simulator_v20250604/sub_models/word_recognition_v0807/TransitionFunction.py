@@ -171,7 +171,8 @@ class TransitionFunction():
         kappa: float = 3.75,
         shape: float = 2.0,
         v_min: float = 200.0,
-        v_max: float = 250.0
+        v_max: float = 250.0,
+        rho_inflation_percentage: float = 0.20,
     ) -> float:
         """
         Sample a single fixation duration (ms) from a Gamma distribution.
@@ -181,7 +182,7 @@ class TransitionFunction():
         entropy_diff : float
             Absolute change in entropy / surprisal produced by this fixation.
         t0 : float
-            Baseline fixation (~150=170 ms in human readers).   # TODO we could make this something else, like prep time, encoding time, and processing time stuff; not using a wrapped gaze duration time
+            Baseline fixation (~150=170 ms in human readers).  
         kappa : float
             Additive time cost (ms) per bit of |Δentropy| or surprisal.
         shape : float
@@ -190,6 +191,11 @@ class TransitionFunction():
         Two-piece model:
             visual/lexical  ~ Gamma
             + constant 40 ms non-labile motor stage
+        
+        Update 2025-0907: 
+        Inflation percentage: float
+            The percent of time (relative to the total fixation-saccade cycles) that could not be reflected in pure fixations.
+            80-90 percent of time are fixations. The rest could be saccades (on the fly), tracking losses, off-text, blinks...
 
         Returns
         -------
@@ -200,9 +206,15 @@ class TransitionFunction():
         mean_vis = np.clip(t_processing_baseline + kappa * entropy_diff, v_min, v_max)
         scale = mean_vis / shape
         t_visual_lex = np.random.gamma(shape, scale)
-        return t_visual_lex
-    
-    def calc_gaze_duration_ms(self, entropy_diffs, **fix_kwargs) -> float:
+        # return t_visual_lex
+
+        inflated_t_visual_lex = t_visual_lex * (1 / (1 - rho_inflation_percentage))
+        return t_visual_lex, inflated_t_visual_lex
+        # TODO: hold it like this  first, maybe need to change the lateral loggings 
+        # TODO: change the inflation as a tunable parameter, run in the code
+
+    # def calc_gaze_duration_ms(self, entropy_diffs, rho_inflation_percentage, **fix_kwargs) -> float:
+    def calc_gaze_duration_ms(self, entropy_diffs) -> float:
         """
         Sum first-pass fixations on a word.  *Do not* add intra-word saccades.
 
@@ -221,7 +233,16 @@ class TransitionFunction():
         """
 
         if len(entropy_diffs) > 0:
-            return sum(self.calc_fixation_duration_ms(d, **fix_kwargs) for d in entropy_diffs)
+            return sum(self.calc_fixation_duration_ms(entropy_diff=d, rho_inflation_percentage=0.0)[0] for d in entropy_diffs)
+        else:
+            return 0
+    
+    def calc_inflated_gaze_duration_ms(self, entropy_diffs, rho_inflation_percentage) -> float:
+        """
+        The inflated version of gaze duration
+        """
+        if len(entropy_diffs) > 0:
+            return sum(self.calc_fixation_duration_ms(entropy_diff=d, rho_inflation_percentage=rho_inflation_percentage)[1] for d in entropy_diffs)
         else:
             return 0
     

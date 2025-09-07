@@ -93,6 +93,7 @@ class WordRecognitionEnv(Env):
         # Temporal variables
         self._gaze_duration_for_this_word = None            # Unit is milliseconds, the total time spent for a first-pass of a word, only including the fixation durations
         self._sum_saccade_duration_for_this_word = None     # Unit is milliseconds, the total time spent for all the saccades when reading the word
+        self._total_time_cost_for_this_word = None          # Unit is milliseconds, the totall time spent for everything, inflated by overhead components (realized by an inflation percentage).
 
         # Define the action 
         self._action = None
@@ -110,6 +111,10 @@ class WordRecognitionEnv(Env):
         self._steps = None
         self._truncated = None
         self._done = None
+
+        # Tunable parameters
+        self._kappa = None
+        self._rho_inflation_percentage = None
 
         # Define the logger:
         self.log_cumulative_version = None
@@ -159,6 +164,7 @@ class WordRecognitionEnv(Env):
         # Temporal variables
         self._gaze_duration_for_this_word = 0
         self._sum_saccade_duration_for_this_word = 0
+        self._total_time_cost_for_this_word = 0
 
         # Reset the seen letters
         self._sampled_letters_so_far_representation = [-1] * self.MAX_WORD_LEN
@@ -190,6 +196,10 @@ class WordRecognitionEnv(Env):
         self._normalized_ground_truth_word_representation = self.transition_function.get_normalized_ground_truth_word_representation(target_word=self._word)
         # This is only used for identifying words and numerical computations
 
+        # Reset the tunable parameter
+        self._rho_inflation_percentage = 0.2    # TODO: put into the reset arguments later when tuning. Grid searcch should be enough.
+        self._kappa = None  # TBD
+        
         # Reset the log
         self._log_valid_sampled_letters_indexes_list = []
 
@@ -275,6 +285,7 @@ class WordRecognitionEnv(Env):
         # Get the durations: gaze duration and sum saccade duration
         self._gaze_duration_for_this_word = self._get_gaze_duration_for_this_word()
         self._sum_saccade_duration_for_this_word = self._get_sum_saccade_duration_for_this_word()
+        self._total_time_cost_for_this_word = self._get_total_time_cost_for_this_word()
 
         return reward, done
     
@@ -325,7 +336,8 @@ class WordRecognitionEnv(Env):
         if len(self._entropy_diffs_list) == 0:
             return 0        # No information sampling, just wasting steps
         else:
-            return self._get_gaze_duration_for_this_word() + self._get_sum_saccade_duration_for_this_word()
+            # return self._get_gaze_duration_for_this_word() + self._get_sum_saccade_duration_for_this_word()
+            return self._get_total_time_cost_for_this_word()
 
     def _calculate_entropy_diff(self):
         """
@@ -342,11 +354,25 @@ class WordRecognitionEnv(Env):
         """
         return self.transition_function.calc_gaze_duration_ms(entropy_diffs=self._entropy_diffs_list)
     
+    def _get_inflated_gaze_duration_for_this_word(self):
+        """
+        Calculate the inflated gaze duration
+        """
+        return self.transition_function.calc_inflated_gaze_duration_ms(entropy_diffs=self._entropy_diffs_list, rho_inflation_percentage=self._rho_inflation_percentage)
+    
     def _get_sum_saccade_duration_for_this_word(self):
         """
         Get the sum saccade duration for this word
         """
         return self.transition_function.calc_total_saccades_duration_ms(entropy_diffs=self._entropy_diffs_list)
+    
+    def _get_total_time_cost_for_this_word(self):
+        """
+        Get the sum of gaze duration, saccade durations, and non-fixation non-saccade overhead durations
+
+        So it turns to be the sum of saccades durations + inflated gaze duration
+        """
+        return self._get_inflated_gaze_duration_for_this_word() + self._get_sum_saccade_duration_for_this_word()
     
     def get_recognized_word(self):
         """
@@ -380,6 +406,7 @@ class WordRecognitionEnv(Env):
                     "word_predictability": self._word_predictability_prob,    # Used for analyzing the predictability's effect
                     "word_representation": self._word_representation,   
                     "normalized_ground_truth_word_representation": self._normalized_ground_truth_word_representation,
+                    "free_param_rho_inflation_percentage": self._rho_inflation_percentage,
                     "fixations": [],
                 }
 
@@ -403,6 +430,7 @@ class WordRecognitionEnv(Env):
                     "entropy_diff": self._entropy_diff,
                     "gaze_duration_for_this_word": self._gaze_duration_for_this_word,
                     "sum_saccade_duration_for_this_word": self._sum_saccade_duration_for_this_word,
+                    "total_time_cost_for_this_word": self._total_time_cost_for_this_word,
                     "accurate_recognition": self._word_to_activate == self._word if self._done else None
                 })
                 return self.log_cumulative_version
