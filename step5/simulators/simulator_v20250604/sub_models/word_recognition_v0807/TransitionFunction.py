@@ -172,7 +172,7 @@ class TransitionFunction():
         shape: float = 2.0,
         v_min: float = 200.0,
         v_max: float = 250.0,
-        rho_inflation_percentage: float = 0.20,
+        rho_inflation_percentage: float = 0.0,
     ) -> float:
         """
         Sample a single fixation duration (ms) from a Gamma distribution.
@@ -206,45 +206,58 @@ class TransitionFunction():
         mean_vis = np.clip(t_processing_baseline + kappa * entropy_diff, v_min, v_max)
         scale = mean_vis / shape
         t_visual_lex = np.random.gamma(shape, scale)
-        # return t_visual_lex
 
         inflated_t_visual_lex = t_visual_lex * (1 / (1 - rho_inflation_percentage))
         return t_visual_lex, inflated_t_visual_lex
-        # TODO: hold it like this  first, maybe need to change the lateral loggings 
-        # TODO: change the inflation as a tunable parameter, run in the code
 
-    # def calc_gaze_duration_ms(self, entropy_diffs, rho_inflation_percentage, **fix_kwargs) -> float:
-    def calc_gaze_duration_ms(self, entropy_diffs) -> float:
-        """
-        Sum first-pass fixations on a word.  *Do not* add intra-word saccades.
+    # # def calc_gaze_duration_ms(self, entropy_diffs, rho_inflation_percentage, **fix_kwargs) -> float:
+    # def calc_gaze_duration_ms(self, entropy_diffs) -> float:
+    #     """
+    #     Sum first-pass fixations on a word.  *Do not* add intra-word saccades.
 
-        Parameters
-        ----------
-        entropy_diffs : Iterable[float]
-            Sequence of entropy/surprisal reductions for each fixation the agent
-            makes before it leaves the word.
-        **fix_kwargs
-            Forwarded to `fixation_duration_ms` for easy tuning.
+    #     Parameters
+    #     ----------
+    #     entropy_diffs : Iterable[float]
+    #         Sequence of entropy/surprisal reductions for each fixation the agent
+    #         makes before it leaves the word.
+    #     **fix_kwargs
+    #         Forwarded to `fixation_duration_ms` for easy tuning.
 
-        Returns
-        -------
-        float
-            Gaze duration in milliseconds.
-        """
+    #     Returns
+    #     -------
+    #     float
+    #         Gaze duration in milliseconds.
+    #     """
 
-        if len(entropy_diffs) > 0:
-            return sum(self.calc_fixation_duration_ms(entropy_diff=d, rho_inflation_percentage=0.0)[0] for d in entropy_diffs)
-        else:
-            return 0
+    #     if len(entropy_diffs) > 0:
+    #         return sum(self.calc_fixation_duration_ms(entropy_diff=d)[0] for d in entropy_diffs)
+    #     else:
+    #         return 0
     
-    def calc_inflated_gaze_duration_ms(self, entropy_diffs, rho_inflation_percentage) -> float:
+    # def calc_inflated_gaze_duration_ms(self, entropy_diffs, rho_inflation_percentage) -> float:
+    #     """
+    #     The inflated version of gaze duration
+    #     """
+    #     if len(entropy_diffs) > 0:
+    #         return sum(self.calc_fixation_duration_ms(entropy_diff=d, rho_inflation_percentage=rho_inflation_percentage)[1] for d in entropy_diffs)
+    #     else:
+    #         return 0
+    
+    def calc_gaze_related_duration_in_ms(self, entropy_diffs, rho_inflation_percentage) -> float:
         """
-        The inflated version of gaze duration
+        Sum of (a) gaze duration (visual+motor) and (b) inflated gaze duration across fixations.
+        Returns (sum_gaze_ms, sum_inflated_ms).
         """
-        if len(entropy_diffs) > 0:
-            return sum(self.calc_fixation_duration_ms(entropy_diff=d, rho_inflation_percentage=rho_inflation_percentage)[1] for d in entropy_diffs)
-        else:
-            return 0
+        total = 0.0
+        total_inflated = 0.0
+        for d in entropy_diffs or ():
+            fix_ms, infl_ms = self.calc_fixation_duration_ms(
+                entropy_diff=d,
+                rho_inflation_percentage=rho_inflation_percentage
+            )
+            total += fix_ms
+            total_inflated += infl_ms
+        return total, total_inflated
     
     @staticmethod
     def calc_individual_saccade_duration_ms() -> float:

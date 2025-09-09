@@ -363,7 +363,7 @@ class ReaderAgent:
         self.text_reader.reset(inputs=inputs)          
 
         time_info = {
-            "elapsed_time": self._elapsed_time,
+            "elapsed_time": self._elapsed_time,         # TODO there are some bugs, why always 0.4? Is it still fixed to the previous value?
             "remaining_time": self._remaining_time,
         }
 
@@ -432,7 +432,7 @@ class ReaderAgent:
             sampled_lettes_indexes_dict = {}
 
             # Reset the step-wise time consumption in second: total elapsed time
-            individual_step_reading_time_in_s = 0
+            individual_step_elapsed_time_in_s = 0
             # Reset the step-wise time consumption in second: total gaze duration
             individual_step_gaze_duration_in_s = 0
 
@@ -449,7 +449,7 @@ class ReaderAgent:
                 }
 
                 # Call the word recognizer for time consumption
-                word_recognition_elapsed_time_in_ms, word_reccognition_gaze_time_in_ms, recognized_word, valid_sampled_letters_indexes_list = self._simulate_word_recognition(inputs=current_word_metadata)
+                word_reccognition_gaze_time_in_ms, word_recognition_elapsed_time_in_ms, recognized_word, valid_sampled_letters_indexes_list = self._simulate_word_recognition(inputs=current_word_metadata)
 
                 # Update the sampled letters indexes dict
                 sampled_lettes_indexes_dict[i] = {
@@ -463,8 +463,13 @@ class ReaderAgent:
                 recognized_words_list.append(recognized_word)
                 
                 # Update the individual step time consumption
-                individual_step_reading_time_in_s += word_recognition_elapsed_time_in_ms / 1_000
-                individual_step_gaze_duration_in_s += word_reccognition_gaze_time_in_ms / 1_000     # TODO finish from here later
+                individual_step_elapsed_time_in_s += word_recognition_elapsed_time_in_ms / 1_000
+                individual_step_gaze_duration_in_s += word_reccognition_gaze_time_in_ms / 1_000     
+
+                # TODO debubg delete later
+                print('\n------------------------------------------------------------------------------------------------------------')
+                print(f"The individual step elapsed time in s is: {individual_step_elapsed_time_in_s}, the gaze duration is: {individual_step_gaze_duration_in_s}. |||| The elapsed time is smaller than the gaze duration: {individual_step_elapsed_time_in_s <= individual_step_gaze_duration_in_s}")
+                print('------------------------------------------------------------------------------------------------------------\n')
 
                 # Sum to the sentence reading time
                 sentence_reading_time_in_s += word_recognition_elapsed_time_in_ms / 1_000
@@ -474,7 +479,7 @@ class ReaderAgent:
             self._update_sentence_reading_logs(
                 num_words_read=len(new_words_indexes_list),
                 sampled_lettes_indexes_dict=sampled_lettes_indexes_dict,
-                total_elapsed_time_in_s=individual_step_reading_time_in_s,
+                individual_step_elapsed_time_in_s=individual_step_elapsed_time_in_s,
                 individual_step_gaze_duration_in_s=individual_step_gaze_duration_in_s,
                 recognized_words_list=recognized_words_list,
             )    
@@ -517,7 +522,7 @@ class ReaderAgent:
             self._update_word_recognition_logs()
         
         # Return the consumed time
-        return self.word_recognizer.env.get_elapsed_time_in_ms(), self.word_recognizer.env.get_gaze_duration_for_this_word(), recognized_word, valid_sampled_letters_indexes_list
+        return self.word_recognizer.env.gaze_duration_for_this_word, self.word_recognizer.env.total_elapsed_time_for_this_word, recognized_word, valid_sampled_letters_indexes_list
 
     ########################################################## Helper functions ##########################################################
     def _init_logs(self):
@@ -545,7 +550,7 @@ class ReaderAgent:
         # Add the words reading in the given sentence (the reading sequence) 
         self._single_episode_logs["text_reading_logs"][self.text_reader.text_reading_steps - 1]["sentence_reading_logs"] = self._individual_sentence_reading_logs
     
-    def _update_sentence_reading_logs(self, num_words_read, sampled_lettes_indexes_dict, total_elapsed_time_in_s, individual_step_gaze_duration_in_s, recognized_words_list):
+    def _update_sentence_reading_logs(self, num_words_read, sampled_lettes_indexes_dict, individual_step_elapsed_time_in_s, individual_step_gaze_duration_in_s, recognized_words_list):
         """
         Update the sentence reading logs.
         """
@@ -554,7 +559,7 @@ class ReaderAgent:
         self._individual_sentence_reading_logs[self.sentence_reader.sentence_reading_steps - 1]["word_recognition_summary"] = {
             "num_words_read_this_step": num_words_read,
             "sampled_letters_indexes_dict": sampled_lettes_indexes_dict,
-            "total_elapsed_time_in_s": total_elapsed_time_in_s,
+            "total_elapsed_time_in_s": individual_step_elapsed_time_in_s,
             "individual_step_gaze_duration_in_s": individual_step_gaze_duration_in_s,
             "recognized_words_list": recognized_words_list,
         }      
