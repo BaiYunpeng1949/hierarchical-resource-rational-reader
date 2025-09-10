@@ -165,6 +165,10 @@ class SentenceReadingUnderTimePressureEnv(Env):
         # Get the sentence information
         self._sentence_len = len(self._sentence_info['words'])
 
+        # TODO 1. organize the documentation, see which parameters are functioning; 
+        # 2.when training, use the sampled elapsed time (I could sampled from our simulation data); 
+        # 3. link the real time elapse when simulating 
+
         # Initialize word beliefs from pre-computed data
         self._word_beliefs = [-1] * self._sentence_len
         self._read_words = []
@@ -506,7 +510,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self.elapsed_time, self._sentence_wise_remaining_time_in_seconds = self.transition_function.update_state_time(
             elapsed_time=self.elapsed_time,
             expected_sentence_reading_time=self._sentence_wise_expected_time_pressure_in_seconds,
-            word_reading_time=self._sentence_info['individual_word_reading_time']   # NOTE NOT Priority: I will not apply the real words' reading time here for now. Implement when needed later, or too much nuances
+            word_reading_time=self._sentence_info['individual_word_reading_time']   # NOTE Now it is the priority! NOT Priority: I will not apply the real words' reading time here for now. Implement when needed later, or too much nuances
         )
         
     def _get_noisy_skipped_word_integration_prob(self, perfect_skipped_word_integration_prob):
@@ -568,7 +572,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
             "action": action_information,
             "current_word_index": self.current_word_index,
             "actual_reading_word_index": self.reading_sequence[-1],
-            "elapsed_time": self.elapsed_time,
+            "elapsed_time": self.elapsed_time,      # TODO check here, not right.
             "remaining_time": self._sentence_wise_remaining_time_in_seconds,
             "valid_words_beliefs": self._valid_words_beliefs.copy(),
             "ongoing_sentence_comprehension_score": self._ongoing_sentence_comprehension_score,

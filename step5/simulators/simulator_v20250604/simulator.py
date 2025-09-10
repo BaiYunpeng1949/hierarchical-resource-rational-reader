@@ -363,7 +363,7 @@ class ReaderAgent:
         self.text_reader.reset(inputs=inputs)          
 
         time_info = {
-            "elapsed_time": self._elapsed_time,         # TODO there are some bugs, why always 0.4? Is it still fixed to the previous value?
+            "elapsed_time": self._elapsed_time,     
             "remaining_time": self._remaining_time,
         }
 
@@ -385,7 +385,7 @@ class ReaderAgent:
             self._remaining_time = self._total_time - self._elapsed_time
             # Update text logs
             self._update_text_reading_logs()
-            # Update the time-info
+            # Update the time-info using the real reading-time data. So reading is fine on the text-level.
             time_info = {
                 "elapsed_time": self._elapsed_time,
                 "remaining_time": self._remaining_time,
@@ -466,10 +466,10 @@ class ReaderAgent:
                 individual_step_elapsed_time_in_s += word_recognition_elapsed_time_in_ms / 1_000
                 individual_step_gaze_duration_in_s += word_reccognition_gaze_time_in_ms / 1_000     
 
-                # TODO debubg delete later
-                print('\n------------------------------------------------------------------------------------------------------------')
-                print(f"The individual step elapsed time in s is: {individual_step_elapsed_time_in_s}, the gaze duration is: {individual_step_gaze_duration_in_s}. |||| The elapsed time is smaller than the gaze duration: {individual_step_elapsed_time_in_s <= individual_step_gaze_duration_in_s}")
-                print('------------------------------------------------------------------------------------------------------------\n')
+                # # TODO debubg delete later
+                # print('\n------------------------------------------------------------------------------------------------------------')
+                # print(f"The individual step elapsed time in s is: {individual_step_elapsed_time_in_s}, the gaze duration is: {individual_step_gaze_duration_in_s}. |||| The elapsed time is smaller than the gaze duration: {individual_step_elapsed_time_in_s <= individual_step_gaze_duration_in_s}")
+                # print('------------------------------------------------------------------------------------------------------------\n')
 
                 # Sum to the sentence reading time
                 sentence_reading_time_in_s += word_recognition_elapsed_time_in_ms / 1_000
@@ -486,6 +486,9 @@ class ReaderAgent:
             # Update the previous step local actual fixation sequence
             previous_step_local_actual_fixation_sequence_in_sentence = self.sentence_reader.env.local_actual_fixation_sequence_in_sentence.copy()
 
+        # # TODO debug delete later
+        # print(f"The self.actual_reading_sentence_index is: {self.actual_reading_sentence_index}, the sentence reading time in s is: {sentence_reading_time_in_s}")
+        
         return sentence_reading_time_in_s
     
     def _simulate_word_recognition(self, inputs: dict=None):

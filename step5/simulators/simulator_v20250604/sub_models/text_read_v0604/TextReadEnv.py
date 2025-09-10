@@ -278,7 +278,7 @@ class TextReadingUnderTimePressureEnv(Env):
 
                 # Update the elapsed time
                 if self._get_data_from_other_agents:
-                    self._elapsed_time = time_info["elapsed_time"]
+                    self._elapsed_time = time_info["elapsed_time"]     
                     self._remaining_time = time_info["remaining_time"]
                 else:   
                     self._elapsed_time, self._remaining_time = self.transition_function.update_state_time(

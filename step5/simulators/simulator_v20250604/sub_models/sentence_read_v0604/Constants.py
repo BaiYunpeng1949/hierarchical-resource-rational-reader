@@ -27,7 +27,8 @@ TIME_CONDITIONS = {
 # Reading speed: approximated from our human participants' preliminary tests
 #########################
 
-READING_SPEED = 0.4     # 0.252 is too fast to our participants. NOTE If wants to have a higher fidelity, sample a from an approximated distribution for training
+# READING_SPEED = 0.4     # 0.252 is too fast to our participants. NOTE If wants to have a higher fidelity, sample a from an approximated distribution for training
+READING_SPEED = 0.252
 
 #########################
 # Datasets
