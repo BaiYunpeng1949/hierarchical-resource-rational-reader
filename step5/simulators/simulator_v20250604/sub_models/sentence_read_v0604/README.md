@@ -35,6 +35,11 @@ The environment builds upon the base sentence reading model and adds time-pressu
    - Visualization of metrics across time conditions
    - Comparison of reading behaviors under different time pressures
 
+## Tunable Parameter
+
+For the Bayesian Inference.
+```self._w_time_perception ```
+
 ## Usage
 
 1. **Running Simulations**:
