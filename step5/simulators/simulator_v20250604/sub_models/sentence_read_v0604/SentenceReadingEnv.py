@@ -98,8 +98,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
 
         # Time tracking
         self._time_condition = None
-        self._time_condition_value = None
-        self._baseline_time_needed_to_read_text = None
+        self._time_condition_value_in_s = None
+        self._baseline_time_needed_to_read_text_in_s = None
         self.elapsed_time = None
         self._sentence_wise_remaining_time_in_seconds = None
         self._min_sentence_wise_remaining_time_in_seconds = None
@@ -197,7 +197,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._valid_words_beliefs = []
 
         # Reset the time related variables
-        self._time_condition, self._time_condition_value = self.time_condition_manager.reset(inputs=inputs)
+        self._time_condition, self._time_condition_value_in_s = self.time_condition_manager.reset(inputs=inputs)
         # Sample words reading time for this text, sampling pool was approximated from the actual simulation data. Do the random sampling for a more robust policy learning.
         self._sampled_n_words_reading_time_for_text_ndarray = sample_n_individual_word_elapsed_duration_from_our_simulation_data(
             dist_name="gamma", 
@@ -206,21 +206,27 @@ class SentenceReadingUnderTimePressureEnv(Env):
         )
         # Approximate the time pressure for each sentence # Get the text information, because need this to approximate the time pressure for each sentence
         # self._baseline_time_needed_to_read_text = self._text_word_count * Constants.READING_SPEED
-        self._baseline_time_needed_to_read_text = np.sum(self._sampled_n_words_reading_time_for_text_ndarray)      
+        self._baseline_time_needed_to_read_text_in_s = np.sum(self._sampled_n_words_reading_time_for_text_ndarray) / 1000      
         # Get the time pressure for each sentence
-        self._time_pressure_scalar_for_the_sentence = self._time_condition_value / self._baseline_time_needed_to_read_text    # belongs to [0, infinity]
+        self._time_pressure_scalar_for_the_sentence = self._time_condition_value_in_s / self._baseline_time_needed_to_read_text_in_s    # belongs to [0, infinity]
         
         # NOTE: our tunable parameter working
         self._w_time_perception = 0.35          # Now I assume it is a tunable parameter   # TODO try a new function that tear bigger gap between 30s and 60s conditions --> NOTE: try 0.5 later, where applies more time pressure perception
         granted_step_budget_factor = self.calc_time_pressure_to_factor(x=self._time_pressure_scalar_for_the_sentence, w=self._w_time_perception)
         # Granted step budget
         self._granted_step_budget = np.ceil(granted_step_budget_factor * self._sentence_len)      # This value is definitely smaller than the sentence lenght.
+        
+        # NOTE: there's an issue with this mechanism: for 30s, 60s, and 90s; self._time_pressure_scalar_for_the_sentence might change a lot; varying around 0.66, 1.27, 2.29;
+        #   But the corresponding granted step budget factor does not differ much after them go through the non-linear function.
+        #   And it creates even a smaller gap of the given sen_len and granted_budget_len. 
+        # TODO: use some manual values. But first, just keep this, see how reward shaping works.
+        # TODO: need to observe another bug: sometimes the agent would only stop after the final step: 70*2=140 steps.
 
-        # reading_speed = Constants.READING_SPEED     # TODO change this
-        # # TODO we need to do a sentence-words sampling here. 1. collect data from simulation; 2. see what distribution it is; 3. see what ranges it cover; 
-        # # 4. can I use a simple stuff to cover it. Or, can I use a simple average value to stand-for it. I still use this average value. But dyanmical values are better because they are more dynamic. The learned policy could be more robust.
+        # NOTE need to verify this: does the agent always trying to finish before the granted budget? --> yes, always budget + 1.
+        #   Potential issue reasons: 1. sensitive to overtime penalties; 2. skipping's cost is too small, no risk of skipping; 
+
+        # reading_speed = Constants.READING_SPEED 
         # self._sentence_wise_expected_time_pressure_in_seconds = reading_speed * self._sentence_len * self._time_pressure_scalar_for_the_sentence    
-        # # TODO: re-sample this using our sampled values. TODO: resample a random index
 
         # NOTE: the individual word's reading time should be obtained from the lower-level agent. But for training efficiency, 
         #   I directly sample them from the distribution observed from simulation data. And sample randomly (first sent_len) values in the sampled text reading time
@@ -231,7 +237,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._sentence_wise_expected_time_pressure_in_seconds = sampled_expected_sentence_reading_time * self._time_pressure_scalar_for_the_sentence
 
         # # TODO debug delete later
-        # print(f"\nthe total time needed: {self._baseline_time_needed_to_read_text}, the self._time_pressure_scalar_for_the_sentence is: {self._time_pressure_scalar_for_the_sentence}")
+        # print(f"\nthe total time needed: {self._baseline_time_needed_to_read_text_in_s}, the time condition value is: {self._time_condition_value_in_s}, the self._time_pressure_scalar_for_the_sentence is: {self._time_pressure_scalar_for_the_sentence}")
         # print(f"The granted_step_budget_factor is: {granted_step_budget_factor}, the self._granted_step_budget is: {self._granted_step_budget}, the sentence len is: {self._sentence_len}")
 
         self.elapsed_time = 0
@@ -245,7 +251,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         
         # NOTE: The two tunable parameters, try, if identified, get it into the Bayesian optimization later
         # TODO: not useful parameters, maybe delete
-        self._w_skip_degradation_factor = 1.0
+        self._w_skip_degradation_factor = 0.5
         self._w_comprehension_vs_time_pressure = 0.5
         self._w_step_wise_comprehension_gain = 0.5      # Tunable step-wise parameter
 
@@ -409,6 +415,9 @@ class SentenceReadingUnderTimePressureEnv(Env):
             )
             self._log_terminate_reward = reward
             self._log_terminate_reward_logs = logs
+
+            # # TODO debug delete later
+            # print(f"The step budget was: {self._granted_step_budget}, the termination step is: {self._steps}. The termination step is always smaller than the budget: {self._steps<self._granted_step_budget}")
 
         else:
             info = {}
@@ -674,7 +683,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
             'sentence_len': self._sentence_len,
             "words": words_data_list,
             "time_condition": self._time_condition,
-            "time_condition_value": self._time_condition_value,
+            "time_condition_value": self._time_condition_value_in_s,
             "elapsed_time": self.elapsed_time,
             "remaining_time": self._sentence_wise_remaining_time_in_seconds,
             "sentence_wise_expected_reading_time_in_seconds": self._sentence_wise_expected_time_pressure_in_seconds,
