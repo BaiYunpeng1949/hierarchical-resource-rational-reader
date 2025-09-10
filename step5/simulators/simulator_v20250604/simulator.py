@@ -19,6 +19,7 @@ from sub_models.text_read_v0604.Utilities import DictActionUnwrapper
 
 from utils.json_utils import np_to_native
 from utils.auxiliary_functions import list_diff_preserve_order
+from utils.analyze_individual_word_stats import analyze_distribution
 
 # Constants and Configurations
 CONFIG_PATH = "sub_models/config.yaml"
@@ -289,6 +290,7 @@ class ReaderAgent:
         self._stimulus_index = None
         self._time_condition = None
         # NOTE: adhoc variables for now, will be revised later
+        self.across_episodes_individual_word_elapsed_time_list = []      # List for analyzing data distribution. Could be removed.
     
     def reset(
         self, 
@@ -466,13 +468,11 @@ class ReaderAgent:
                 individual_step_elapsed_time_in_s += word_recognition_elapsed_time_in_ms / 1_000
                 individual_step_gaze_duration_in_s += word_reccognition_gaze_time_in_ms / 1_000     
 
-                # # TODO debubg delete later
-                # print('\n------------------------------------------------------------------------------------------------------------')
-                # print(f"The individual step elapsed time in s is: {individual_step_elapsed_time_in_s}, the gaze duration is: {individual_step_gaze_duration_in_s}. |||| The elapsed time is smaller than the gaze duration: {individual_step_elapsed_time_in_s <= individual_step_gaze_duration_in_s}")
-                # print('------------------------------------------------------------------------------------------------------------\n')
-
                 # Sum to the sentence reading time
                 sentence_reading_time_in_s += word_recognition_elapsed_time_in_ms / 1_000
+
+                # Append logs
+                self.across_episodes_individual_word_elapsed_time_list.append(word_recognition_elapsed_time_in_ms)
             
             # Update sentence logs
             # NOTE NOT Pirority: I can do the cross validation using the reading_sequence and logs from that reader <<PLUS>> check whether the index input is correct -- Error: list index out of range
@@ -485,9 +485,6 @@ class ReaderAgent:
             )    
             # Update the previous step local actual fixation sequence
             previous_step_local_actual_fixation_sequence_in_sentence = self.sentence_reader.env.local_actual_fixation_sequence_in_sentence.copy()
-
-        # # TODO debug delete later
-        # print(f"The self.actual_reading_sentence_index is: {self.actual_reading_sentence_index}, the sentence reading time in s is: {sentence_reading_time_in_s}")
         
         return sentence_reading_time_in_s
     
@@ -680,6 +677,9 @@ def run_batch_simulations(
         json.dump(metadata_dict, file, indent=4, default=np_to_native)
     print(f"Simulation metadata has been saved to: {metadata_file}")
 
+    # NOTE: removable anytime -- data distribution analysis
+    report = analyze_distribution(values=simulator.across_episodes_individual_word_elapsed_time_list)
+
     return {
         "results": all_results,
         "metadata": metadata_dict,
@@ -693,15 +693,3 @@ if __name__ == "__main__":
     """
     # Run simulations with default parameters
     results = run_batch_simulations(num_trials=1)
-    
-    # # Example of running with custom parameters:
-    # custom_stimuli = [0] # [0, 1, 2]
-    # custom_conditions = ["30s", "60s"]
-    # custom_trials = 1
-    # custom_output = "custom_simulation_results"
-    # results = run_batch_simulations(
-    #     stimulus_ids=custom_stimuli,
-    #     time_conditions=custom_conditions,
-    #     num_trials=custom_trials,
-    #     output_dir=custom_output
-    # )

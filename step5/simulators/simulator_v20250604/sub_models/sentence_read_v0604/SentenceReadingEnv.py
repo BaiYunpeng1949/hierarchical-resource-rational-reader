@@ -6,6 +6,9 @@ import torch
 import numpy as np
 import json
 
+from scipy import stats
+from typing import Optional, Sequence
+
 from gymnasium import Env
 from gymnasium.spaces import Box, Discrete, Dict
 
@@ -60,7 +63,9 @@ class SentenceReadingUnderTimePressureEnv(Env):
         elif self._mode == "train" or self._mode == "continual_train" or self._mode == "debug":
             DATASET = "ZuCo1.0"
             assert DATASET == "ZuCo1.0", f"Invalid dataset: {DATASET}, should be 'ZuCo1.0' when training the model!"
+        print(f"\n===================================================================================================================")
         print(f"Sentence Reading Under Time Pressure Environment V0604 -- Deploying in {self._mode} mode with the dataset {DATASET}")
+        print(f"===================================================================================================================\n")
 
         # Initialize components
         self.time_condition_manager = TimeConditionManager()
@@ -100,6 +105,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._min_sentence_wise_remaining_time_in_seconds = None
         self._time_pressure_scalar_for_the_sentence = None
         self._sentence_wise_expected_time_pressure_in_seconds = None
+        self._sampled_n_words_reading_time_for_text_ndarray = None
+        self._sampled_m_words_reading_time_for_sentence_ndarray = None
 
         # Environment parameters
         self._steps = None
@@ -191,25 +198,50 @@ class SentenceReadingUnderTimePressureEnv(Env):
 
         # Reset the time related variables
         self._time_condition, self._time_condition_value = self.time_condition_manager.reset(inputs=inputs)
+        # Sample words reading time for this text, sampling pool was approximated from the actual simulation data. Do the random sampling for a more robust policy learning.
+        self._sampled_n_words_reading_time_for_text_ndarray = sample_n_individual_word_elapsed_duration_from_our_simulation_data(
+            dist_name="gamma", 
+            n=self._text_word_count,
+            params=(1.827785449759574, 25.65868356976778, 154.48236013843115),  # (a, loc, scale)
+        )
         # Approximate the time pressure for each sentence # Get the text information, because need this to approximate the time pressure for each sentence
-        self._baseline_time_needed_to_read_text = self._text_word_count * Constants.READING_SPEED
+        # self._baseline_time_needed_to_read_text = self._text_word_count * Constants.READING_SPEED
+        self._baseline_time_needed_to_read_text = np.sum(self._sampled_n_words_reading_time_for_text_ndarray)      
         # Get the time pressure for each sentence
         self._time_pressure_scalar_for_the_sentence = self._time_condition_value / self._baseline_time_needed_to_read_text    # belongs to [0, infinity]
         
+        # NOTE: our tunable parameter working
         self._w_time_perception = 0.35          # Now I assume it is a tunable parameter   # TODO try a new function that tear bigger gap between 30s and 60s conditions --> NOTE: try 0.5 later, where applies more time pressure perception
         granted_step_budget_factor = self.calc_time_pressure_to_factor(x=self._time_pressure_scalar_for_the_sentence, w=self._w_time_perception)
         # Granted step budget
         self._granted_step_budget = np.ceil(granted_step_budget_factor * self._sentence_len)      # This value is definitely smaller than the sentence lenght.
 
-        reading_speed = Constants.READING_SPEED
-        self._sentence_wise_expected_time_pressure_in_seconds = reading_speed * self._sentence_len * self._time_pressure_scalar_for_the_sentence
+        # reading_speed = Constants.READING_SPEED     # TODO change this
+        # # TODO we need to do a sentence-words sampling here. 1. collect data from simulation; 2. see what distribution it is; 3. see what ranges it cover; 
+        # # 4. can I use a simple stuff to cover it. Or, can I use a simple average value to stand-for it. I still use this average value. But dyanmical values are better because they are more dynamic. The learned policy could be more robust.
+        # self._sentence_wise_expected_time_pressure_in_seconds = reading_speed * self._sentence_len * self._time_pressure_scalar_for_the_sentence    
+        # # TODO: re-sample this using our sampled values. TODO: resample a random index
+
+        # NOTE: the individual word's reading time should be obtained from the lower-level agent. But for training efficiency, 
+        #   I directly sample them from the distribution observed from simulation data. And sample randomly (first sent_len) values in the sampled text reading time
+        #   as sampled sentence reading time.
+        #   I will keep using this with simulation mode as well, bc I don't think these individual words' reading time are dominant factors.
+        self._sampled_m_words_reading_time_for_sentence_ndarray = self._sampled_n_words_reading_time_for_text_ndarray[0:self._sentence_len]
+        sampled_expected_sentence_reading_time = np.sum(self._sampled_m_words_reading_time_for_sentence_ndarray)
+        self._sentence_wise_expected_time_pressure_in_seconds = sampled_expected_sentence_reading_time * self._time_pressure_scalar_for_the_sentence
+
+        # # TODO debug delete later
+        # print(f"\nthe total time needed: {self._baseline_time_needed_to_read_text}, the self._time_pressure_scalar_for_the_sentence is: {self._time_pressure_scalar_for_the_sentence}")
+        # print(f"The granted_step_budget_factor is: {granted_step_budget_factor}, the self._granted_step_budget is: {self._granted_step_budget}, the sentence len is: {self._sentence_len}")
+
         self.elapsed_time = 0
         self._sentence_wise_remaining_time_in_seconds = self._sentence_wise_expected_time_pressure_in_seconds - self.elapsed_time
-        self._min_sentence_wise_remaining_time_in_seconds = - self._sentence_wise_expected_time_pressure_in_seconds   # NOTE: empirically set a negative value, for tracking the exceeded time
+        self._min_sentence_wise_remaining_time_in_seconds = - self._sentence_wise_expected_time_pressure_in_seconds   
+        # NOTE: empirically set a negative value, for tracking the exceeded time
 
         # Initialize a random regression cost
         # self._w_regression_cost = random.uniform(0, 1)   # NOTE: uncomment when training!!!!
-        self._w_regression_cost = 1.0    # NOTE: uncomment when testing!!!!
+        self._w_regression_cost = 1.0    # NOTE: uncomment when testing!!!! --> For the reading under time constraint, no need to change, keep it as constant in both training and testing.
         
         # NOTE: The two tunable parameters, try, if identified, get it into the Bayesian optimization later
         # TODO: not useful parameters, maybe delete
@@ -510,7 +542,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self.elapsed_time, self._sentence_wise_remaining_time_in_seconds = self.transition_function.update_state_time(
             elapsed_time=self.elapsed_time,
             expected_sentence_reading_time=self._sentence_wise_expected_time_pressure_in_seconds,
-            word_reading_time=self._sentence_info['individual_word_reading_time']   # NOTE Now it is the priority! NOT Priority: I will not apply the real words' reading time here for now. Implement when needed later, or too much nuances
+            # word_reading_time=self._sentence_info['individual_word_reading_time']   # NOTE Now it is the priority! NOT Priority: I will not apply the real words' reading time here for now. Implement when needed later, or too much nuances
+            word_reading_time=self._sampled_m_words_reading_time_for_sentence_ndarray[self._actual_reading_word_index]  # Version 0910  # NOTE a slightly more realistic value, but still not at the max fidelity.
         )
         
     def _get_noisy_skipped_word_integration_prob(self, perfect_skipped_word_integration_prob):
@@ -655,6 +688,17 @@ class SentenceReadingUnderTimePressureEnv(Env):
         }
 
         return episode_log
+    
+
+def sample_n_individual_word_elapsed_duration_from_our_simulation_data(dist_name: str, params: Sequence[float], n: int, random_state: Optional[int] = None):
+    """
+    Draw n samples from a SciPy distribution given its name and fitted params.
+    params must be the exact tuple returned by dist.fit(...): (shape(s)?, loc, scale)
+    """
+    if random_state is not None:
+        np.random.seed(random_state)
+    dist = getattr(stats, dist_name)
+    return dist.rvs(*params, size=n)
 
 
 if __name__ == "__main__":
