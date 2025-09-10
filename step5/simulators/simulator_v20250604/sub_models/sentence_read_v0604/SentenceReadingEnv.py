@@ -227,7 +227,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         #   as sampled sentence reading time.
         #   I will keep using this with simulation mode as well, bc I don't think these individual words' reading time are dominant factors.
         self._sampled_m_words_reading_time_for_sentence_ndarray = self._sampled_n_words_reading_time_for_text_ndarray[0:self._sentence_len]
-        sampled_expected_sentence_reading_time = np.sum(self._sampled_m_words_reading_time_for_sentence_ndarray)
+        sampled_expected_sentence_reading_time = np.sum(self._sampled_m_words_reading_time_for_sentence_ndarray)        # TODO these should be converted to s, now still ms.
         self._sentence_wise_expected_time_pressure_in_seconds = sampled_expected_sentence_reading_time * self._time_pressure_scalar_for_the_sentence
 
         # # TODO debug delete later
