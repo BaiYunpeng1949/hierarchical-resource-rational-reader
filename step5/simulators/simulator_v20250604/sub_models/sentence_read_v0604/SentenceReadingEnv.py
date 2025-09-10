@@ -409,6 +409,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
             )
             self._log_terminate_reward = reward
             self._log_terminate_reward_logs = logs
+
         else:
             info = {}
         

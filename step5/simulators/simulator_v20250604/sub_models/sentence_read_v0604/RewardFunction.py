@@ -12,19 +12,6 @@ class RewardFunction():
     def __init__(self):
         self._coefficient_eye_movement_cost = 5
         self._coefficeint_comprehension = 1
-        # Sigmoid parameters for comprehension saturation
-        self._sigmoid_scale = 10.0  # Controls how quickly the sigmoid saturates, larger the agent more easily to please
-        self._sigmoid_shift = 0.5  # Controls where the sigmoid saturates, smaller the agent more easily to please
-
-    def _sigmoid(self, x):
-        """
-        Compute sigmoid function for reward saturation
-        Args:
-            x: Input value in [0,1]
-        Returns:
-            Saturated value in [0,1]
-        """
-        return 1 / (1 + math.exp(-self._sigmoid_scale * (x - self._sigmoid_shift)))
 
     def compute_regress_reward(self, w_regression_cost: float):
         """
@@ -71,7 +58,7 @@ class RewardFunction():
         """
         
         if num_words_read < sentence_len:   # If the agent did not finish the sentence reading, then the reward is 0
-            not_finished_penalty = -10
+            not_finished_penalty = -100
             logs = {
                 "comprehension_reward": 0,
                 "penalty_for_wasting_time": 0,
@@ -88,12 +75,7 @@ class RewardFunction():
             else:
                 overall_comprehension_scalar = 0.0
             
-            comprehension_reward = 1 * overall_comprehension_scalar
-
-            # if remaining_time < 0:    # If the agent finished the sentence reading out of expected time, then apply some penalties
-            #     penalty_for_wasting_time = 10 * (remaining_time / expected_sentence_reading_time)    # NOTE: see if need a parameter to tune here later (re-use w_comprehension_vs_time_pressure)
-            # else:
-            #     penalty_for_wasting_time = 0
+            comprehension_reward = 10 * overall_comprehension_scalar
 
             # NOTE: linear reward: linear scaling for the comprehension performance
             # final_reward = comprehension_reward + w_comprehension_vs_time_pressure * penalty_for_wasting_time
