@@ -232,9 +232,9 @@ class SentenceReadingUnderTimePressureEnv(Env):
         sampled_expected_sentence_reading_time = np.sum(self._sampled_m_words_reading_time_for_sentence_ndarray)        
         self._sentence_wise_expected_time_pressure_in_seconds = sampled_expected_sentence_reading_time * self._time_pressure_scalar_for_the_sentence
 
-        # TODO debug delete later
-        print(f"\nthe total time needed: {self._baseline_time_needed_to_read_text_in_s}, the time condition value is: {self._time_condition_value_in_s}, the self._time_pressure_scalar_for_the_sentence is: {self._time_pressure_scalar_for_the_sentence}")
-        print(f"The granted_step_budget_factor is: {granted_step_budget_factor}, the self._granted_step_budget is: {self._granted_step_budget}, the sentence len is: {self._sentence_len}")
+        # # TODO debug delete later
+        # print(f"\nthe total time needed: {self._baseline_time_needed_to_read_text_in_s}, the time condition value is: {self._time_condition_value_in_s}, the self._time_pressure_scalar_for_the_sentence is: {self._time_pressure_scalar_for_the_sentence}")
+        # print(f"The granted_step_budget_factor is: {granted_step_budget_factor}, the self._granted_step_budget is: {self._granted_step_budget}, the sentence len is: {self._sentence_len}")
 
         self.elapsed_time = 0
         self._sentence_wise_remaining_time_in_seconds = self._sentence_wise_expected_time_pressure_in_seconds - self.elapsed_time
@@ -380,12 +380,17 @@ class SentenceReadingUnderTimePressureEnv(Env):
                 new_beliefs=self._word_beliefs.copy()
                 )
 
-        elif action == self._STOP_ACTION:
+        # elif action == self._STOP_ACTION:
+        #     self._terminate = True
+        # NOTE: instead of letting the agent control when to stop. Apply the automatic stop when the sentence is finished reading.
+        # Check whether all words are covered, if yes, stop the trial immediately.
+        valid_words_beliefs = [b for b in self._word_beliefs if b != -1]
+        if len(valid_words_beliefs) >= self._sentence_len:
             self._terminate = True
         
-        # TODO debug delete later
-        if self._steps >= 100:
-            print(f"    The current action is: {action}")
+        # # TODO debug delete later
+        # if self._steps >= 100:
+        #     print(f"    The current action is: {action}")
         
         #######################################################################################
 
@@ -415,8 +420,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
             self._log_terminate_reward = reward
             self._log_terminate_reward_logs = logs
 
-            # TODO debug delete later
-            print(f"The step budget was: {self._granted_step_budget}, the termination step is: {self._steps}. The termination step is always smaller than the budget: {self._steps<self._granted_step_budget}")
+            # # TODO debug delete later
+            # print(f"The step budget was: {self._granted_step_budget}, the termination step is: {self._steps}. The termination step is always smaller than the budget: {self._steps<self._granted_step_budget}")
 
         else:
             info = {}
@@ -492,11 +497,11 @@ class SentenceReadingUnderTimePressureEnv(Env):
         # clipped_remaining_granted_step = np.clip(self._granted_step_budget-self._steps, 0, self._granted_step_budget)
         # norm_remaining_granted_step_budget = self.normalise(clipped_remaining_granted_step, 0, self._granted_step_budget, 0, 1)
 
-        # TODO debug delete later
-        if self._steps >= 100:
-            print(f"     the flag is overtime is: {is_overtime}")
-            print(f"      the current over-steping norm_remaining granted step is: {norm_remaining_granted_step_budget}")
-            print(f"       The remaining words is: {remaining_words}")
+        # # TODO debug delete later
+        # if self._steps >= 100:
+        #     print(f"     the flag is overtime is: {is_overtime}")
+        #     print(f"      the current over-steping norm_remaining granted step is: {norm_remaining_granted_step_budget}")
+        #     print(f"       The remaining words is: {remaining_words}")
 
         stateful_obs = np.array([
             current_position,

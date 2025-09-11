@@ -75,7 +75,7 @@ class RewardFunction():
             else:
                 overall_comprehension_scalar = 0.0
             
-            comprehension_reward = 10 * overall_comprehension_scalar
+            comprehension_reward = 1 * overall_comprehension_scalar
 
             # NOTE: linear reward: linear scaling for the comprehension performance
             # final_reward = comprehension_reward + w_comprehension_vs_time_pressure * penalty_for_wasting_time
