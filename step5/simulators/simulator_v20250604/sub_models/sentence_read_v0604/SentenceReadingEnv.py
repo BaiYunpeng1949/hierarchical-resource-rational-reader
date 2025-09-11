@@ -124,7 +124,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self.action_space = Discrete(4)     
         
         # Observation space - simplified to scalar signals
-        self._num_stateful_obs = 6 + 6      # 6 non-time related variables, 6 time related variables
+        self._num_stateful_obs = 7 + 6      # 7 non-time related variables, 6 time related variables
         self.observation_space = Box(low=0, high=1, shape=(self._num_stateful_obs,))
         self._noisy_obs_sigma = Constants.NOISY_OBS_SIGMA
 
@@ -246,7 +246,15 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._w_regression_cost = 1.0    # NOTE: uncomment when testing!!!! --> For the reading under time constraint, no need to change, keep it as constant in both training and testing.
         
         # NOTE: The two tunable parameters, try, if identified, get it into the Bayesian optimization later
-        self._w_skip_degradation_factor = 0.7       # NOTE: useful for now.
+        # self._w_skip_degradation_factor = 0.7       # NOTE: useful for now.
+        # NOTE: Armortized training solution.
+        w_skip_degradation_factor_range = [0.5, 1.0]
+        possible_values = np.arange(w_skip_degradation_factor_range[0], w_skip_degradation_factor_range[1] + 1e-8, 0.05)
+        self._w_skip_degradation_factor = np.random.choice(possible_values)
+        # # TODO debug delete later
+        # print(f"The w_skip_degradation_factor sampled is: {self._w_skip_degradation_factor}")
+
+        # NOTE: not tunable and usable parameters -- leave it be
         self._w_comprehension_vs_time_pressure = 0.5
         self._w_step_wise_comprehension_gain = 0.5      # Tunable step-wise parameter
 
@@ -466,6 +474,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._ongoing_sentence_comprehension_score = self._compute_ongoing_sentence_comprehension_score(valid_words_beliefs)
         
         # Weights
+        norm_w_skip_degradation_factor = self._w_skip_degradation_factor
         # norm_w_regression_cost = self.normalise(self._w_regression_cost, 0, 1, 0, 1)
         # # norm_w_skipping_cost = self.normalise(self._w_skipping_cost, self.MIN_W_SKIPPING_COST, self.MAX_W_SKIPPING_COST, 0, 1)
         # # norm_noisy_skipped_word_integration_prob_sigma = self.normalise(self._noisy_skipped_word_integration_prob_sigma, self.MIN_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA, self.MAX_NOISY_SKIPPED_WORD_INTEGRATION_PROB_SIGMA, 0, 1)
@@ -510,6 +519,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
             observed_current_word_belief,
             observed_next_word_predictability,
             self._ongoing_sentence_comprehension_score,
+            norm_w_skip_degradation_factor,
             norm_time_condition,
             norm_granted_steps,
             norm_remaining_steps_in_ep,
