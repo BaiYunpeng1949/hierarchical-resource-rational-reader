@@ -356,7 +356,7 @@ if __name__ == "__main__":
     # file_name = "20250819_1700_trials1_stims9_conds3"
     # file_name = "20250907_0607_trials1_stims9_conds3"
     # file_name = "20250907_0920_trials1_stims9_conds3"
-    file_name = "20250910_1555_trials1_stims9_conds3"
+    file_name = "20250911_0424_trials1_stims9_conds3"
 
     input_file = os.path.join(current_dir, "simulated_results", file_name, "all_simulation_results.json")
     output_file = os.path.join(current_dir, "simulated_results", file_name, "processed_reading_metrics.json")

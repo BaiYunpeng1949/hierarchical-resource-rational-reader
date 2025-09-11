@@ -236,9 +236,9 @@ class SentenceReadingUnderTimePressureEnv(Env):
         sampled_expected_sentence_reading_time = np.sum(self._sampled_m_words_reading_time_for_sentence_ndarray)        # TODO these should be converted to s, now still ms.
         self._sentence_wise_expected_time_pressure_in_seconds = sampled_expected_sentence_reading_time * self._time_pressure_scalar_for_the_sentence
 
-        # # TODO debug delete later
-        # print(f"\nthe total time needed: {self._baseline_time_needed_to_read_text_in_s}, the time condition value is: {self._time_condition_value_in_s}, the self._time_pressure_scalar_for_the_sentence is: {self._time_pressure_scalar_for_the_sentence}")
-        # print(f"The granted_step_budget_factor is: {granted_step_budget_factor}, the self._granted_step_budget is: {self._granted_step_budget}, the sentence len is: {self._sentence_len}")
+        # TODO debug delete later
+        print(f"\nthe total time needed: {self._baseline_time_needed_to_read_text_in_s}, the time condition value is: {self._time_condition_value_in_s}, the self._time_pressure_scalar_for_the_sentence is: {self._time_pressure_scalar_for_the_sentence}")
+        print(f"The granted_step_budget_factor is: {granted_step_budget_factor}, the self._granted_step_budget is: {self._granted_step_budget}, the sentence len is: {self._sentence_len}")
 
         self.elapsed_time = 0
         self._sentence_wise_remaining_time_in_seconds = self._sentence_wise_expected_time_pressure_in_seconds - self.elapsed_time
@@ -416,8 +416,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
             self._log_terminate_reward = reward
             self._log_terminate_reward_logs = logs
 
-            # # TODO debug delete later
-            # print(f"The step budget was: {self._granted_step_budget}, the termination step is: {self._steps}. The termination step is always smaller than the budget: {self._steps<self._granted_step_budget}")
+            # TODO debug delete later
+            print(f"The step budget was: {self._granted_step_budget}, the termination step is: {self._steps}. The termination step is always smaller than the budget: {self._steps<self._granted_step_budget}")
 
         else:
             info = {}
