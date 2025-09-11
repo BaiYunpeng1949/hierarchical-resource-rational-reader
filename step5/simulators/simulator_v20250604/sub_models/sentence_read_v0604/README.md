@@ -39,6 +39,7 @@ The environment builds upon the base sentence reading model and adds time-pressu
 
 For the Bayesian Inference.
 ```self._w_time_perception ```
+```self._w_skip_degradation_factor```
 
 ## Usage
 

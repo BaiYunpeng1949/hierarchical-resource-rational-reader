@@ -124,7 +124,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self.action_space = Discrete(4)     
         
         # Observation space - simplified to scalar signals
-        self._num_stateful_obs = 6 + 3      # +2 for the time condition and remaining granted steps and whether overtime or not
+        self._num_stateful_obs = 6 + 6      # 6 non-time related variables, 6 time related variables
         self.observation_space = Box(low=0, high=1, shape=(self._num_stateful_obs,))
         self._noisy_obs_sigma = Constants.NOISY_OBS_SIGMA
 
@@ -171,10 +171,6 @@ class SentenceReadingUnderTimePressureEnv(Env):
 
         # Get the sentence information
         self._sentence_len = len(self._sentence_info['words'])
-
-        # TODO 1. organize the documentation, see which parameters are functioning; 
-        # 2.when training, use the sampled elapsed time (I could sampled from our simulation data); 
-        # 3. link the real time elapse when simulating 
 
         # Initialize word beliefs from pre-computed data
         self._word_beliefs = [-1] * self._sentence_len
@@ -233,12 +229,12 @@ class SentenceReadingUnderTimePressureEnv(Env):
         #   as sampled sentence reading time.
         #   I will keep using this with simulation mode as well, bc I don't think these individual words' reading time are dominant factors.
         self._sampled_m_words_reading_time_for_sentence_ndarray = self._sampled_n_words_reading_time_for_text_ndarray[0:self._sentence_len]
-        sampled_expected_sentence_reading_time = np.sum(self._sampled_m_words_reading_time_for_sentence_ndarray)        # TODO these should be converted to s, now still ms.
+        sampled_expected_sentence_reading_time = np.sum(self._sampled_m_words_reading_time_for_sentence_ndarray)        
         self._sentence_wise_expected_time_pressure_in_seconds = sampled_expected_sentence_reading_time * self._time_pressure_scalar_for_the_sentence
 
-        # TODO debug delete later
-        print(f"\nthe total time needed: {self._baseline_time_needed_to_read_text_in_s}, the time condition value is: {self._time_condition_value_in_s}, the self._time_pressure_scalar_for_the_sentence is: {self._time_pressure_scalar_for_the_sentence}")
-        print(f"The granted_step_budget_factor is: {granted_step_budget_factor}, the self._granted_step_budget is: {self._granted_step_budget}, the sentence len is: {self._sentence_len}")
+        # # TODO debug delete later
+        # print(f"\nthe total time needed: {self._baseline_time_needed_to_read_text_in_s}, the time condition value is: {self._time_condition_value_in_s}, the self._time_pressure_scalar_for_the_sentence is: {self._time_pressure_scalar_for_the_sentence}")
+        # print(f"The granted_step_budget_factor is: {granted_step_budget_factor}, the self._granted_step_budget is: {self._granted_step_budget}, the sentence len is: {self._sentence_len}")
 
         self.elapsed_time = 0
         self._sentence_wise_remaining_time_in_seconds = self._sentence_wise_expected_time_pressure_in_seconds - self.elapsed_time
@@ -250,8 +246,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._w_regression_cost = 1.0    # NOTE: uncomment when testing!!!! --> For the reading under time constraint, no need to change, keep it as constant in both training and testing.
         
         # NOTE: The two tunable parameters, try, if identified, get it into the Bayesian optimization later
-        # TODO: not useful parameters, maybe delete
-        self._w_skip_degradation_factor = 0.5
+        self._w_skip_degradation_factor = 0.8       # NOTE: useful for now.
         self._w_comprehension_vs_time_pressure = 0.5
         self._w_step_wise_comprehension_gain = 0.5      # Tunable step-wise parameter
 
@@ -388,6 +383,10 @@ class SentenceReadingUnderTimePressureEnv(Env):
         elif action == self._STOP_ACTION:
             self._terminate = True
         
+        # # TODO debug delete later
+        # if self._steps >= 100:
+        #     print(f"    The current action is: {action}")
+        
         #######################################################################################
 
         # Check whether exceeds the allocated step numbers
@@ -416,8 +415,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
             self._log_terminate_reward = reward
             self._log_terminate_reward_logs = logs
 
-            # TODO debug delete later
-            print(f"The step budget was: {self._granted_step_budget}, the termination step is: {self._steps}. The termination step is always smaller than the budget: {self._steps<self._granted_step_budget}")
+            # # TODO debug delete later
+            # print(f"The step budget was: {self._granted_step_budget}, the termination step is: {self._steps}. The termination step is always smaller than the budget: {self._steps<self._granted_step_budget}")
 
         else:
             info = {}
@@ -477,17 +476,27 @@ class SentenceReadingUnderTimePressureEnv(Env):
             norm_time_condition = 1
         else:
             raise ValueError(f"Invalid time condition: {self._time_condition}")
-        
-        # min_remaining_time = self._min_sentence_wise_remaining_time_in_seconds
-        # max_remaining_time = self._sentence_wise_expected_time_pressure_in_seconds
-        # clipped_remaining_time = np.clip(self._sentence_wise_remaining_time_in_seconds, min_remaining_time, max_remaining_time)
-        # norm_remaining_time = self.normalise(clipped_remaining_time, min_remaining_time, max_remaining_time, 0, 1)   
-        # In the simulation mode, when the time is running out, or reading out of the sentence, the remaining time is negative. I clip it to 0.
 
-        # Variables related to whether overtime or not in terms of the granted step budget
+        # Variables related to time in simulation -- steps
+        # Static granted steps
+        norm_granted_steps = self.normalise(self._granted_step_budget, 0, self.ep_len, 0, 1)
+        # Remaining steps in the episode (relative to the ep len)
+        norm_remaining_steps_in_ep = self.normalise(self.ep_len-self._steps, 0, self.ep_len, 0, 1)
+        # A hard flag on whether overtime
         is_overtime = 1 if self._steps >= self._granted_step_budget else 0
-        clipped_remaining_granted_step = np.clip(self._granted_step_budget-self._steps, 0, self._granted_step_budget)
-        norm_remaining_granted_step_budget = self.normalise(clipped_remaining_granted_step, 0, self._granted_step_budget, 0, 1)
+        # Remaining steps relative to the granted steps
+        norm_remaining_steps_to_granted_budget = self.normalise(self._granted_step_budget-self._steps, -self.ep_len, self.ep_len, 0, 1)
+        # Overtime step awareness
+        norm_overstep_steps = self.normalise(np.clip(self._steps-self._granted_step_budget, 0, self.ep_len), 0, self.ep_len, 0, 1)
+
+        # clipped_remaining_granted_step = np.clip(self._granted_step_budget-self._steps, 0, self._granted_step_budget)
+        # norm_remaining_granted_step_budget = self.normalise(clipped_remaining_granted_step, 0, self._granted_step_budget, 0, 1)
+
+        # # TODO debug delete later
+        # if self._steps >= 100:
+        #     print(f"     the flag is overtime is: {is_overtime}")
+        #     print(f"      the current over-steping norm_remaining granted step is: {norm_remaining_granted_step_budget}")
+        #     print(f"       The remaining words is: {remaining_words}")
 
         stateful_obs = np.array([
             current_position,
@@ -496,13 +505,12 @@ class SentenceReadingUnderTimePressureEnv(Env):
             observed_current_word_belief,
             observed_next_word_predictability,
             self._ongoing_sentence_comprehension_score,
-            # norm_w_regression_cost,
-            # norm_w_skip_degradation_factor,
-            # norm_w_comprehension_vs_time_pressure,
             norm_time_condition,
-            # norm_remaining_time
-            norm_remaining_granted_step_budget,
-            is_overtime
+            norm_granted_steps,
+            norm_remaining_steps_in_ep,
+            is_overtime,
+            norm_remaining_steps_to_granted_budget,
+            norm_overstep_steps
         ])
 
         assert stateful_obs.shape == (self._num_stateful_obs,)
@@ -615,7 +623,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
             "action": action_information,
             "current_word_index": self.current_word_index,
             "actual_reading_word_index": self.reading_sequence[-1],
-            "elapsed_time": self.elapsed_time,      # TODO check here, not right.
+            "elapsed_time": self.elapsed_time,    
             "remaining_time": self._sentence_wise_remaining_time_in_seconds,
             "valid_words_beliefs": self._valid_words_beliefs.copy(),
             "ongoing_sentence_comprehension_score": self._ongoing_sentence_comprehension_score,
