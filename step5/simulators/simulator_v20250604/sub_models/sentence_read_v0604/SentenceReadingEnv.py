@@ -246,7 +246,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._w_regression_cost = 1.0    # NOTE: uncomment when testing!!!! --> For the reading under time constraint, no need to change, keep it as constant in both training and testing.
         
         # NOTE: The two tunable parameters, try, if identified, get it into the Bayesian optimization later
-        self._w_skip_degradation_factor = 0.8       # NOTE: useful for now.
+        self._w_skip_degradation_factor = 0.5       # NOTE: useful for now.
         self._w_comprehension_vs_time_pressure = 0.5
         self._w_step_wise_comprehension_gain = 0.5      # Tunable step-wise parameter
 
