@@ -337,22 +337,6 @@ class WordRecognitionEnv(Env):
         self._previous_step_entropy = self._current_step_entropy
         self._entropy_diffs_list.append(self._entropy_diff)
     
-    # def get_elapsed_time_for_this_word_in_ms(self):
-    #     """
-    #     Get the elapsed time, including the gaze duration (sum of the first-fixations) and total saccade durations
-    #     """
-    #     if len(self._entropy_diffs_list) == 0:
-    #         return 0        # No information sampling, just wasting steps
-    #     else:
-    #         # return self._get_gaze_duration_for_this_word() + self._get_sum_saccade_duration_for_this_word()
-    #         return self.transition_function.calc_inflated_gaze_duration_ms(entropy_diffs=self._entropy_diffs_list, rho_inflation_percentage=self._rho_inflation_percentage) + self.transition_function.calc_total_saccades_duration_ms(entropy_diffs=self._entropy_diffs_list)
-
-    # def get_gaze_duration_for_this_word_in_ms(self):
-    #     """
-    #     Calculate the gaze duration
-    #     """
-    #     return self.transition_function.calc_gaze_duration_ms(entropy_diffs=self._entropy_diffs_list)
-    
     def get_gaze_and_elapsed_duration_in_ms(self):
         gaze_duration, inflated_gaze_duration = self.transition_function.calc_gaze_related_duration_in_ms(
             entropy_diffs=self._entropy_diffs_list, rho_inflation_percentage=self._rho_inflation_percentage,
@@ -363,25 +347,11 @@ class WordRecognitionEnv(Env):
         elapsed_time = inflated_gaze_duration + saccades_sum_duration
         return gaze_duration, elapsed_time
     
-    # def _get_inflated_gaze_duration_for_this_word(self):
-    #     """
-    #     Calculate the inflated gaze duration
-    #     """
-    #     return self.transition_function.calc_inflated_gaze_duration_ms(entropy_diffs=self._entropy_diffs_list, rho_inflation_percentage=self._rho_inflation_percentage)
-    
     def _get_sum_saccade_duration_for_this_word(self):
         """
         Get the sum saccade duration for this word
         """
         return self.transition_function.calc_total_saccades_duration_ms(entropy_diffs=self._entropy_diffs_list)
-    
-    # def _get_total_time_cost_for_this_word(self):
-    #     """
-    #     Get the sum of gaze duration, saccade durations, and non-fixation non-saccade overhead durations
-
-    #     So it turns to be the sum of saccades durations + inflated gaze duration
-    #     """
-    #     return self._get_inflated_gaze_duration_for_this_word() + self._get_sum_saccade_duration_for_this_word()
     
     def get_recognized_word(self):
         """

@@ -250,7 +250,8 @@ class SentenceReadingUnderTimePressureEnv(Env):
         # NOTE: Armortized training solution.
         w_skip_degradation_factor_range = [0.5, 1.0]
         possible_values = np.arange(w_skip_degradation_factor_range[0], w_skip_degradation_factor_range[1] + 1e-8, 0.05)
-        self._w_skip_degradation_factor = np.random.choice(possible_values)
+        # self._w_skip_degradation_factor = np.random.choice(possible_values)   # NOTE: for training
+        self._w_skip_degradation_factor = 0.7  # NOTE: for testing and simulating
         # # TODO debug delete later
         # print(f"The w_skip_degradation_factor sampled is: {self._w_skip_degradation_factor}")
 

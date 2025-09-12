@@ -38,8 +38,10 @@ The environment builds upon the base sentence reading model and adds time-pressu
 ## Tunable Parameter
 
 For the Bayesian Inference.
-```self._w_time_perception ```
-```self._w_skip_degradation_factor```
+```self._w_time_perception ``` (might not be needed anymore)
+```self._w_skip_degradation_factor```. 
+
+After the armotised training, a good usable parameter is ```self._w_skip_degradation_factor=0.7```
 
 ## Usage
 
