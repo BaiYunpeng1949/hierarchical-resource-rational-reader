@@ -257,3 +257,4 @@ sysinfo.txt
 /step5/simulators/simulator_v20250604/results/visualize_fixations/heatmap_plots
 /step5/simulators/simulator_v20250604/results/visualize_fixations/letter_index_plots
 /step5/simulators/simulator_v20250604/results/analyze_aggregated_results/assets/comprehension_results/simulation
+/step5/modules/rl_envs/word_activation_v0218/parameter_inference/simulation_data
