@@ -620,149 +620,6 @@ class RL:
         # Save the model as the rear guard.
         self._model.save(self._models_save_file_final)
 
-    def _oculomotor_controller_test(self, grid_test_params=None):
-        """
-        This method generates the RL env testing results with or without a pre-trained RL model in a manual way.
-        """
-        if self._mode == _MODES['debug']:
-            print('\nThe MuJoCo env and tasks baseline: ')
-        elif self._mode == _MODES['test']:
-            print('\nThe pre-trained RL model testing: ')
-
-        # Start the timer
-        start_time = time.time()
-
-        logger = []
-
-        reward_col = "Reward"
-        # Create column names dynamically, e.g., ['A', 'B', 'C']
-        column_names = [chr(65 + i) for i in range(self._env.action_space.shape[0])] + [reward_col]  # 65 is the ASCII code for 'A'
-        # Initialize an empty DataFrame with these columns
-        df = pd.DataFrame(columns=column_names)
-
-        # Some aggregated metrics' lists
-        total_num_successful_word_recognitions = 0
-        total_num_failed_word_recognitions = 0
-        list_of_num_steps_for_word_recognition = []
-        list_of_target_words_lengths = []
-
-        for episode in range(1, self._num_episodes + 1):    # TODO check from here
-            if grid_test_params is not None:
-                obs, info = self._env.reset(ep_idx=episode, w_penalty=grid_test_params['w_penalty'])
-            else:
-                obs, info = self._env.reset()
-            done = False
-            score = 0
-
-            # Get the fixations from the reset to record the initial fixation
-            last_fixation = self._env.fixations_logger[-1]
-            # Create a log entry and append a copy of last_fixation to avoid reference issues
-            log_entry = (episode,) + copy.deepcopy(last_fixation)
-            logger.append(log_entry)
-
-            word_recognition_step = 0
-
-            while not done:
-                if self._mode == _MODES['debug']:
-                    action = self._env.action_space.sample()
-                elif self._mode == _MODES['test'] or self._mode == _MODES['grid_test']:
-                    action, _states = self._model.predict(obs, deterministic=True)
-                else:
-                    raise ValueError(f'Invalid mode {self._mode}.')
-                obs, reward, done, truncated, info = self._env.step(action)
-                score += reward
-
-                # Update the word recognition step
-                word_recognition_step += 1
-
-                # Flatten the list of tuples and prepend the episode number
-                last_fixation = self._env.fixations_logger[-1]
-
-                # Create a log entry and append a copy of last_fixation to avoid reference issues
-                log_entry = (episode,) + copy.deepcopy(last_fixation)
-                logger.append(log_entry)
-
-                # Record data - include action and reward in the row
-                action_list = list(action) if hasattr(action, '__iter__') and not isinstance(action, str) else [
-                    action]  # Ensure action is list-like and not a string
-                row_to_add = action_list + [reward]  # Append reward to the action values
-
-                # Convert row_to_add into a DataFrame with appropriate columns before concatenating
-                row_df = pd.DataFrame([row_to_add], columns=df.columns)
-                df = pd.concat([df, row_df], ignore_index=True)
-
-            if score > 0:
-                total_num_successful_word_recognitions += 1
-            else:
-                total_num_failed_word_recognitions += 1
-            
-            list_of_num_steps_for_word_recognition.append(word_recognition_step)
-
-            list_of_target_words_lengths.append(len(self._env.target_word))
-
-            print(
-                f'Episode:{episode}     Score:{score} \n'
-                f'{"-"*50}\n'
-            )
-
-        # Print the time elapsed
-        print(f"The recognition success percentage is: {round((total_num_successful_word_recognitions / self._num_episodes) * 100, 2)}%. "
-              f"Average number of steps for word recognition is: {np.mean(list_of_num_steps_for_word_recognition)}. "
-              f"Average target word length is: {np.mean(list_of_target_words_lengths)}.")
-        print(f'Time elapsed for running the DEBUG/TEST: {time.time() - start_time} seconds')
-
-        if self._mode == _MODES['test'] or self._mode == _MODES['grid_test']:
-            # Store the data
-            root_path = os.path.dirname(os.path.abspath(__file__))
-            rl_model_name = self._config_rl['train']['checkpoints_folder_name'] + '_' + self._config_rl['test']['loaded_model_name']
-            folder_path = os.path.join(root_path, "data", "sim_results", rl_model_name)
-
-            if not os.path.exists(folder_path):
-                os.makedirs(folder_path)
-
-            if grid_test_params is None:
-                log_file_name = f'{self._dataset_mode}_{self._num_episodes}ep_logger.csv'
-            else:
-                log_file_name = f'{self._dataset_mode}_{self._num_episodes}ep_w{grid_test_params["w_penalty"]}_logger.csv'
-
-            log_file_dir = os.path.join(folder_path, log_file_name)
-
-            cols = [
-                'episode',
-                'step',
-                'image idx',
-                'words',
-                'word num',
-                'target word',
-                'encoded target word',
-                'target word len',
-                'target word idx',
-                'norm fix x',
-                'norm fix y',
-                'fix x',
-                'fix y',
-                'letter sigma',
-                'seen target word letters',
-                'seen next word letters',
-                'internal word',
-                "word counters",
-                'inferred word',
-                'recognize flag',
-                'completeness',
-                'flag on target',
-                'flag updated',
-                'reward',
-                'done action',
-                "done",
-            ]
-
-            with open(log_file_dir, 'w', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(cols)
-                writer.writerows(logger)
-
-            print(f'\nThe log is saved in {log_file_dir}')
-
     def _word_activation_test(self):
         """
         This method generates the RL env testing results w/ or w/o a pre-trained RL model in a manual way.
@@ -887,155 +744,119 @@ class RL:
         print(f'Time elapsed for running the DEBUG/TEST: {time.time() - start_time} seconds')
         ###############################################################################################
 
-    def _supervisory_controller_test(self):     # TODO: get a plot of regression rate vs. appraisal level weights. vs. time constraints.
+    def _word_activation_grid_test(self):
         """
-        This method generates the RL env testing results with or without a pre-trained RL model in a manual way.
+        Sweep kappa over [start, end] with the given step.
+        For each kappa:
+        - run self._num_episodes episodes
+        - collect ALL episode logs into logs.json (list of episodes)
+        - run analyzers to produce prior-effect CSVs (raw + binned), word-length CSV, and accuracy
         """
-        if self._mode == _MODES['debug']:
-            print('\nDebugging mode: ')
-        elif self._mode == _MODES['test']:
-            print('\nThe pre-trained RL model testing: ')
 
-        # Start the timer
+        # ----- grid from config (inclusive end) -----
+        k_start, k_end, k_step = self._config_rl['test']['params']['kappa']
+        num_kappas = int((k_end - k_start) / k_step) + 1
+
+        # ----- output base dir (your new path) -----
+        root_path = os.path.dirname(os.path.abspath(__file__))    # /home/.../step5
+        base_dir = os.path.join(
+            root_path, "modules", "rl_envs", "word_activation_v0218",
+            "parameter_inference", "simulation_data"
+        )
+        os.makedirs(base_dir, exist_ok=True)
+
+        def _fmt_kappa_folder(k):
+            # e.g., kappa_2p00 (safe folder name)
+            return f"kappa_{str(float(k)).replace('.', 'p')}"
+
+        # json helper
+        def convert_ndarray(obj):
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif isinstance(obj, (np.int64, np.int32)):
+                return int(obj)
+            elif isinstance(obj, (np.float64, np.float32)):
+                return float(obj)
+            else:
+                raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
         start_time = time.time()
+        for k_idx in range(num_kappas):
+            kappa = k_start + k_idx * k_step
 
-        # Initialize the logs dictionary
-        logs = {}
+            # folder for THIS kappa
+            kappa_dir = os.path.join(base_dir, _fmt_kappa_folder(kappa))
+            os.makedirs(kappa_dir, exist_ok=True)
 
-        for episode in range(1, self._num_episodes + 1):
+            logs_across_episodes = []
 
-            obs, info = self._env.reset()
-            done = False
-            score = 0
+            # run N episodes for THIS kappa
+            for ep_idx in range(1, self._num_episodes + 1):
 
-            # Initialize a list to store step logs for this episode
-            episode_logs = []
+                obs, info = self._env.reset(params={"kappa": float(kappa)}, ep_idx=ep_idx)
+                # Defensive: make sure the env created the log structure (some envs do it lazily)
+                try:
+                    if not hasattr(self._env, "log_cumulative_version") or \
+                    "fixations" not in getattr(self._env, "log_cumulative_version", {}):
+                        _ = self._env._get_logs(is_initialization=True, mode="test")
+                except Exception:
+                    # if your env doesn't expose _get_logs publicly, it's fine—logging should still proceed on steps
+                    pass
 
-            while not done:
-                if self._mode == _MODES['debug']:
-                    action = self._env.action_space.sample()
-                elif self._mode == _MODES['test']:
-                    action, _states = self._model.predict(obs, deterministic=True)
-                    # action, _states = self._model.predict(obs, deterministic=False)
-                else:
-                    raise ValueError(f'Invalid mode {self._mode}.')
+                done = False
+                score = 0.0
+                while not done:
+                    action, _ = self._model.predict(obs, deterministic=True)
+                    obs, reward, done, truncated, step_info = self._env.step(action)
+                    score += reward
 
-                obs, reward, done, truncated, info = self._env.step(action)
-                score += reward
+                ep_log = self._env.log_cumulative_version
+                ep_log["episode_idnex"] = ep_idx  # keep your original spelling
+                ep_log["kappa"] = float(kappa)
 
-            # Collect the step log only at the end of the episode
-            step_log = self._env._get_logs()
+                logs_across_episodes.append(ep_log)
 
-            # Process the step log to make it JSON serializable
-            step_log_serializable = self._make_serializable(step_log)
+                # console progress
+                if (ep_idx % max(1, self._num_episodes // 5)) == 0 or ep_idx == self._num_episodes:
+                    print(f"[grid_test] kappa={kappa:.3f}  episode {ep_idx}/{self._num_episodes}")
 
-            # Store the serializable step log with the episode index as the key
-            logs[episode] = step_log_serializable
+            # save ALL episodes for this kappa
+            logs_path = os.path.join(kappa_dir, "logs.json")
+            with open(logs_path, "w", encoding="utf-8") as f:
+                json.dump(logs_across_episodes, f, default=convert_ndarray, indent=4)
 
-            # Log -- Optional: Comment this out when training
-            final_step_log = self._env._get_logs()
-            print(f"The final step log is: {final_step_log}")
+            # analyze once per kappa (aggregates all episodes)
+            with open(logs_path, "r", encoding="utf-8") as f:
+                json_data = f.read()
 
-            print(
-                f'Episode:{episode}     Score:{score} \n'
-                f'{"-" * 50}\n'
+            # prior effects (raw + binned)
+            csv_log_freq_file_path          = os.path.join(kappa_dir, "gaze_duration_vs_word_log_frequency.csv")
+            csv_logit_pred_file_path        = os.path.join(kappa_dir, "gaze_duration_vs_word_logit_predictability.csv")
+            csv_binned_log_freq_file_path   = os.path.join(kappa_dir, "gaze_duration_vs_word_log_frequency_binned.csv")
+            csv_binned_logit_pred_file_path = os.path.join(kappa_dir, "gaze_duration_vs_word_logit_predictability_binned.csv")
+
+            plot_word_activation_figures.analyze_priors_effect_on_gaze_duration(
+                json_data=json_data, save_file_dir=kappa_dir,
+                csv_log_freq_file_path=csv_log_freq_file_path,
+                csv_logit_pred_file_path=csv_logit_pred_file_path,
+                csv_binned_log_freq_file_path=csv_binned_log_freq_file_path,
+                csv_binned_logit_pred_file_path=csv_binned_logit_pred_file_path
             )
 
-        print(f'Time elapsed for running the DEBUG/TEST: {time.time() - start_time} seconds')
+            # word-length effect
+            wl_csv = os.path.join(kappa_dir, "gaze_duration_vs_word_length.csv")
+            plot_word_activation_figures.analyze_word_length_gaze_duration(
+                json_data=json_data, save_file_dir=kappa_dir, csv_file_path=wl_csv
+            )
 
-        # Store the data
-        root_path = os.path.dirname(os.path.abspath(__file__))
-        rl_model_name = self._config_rl['train']['checkpoints_folder_name'] + '_' + self._config_rl['test']['loaded_model_name']
-        folder_path = os.path.join(root_path, "data", "sim_results", rl_model_name)
+            # accuracy
+            acc_dir = os.path.join(kappa_dir, "accuracy")
+            os.makedirs(acc_dir, exist_ok=True)
+            plot_word_activation_figures.analyze_accuracy(json_data=json_data, save_file_dir=acc_dir)
 
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
+            print(f"[grid_test] kappa={kappa:.3f}  -> analyses saved in {kappa_dir}")
 
-        # Define the log file name
-        log_file_name = f'rl_supervisory_controller_{self._num_episodes}ep.json'
-        log_file_dir = os.path.join(folder_path, log_file_name)
-
-        # Define the number of regression figure file name
-        num_regressions_figure_file_name = f'num_regressions_vs_time_constraints_{self._num_episodes}ep.png'
-        num_regressions_figure_file_dir = os.path.join(folder_path, num_regressions_figure_file_name)
-
-        # Define the regression rate figure file name
-        regression_rate_figure_file_name = f'regression_rate_sentence_level_vs_time_constraints_{self._num_episodes}ep.png'
-        regression_rate_figure_file_dir = os.path.join(folder_path, regression_rate_figure_file_name)
-
-        # Define the revisit percentage word level using saccades figure file name
-        revisit_percentage_word_level_using_saccades_figure_file_name = f'revisit_percentage_word_level_using_saccades_vs_time_constraints_{self._num_episodes}ep.png'
-        revisit_percentage_word_level_using_saccades_figure_file_dir = os.path.join(folder_path, revisit_percentage_word_level_using_saccades_figure_file_name)
-
-        # Define the revisit percentage word level using reading progress figure file name
-        revisit_percentage_word_level_using_reading_progress_figure_file_name = f'revisit_percentage_word_level_using_reading_progress_vs_time_constraints_{self._num_episodes}ep.png'
-        revisit_percentage_word_level_using_reading_progress_figure_file_dir = os.path.join(folder_path, revisit_percentage_word_level_using_reading_progress_figure_file_name)
-
-        # Save the logs to a JSON file
-        self._save_logs_to_file(logs=logs, filepath=log_file_dir)
-
-        # Plot the number of regressions vs. time constraints
-        self._plot_revisits_vs_time_constraints(
-            log_file_path=log_file_dir, num_episodes=self._num_episodes,
-            num_regressions_figure_file_path=num_regressions_figure_file_dir,
-            regression_rate_figure_file_path=regression_rate_figure_file_dir,
-            revisit_percentage_word_level_using_saccades_figure_file_path=revisit_percentage_word_level_using_saccades_figure_file_dir,
-            revisit_percentage_word_level_using_reading_progress_figure_file_path=revisit_percentage_word_level_using_reading_progress_figure_file_dir,
-        )
-
-        # Define the appraisal weight vs. revisit percentage figure file name
-        appraisal_vs_revisit_figure_file_name = f'appraisal_weights_vs_revisit_percentage_{self._num_episodes}ep.png'
-        appraisal_vs_revisit_figure_file_dir = os.path.join(folder_path, appraisal_vs_revisit_figure_file_name)
-        # Call the new plotting function
-        self._plot_appraisal_weights_vs_revisit_percentage(
-            log_file_path=log_file_dir,
-            num_episodes=self._num_episodes,
-            figure_file_path=appraisal_vs_revisit_figure_file_dir
-        )
-
-        # Define the reward weight vs. revisit percentage figure file name
-        reward_vs_revisit_figure_file_name = f'reward_explore_weights_vs_revisit_percentage_{self._num_episodes}ep.png'
-        reward_vs_revisit_figure_file_dir = os.path.join(folder_path, reward_vs_revisit_figure_file_name)
-        # Call the new plotting function
-        self._plot_reward_explore_weight_vs_revisit_percentage(
-            log_file_path=log_file_dir,
-            num_episodes=self._num_episodes,
-            figure_file_path=reward_vs_revisit_figure_file_dir
-        )
-
-        # Define the reward weights vs. revisit percentage figure file name
-        reward_weights_vs_revisit_percentage_figure_file_name = f'reward_weights_vs_revisit_percentage_{self._num_episodes}ep.png'
-        reward_weights_vs_revisit_percentage_figure_file_dir = os.path.join(folder_path, reward_weights_vs_revisit_percentage_figure_file_name)
-        # Call the new plotting function
-        self._plot_weights_vs_revisit_percentage(
-            log_file_path=log_file_dir,
-            num_episodes=self._num_episodes,
-            figure_file_path=reward_weights_vs_revisit_percentage_figure_file_dir
-        )
-
-    def _make_serializable(self, data):
-        """
-        Recursively convert data to JSON serializable format.
-        """
-        if isinstance(data, dict):
-            return {str(k): self._make_serializable(v) for k, v in data.items()}
-        elif isinstance(data, list):
-            return [self._make_serializable(v) for v in data]
-        elif isinstance(data, tuple):
-            return tuple(self._make_serializable(v) for v in data)
-        elif isinstance(data, set):
-            return [self._make_serializable(v) for v in data]
-        elif isinstance(data, np.ndarray):
-            return data.tolist()
-        elif isinstance(data, OrderedDict):
-            return {str(k): self._make_serializable(v) for k, v in data.items()}
-        else:
-            # Attempt to convert other types directly
-            try:
-                json.dumps(data)
-                return data
-            except (TypeError, OverflowError):
-                return str(data)
+        print(f"Time elapsed for GRID TEST: {time.time() - start_time:.2f} s")
 
     @staticmethod
     def _save_logs_to_file(logs, filepath):
@@ -1047,591 +868,6 @@ class RL:
 
         # Print the time elapsed
         print(f'Logs have been saved to {filepath}')
-
-    @staticmethod
-    def _plot_revisits_vs_time_constraints(
-            log_file_path, num_episodes, num_regressions_figure_file_path, regression_rate_figure_file_path,
-            revisit_percentage_word_level_using_saccades_figure_file_path,
-            revisit_percentage_word_level_using_reading_progress_figure_file_path,
-    ):
-        """
-        Reads the logs from the JSON file and plots the number of regressions vs. time constraints.
-        TODO actually this is revisit, not pure regression, may change it later
-        """
-
-        # Load the logs from the JSON file
-        with open(log_file_path, 'r') as f:
-            logs = json.load(f)
-
-        # Initialize data structures
-        condition_30 = constants.TIME_CONSTRAINT_LEVELS['30S']
-        condition_60 = constants.TIME_CONSTRAINT_LEVELS['60S']
-        condition_90 = constants.TIME_CONSTRAINT_LEVELS['90S']
-        time_constraints = [condition_30, condition_60, condition_90]
-        regressions_by_time_constraint = {condition_30: [], condition_60: [], condition_90: []}
-        regression_rate_sentence_level_by_time_constraint = {condition_30: [], condition_60: [], condition_90: []}
-        revisit_percentage_word_level_using_saccades_by_time_constraint = {condition_30: [], condition_60: [], condition_90: []}
-        revisit_percentage_word_level_using_reading_progress_by_time_constraint = {condition_30: [], condition_60: [], condition_90: []}
-
-        # Iterate over episodes
-        for episode, episode_log in logs.items():
-            # Each episode_log is a dictionary of the final step log
-            # Get the total time in seconds (time constraint) and number of regressions
-            total_time_in_seconds = episode_log.get('total_time_in_seconds')
-            num_regressions = episode_log.get('num_regression')
-            regression_rates_sentence_level = episode_log.get('regression_rate_sentence_level')
-            revisit_percentage_word_level_using_saccades = episode_log.get('revisit_percentage_word_level_using_saccades')
-            revisit_percentage_word_level_using_reading_progress = episode_log.get('revisit_percentage_word_level_using_reading_progress')
-
-            # Only consider time constraints of 30, 60, 90
-            if total_time_in_seconds in time_constraints:
-                regressions_by_time_constraint[total_time_in_seconds].append(num_regressions)
-                regression_rate_sentence_level_by_time_constraint[total_time_in_seconds].append(regression_rates_sentence_level)
-                revisit_percentage_word_level_using_saccades_by_time_constraint[total_time_in_seconds].append(revisit_percentage_word_level_using_saccades)
-                revisit_percentage_word_level_using_reading_progress_by_time_constraint[total_time_in_seconds].append(revisit_percentage_word_level_using_reading_progress)
-            else:
-                # If total_time_in_seconds is not one of the expected values, you may want to handle it
-                pass
-
-        # Prepare data for plotting the revisit percentage at word level using saccades
-        revisit_percentage_word_level_using_saccades_means = []
-        revisit_percentage_word_level_using_saccades_stds = []
-        for tc in time_constraints:
-            # Corrected this line to use the appropriate data
-            revisit_percentage_word_level_using_saccades = revisit_percentage_word_level_using_saccades_by_time_constraint[tc]
-            if revisit_percentage_word_level_using_saccades:
-                mean = np.mean(revisit_percentage_word_level_using_saccades)
-                std = np.std(revisit_percentage_word_level_using_saccades)
-            else:
-                mean = 0
-                std = 0
-            revisit_percentage_word_level_using_saccades_means.append(mean)
-            revisit_percentage_word_level_using_saccades_stds.append(std)
-
-        plt.figure(figsize=(8, 6))
-        x_pos = np.arange(len(time_constraints))
-        bars = plt.bar(
-            x_pos,
-            revisit_percentage_word_level_using_saccades_means,
-            yerr=revisit_percentage_word_level_using_saccades_stds,
-            align='center',
-            alpha=0.7,
-            capsize=10
-        )
-        plt.xticks(x_pos, [str(tc) for tc in time_constraints])
-        plt.xlabel('Time Constraint (seconds)')
-        plt.ylabel('Revisit Percentage At Word Level Using Saccades')
-        plt.title(f'Revisit Percentage At Word Level Using Saccades vs.\nTime Constraints ({num_episodes} Episodes)')
-        plt.grid(True)
-
-        # Add annotations of mean (std) on the bars
-        for i, bar in enumerate(bars):
-            yval = bar.get_height()
-            plt.text(
-                bar.get_x() + bar.get_width() / 2.0,
-                yval + 0.01 * yval,
-                f'{revisit_percentage_word_level_using_saccades_means[i]:.2f}\n({revisit_percentage_word_level_using_saccades_stds[i]:.2f})',
-                ha='center',
-                va='bottom',
-                fontsize=10
-            )
-
-        plt.savefig(revisit_percentage_word_level_using_saccades_figure_file_path)
-        print(f'\nThe revisit percentage word level using saccades figure is saved in {revisit_percentage_word_level_using_saccades_figure_file_path}')
-
-        # Prepare data for plotting the revisit percentage at word level using reading progress
-        revisit_percentage_word_level_using_reading_progress_means = []
-        revisit_percentage_word_level_using_reading_progress_stds = []
-        for tc in time_constraints:
-            # Corrected this line to use the appropriate data
-            revisit_percentage_word_level_using_reading_progress = revisit_percentage_word_level_using_reading_progress_by_time_constraint[tc]
-            if revisit_percentage_word_level_using_reading_progress:
-                mean = np.mean(revisit_percentage_word_level_using_reading_progress)
-                std = np.std(revisit_percentage_word_level_using_reading_progress)
-            else:
-                mean = 0
-                std = 0
-            revisit_percentage_word_level_using_reading_progress_means.append(mean)
-            revisit_percentage_word_level_using_reading_progress_stds.append(std)
-
-        plt.figure(figsize=(8, 6))
-        x_pos = np.arange(len(time_constraints))
-        bars = plt.bar(
-            x_pos,
-            revisit_percentage_word_level_using_reading_progress_means,
-            yerr=revisit_percentage_word_level_using_reading_progress_stds,
-            align='center',
-            alpha=0.7,
-            capsize=10
-        )
-        plt.xticks(x_pos, [str(tc) for tc in time_constraints])
-        plt.xlabel('Time Constraint (seconds)')
-        plt.ylabel('Revisit Percentage At Word Level Using Reading Progress')
-        plt.title(f'Revisit Percentage At Word Level Using Reading Progress\nvs. Time Constraints ({num_episodes} Episodes)')
-        plt.grid(True)
-
-        # Add annotations of mean (std) on the bars
-        for i, bar in enumerate(bars):
-            yval = bar.get_height()
-            plt.text(
-                bar.get_x() + bar.get_width() / 2.0,
-                yval + 0.01 * yval,
-                f'{revisit_percentage_word_level_using_reading_progress_means[i]:.2f}\n({revisit_percentage_word_level_using_reading_progress_stds[i]:.2f})',
-                ha='center',
-                va='bottom',
-                fontsize=10
-            )
-
-        plt.savefig(revisit_percentage_word_level_using_reading_progress_figure_file_path)
-        print(f'\nThe revisit percentage word level using reading progress figure is saved in {revisit_percentage_word_level_using_reading_progress_figure_file_path}')
-    
-    @staticmethod
-    def _plot_appraisal_weights_vs_revisit_percentage(
-            log_file_path, num_episodes, figure_file_path
-    ):
-        """
-        Plots the relationship between appraisal level weights, time constraints, and revisit percentage.
-        """
-        # Load the logs from the JSON file
-        with open(log_file_path, 'r') as f:
-            logs = json.load(f)
-
-        # Initialize data structures
-        time_constraints = [30, 60, 90]  # Or use your constants
-        data_by_time_constraint = {tc: {'appraisal_weights': [], 'revisit_percentages': []} for tc in time_constraints}
-
-        # Iterate over episodes
-        for episode_log in logs.values():
-            total_time_in_seconds = episode_log.get('total_time_in_seconds')
-            avg_appraisal_weight = episode_log.get('average_individual_sentence_appraisal_level_weight')
-            revisit_percentage = episode_log.get('revisit_percentage_word_level_using_saccades')
-            
-            if total_time_in_seconds in time_constraints:
-                data_by_time_constraint[total_time_in_seconds]['appraisal_weights'].append(avg_appraisal_weight)
-                data_by_time_constraint[total_time_in_seconds]['revisit_percentages'].append(revisit_percentage)
-
-        # Plotting
-        plt.figure(figsize=(12, 8))
-        for tc in time_constraints:
-            appraisal_weights = data_by_time_constraint[tc]['appraisal_weights']
-            revisit_percentages = data_by_time_constraint[tc]['revisit_percentages']
-            
-            plt.scatter(appraisal_weights, revisit_percentages, label=f'Time Constraint: {tc}s')
-            
-            # Optional: Fit a regression line
-            if appraisal_weights and revisit_percentages:
-                z = np.polyfit(appraisal_weights, revisit_percentages, 1)
-                p = np.poly1d(z)
-                plt.plot(appraisal_weights, p(appraisal_weights), linestyle='--')
-
-        plt.xlabel('Average Appraisal Level Weight')
-        plt.ylabel('Revisit Percentage at Word Level Using Saccades')
-        plt.title(f'Revisit Percentage vs. Appraisal Level Weight\nAcross Time Constraints ({num_episodes} Episodes)')
-        plt.legend()
-        plt.grid(True)
-        plt.savefig(figure_file_path)
-        print(f'\nThe appraisal level weights vs. revisit percentage figure is saved in {figure_file_path}')
-        # plt.show()
-
-    @staticmethod
-    def _plot_reward_explore_weight_vs_revisit_percentage(
-            log_file_path, num_episodes, figure_file_path
-    ):
-        """
-        Plots the relationship between appraisal level weights, time constraints, and revisit percentage.
-        """
-        # Load the logs from the JSON file
-        with open(log_file_path, 'r') as f:
-            logs = json.load(f)
-
-        # Initialize data structures
-        time_constraints = [30, 60, 90]  # Or use your constants
-        data_by_time_constraint = {tc: {'explore_weight': [], 'revisit_percentages': []} for tc in time_constraints}
-
-        # Iterate over episodes
-        for episode_log in logs.values():
-            total_time_in_seconds = episode_log.get('total_time_in_seconds')
-            reward_weight = episode_log.get('explore_weight')
-            revisit_percentage = episode_log.get('revisit_percentage_word_level_using_saccades')
-            
-            if total_time_in_seconds in time_constraints:
-                data_by_time_constraint[total_time_in_seconds]['explore_weight'].append(reward_weight)
-                data_by_time_constraint[total_time_in_seconds]['revisit_percentages'].append(revisit_percentage)
-
-        # Plotting
-        plt.figure(figsize=(12, 8))
-        for tc in time_constraints:
-            reward_weights = data_by_time_constraint[tc]['explore_weight']
-            revisit_percentages = data_by_time_constraint[tc]['revisit_percentages']
-            
-            plt.scatter(reward_weights, revisit_percentages, label=f'Time Constraint: {tc}s')
-            
-            # Optional: Fit a regression line
-            if reward_weights and revisit_percentages:
-                z = np.polyfit(reward_weights, revisit_percentages, 1)
-                p = np.poly1d(z)
-                plt.plot(reward_weights, p(reward_weights), linestyle='--')
-
-        plt.xlabel('Reward Explore Weight')
-        plt.ylabel('Revisit Percentage at Word Level Using Saccades')
-        plt.title(f'Revisit Percentage vs. Reward Weight\nAcross Time Constraints ({num_episodes} Episodes)')
-        plt.legend()
-        plt.grid(True)
-        plt.savefig(figure_file_path)
-        print(f'\nThe reward EXPLORE weights vs. revisit percentage figure is saved in {figure_file_path}')
-        # plt.show()
-    
-    @staticmethod
-    def _plot_weights_vs_revisit_percentage(
-        log_file_path, num_episodes, figure_file_path
-    ):
-        # Load the logs from the JSON file
-        with open(log_file_path, 'r') as f:
-            logs = json.load(f)
-
-        # Initialize data structures
-        time_constraints = [30, 60, 90]  # Or use your constants
-        data_list = []
-
-        # Iterate over episodes
-        for episode_log in logs.values():
-            total_time_in_seconds = episode_log.get('total_time_in_seconds')
-            failure_penalty_weight = episode_log.get('failure_penalty_weight')  # Replace with actual key
-            exploit_weight = episode_log.get('exploit_weight')  # Replace with actual key
-            explore_weight = episode_log.get('explore_weight')  # Replace with actual key
-            revisit_percentage = episode_log.get('revisit_percentage_word_level_using_saccades')
-
-            # Ensure all values are present
-            if None not in (failure_penalty_weight, exploit_weight, explore_weight, revisit_percentage):
-                data_list.append({
-                    'Time Constraint': total_time_in_seconds,
-                    'Failure Penalty Weight': failure_penalty_weight,
-                    'Exploit Weight': exploit_weight,
-                    'Explore Weight': explore_weight,
-                    'Revisit Percentage': revisit_percentage
-                })
-
-        # Convert to DataFrame
-        df = pd.DataFrame(data_list)
-
-        # Plot
-        fig = plt.figure(figsize=(12, 8))
-        ax = fig.add_subplot(111, projection='3d')
-
-        # Customize which weights to plot
-        x = df['Failure Penalty Weight']
-        y = df['Exploit Weight']
-        z = df['Revisit Percentage']
-        c = df['Explore Weight']  # Could also use as color coding
-
-        scatter = ax.scatter(x, y, z, c=c, cmap='viridis')
-
-        ax.set_xlabel('Failure Penalty Weight')
-        ax.set_ylabel('Exploit Weight')
-        ax.set_zlabel('Revisit Percentage')
-
-        # Add color bar if using color coding
-        cbar = plt.colorbar(scatter, ax=ax)
-        cbar.set_label('Explore Weight')
-
-        plt.title(f'Revisit Percentage vs. Weights\n({num_episodes} Episodes)')
-        plt.savefig(figure_file_path)
-        plt.show()
-
-    def _sentence_level_controller_test(self):
-        """
-        This method generates the RL env testing results with or without a pre-trained RL model in a manual way.
-        """
-        if self._mode == _MODES['debug']:
-            print('\nThe env and tasks baseline: ')
-        elif self._mode == _MODES['test']:
-            print('\nThe pre-trained RL model testing: ')
-
-        # Start the timer
-        start_time = time.time()
-
-        # Initialize the logs dictionary
-        logs = {}
-
-        for episode in range(1, self._num_episodes + 1):
-
-            obs, info = self._env.reset()
-            done = False
-            score = 0
-
-            # Initialize a list to store step logs for this episode
-            episode_logs = []
-
-            while not done:
-                if self._mode == _MODES['debug']:
-                    action = self._env.action_space.sample()
-                elif self._mode == _MODES['test']:
-                    # action, _states = self._model.predict(obs, deterministic=True)
-                    action, _states = self._model.predict(obs, deterministic=False)
-                else:
-                    raise ValueError(f'Invalid mode {self._mode}.')
-
-                obs, reward, done, truncated, info = self._env.step(action)
-                score += reward
-
-            # Collect the step log only at the end of the episode
-            step_log = self._env._get_logs()
-
-            # Process the step log to make it JSON serializable
-            step_log_serializable = self._make_serializable(step_log)
-
-            # Store the serializable step log with the episode index as the key
-            logs[episode] = step_log_serializable
-
-            # Log
-            final_step_log = self._env._get_logs()
-            print(f"The final step log is: {final_step_log}")
-            print(f"The number of words in the sentence: {self._env.num_words_in_sentence}, "
-                  f"the allocated time constraint: {self._env._time_constraint_level_key}, "
-                  f"the episode length: {self._env.granted_time_constraints_in_steps}.")
-            print(f"The number of words read: {self._env.num_words_read_in_sentence}, "
-                  f"the number of words skipped: {self._env.num_words_skipped_in_sentence}, "
-                  f"the number of word-level saccades: {self._env.num_saccades_on_word_level}."
-                  f"The word skipping rate is: {self._env.num_words_skipped_in_sentence /self._env.num_words_read_in_sentence}.")
-            print(f"The predictability levels of the words: {self._env._predictability_states}.")
-            print(f"The time constraint weight: {self._env._time_constraint_weight}.")
-            
-            print(
-                f'Episode:{episode}     Score:{score} \n'
-                f'{"-" * 50}\n'
-            )
-
-        print(f'Time elapsed for running the DEBUG/TEST: {time.time() - start_time} seconds')
-
-        # Store the data
-        root_path = os.path.dirname(os.path.abspath(__file__))
-        rl_model_name = self._config_rl['train']['checkpoints_folder_name'] + '_' + self._config_rl['test']['loaded_model_name']
-        folder_path = os.path.join(root_path, "data", "sim_results", rl_model_name)
-
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
-
-        # Define the log file name
-        log_file_name = f'rl_word_level_controller_{self._num_episodes}ep.json'
-        log_file_dir = os.path.join(folder_path, log_file_name)
-
-        # Define the word skipping rate figure file name
-        word_skipping_rate_figure_file_name = f'word_skipping_rate_vs_time_constraints_{self._num_episodes}ep.png'
-        word_skipping_rate_figure_file_dir = os.path.join(folder_path, word_skipping_rate_figure_file_name)
-
-        # Define the word skip by appraisal figure file name
-        word_skip_by_appraisals_figure_file_name = f'word_skips_vs_appraisals_{self._num_episodes}ep.png'
-        word_skip_by_appraisals_figure_file_dir = os.path.join(folder_path, word_skip_by_appraisals_figure_file_name)
-
-        # Define the word skipping rate vs. time awareness weight figure file name
-        word_skipping_vs_time_awareness_figure_file_name = f'word_skipping_rate_vs_time_awareness_weight_{self._num_episodes}ep.png'
-        word_skipping_vs_time_awareness_figure_file_dir = os.path.join(folder_path, word_skipping_vs_time_awareness_figure_file_name)
-        
-        # Define the word skipping rate vs. time awareness weight figure file name
-        word_skipping_vs_time_constraint_figure_file_name = f'word_skipping_rate_vs_time_constraint_weight_{self._num_episodes}ep.png'
-        word_skipping_vs_time_constraint_figure_file_dir = os.path.join(folder_path, word_skipping_vs_time_constraint_figure_file_name)
-
-        # Save the logs to a JSON file
-        self._save_logs_to_file(logs=logs, filepath=log_file_dir)
-
-        # Call the updated plotting function
-        self._plot_word_skipping_rates(
-            log_file_path=log_file_dir, num_episodes=self._num_episodes,
-            word_skipping_rate_by_time_constraint_levels_figure_file_path=word_skipping_rate_figure_file_dir,
-            word_skip_by_appraisals_figure_file_dir=word_skip_by_appraisals_figure_file_dir,
-            word_skipping_vs_time_awareness_figure_file_path=word_skipping_vs_time_awareness_figure_file_dir,
-            word_skipping_vs_time_constraint_figure_file_path=word_skipping_vs_time_constraint_figure_file_dir,
-        )
-
-    @staticmethod
-    def _plot_word_skipping_rates(log_file_path, num_episodes, word_skipping_rate_by_time_constraint_levels_figure_file_path, 
-                                  word_skip_by_appraisals_figure_file_dir, word_skipping_vs_time_awareness_figure_file_path, 
-                                  word_skipping_vs_time_constraint_figure_file_path):
-
-        """
-        Reads the logs from the JSON file and plots:
-        - Word skipping rates vs. time constraints
-        - Word skipping vs. appraisal levels
-        - Word skipping rate vs. time awareness weight
-        - Predictabilities vs. time constraint weights (New Plot)
-        """
-
-        # Load the logs from the JSON file
-        with open(log_file_path, 'r') as f:
-            logs = json.load(f)
-
-        # Initialize data structures for time constraints
-        condition_30 = '30S'
-        condition_60 = '60S'
-        condition_90 = '90S'
-        time_constraint_levels = [condition_30, condition_60, condition_90]
-        word_skipping_rates_by_time_constraint = {condition_30: [], condition_60: [], condition_90: []}
-
-        # Initialize data for appraisal scatter plot
-        appraisals = []
-        y_positions = []  # This will store the corresponding y position for each condition
-        colors = []
-        colors_map = {condition_30: 'red', condition_60: 'green', condition_90: 'blue'}
-        y_map = {condition_30: 0, condition_60: 1, condition_90: 2}  # Map conditions to y-axis positions
-        predictabilities = []
-        time_constraint_weights = []
-
-        # Initialize data for time awareness weight plot
-        time_awareness_weights = []
-        skipping_rates = []
-
-        # Iterate over episodes in logs
-        for episode, episode_log in logs.items():
-            # Get time constraint and word skipping rate
-            time_constraint_level = episode_log.get('time_constraint_level')
-            word_skipping_rate = episode_log.get('word_skipping_percentage')
-            appraisal_states = episode_log.get('appraisal_states')
-            time_constraint_weight = episode_log.get('time_constraint_weight')
-            
-            # Only consider valid time constraints of 30S, 60S, 90S
-            if time_constraint_level in time_constraint_levels:
-                word_skipping_rates_by_time_constraint[time_constraint_level].append(word_skipping_rate)
-
-                # For appraisal-based plot
-                for word_idx, (appraisal_value, skip_decision) in appraisal_states.items():
-                    if skip_decision == 1:  # Only considering skipped words
-                        appraisals.append(appraisal_value)
-                        y_positions.append(y_map[time_constraint_level])  # Map the condition to the y position
-                        colors.append(colors_map[time_constraint_level])
-            else:
-                print(f"Time constraint level {time_constraint_level} is not one of the expected values.")
-            
-            # Get appraisal states
-            if time_constraint_weight is not None and word_skipping_rate is not None:
-                # Convert word_skipping_rate to a value between 0 and 1
-                skipping_rate = word_skipping_rate / 100.0
-                time_constraint_weights.append(time_constraint_weight)
-                skipping_rates.append(skipping_rate)
-            else:
-                print(f"Missing data in episode {episode} for time awareness CONSTRAINT plot.")
-
-        # -------------------------------------------------------------------------------------------
-        # Updated Plot: Appraisal Levels by Binned Time Constraint Weights
-
-        # Collect appraisal values and corresponding time constraint weights for skipped words
-        skipped_appraisals = []
-        skipped_time_constraint_weights = []
-
-        for episode, episode_log in logs.items():
-            time_constraint_weight = episode_log.get('time_constraint_weight')
-            appraisal_states = episode_log.get('appraisal_states')
-            if appraisal_states and time_constraint_weight is not None:
-                for word_idx, (appraisal_value, skip_decision) in appraisal_states.items():
-                    if skip_decision == 1:  # Only considering skipped words
-                        skipped_appraisals.append(appraisal_value)
-                        skipped_time_constraint_weights.append(time_constraint_weight)
-            else:
-                print(f"Missing data in episode {episode} for appraisal levels by time constraint weights.")
-
-        # Convert to numpy arrays
-        skipped_appraisals = np.array(skipped_appraisals)
-        skipped_time_constraint_weights = np.array(skipped_time_constraint_weights)
-
-        # Define bins for Time Constraint Weight
-        bins = np.linspace(0, 1, 11)  # 10 bins from 0 to 1
-        bin_labels = [f'{bins[i]:.1f}-{bins[i+1]:.1f}' for i in range(len(bins)-1)]
-
-        # Bin the Time Constraint Weight data
-        binned_indices = np.digitize(skipped_time_constraint_weights, bins) - 1  # Adjust indices to start from 0
-
-        # Group appraisal values by binned time constraint weights
-        appraisals_by_tcw_bin = [[] for _ in range(len(bins)-1)]
-
-        for idx, bin_idx in enumerate(binned_indices):
-            if 0 <= bin_idx < len(appraisals_by_tcw_bin):
-                appraisals_by_tcw_bin[bin_idx].append(skipped_appraisals[idx])
-            else:
-                print(f"Time constraint weight {skipped_time_constraint_weights[idx]} is out of bin range.")
-
-        # Remove bins with no data
-        appraisals_by_tcw_bin_filtered = []
-        bin_labels_filtered = []
-        for i, appraisals_in_bin in enumerate(appraisals_by_tcw_bin):
-            if appraisals_in_bin:
-                appraisals_by_tcw_bin_filtered.append(appraisals_in_bin)
-                bin_labels_filtered.append(bin_labels[i])
-
-        # Create the horizontal box plot
-        plt.figure(figsize=(8, 6))
-        box = plt.boxplot(
-            appraisals_by_tcw_bin_filtered,
-            vert=False,
-            patch_artist=True,
-            labels=bin_labels_filtered
-        )
-
-        # Customize the plot
-        plt.xlabel('Appraisal Value')
-        plt.ylabel('Time Constraint Weight Bins')
-        plt.title(f'Appraisal Levels by Time Constraint Weights ({num_episodes} Episodes)')
-        plt.grid(True)
-
-        # Save the figure
-        plt.savefig(word_skip_by_appraisals_figure_file_dir, bbox_inches='tight')
-        plt.close()
-        print(f"The appraisal levels by time constraint weights figure is saved in {word_skip_by_appraisals_figure_file_dir}")
-
-
-        # -------------------------------------------------------------------------------------------
-        # New Plot: Word Skipping Rate vs. Time Constraint Weight with Improved Visualization
-
-        # Convert data to numpy arrays
-        time_constraint_weights = np.array(time_constraint_weights)
-        skipping_rates = np.array(skipping_rates)
-
-        # Create a DataFrame
-        data_df = pd.DataFrame({
-            'Time Constraint Weight': time_constraint_weights,
-            'Word Skipping Rate': skipping_rates
-        })
-
-
-        # Define bins for Time Constraint Weight
-        bins = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-        labels = ['0.0-0.1', '0.1-0.2', '0.2-0.3', '0.3-0.4', '0.4-0.5', '0.5-0.6', '0.6-0.7', '0.7-0.8', '0.8-0.9', '0.9-1.0']
-
-        # Bin the Time Constraint Weight data
-        data_df['TCW Bin'] = pd.cut(data_df['Time Constraint Weight'], bins=bins, labels=labels, include_lowest=True)
-
-        # Calculate mean and standard deviation of Word Skipping Rate for each bin
-        grouped = data_df.groupby('TCW Bin')['Word Skipping Rate'].agg(['mean', 'std']).reset_index()
-
-        # Plot the bar chart
-        plt.figure(figsize=(8, 6))
-        bars = plt.bar(
-            grouped['TCW Bin'],
-            grouped['mean'],
-            yerr=grouped['std'],
-            align='center',
-            alpha=0.7,
-            capsize=10
-        )
-        plt.xlabel('Time Constraint Weight Bins')
-        plt.ylabel('Word Skipping Rate')
-        plt.title(f'Word Skipping Rate vs. Time Constraint Weight ({num_episodes} Episodes)')
-        plt.grid(True)
-
-        # Add annotations of mean (std) on the bars
-        for i, bar in enumerate(bars):
-            yval = bar.get_height()
-            plt.text(
-                bar.get_x() + bar.get_width() / 2.0,
-                yval + 0.01,
-                f'{grouped["mean"].iloc[i]:.2f}\n({grouped["std"].iloc[i]:.2f})',
-                ha='center',
-                va='bottom',
-                fontsize=10
-            )
-
-        # Save the new figure
-        plt.savefig(word_skipping_vs_time_constraint_figure_file_path, bbox_inches='tight')
-        plt.close()
-        print(f"The word skipping rate vs. time constraint weight figure is saved in {word_skipping_vs_time_constraint_figure_file_path}")
 
 
     def run(self):
@@ -1646,17 +882,20 @@ class RL:
             self._continual_train()
         elif self._mode == _MODES['test'] or self._mode == _MODES['debug']:
             if isinstance(self._env, GeneralOculomotorControllerEnv) or isinstance(self._env, OculomotorControllerRLEnv):
-                self._oculomotor_controller_test()
+                # self._oculomotor_controller_test()
+                pass
             elif isinstance(self._env, WordActivationRLEnv):
                 self._word_activation_test()
             elif isinstance(self._env, SupervisoryControllerEnv):
-                self._supervisory_controller_test()
+                # self._supervisory_controller_test()
+                pass
             elif isinstance(self._env, SentenceLevelControllerEnv):
-                self._sentence_level_controller_test()
+                # self._sentence_level_controller_test()
+                pass
             else:
                 raise ValueError(f'Invalid environment {self._env}.')
         elif self._mode == _MODES['grid_test']:
-            self._grid_test()
+            self._word_activation_grid_test()
         else:
             raise ValueError(f'Invalid mode {self._mode}.')
 

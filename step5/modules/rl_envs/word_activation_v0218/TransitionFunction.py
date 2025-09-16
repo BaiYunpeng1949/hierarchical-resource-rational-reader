@@ -161,37 +161,6 @@ class TransitionFunction():
 
         return words_norm_posteriors_dict
     
-    # def calculate_fixation_duration_in_ms_nonlinear(self, t0=250, lamda=1.0, entropy_diff=0.0):
-    #     """
-    #     Calculate the fixation duration in milliseconds with gamma-distributed noise
-    #     NOTE Based on EMMA's assumption and Reichle et al., 1998
-    #     """
-    #     # Calculate mean duration
-    #     # mean_duration = t0 * (1 + np.exp(-lamda * entropy_diff))
-    #     entropy_change_magnitude = np.abs(entropy_diff)
-    #     mean_duration = t0 * (1 + lamda * entropy_change_magnitude)
-        
-    #     # Set standard deviation to 1/3 of mean (following EMMA)
-    #     std_dev = mean_duration / 3
-        
-    #     # Calculate gamma distribution parameters
-    #     # For gamma dist: mean = k*theta, var = k*theta^2
-    #     # where k is shape, theta is scale
-    #     theta = (std_dev ** 2) / mean_duration  # scale
-    #     k = mean_duration / theta               # shape
-        
-    #     # Sample from gamma distribution
-    #     duration = np.random.gamma(k, theta)
-        
-    #     return duration
-
-    # def calculate_saccade_duration_in_ms_emma(self, delta_visual_angle_in_degree=2.0):
-    #     """
-    #     Calculate the saccade duration in milliseconds (T_exec in EMMA)
-    #     NOTE: the gaze duration should not include any forms of saccade lengths
-    #     """
-    #     return 50 + 20 + delta_visual_angle_in_degree * 2
-    
     @staticmethod
     def calc_fixation_duration_ms(
         entropy_diff: float,
@@ -225,12 +194,13 @@ class TransitionFunction():
             Fixation duration in milliseconds (includes visual processing +
             saccade motor-programming time, but **not** the eye-in-flight time).
         """
+        # print(f"        The applied kappa is: {kappa}")
         mean_vis = np.clip(t_processing_baseline + kappa * entropy_diff, v_min, v_max)
         scale = mean_vis / shape
         t_visual_lex = np.random.gamma(shape, scale)
         return t_visual_lex
     
-    def calc_gaze_duration_ms(self, entropy_diffs, **fix_kwargs) -> float:
+    def calc_gaze_duration_ms(self, entropy_diffs, kappa) -> float:
         """
         Sum first-pass fixations on a word.  *Do not* add intra-word saccades.
 
@@ -249,7 +219,7 @@ class TransitionFunction():
         """
 
         if len(entropy_diffs) > 0:
-            return sum(self.calc_fixation_duration_ms(d, **fix_kwargs) for d in entropy_diffs)
+            return sum(self.calc_fixation_duration_ms(entropy_diff=d, kappa=kappa) for d in entropy_diffs)
         else:
             return 0
     
