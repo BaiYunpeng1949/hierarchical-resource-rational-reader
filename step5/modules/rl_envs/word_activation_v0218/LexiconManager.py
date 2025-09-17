@@ -35,6 +35,8 @@ class LexiconManager():
 
         # Initialize the Approximate Word Generator to generate likely words
         self.approximate_word_generator = ApproximateWordGenerator()
+
+        self._build_freq_cdf()
     
     def reset(self, prior_type=Constants.PRIOR_AS_PRED):
         """
@@ -51,15 +53,52 @@ class LexiconManager():
         # Reset the prior dictionary
         self.prior_dict = {}
     
+    # inside class LexiconManager
+    def _build_freq_cdf(self):
+        freqs = np.asarray(self.normalized_freqs, dtype=float)
+        total = float(freqs.sum())
+        if total <= 0:
+            # fallback to uniform if something is wrong
+            freqs = np.ones_like(freqs, dtype=float)
+            total = float(freqs.sum())
+        cdf = np.cumsum(freqs) / total
+        # guard against numerical issues
+        cdf[-1] = 1.0
+        self._freq_cdf = cdf
+
+    
     def _generate_prior_probability(self):
         """
         Generate a random prior probability for a word. Could either be a frequency or predictability.
         Depends on the prior type input.
         """
         if self.prior_type == Constants.PRIOR_AS_FREQ:
+
+            # NOTE: sample using zipf's index, but the high-frequent words are very few, so actually unbalanced.
             index_in_the_list = random.randint(0, len(self.normalized_freqs) - 1)
             raw_occurrance = self.raw_occurances[index_in_the_list]
             prior_prob = self.normalized_freqs[index_in_the_list]
+
+            # # NOTE: quantile edges method -- more balanced sampling
+            # # quantile edges (e.g., 5 bins = quintiles)
+            # B = int(getattr(self, "_freq_bins", 5))
+            # freqs = np.asarray(self.normalized_freqs, dtype=float)
+            # edges = np.quantile(freqs, np.linspace(0, 1, B + 1))
+            # b = np.random.randint(0, B)  # choose a bin uniformly
+            # if b < B - 1:
+            #     mask = (freqs >= edges[b]) & (freqs < edges[b + 1])
+            # else:
+            #     mask = (freqs >= edges[b]) & (freqs <= edges[b + 1])
+            # cand = np.where(mask)[0]
+            # idx = int(np.random.choice(cand if len(cand) else np.arange(len(freqs))))            
+            # raw_occurrance = self.raw_occurances[idx]
+            # prior_prob = self.normalized_freqs[idx]
+
+            # # NOTE: sample from the frequency distribution
+            # u = random.random()
+            # idx = int(np.searchsorted(self._freq_cdf, u, side="right"))
+            # raw_occurrance = self.raw_occurances[idx]
+            # prior_prob = self.normalized_freqs[idx]
 
         elif self.prior_type == Constants.PRIOR_AS_PRED:
             prior_prob = random.uniform(0, 1)
