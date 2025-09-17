@@ -37,54 +37,143 @@ FILES = {
 }
 
 WEIGHTS = {"length": 1.0, "logfreq": 1.0, "logitpred": 1.0}
-EPS = 1e-12
+
+# ===== Curve-comparison knobs =====
+# Resample both curves to the same number of x points inside their overlap
+FIXED_POINTS_PER_METRIC = 20
+# Use reduced chi-square if True; otherwise NRMSE
+USE_REDUCED_CHI2 = True
+# If SE/CI not available in CSVs, use this ms floor in the chi-square denominator
+SE_FLOOR_MS = 5.0
 
 # Where to dump the grid summary and the "best" sim files (so plot.py can use them)
 GRID_OUT_CSV = os.path.join(SIM_ROOT, "grid_search_results.csv")
-SIMULATED_RESULTS_FOR_PLOTS = os.path.join(HERE, "best_param_simulated_results")  # plot.py expects this dir name
+SIMULATED_RESULTS_FOR_PLOTS = os.path.join(HERE, "best_param_simulated_results")  # plot.py reads this
 
 
-def js_divergence(p, q, eps=EPS):
-    """Jensen-Shannon divergence, natural logs."""
-    p = np.clip(p, eps, None)
-    q = np.clip(q, eps, None)
-    p /= p.sum()
-    q /= q.sum()
-    m = 0.5 * (p + q)
-    kl_pm = np.sum(p * np.log(p / m))
-    kl_qm = np.sum(q * np.log(q / m))
-    return 0.5 * (kl_pm + kl_qm)
-
-
-def load_xy(csv_path, x_col, y_col):
+# ----------------------------
+# Helpers
+# ----------------------------
+def load_xy_se(csv_path, x_col, y_col):
+    """Load x, y and (optionally) per-bin SE from a CSV.
+    Tries common column names: se/sem/std_err/stderr, or CI columns to derive SE.
+    Falls back to None if unavailable.
+    """
     df = pd.read_csv(csv_path)
     if x_col not in df.columns or y_col not in df.columns:
-        raise ValueError(f"Expected columns '{x_col}' and '{y_col}' in {csv_path}. Got: {df.columns.tolist()}")
-    df = df[[x_col, y_col]].dropna().sort_values(x_col)
-    return df[x_col].to_numpy(), df[y_col].to_numpy()
+        raise ValueError(
+            f"Expected columns '{x_col}' and '{y_col}' in {csv_path}. "
+            f"Got: {df.columns.tolist()}"
+        )
+    df = df[[x_col, y_col] + [c for c in df.columns if c not in (x_col, y_col)]].dropna(
+        subset=[x_col, y_col]
+    ).sort_values(x_col)
+
+    # try to find SE
+    se = None
+    for cand in ["se", "sem", "std_err", "stderr", "se_ms"]:
+        if cand in df.columns:
+            se = df[cand].to_numpy(dtype=float)
+            break
+    if se is None:
+        # try CI columns
+        lo = next((c for c in ["ci_low", "ci95_low", "lower_ci", "ci_lower"] if c in df.columns), None)
+        hi = next((c for c in ["ci_high", "ci95_high", "upper_ci", "ci_upper"] if c in df.columns), None)
+        if lo and hi:
+            se = (df[hi].to_numpy(dtype=float) - df[lo].to_numpy(dtype=float)) / (2 * 1.96)
+        else:
+            # try std + n
+            std = next((c for c in ["std", "sd", "std_ms"] if c in df.columns), None)
+            n = next((c for c in ["n", "count", "N", "Num"] if c in df.columns), None)
+            if std is not None and n is not None:
+                se = df[std].to_numpy(dtype=float) / np.sqrt(np.maximum(df[n].to_numpy(dtype=float), 1.0))
+
+    x = df[x_col].to_numpy(dtype=float)
+    y = df[y_col].to_numpy(dtype=float)
+    return x, y, (se.astype(float) if se is not None else None)
 
 
-def curve_js(human_csv, sim_csv, x_col, y_col):
-    # human is reference grid
-    hx, hy = load_xy(human_csv, x_col, y_col)
-    sx, sy = load_xy(sim_csv, x_col, y_col)
+def resample_xy_se(x, y, se, lo, hi, K):
+    xs = np.linspace(lo, hi, int(K))
+    ys = np.interp(xs, x, y)
+    if se is None:
+        ses = None
+    else:
+        ses = np.interp(xs, x, se)
+    return xs, ys, ses
 
-    if len(hx) == 0 or len(sx) == 0:
+
+def reduced_chi2(hx, hy, hse, sx, sy, sse, K=FIXED_POINTS_PER_METRIC):
+    # overlapping support
+    lo, hi = max(hx.min(), sx.min()), min(hx.max(), sx.max())
+    if not np.isfinite(lo) or not np.isfinite(hi) or hi <= lo:
         return np.inf
+    hx, hy, hse = resample_xy_se(hx, hy, hse, lo, hi, K)
+    sx, sy, sse = resample_xy_se(sx, sy, sse, lo, hi, K)
 
-    # restrict to overlapping x-range
-    lo = max(np.min(hx), np.min(sx))
-    hi = min(np.max(hx), np.max(sx))
-    mask = (hx >= lo) & (hx <= hi)
-    hx_ov = hx[mask]
-    hy_ov = hy[mask]
-    if len(hx_ov) < 2:
+    if hse is None and sse is None:
+        denom = (SE_FLOOR_MS ** 2)
+        z2 = ((hy - sy) ** 2) / denom
+    else:
+        hvar = (hse if hse is not None else 0.0) ** 2
+        svar = (sse if sse is not None else 0.0) ** 2
+        denom = hvar + svar
+        denom = np.where(~np.isfinite(denom) | (denom <= 0), SE_FLOOR_MS ** 2, denom)
+        z2 = ((hy - sy) ** 2) / denom
+
+    return float(np.mean(z2))  # reduced by K
+
+
+def nrmse(hx, hy, sx, sy, K=FIXED_POINTS_PER_METRIC):
+    lo, hi = max(hx.min(), sx.min()), min(hx.max(), sx.max())
+    if not np.isfinite(lo) or not np.isfinite(hi) or hi <= lo:
         return np.inf
+    xs = np.linspace(lo, hi, int(K))
+    hyi = np.interp(xs, hx, hy)
+    syi = np.interp(xs, sx, sy)
+    rng = np.ptp(hyi)
+    rng = rng if rng > 0 else 1.0
+    return float(np.sqrt(np.mean((hyi - syi) ** 2)) / rng)
 
-    # interpolate sim onto human x grid within overlap
-    sy_interp = np.interp(hx_ov, sx, sy)
-    # turn means into a discrete distribution (approximation)
-    return js_divergence(hy_ov, sy_interp)
+
+def per_metric_loss(human_csv, sim_csv, xcol, ycol):
+    hx, hy, hse = load_xy_se(human_csv, xcol, ycol)
+    sx, sy, sse = load_xy_se(sim_csv, xcol, ycol)
+    if USE_REDUCED_CHI2:
+        return reduced_chi2(hx, hy, hse, sx, sy, sse)
+    else:
+        return nrmse(hx, hy, sx, sy)
+
+def align_to_sim_bins_arrays(hx, hy, hse, sx, sy, sse, decimals=6):
+    """
+    Keep only human x-values that exist in SIM (match by rounded x).
+    Returns matched arrays + count_removed.
+    If fewer than 2 matched points remain, returns (None, ...), 0.
+    """
+    hr = np.round(hx, decimals)
+    sr = np.round(sx, decimals)
+    sim_bins = set(sr.tolist())
+
+    hmask = np.array([x in sim_bins for x in hr])
+    removed = int((~hmask).sum())
+
+    hx2, hy2 = hx[hmask], hy[hmask]
+    hse2 = (hse[hmask] if hse is not None else None)
+
+    # Now keep sim rows only where sim bins are in the (filtered) human set, so order lines up
+    common_bins = set(np.round(hx2, decimals).tolist())
+    smask = np.array([x in common_bins for x in sr])
+    sx2, sy2 = sx[smask], sy[smask]
+    sse2 = (sse[smask] if sse is not None else None)
+
+    if len(hx2) < 2 or len(sx2) < 2:
+        return (None, None, None, None, None, None), removed
+
+    # Sort both by x so indices align
+    order_h = np.argsort(hx2); order_s = np.argsort(sx2)
+    return (hx2[order_h], hy2[order_h], (hse2[order_h] if hse2 is not None else None),
+            sx2[order_s], sy2[order_s], (sse2[order_s] if sse2 is not None else None)), removed
+
 
 
 def parse_kappa(folder_name):
@@ -130,7 +219,6 @@ def main():
             if not os.path.exists(sim_csv):
                 # try un-binned fallback for freq/pred if needed
                 if mkey in ("logfreq", "logitpred"):
-                    # remove '_binned' and try again
                     sim_alt = sim_rel.replace("_binned", "")
                     sim_csv_alt = os.path.join(kdir, sim_alt)
                     if os.path.exists(sim_csv_alt):
@@ -142,9 +230,9 @@ def main():
                     per_metric[mkey] = np.inf
                     continue
 
-            js = curve_js(human_csv, sim_csv, xcol, ycol)
-            per_metric[mkey] = js
-            total += WEIGHTS[mkey] * js
+            loss = per_metric_loss(human_csv, sim_csv, xcol, ycol)
+            per_metric[mkey] = loss
+            total += WEIGHTS[mkey] * loss
 
         row = {
             "kappa": kappa,
@@ -155,8 +243,10 @@ def main():
             "kappa_folder": kdir,
         }
         rows.append(row)
-        print(f"kappa={kappa:.3f}  -> F={total:.6f} | len={row['F_length']:.6f}, "
-              f"logfreq={row['F_log_frequency']:.6f}, logitpred={row['F_logit_predictability']:.6f}")
+        print(
+            f"kappa={kappa:.3f}  -> F={total:.6f} | len={row['F_length']:.6f}, "
+            f"logfreq={row['F_log_frequency']:.6f}, logitpred={row['F_logit_predictability']:.6f}"
+        )
 
     res_df = pd.DataFrame(rows).sort_values(["F_total", "kappa"]).reset_index(drop=True)
     os.makedirs(SIM_ROOT, exist_ok=True)
@@ -170,7 +260,7 @@ def main():
     print(f"\nBest kappa = {best_kappa:.3f} (F_total={best['F_total']:.6f})")
     print(f"Folder: {best_dir}")
 
-    # prepare 'simulated_results' for plot.py (copy the 3 sim CSVs)
+    # prepare 'best_param_simulated_results' for plot.py (copy the 3 sim CSVs)
     os.makedirs(SIMULATED_RESULTS_FOR_PLOTS, exist_ok=True)
     copies = [
         ("gaze_duration_vs_word_length.csv", "gaze_duration_vs_word_length.csv"),
@@ -191,11 +281,8 @@ def main():
     plot_py = os.path.join(HERE, "plot.py")
     if os.path.exists(plot_py):
         try:
-            # Make sure we run with cwd=HERE so plot.py's relative paths work
             prev_cwd = os.getcwd()
             os.chdir(HERE)
-            # Import and call main section from plot.py by executing the file
-            # (safe since it's your script)
             with open("plot.py", "rb") as f:
                 code = compile(f.read(), "plot.py", "exec")
                 exec(code, {"__name__": "__main__"})
