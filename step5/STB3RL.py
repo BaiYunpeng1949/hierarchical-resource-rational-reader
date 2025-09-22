@@ -59,6 +59,7 @@ from modules.rl_envs.OMCRLEnvV0128 import OculomotorControllerRLEnv
 from modules.rl_envs.word_activation_v0218.WordActivationEnvV0218 import WordActivationRLEnv
 # from modules.rl_envs.sentence_read_v0306.SentenceReadingEnvV0306 import SentenceReadingEnv
 from modules.rl_envs.sentence_read_v0319.SentenceReadingEnv import SentenceReadingEnv
+from modules.rl_envs.sentence_read_v0319.parameter_inference.analyze_sim_results_word_regression_and_skip_probabilities import analyze_folder
 
 
 _MODES = {
@@ -640,130 +641,6 @@ class RL:
     
     ########################################### Testings ###########################################
 
-    def _word_activation_test(self):
-        """
-        This method generates the RL env testing results w/ or w/o a pre-trained RL model in a manual way.
-        """
-        if self._mode == _MODES['debug']:
-            print('\nThe MuJoCo env and tasks baseline: ')
-        elif self._mode == _MODES['test']:
-            print('\nThe pre-trained RL model testing: ')
-
-        # Start the timer
-        start_time = time.time()
-
-        # Initialize the logs dictionary
-        logs_across_episodes = []
-
-        for episode in range(1, self._num_episodes + 1):
-
-            obs, info = self._env.reset()
-            done = False
-            score = 0
-
-            # Initialize a list to store step logs for this episode
-            episode_logs = []
-
-            while not done:
-                if self._mode == _MODES['debug']:
-                    action = self._env.action_space.sample()
-                elif self._mode == _MODES['test']:
-                    action, _states = self._model.predict(obs, deterministic=True)
-                    # action, _states = self._model.predict(obs, deterministic=False)
-                else:
-                    raise ValueError(f'Invalid mode {self._mode}.')
-
-                obs, reward, done, truncated, info = self._env.step(action)
-                score += reward
-            
-            # Output results to check whether achieved the learning objectives. Store them to the json files.
-            #   1. optimal word sampling positions and sequences
-            #   2. word length's effect
-            #   3. word frequency's effect
-            #   4. word predictability's effect
-
-            # Get this only after the loop ends -- when the episode ends
-            individual_episode_logs = self._env.log_cumulative_version
-
-            # Insert the episode number as the value
-            individual_episode_logs['episode_idnex'] = episode - 1
-            
-            # Append the individual episode logs to the list of logs across episodes
-            logs_across_episodes.append(individual_episode_logs)
-
-            print(
-                f'Episode:{episode}     Score:{score} \n'
-                f'{"-" * 50}\n'
-            )
-        
-        #####################################  Store the data   ######################################
-        # Function to convert numpy arrays and other non-serializable types to lists or native Python types
-        def convert_ndarray(obj):
-            if isinstance(obj, np.ndarray):
-                return obj.tolist()  # Convert numpy arrays to lists
-            elif isinstance(obj, np.int64) or isinstance(obj, np.int32):
-                return int(obj)  # Convert NumPy integers to Python integers
-            elif isinstance(obj, np.float64) or isinstance(obj, np.float32):
-                return float(obj)  # Convert NumPy floats to Python floats
-            else:
-                raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
-
-        # Store the data to a json file
-        root_path = os.path.dirname(os.path.abspath(__file__))
-        data_log_path = os.path.join(root_path, "data", "sim_results", "word_activation", self._config_rl['train']['checkpoints_folder_name'], self._config_rl['test']['loaded_model_name'], f"{self._num_episodes}ep")
-        # Create the directory if it does not exist
-        if not os.path.exists(data_log_path):
-            os.makedirs(data_log_path)
-        file_name = os.path.join(data_log_path, f'logs.json')
-        # Write the logs to a JSON file
-        with open(file_name, 'w') as f:
-            json.dump(logs_across_episodes, f, default=convert_ndarray, indent=4)
-        print(f"The logs are saved in {data_log_path}")
-        ###############################################################################################
-
-        #####################################  Analyze the data   ######################################
-        with open(file_name, "r") as f:
-            json_data = f.read()
-        # plot_word_activation_figures.analyze_fixations(json_data=json_data, save_file_dir=data_log_path, controlled_word_length=10)
-        # plot_word_activation_figures.analyze_fixations(json_data=json_data, save_file_dir=data_log_path)
-        # Do the piror's effects -- freq and pred
-
-        prior_data_effect_log_save_path = os.path.join(data_log_path, "prior_effects")
-        word_binned_freq_effect_data_csv_file_path = os.path.join(prior_data_effect_log_save_path, "gaze_duration_vs_word_log_frequency_binned.csv")
-        word_log_freq_effect_data_csv_file_path = os.path.join(prior_data_effect_log_save_path, "gaze_duration_vs_word_log_frequency.csv")
-        word_logit_pred_effect_data_csv_file_path = os.path.join(prior_data_effect_log_save_path, "gaze_duration_vs_word_logit_predictability.csv")
-        word_binned_logit_pred_effect_data_csv_file_path = os.path.join(prior_data_effect_log_save_path, "gaze_duration_vs_word_logit_predictability_binned.csv")
-        if not os.path.exists(prior_data_effect_log_save_path):
-            os.makedirs(prior_data_effect_log_save_path)
-                # plot_word_activation_figures.analyze_priors_effect(json_data=json_data, save_file_dir=prior_data_effect_log_save_path)
-        plot_word_activation_figures.analyze_priors_effect_on_gaze_duration(
-            json_data=json_data, save_file_dir=prior_data_effect_log_save_path, 
-            csv_log_freq_file_path=word_log_freq_effect_data_csv_file_path, csv_logit_pred_file_path=word_logit_pred_effect_data_csv_file_path,
-            csv_binned_log_freq_file_path=word_binned_freq_effect_data_csv_file_path, csv_binned_logit_pred_file_path=word_binned_logit_pred_effect_data_csv_file_path
-        )
-
-        word_length_effect_data_log_save_path = os.path.join(data_log_path, "word_length_effect")
-        word_length_effect_data_csv_file_path = os.path.join(word_length_effect_data_log_save_path, "gaze_duration_vs_word_length.csv")
-        if not os.path.exists(word_length_effect_data_log_save_path):
-            os.makedirs(word_length_effect_data_log_save_path)
-        # plot_word_activation_figures.analyze_word_length_effect(json_data=json_data, save_file_dir=word_length_effect_data_log_save_path)
-        plot_word_activation_figures.analyze_word_length_gaze_duration(
-            json_data=json_data, save_file_dir=word_length_effect_data_log_save_path, csv_file_path=word_length_effect_data_csv_file_path
-        )
-
-        # prior_vs_word_length_data_log_save_path = os.path.join(data_log_path, "prior_vs_word_length")
-        # if not os.path.exists(prior_vs_word_length_data_log_save_path):
-        #     os.makedirs(prior_vs_word_length_data_log_save_path)
-        # plot_word_activation_figures.analyze_prior_vs_word_length(json_data=json_data, save_file_dir=prior_vs_word_length_data_log_save_path)
-
-        acc_data_log_save_path = os.path.join(data_log_path, "accuracy")
-        if not os.path.exists(acc_data_log_save_path):
-            os.makedirs(acc_data_log_save_path)
-        plot_word_activation_figures.analyze_accuracy(json_data=json_data, save_file_dir=acc_data_log_save_path)
-
-        print(f'Time elapsed for running the DEBUG/TEST: {time.time() - start_time} seconds')
-        ###############################################################################################
-
     def _sentence_reading_test(self):
         """
         Test the sentence reading environment.
@@ -822,6 +699,113 @@ class RL:
             with open(os.path.join(log_dir, "raw_simulated_results.json"), "w") as f:
                 json.dump(logs_across_episodes, f, indent=4)
 
+    def _sentence_reading_grid_test(self):
+        """
+        Sentence-reading grid test: sweep *w_regression_cost* and dump raw logs.
+        For each value w in [start, end] with given step (from rl.test.params.w_regression_cost),
+        run N episodes and save **raw_simulated_results.json** under:
+            modules/rl_envs/sentence_read_v0319/parameter_inference/simulation_data/w_regression_cost_<val>/
+        """
+        # Read sweep triple from config; fall back to defaults if missing
+        sweep = None
+        try:
+            sweep = self._config_rl.get('test', {}).get('params', {}).get('w_regression_cost', None)
+        except Exception:
+            sweep = None
+        if not sweep:
+            # try legacy key
+            sweep = self._config_rl.get('test', {}).get('grid_params', {}).get('w_regression_cost', None)
+        if not sweep:
+            sweep = [0.10, 1.00, 0.10]  # default sensible range
+        
+        if len(sweep) != 3:
+            raise ValueError(f"rl.test.params.w_regression_cost must be [start, end, step], got: {sweep}")
+        w_start, w_end, w_step = float(sweep[0]), float(sweep[1]), float(sweep[2])
+        if w_step == 0.0:
+            raise ValueError("w_regression_cost step cannot be 0")
+        num_vals = int((w_end - w_start) / w_step) + 1
+
+        # Output base directory aligned with the sentence env import path
+        root_path = os.path.dirname(os.path.abspath(__file__))
+        base_dir = os.path.join(
+            root_path, "modules", "rl_envs", "sentence_read_v0319", "parameter_inference", "simulation_data"
+        )
+        os.makedirs(base_dir, exist_ok=True)
+
+        def _fmt_w_folder(w):
+            # e.g., w_regression_cost_0p35
+            return f"w_regression_cost_{str(float(w)).replace('.', 'p')}"
+
+        # JSON helper
+        def convert_ndarray(obj):
+            import numpy as np
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif isinstance(obj, (np.int64, np.int32)):
+                return int(obj)
+            elif isinstance(obj, (np.float64, np.float32)):
+                return float(obj)
+            else:
+                raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
+        import time
+        start_time = time.time()
+
+        for i in range(num_vals):
+            w_val = w_start + i * w_step
+
+            # Folder for THIS w_regression_cost
+            w_dir = os.path.join(base_dir, _fmt_w_folder(w_val))
+            os.makedirs(w_dir, exist_ok=True)
+
+            logs_across_episodes = []
+
+            # Run N episodes
+            for ep_idx in range(1, self._num_episodes + 1):
+                # Ensure env picks up the parameter and episode id for reproducible logging
+                try:
+                    obs, info = self._env.reset(params={'w_regression_cost': float(w_val)}, episode_id=ep_idx)
+                except TypeError:
+                    # fallback older signature
+                    obs, info = self._env.reset(params={'w_regression_cost': float(w_val)}, ep_idx=ep_idx)
+
+                done = False
+                score = 0.0
+                while not done:
+                    action, _ = self._model.predict(obs, deterministic=True)
+                    obs, reward, done, truncated, step_info = self._env.step(action)
+                    score += reward
+
+                # Prefer env.get_episode_log() if available, else use log_cumulative_version
+                ep_log = None
+                if hasattr(self._env, 'get_episode_log') and callable(getattr(self._env, 'get_episode_log')):
+                    try:
+                        ep_log = self._env.get_episode_log()
+                    except Exception:
+                        ep_log = None
+                if ep_log is None and hasattr(self._env, 'log_cumulative_version'):
+                    ep_log = self._env.log_cumulative_version
+                if ep_log is None:
+                    ep_log = {'episode_index': ep_idx}
+
+                ep_log['episode_index'] = ep_idx
+                ep_log['w_regression_cost'] = float(w_val)
+                logs_across_episodes.append(ep_log)
+
+                if (ep_idx % max(1, self._num_episodes // 5)) == 0 or ep_idx == self._num_episodes:
+                    print(f"[sentence grid] w_regression_cost={w_val:.3f}  episode {ep_idx}/{self._num_episodes}")
+
+            # Save ALL episodes for this w_regression_cost
+            logs_path = os.path.join(w_dir, "raw_simulated_results.json")
+            with open(logs_path, "w", encoding="utf-8") as f:
+                json.dump(logs_across_episodes, f, default=convert_ndarray, indent=4)
+
+            print(f"[sentence grid] w_regression_cost={w_val:.3f} -> saved raw logs to {logs_path}")
+
+            # Analyze data on-the-fly
+            analyze_folder(input_folder_dir=w_dir)
+
+        print(f"Time elapsed for SENTENCE GRID TEST: {time.time() - start_time:.2f} s")
 
     def run(self):
         """
@@ -848,7 +832,7 @@ class RL:
             else:
                 raise ValueError(f'Invalid environment {self._env}.')
         elif self._mode == _MODES['grid_test']:
-            self._grid_test()
+            self._sentence_reading_grid_test()
         else:
             raise ValueError(f'Invalid mode {self._mode}.')
 

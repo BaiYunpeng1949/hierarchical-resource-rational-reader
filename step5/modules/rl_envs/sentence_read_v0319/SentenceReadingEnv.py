@@ -76,7 +76,7 @@ class SentenceReadingEnv(Env):
         # Free parameters
         self._w_regression_cost = None
         
-    def reset(self, seed=42, sentence_idx=None, episode_id=None):
+    def reset(self, seed=42, sentence_idx=None, episode_id=None, params=None):
         """Reset environment and initialize states"""
         super().reset(seed=seed)
 
@@ -103,11 +103,16 @@ class SentenceReadingEnv(Env):
         self._reading_sequence = []
 
         # Initialize a random regression cost
-        # self._w_regression_cost = random.uniform(0, 1)
-        self._w_regression_cost = 1.0
-
-        # TODO debug delete later
-        print(f"w_regression_cost: {self._w_regression_cost}")
+        mode = self._config['rl']['mode']
+        if mode == 'train' or mode == 'continual_train':
+            self._w_regression_cost = random.uniform(0, 1)
+        elif mode == 'debug' or mode == 'test' or mode == 'grid_test':
+            if params is not None:
+                self._w_regression_cost = params['w_regression_cost']
+                # print(f"w_regression_cost is set as selected: {self._w_regression_cost}")
+            else:
+                self._w_regression_cost = 1.0
+                # print(f"w_regression_cost is set as default: {self._w_regression_cost}")
 
         return self._get_obs(), {}
     

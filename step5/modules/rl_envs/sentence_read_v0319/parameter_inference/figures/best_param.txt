@@ -1,0 +1,9 @@
+Best w_regression_cost: 0.66
+Best folder: w_regression_cost_0p66
+Per-metric reduced chi-square (NaN = missing/non-overlap):
+  skip_vs_length: 22.111882628885066
+  skip_vs_logit_predictability: 8.499977373872742
+  skip_vs_log_frequency: 11.96805339082294
+  regression_vs_difficulty: nan
+  F_total: 42.579913393580746
+F_total: 42.579913393580746

@@ -176,7 +176,8 @@ def plot_comparison(x_human, y_human, x_sim, y_sim, x_name, y_name, output_dir, 
                     )
         plt.close()
         
-        print(f"Comparison plots saved at {regression_path}, {binned_path}, and {binned_only_path}")
+        # print(f"Comparison plots saved at {regression_path}, {binned_path}, and {binned_only_path}")
+        print(f"Comparison plots saved at, {binned_path}, and {binned_only_path}")
         
     except Exception as e:
         print(f"Error plotting {y_name} vs {x_name}: {str(e)}")
