@@ -14,6 +14,12 @@ TARGETS = [
 ]
 
 SIGMA0 = 1e-3  # stability floor
+# Slope/offset objective (you can tweak these if needed)
+N_BINS = 12         # number of bins for each curve (matches plot style)
+EPS    = 1e-9       # tiny number for numerical stability
+LAMBDA_SLOPE = 1.0  # weight for slope difference
+LAMBDA_INT   = 1.0  # weight for intercept difference
+
 
 def _parse_w_from_folder(name: str) -> Optional[float]:
     m = re.search(r"w_regression_cost_([0-9]+)p([0-9]+)", name)
@@ -66,7 +72,11 @@ def _normalize_long(df: pd.DataFrame) -> pd.DataFrame:
         "length": _first_col(df2, ["length", "word_length", "l", "len", "len_bin"]),
         "logit_predictability": _first_col(df2, ["logit_predictability", "lp", "logit_pred", "p_logit"]),
         "log_frequency": _first_col(df2, ["log_frequency", "logfreq", "log_freq", "f_log", "freq_log"]),
-        "difficulty": _first_col(df2, ["difficulty", "d", "diff", "difficulty_bin"]),
+        # "difficulty": _first_col(df2, ["difficulty", "d", "diff", "difficulty_bin"]),
+        "difficulty": _first_col(df2, [
+            "difficulty", "word_difficulty", "difficulty_score", "diff_score",
+            "d", "diff", "difficulty_bin"
+        ]),
     }
     have_any_cond = any(v is not None for v in cond_cols.values())
     if not have_any_cond:
@@ -88,7 +98,13 @@ def _normalize_long(df: pd.DataFrame) -> pd.DataFrame:
     # For each condition column that exists, subset rows where it's non-null and build long records
     records = []
     skip_prefixes = ["skip", "p_skip", "skip_prob", "prob_skip"]
-    reg_prefixes  = ["regression", "reg", "p_reg", "reg_prob", "prob_reg", "regression_prob"]
+    # reg_prefixes  = ["regression", "reg", "p_reg", "reg_prob", "prob_reg", "regression_prob"]
+    reg_prefixes  = [
+        "regression", "reg", "p_reg", "reg_prob", "prob_reg",
+        "regression_prob", "regression_probability", "p_regression",
+        "probability_of_regression", "regr", "regr_prob"
+    ]
+
 
     for cond, xcol in cond_cols.items():
         if xcol is None:
@@ -111,17 +127,6 @@ def _normalize_long(df: pd.DataFrame) -> pd.DataFrame:
         se_skip = _any_cols(sub, skip_prefixes, "se")
         n_skip  = _any_cols(sub, skip_prefixes, "n")
 
-        # if y_skip is not None:
-        #     part = pd.DataFrame({
-        #         "metric": "skip",
-        #         "condition": cond,
-        #         "x": sub["__x__"],
-        #         "mu": pd.to_numeric(sub[y_skip], errors="coerce"),
-        #     })
-        #     part["se"] = pd.to_numeric(sub[se_skip], errors="coerce") if se_skip and se_skip in sub.columns else np.nan
-        #     part["n"]  = pd.to_numeric(sub[n_skip],  errors="coerce") if n_skip  and n_skip  in sub.columns else np.nan
-        #     records.append(part)
-
         if y_skip is not None:
             sub_skip = sub[sub[y_skip].notna()].copy()
             if not sub_skip.empty:
@@ -139,17 +144,6 @@ def _normalize_long(df: pd.DataFrame) -> pd.DataFrame:
         y_reg = _any_cols(sub, reg_prefixes, "prob") or _any_cols(sub, reg_prefixes, "p") or _any_cols(sub, reg_prefixes, "mean") or _any_cols(sub, reg_prefixes, "mu")
         se_reg = _any_cols(sub, reg_prefixes, "se")
         n_reg  = _any_cols(sub, reg_prefixes, "n")
-
-        # if y_reg is not None:
-        #     part = pd.DataFrame({
-        #         "metric": "regression",
-        #         "condition": cond,
-        #         "x": sub["__x__"],
-        #         "mu": pd.to_numeric(sub[y_reg], errors="coerce"),
-        #     })
-        #     part["se"] = pd.to_numeric(sub[se_reg], errors="coerce") if se_reg and se_reg in sub.columns else np.nan
-        #     part["n"]  = pd.to_numeric(sub[n_reg],  errors="coerce") if n_reg  and n_reg  in sub.columns else np.nan
-        #     records.append(part)
         if y_reg is not None:
             sub_reg = sub[sub[y_reg].notna()].copy()
             if not sub_reg.empty:
@@ -173,6 +167,18 @@ def _load_long(csv_path: str) -> pd.DataFrame:
     long = _normalize_long(df)
     long["metric"] = long["metric"].str.lower().str.strip()
     long["condition"] = long["condition"].str.lower().str.strip()
+    # Canonicalize possible labels from long-format files
+    long["metric"] = long["metric"].replace({
+        "skip_probability": "skip", "p_skip": "skip",
+        "regression_probability": "regression", "reg_prob": "regression",
+        "prob_reg": "regression", "p_reg": "regression"
+    })
+    long["condition"] = long["condition"].replace({
+        "word_length": "length", "len": "length",
+        "logfreq": "log_frequency", "log_freq": "log_frequency",
+        "p_logit": "logit_predictability",
+        "word_difficulty": "difficulty", "difficulty_score": "difficulty", "diff_score": "difficulty"
+    })
     mask = False
     for m, c in TARGETS:
         mask = mask | ((long["metric"] == m) & (long["condition"] == c))
@@ -286,6 +292,59 @@ def _chi2_on_binned(h: pd.DataFrame, s: pd.DataFrame) -> float:
     numer = (s_use["mu"].values - h_use["mu"].values)**2
     return float(np.mean(numer / denom))
 
+def _fit_line(x, y, w=None):
+    """
+    Weighted least squares fit of y = a + b x.
+    Returns (a, b). Uses normal equations with diagonal weights.
+    """
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    if w is None:
+        w = np.ones_like(x, dtype=float)
+    else:
+        w = np.asarray(w, dtype=float)
+    # design matrix
+    X = np.vstack([np.ones_like(x), x]).T
+    # WLS via normal equations (small system: 2x2)
+    XtW = X.T * w
+    beta = np.linalg.pinv(XtW @ X) @ (XtW @ y)
+    a, b = float(beta[0]), float(beta[1])
+    return a, b
+
+
+def _slope_offset_loss_on_binned(h_b: pd.DataFrame, s_b: pd.DataFrame) -> float:
+    """
+    Match the plotting regression exactly: use numpy.polyfit on binned points
+    without normalization or weights. Return (Î”slope^2 * LAMBDA_SLOPE + Î”intercept^2 * LAMBDA_INT).
+    """
+    if h_b.empty or s_b.empty:
+        return np.nan
+
+    # Align by bin centers (we pass the SAME edges to _bin_curve for human and sim)
+    xs = np.intersect1d(h_b["x"].values, s_b["x"].values)
+    H = h_b[h_b["x"].isin(xs)].sort_values("x")
+    S = s_b[s_b["x"].isin(xs)].sort_values("x")
+
+    # Fallback: if alignment killed points, just use each side's own bins
+    if len(H) < 2 and len(h_b) >= 2:
+        H = h_b.sort_values("x")
+    if len(S) < 2 and len(s_b) >= 2:
+        S = s_b.sort_values("x")
+
+    # If still too few points, return NaN
+    if len(H) < 2 or len(S) < 2:
+        return np.nan
+
+    xh, yh = H["x"].values, H["mu"].values
+    xs_, ys_ = S["x"].values, S["mu"].values
+
+    # Fit lines exactly like plot.py
+    sh, bh = np.polyfit(xh, yh, deg=1)   # sh=slope_h, bh=intercept_h
+    ss, bs = np.polyfit(xs_, ys_, deg=1) # ss=slope_s, bs=intercept_s
+
+    return float(LAMBDA_SLOPE * (ss - sh) ** 2 + LAMBDA_INT * (bs - bh) ** 2)
+
+
 def score_folder(sim_csv: str, human_csv: str) -> dict:
     h_raw = _load_long(human_csv)
     s_raw = _load_long(sim_csv)
@@ -294,28 +353,57 @@ def score_folder(sim_csv: str, human_csv: str) -> dict:
     total_vals = []
 
     for m, c in TARGETS:
-        # Get overlap range and shared edges (follow plot: ~12 bins is typical)
+        # rows for this metric/condition
         h_mc = h_raw[(h_raw["metric"] == m) & (h_raw["condition"] == c)].dropna(subset=["x","mu"])
         s_mc = s_raw[(s_raw["metric"] == m) & (s_raw["condition"] == c)].dropna(subset=["x","mu"])
-        if h_mc.empty or s_mc.empty:
-            chi = np.nan
-        else:
+
+        # default loss
+        loss = np.nan
+
+        print(f"The current m: {m}, c: {c}")
+
+        if not h_mc.empty and not s_mc.empty:
+
+            print(f"Valid h_mc and s_mc, m: {m}, c: {c}")
+
             lo = max(h_mc["x"].min(), s_mc["x"].min())
             hi = min(h_mc["x"].max(), s_mc["x"].max())
-            if not (lo < hi):
-                chi = np.nan
-            else:
-                n_bins = 12  # match your plot binning density
-                edges = np.linspace(lo, hi, n_bins + 1)
+            if lo < hi:
+                # shared-bin pass (plot-like)
+                nb = N_BINS
+                if c == "difficulty":
+                    nb = max(6, min(N_BINS, int(len(h_mc) / 2), int(len(s_mc) / 2)))
+                edges = np.linspace(lo, hi, nb + 1)
 
                 h_b = _bin_curve(h_raw, m, c, edges)
                 s_b = _bin_curve(s_raw, m, c, edges)
+                loss = _slope_offset_loss_on_binned(h_b, s_b)
 
-                chi = _chi2_on_binned(h_b, s_b)
+                # Fallback 1: coarser bins
+                if (np.isnan(loss) or len(h_b) < 2 or len(s_b) < 2):
+                    for nb_try in range(max(2, nb // 2), 1, -1):
+                        edges_try = np.linspace(lo, hi, nb_try + 1)
+                        h_b2 = _bin_curve(h_raw, m, c, edges_try)
+                        s_b2 = _bin_curve(s_raw, m, c, edges_try)
+                        loss2 = _slope_offset_loss_on_binned(h_b2, s_b2)
+                        if not np.isnan(loss2):
+                            loss = loss2
+                            break
 
-        per_metric[f"{m}_vs_{c}"] = chi
-        total_vals.append(chi)
+                # Fallback 2: raw polyfit on overlap (exactly like plot.py)
+                if np.isnan(loss):
+                    h_seg = h_mc[(h_mc["x"] >= lo) & (h_mc["x"] <= hi)]
+                    s_seg = s_mc[(s_mc["x"] >= lo) & (s_mc["x"] <= hi)]
+                    if len(h_seg) >= 2 and len(s_seg) >= 2:
+                        sh, bh = np.polyfit(h_seg["x"].values, h_seg["mu"].values, deg=1)
+                        ss, bs = np.polyfit(s_seg["x"].values, s_seg["mu"].values, deg=1)
+                        loss = float(LAMBDA_SLOPE * (ss - sh) ** 2 + LAMBDA_INT * (bs - bh) ** 2)
 
+        # ALWAYS record the metric (even if NaN), then accumulate
+        per_metric[f"{m}_vs_{c}"] = loss
+        total_vals.append(loss)
+
+    # finalize after the loop
     total = float(np.nansum(total_vals)) if np.isfinite(np.nansum(total_vals)) else float("inf")
     per_metric["F_total"] = total
     return per_metric
