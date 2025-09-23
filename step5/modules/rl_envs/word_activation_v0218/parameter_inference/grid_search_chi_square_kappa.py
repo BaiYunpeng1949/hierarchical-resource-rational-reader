@@ -1,6 +1,7 @@
 import os
 import sys
 import shutil
+import json
 import numpy as np
 import pandas as pd
 
@@ -23,13 +24,13 @@ FILES = {
     ),
     "logfreq": (
         os.path.join(HUMAN_DIR, "gaze_duration_vs_word_log_frequency.csv"),
-        "gaze_duration_vs_word_log_frequency_binned.csv",  # use binned sim if present
+        "gaze_duration_vs_word_log_frequency_binned.csv",  # use binned sim
         "log_frequency",
         "average_gaze_duration",
     ),
     "logitpred": (
         os.path.join(HUMAN_DIR, "gaze_duration_vs_word_logit_predictability.csv"),
-        "gaze_duration_vs_word_logit_predictability_binned.csv",  # use binned sim if present
+        "gaze_duration_vs_word_logit_predictability_binned.csv",  # use binned sim
         "logit_predictability",
         "average_gaze_duration",
     ),
@@ -37,72 +38,143 @@ FILES = {
 
 WEIGHTS = {"length": 1.0, "logfreq": 1.0, "logitpred": 1.0}
 
-# ===== Regression-line matching knobs =====
-# Normalize within the overlap so losses are comparable across metrics
-NORMALIZE = True
-SLOPE_WEIGHT = 10.0   # prioritize trend
-INTERCEPT_WEIGHT = 1.0
-EPS = 1e-9
+# ===== Curve-comparison knobs =====
+# Resample both curves to the same number of x points inside their overlap
+FIXED_POINTS_PER_METRIC = 20
+# Use reduced chi-square if True; otherwise NRMSE
+USE_REDUCED_CHI2 = True
+# If SE/CI not available in CSVs, use this ms floor in the chi-square denominator
+SE_FLOOR_MS = 5.0
 
 # Where to dump the grid summary and the "best" sim files (so plot.py can use them)
 GRID_OUT_CSV = os.path.join(SIM_ROOT, "grid_search_results.csv")
 SIMULATED_RESULTS_FOR_PLOTS = os.path.join(HERE, "best_param_simulated_results")  # plot.py reads this
 
+
 # ----------------------------
 # Helpers
 # ----------------------------
-def load_xy(csv_path, x_col, y_col):
+def load_xy_se(csv_path, x_col, y_col):
+    """Load x, y and (optionally) per-bin SE from a CSV.
+    Tries common column names: se/sem/std_err/stderr, or CI columns to derive SE.
+    Falls back to None if unavailable.
+    """
     df = pd.read_csv(csv_path)
     if x_col not in df.columns or y_col not in df.columns:
         raise ValueError(
             f"Expected columns '{x_col}' and '{y_col}' in {csv_path}. "
             f"Got: {df.columns.tolist()}"
         )
-    df = df[[x_col, y_col]].dropna().sort_values(x_col)
+    df = df[[x_col, y_col] + [c for c in df.columns if c not in (x_col, y_col)]].dropna(
+        subset=[x_col, y_col]
+    ).sort_values(x_col)
+
+    # try to find SE
+    se = None
+    for cand in ["se", "sem", "std_err", "stderr", "se_ms"]:
+        if cand in df.columns:
+            se = df[cand].to_numpy(dtype=float)
+            break
+    if se is None:
+        # try CI columns
+        lo = next((c for c in ["ci_low", "ci95_low", "lower_ci", "ci_lower"] if c in df.columns), None)
+        hi = next((c for c in ["ci_high", "ci95_high", "upper_ci", "ci_upper"] if c in df.columns), None)
+        if lo and hi:
+            se = (df[hi].to_numpy(dtype=float) - df[lo].to_numpy(dtype=float)) / (2 * 1.96)
+        else:
+            # try std + n
+            std = next((c for c in ["std", "sd", "std_ms"] if c in df.columns), None)
+            n = next((c for c in ["n", "count", "N", "Num"] if c in df.columns), None)
+            if std is not None and n is not None:
+                se = df[std].to_numpy(dtype=float) / np.sqrt(np.maximum(df[n].to_numpy(dtype=float), 1.0))
+
     x = df[x_col].to_numpy(dtype=float)
     y = df[y_col].to_numpy(dtype=float)
-    return x, y
+    return x, y, (se.astype(float) if se is not None else None)
 
-def line_loss_over_overlap(hx, hy, sx, sy):
-    if hx.size == 0 or sx.size == 0:
-        return np.inf
+
+def resample_xy_se(x, y, se, lo, hi, K):
+    xs = np.linspace(lo, hi, int(K))
+    ys = np.interp(xs, x, y)
+    if se is None:
+        ses = None
+    else:
+        ses = np.interp(xs, x, se)
+    return xs, ys, ses
+
+
+def reduced_chi2(hx, hy, hse, sx, sy, sse, K=FIXED_POINTS_PER_METRIC):
+    # overlapping support
     lo, hi = max(hx.min(), sx.min()), min(hx.max(), sx.max())
     if not np.isfinite(lo) or not np.isfinite(hi) or hi <= lo:
         return np.inf
-    hmask = (hx >= lo) & (hx <= hi)
-    smask = (sx >= lo) & (sx <= hi)
-    xh, yh = hx[hmask], hy[hmask]
-    xs, ys = sx[smask], sy[smask]
-    if xh.size < 2 or xs.size < 2:
-        return np.inf
+    hx, hy, hse = resample_xy_se(hx, hy, hse, lo, hi, K)
+    sx, sy, sse = resample_xy_se(sx, sy, sse, lo, hi, K)
 
-    if NORMALIZE:
-        # normalize x to [0,1] using human overlap
-        x0, x1 = float(xh.min()), float(xh.max())
-        xrng = max(x1 - x0, EPS)
-        xh_n = (xh - x0) / xrng
-        xs_n = (xs - x0) / xrng
-        # normalize y to [0,1] using human overlap
-        y0, y1 = float(yh.min()), float(yh.max())
-        yrng = max(y1 - y0, EPS)
-        yh_n = (yh - y0) / yrng
-        ys_n = (ys - y0) / yrng
+    if hse is None and sse is None:
+        denom = (SE_FLOOR_MS ** 2)
+        z2 = ((hy - sy) ** 2) / denom
     else:
-        xh_n, yh_n = xh, yh
-        xs_n, ys_n = xs, ys
+        hvar = (hse if hse is not None else 0.0) ** 2
+        svar = (sse if sse is not None else 0.0) ** 2
+        denom = hvar + svar
+        denom = np.where(~np.isfinite(denom) | (denom <= 0), SE_FLOOR_MS ** 2, denom)
+        z2 = ((hy - sy) ** 2) / denom
 
-    # Fit lines exactly like plot.py (np.polyfit)
-    sh, bh = np.polyfit(xh_n, yh_n, deg=1)  # slope, intercept
-    ss, bs = np.polyfit(xs_n, ys_n, deg=1)
+    return float(np.mean(z2))  # reduced by K
 
-    slope_err2 = (ss - sh) ** 2
-    int_err2   = (bs - bh) ** 2
-    return float(SLOPE_WEIGHT * slope_err2 + INTERCEPT_WEIGHT * int_err2)
+
+def nrmse(hx, hy, sx, sy, K=FIXED_POINTS_PER_METRIC):
+    lo, hi = max(hx.min(), sx.min()), min(hx.max(), sx.max())
+    if not np.isfinite(lo) or not np.isfinite(hi) or hi <= lo:
+        return np.inf
+    xs = np.linspace(lo, hi, int(K))
+    hyi = np.interp(xs, hx, hy)
+    syi = np.interp(xs, sx, sy)
+    rng = np.ptp(hyi)
+    rng = rng if rng > 0 else 1.0
+    return float(np.sqrt(np.mean((hyi - syi) ** 2)) / rng)
+
 
 def per_metric_loss(human_csv, sim_csv, xcol, ycol):
-    hx, hy = load_xy(human_csv, xcol, ycol)
-    sx, sy = load_xy(sim_csv, xcol, ycol)
-    return line_loss_over_overlap(hx, hy, sx, sy)
+    hx, hy, hse = load_xy_se(human_csv, xcol, ycol)
+    sx, sy, sse = load_xy_se(sim_csv, xcol, ycol)
+    if USE_REDUCED_CHI2:
+        return reduced_chi2(hx, hy, hse, sx, sy, sse)
+    else:
+        return nrmse(hx, hy, sx, sy)
+
+def align_to_sim_bins_arrays(hx, hy, hse, sx, sy, sse, decimals=6):
+    """
+    Keep only human x-values that exist in SIM (match by rounded x).
+    Returns matched arrays + count_removed.
+    If fewer than 2 matched points remain, returns (None, ...), 0.
+    """
+    hr = np.round(hx, decimals)
+    sr = np.round(sx, decimals)
+    sim_bins = set(sr.tolist())
+
+    hmask = np.array([x in sim_bins for x in hr])
+    removed = int((~hmask).sum())
+
+    hx2, hy2 = hx[hmask], hy[hmask]
+    hse2 = (hse[hmask] if hse is not None else None)
+
+    # Now keep sim rows only where sim bins are in the (filtered) human set, so order lines up
+    common_bins = set(np.round(hx2, decimals).tolist())
+    smask = np.array([x in common_bins for x in sr])
+    sx2, sy2 = sx[smask], sy[smask]
+    sse2 = (sse[smask] if sse is not None else None)
+
+    if len(hx2) < 2 or len(sx2) < 2:
+        return (None, None, None, None, None, None), removed
+
+    # Sort both by x so indices align
+    order_h = np.argsort(hx2); order_s = np.argsort(sx2)
+    return (hx2[order_h], hy2[order_h], (hse2[order_h] if hse2 is not None else None),
+            sx2[order_s], sy2[order_s], (sse2[order_s] if sse2 is not None else None)), removed
+
+
 
 def parse_kappa(folder_name):
     # 'kappa_2p30' -> 2.30
@@ -114,6 +186,7 @@ def parse_kappa(folder_name):
     except Exception:
         return None
 
+
 def find_kappa_folders(sim_root):
     out = []
     if not os.path.isdir(sim_root):
@@ -124,6 +197,7 @@ def find_kappa_folders(sim_root):
             out.append((k, os.path.join(sim_root, name)))
     out.sort(key=lambda t: t[0])
     return out
+
 
 def main():
     # sanity check human files exist
@@ -218,6 +292,7 @@ def main():
             print(f"plot.py execution failed (skipping figure generation): {e}")
     else:
         print("plot.py not found next to this script; skipping automatic figure generation.")
+
 
 if __name__ == "__main__":
     main()

@@ -240,3 +240,4 @@ sysinfo.txt
 /results/section2/_raw_simulated_results/_archived
 /results/section2/processed_simulated_results/_archived
 /step5/modules/rl_envs/word_activation_v0218/parameter_inference/simulation_data
+/step5/modules/rl_envs/sentence_read_v0319/parameter_inference/simulation_data
