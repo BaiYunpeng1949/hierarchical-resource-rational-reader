@@ -186,6 +186,10 @@ text_comprehension_v0523/
 
 ### Tunable Parameters Summary
 
+```
+python infer_parameter.py --high_range 0 1 0.001 --low_range 0 1 0.001 --input_json ../assets/organized_example_propositions_v0527.json  
+```
+
 1. **Proposition Organization** (`organize_propositions.py`)
    - `window_size`: Controls local coherence calculation window
      - Default: 5 (based on short-term memory capacity)
