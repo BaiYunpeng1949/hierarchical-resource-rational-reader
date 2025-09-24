@@ -660,7 +660,8 @@ def run_batch_simulations(
     for stimulus_id in stimulus_ids:
         for time_condition in time_conditions:
             for trial in range(num_trials):
-                print(f"\nRunning trial {trial + 1}/{num_trials} for stimulus {stimulus_id} under {time_condition} condition")
+                
+                # print(f"\nRunning trial {trial + 1}/{num_trials} for stimulus {stimulus_id} under {time_condition} condition")
                 
                 # Reset the simulator with current parameters
                 simulator.reset(
@@ -707,7 +708,7 @@ def run_batch_simulations(
     print(f"Simulation metadata has been saved to: {metadata_file}")
 
     # NOTE: removable anytime -- data distribution analysis
-    report = analyze_distribution(values=simulator.across_episodes_individual_word_elapsed_time_list)
+    # report = analyze_distribution(values=simulator.across_episodes_individual_word_elapsed_time_list)
 
     return {
         "results": all_results,

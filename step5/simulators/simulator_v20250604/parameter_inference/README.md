@@ -65,3 +65,21 @@ python plot.py \
   --grid_dir simulation_data \
   --human human_data/analyzed_human_metrics.json \
   --topk 3
+```
+
+### 2. Run the Bayesian Inference
+```bash 
+python bayesian_inference.py \
+  --human human_data/analyzed_human_metrics.json \
+  --out_root parameter_inference/bayes_runs \
+  --iters 40 --init 8 --cand 512 --xi 0.01 \
+  --bounds_rho 0.10 0.30 --bounds_w 0.50 1.00 --bounds_cov 0.00 3.00 \
+  --stimuli 0-8 --conds 30s,60s,90s --trials 1 \
+  --loss sse \
+  --warm_start_from parameter_inference/simulation_data/grid_inference_summary.csv
+```
+So the best way would be use the grid search to roughly find some good start. Then use the Bayesian inference.
+
+```bash
+python plot.py --grid_dir parameter_inference/bayes_runs --human human_data/analyzed_human_metrics.json --topk 3
+```

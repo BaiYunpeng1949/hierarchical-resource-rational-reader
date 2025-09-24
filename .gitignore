@@ -260,3 +260,4 @@ sysinfo.txt
 /step5/modules/rl_envs/word_activation_v0218/parameter_inference/simulation_data
 /step5/modules/rl_envs/sentence_read_v0319/parameter_inference/simulation_data
 /step5/simulators/simulator_v20250604/parameter_inference/simulation_data
+/step5/simulators/simulator_v20250604/parameter_inference/bayes_runs
