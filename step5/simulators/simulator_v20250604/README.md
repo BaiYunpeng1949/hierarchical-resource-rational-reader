@@ -198,6 +198,7 @@ Procedure
 Parameter Inference Procedure
 1. With default parameters `python simulator.py grid`
 2. With specified parameters `python simulator.py grid --rho 0.1,0.3,0.02 --w 0.5,1.0,0.02 --cov 0.0,3.0,0.1`
+3. Go to folder `parameter_inference` to continue analysis and ploting.
 
 ## Troubleshooting
 
