@@ -152,7 +152,7 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._log_terminate_reward = None
         self._log_terminate_reward_logs = None
         
-    def reset(self, seed=42, inputs: dict=None):          
+    def reset(self, seed=42, inputs: dict=None, params: dict=None):          
         """
         Reset environment and initialize states.
 
@@ -246,14 +246,16 @@ class SentenceReadingUnderTimePressureEnv(Env):
         self._w_regression_cost = 1.0    # NOTE: uncomment when testing!!!! --> For the reading under time constraint, no need to change, keep it as constant in both training and testing.
         
         # NOTE: The two tunable parameters, try, if identified, get it into the Bayesian optimization later
-        # self._w_skip_degradation_factor = 0.7       # NOTE: useful for now.
         # NOTE: Armortized training solution.
-        w_skip_degradation_factor_range = [0.5, 1.0]
-        possible_values = np.arange(w_skip_degradation_factor_range[0], w_skip_degradation_factor_range[1] + 1e-8, 0.05)
-        # self._w_skip_degradation_factor = np.random.choice(possible_values)   # NOTE: for training
-        self._w_skip_degradation_factor = 0.7  # NOTE: for testing and simulating
-        # # TODO debug delete later
-        # print(f"The w_skip_degradation_factor sampled is: {self._w_skip_degradation_factor}")
+        if self._mode == "train" or self._mode == "continual_train":
+            w_skip_degradation_factor_range = [0.5, 1.0]
+            possible_values = np.arange(w_skip_degradation_factor_range[0], w_skip_degradation_factor_range[1] + 1e-8, 0.05)
+            self._w_skip_degradation_factor = np.random.choice(possible_values)   # NOTE: for training
+        else:
+            if params is None:
+                self._w_skip_degradation_factor = 0.7  # NOTE: for testing and simulating
+            else:
+                self._w_skip_degradation_factor = params['w_skip_degradation_factor']
 
         # NOTE: not tunable and usable parameters -- leave it be
         self._w_comprehension_vs_time_pressure = 0.5

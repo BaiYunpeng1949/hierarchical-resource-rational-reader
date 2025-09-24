@@ -120,7 +120,7 @@ class WordRecognitionEnv(Env):
         self.log_cumulative_version = None
         self._log_valid_sampled_letters_indexes_list = None
     
-    def reset(self, seed=None, inputs=None, ep_idx=None):
+    def reset(self, seed=None, inputs=None, ep_idx=None, params=None):
         """
         Reset the environment to the initial state
         """
@@ -197,8 +197,11 @@ class WordRecognitionEnv(Env):
         # This is only used for identifying words and numerical computations
 
         # Reset the tunable parameter
-        self._rho_inflation_percentage = 0.2    # TODO: put into the reset arguments later when tuning. Grid searcch should be enough.
-        self._kappa = None  # TBD
+        self._kappa = 2.50  # Version September, optimized as 2.50. Stay fixed for reading under time pressure.
+        if params is None:
+            self._rho_inflation_percentage = 0.2
+        else:
+            self._rho_inflation_percentage = params['rho_inflation_percentage']
         
         # Reset the log
         self._log_valid_sampled_letters_indexes_list = []

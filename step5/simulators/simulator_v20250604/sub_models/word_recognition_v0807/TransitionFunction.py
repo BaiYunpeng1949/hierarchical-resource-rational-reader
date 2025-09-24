@@ -168,7 +168,7 @@ class TransitionFunction():
     def calc_fixation_duration_ms(
         entropy_diff: float,
         t_processing_baseline: float = 200,
-        kappa: float = 3.75,
+        kappa: float = 2.50,    # According to the parameter inference, we optimize it as 2.50    # 3.75,
         shape: float = 2.0,
         v_min: float = 200.0,
         v_max: float = 250.0,
@@ -209,39 +209,6 @@ class TransitionFunction():
 
         inflated_t_visual_lex = t_visual_lex * (1 / (1 - rho_inflation_percentage))
         return t_visual_lex, inflated_t_visual_lex
-
-    # # def calc_gaze_duration_ms(self, entropy_diffs, rho_inflation_percentage, **fix_kwargs) -> float:
-    # def calc_gaze_duration_ms(self, entropy_diffs) -> float:
-    #     """
-    #     Sum first-pass fixations on a word.  *Do not* add intra-word saccades.
-
-    #     Parameters
-    #     ----------
-    #     entropy_diffs : Iterable[float]
-    #         Sequence of entropy/surprisal reductions for each fixation the agent
-    #         makes before it leaves the word.
-    #     **fix_kwargs
-    #         Forwarded to `fixation_duration_ms` for easy tuning.
-
-    #     Returns
-    #     -------
-    #     float
-    #         Gaze duration in milliseconds.
-    #     """
-
-    #     if len(entropy_diffs) > 0:
-    #         return sum(self.calc_fixation_duration_ms(entropy_diff=d)[0] for d in entropy_diffs)
-    #     else:
-    #         return 0
-    
-    # def calc_inflated_gaze_duration_ms(self, entropy_diffs, rho_inflation_percentage) -> float:
-    #     """
-    #     The inflated version of gaze duration
-    #     """
-    #     if len(entropy_diffs) > 0:
-    #         return sum(self.calc_fixation_duration_ms(entropy_diff=d, rho_inflation_percentage=rho_inflation_percentage)[1] for d in entropy_diffs)
-    #     else:
-    #         return 0
     
     def calc_gaze_related_duration_in_ms(self, entropy_diffs, rho_inflation_percentage) -> float:
         """

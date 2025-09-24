@@ -136,7 +136,7 @@ class TextReadingUnderTimePressureEnv(Env):
         self.MAX_COVERAGE_FACTOR = 3
         self.MIN_COVERAGE_FACTOR = 0
 
-    def reset(self, seed=None, options=None, inputs: dict=None):                
+    def reset(self, seed=None, options=None, inputs: dict=None, params: dict=None):                
         """Reset environment and initialize states"""
         super().reset(seed=seed)
 
@@ -184,8 +184,11 @@ class TextReadingUnderTimePressureEnv(Env):
             self._free_param_coverage_factor = random.randint(self.MIN_COVERAGE_FACTOR * 10, self.MAX_COVERAGE_FACTOR * 10) / 10
             # print(f"sampling coverage factor: {self._free_param_coverage_factor}")
         else:
-            self._free_param_coverage_factor = 3.0
-            print(f"TODO: apply this parameter with a fixed value when testing")
+            if params is None:
+                self._free_param_coverage_factor = 3.0
+                print(f"    Text Read: fixed _free_param_coverage_factor as {self._free_param_coverage_factor}")
+            else:
+                self._free_param_coverage_factor = params['coverage_factor']
         # NOTE: now range from [1, 2], all over-weighting / encouraging the agent to read more sentences, 
         #   maybe need to range from [0, 2] later, also consider different coverage factor for different texts
         
