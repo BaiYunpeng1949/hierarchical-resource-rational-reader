@@ -53,12 +53,7 @@ parameter_inference/
 
 ### 1. Run Parameter Inference
 ```bash
-python infer_parameters.py \
-  --grid_dir simulation_data \
-  --human human_data/analyzed_human_metrics.json \
-  --loss sse \
-  --out_csv grid_inference_summary.csv \
-  --topk 15
+python infer_parameters.py --grid_dir simulation_data/ --human human_data/analyzed_human_metrics.json --loss sse --norm zscore --topk 10
 
 
 python plot.py \

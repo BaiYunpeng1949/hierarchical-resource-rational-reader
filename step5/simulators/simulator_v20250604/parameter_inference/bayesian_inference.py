@@ -404,29 +404,61 @@ def main():
     print(f"  {out_root/'best_so_far.txt'}")
     print("  Per-eval subfolders contain all_simulation_results.json + analyzed metrics.")
 
-    # --- Auto-plot best run(s) ---
+        # --- Auto-plot best run(s) ---
     try:
         from plot import ensure_analyzed_metrics, load_episode_metrics, plot_metrics_comparison
         human_path = args.human
 
         # read best_so_far
         best_info = json.load(open(out_root / "best_so_far.txt", "r", encoding="utf-8"))
-        # find the corresponding run_dir in bayes_log
+        best_loss = float(best_info["loss"])
+        best_theta = np.array([best_info["rho"], best_info["w"], best_info["cov"]], dtype=float)
+
+        # try to find a matching run_dir in this session's log (within tolerance)
         import csv
-        last_run = None
+        TOL = 1e-9
+        best_run_dir = None
         with open(log_csv, "r", encoding="utf-8") as f:
             r = csv.DictReader(f)
             for row in r:
-                if float(row["loss"]) == best_info["loss"]:
-                    last_run = Path(row["run_dir"])
-        if last_run and last_run.exists():
-            per_ep_path = ensure_analyzed_metrics(last_run)
-            sim_episodes = load_episode_metrics(per_ep_path)
-            out_path = last_run / "comparison_human_vs_sim_best.png"
-            plot_metrics_comparison(human_path, sim_episodes, str(out_path))
-            print(f"\nAuto-plotted best run at {out_path}")
+                try:
+                    loss_row = float(row["loss"])
+                except Exception:
+                    continue
+                if abs(loss_row - best_loss) <= TOL:
+                    cand_dir = Path(row["run_dir"])
+                    if cand_dir.exists():
+                        best_run_dir = cand_dir
+                        break
+
+        # If best came from warm start (no local folder), re-evaluate it now
+        if best_run_dir is None:
+            print("Best comes from warm start; re-evaluating locally for artifacts & plotting...", flush=True)
+            # Re-evaluate to create a local folder consistent with current settings
+            L2, run_dir2 = evaluate_theta(tuple(best_theta.tolist()), cfg)
+            best_run_dir = run_dir2
+            # log it
+            with open(log_csv, "a", encoding="utf-8") as f:
+                f.write(f"{len(y)+1},{best_theta[0]},{best_theta[1]},{best_theta[2]},{L2},{run_dir2}\n")
+            # if it actually beats previous best (due to randomness), update best_so_far.txt
+            if L2 < best_loss:
+                best_loss = L2
+                with open(out_root / "best_so_far.txt", "w", encoding="utf-8") as f:
+                    json.dump({"loss": float(best_loss),
+                               "rho": float(best_theta[0]),
+                               "w": float(best_theta[1]),
+                               "cov": float(best_theta[2])}, f, indent=2)
+
+        # Ensure analyzed metrics and plot
+        per_ep_path = ensure_analyzed_metrics(best_run_dir)
+        sim_episodes = load_episode_metrics(per_ep_path)
+        out_path = best_run_dir / "comparison_human_vs_sim_best.png"
+        plot_metrics_comparison(human_path, sim_episodes, str(out_path))
+        print(f"\nAuto-plotted best run at {out_path}")
+
     except Exception as e:
         print(f"Auto-plotting failed: {e}")
+
 
 
 if __name__ == "__main__":

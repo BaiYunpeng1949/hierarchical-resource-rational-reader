@@ -75,12 +75,51 @@ def compute_condition_means(per_episode_metrics_path: str) -> Dict[str, Dict[str
 
 def loss_between(sim_means: Dict[str, Dict[str, float]],
                  human_means: Dict[str, Dict[str, float]],
-                 loss: str = "sse") -> Tuple[float, Dict[str, float]]:
+                 loss: str = "sse",
+                 norm: str = "zscore",
+                 weights: Dict[str, float] | None = None) -> Tuple[float, Dict[str, float]]:
     """
-    Compute total loss across conditions & metrics.
-    Returns (total_loss, breakdown_per_metric).
-    loss in {'sse', 'l1'}  -> SSE: (h-s)^2; L1: |h-s|
+    Compute total loss across conditions & metrics with normalization + weights.
+    norm:
+      - 'zscore':  (s - h) / human_std
+      - 'percent': (s - h) / max(|h|, 1e-9)
+      - 'range':   (s - h) / (max_h - min_h across conditions, fallback 1)
+      - 'none':    (s - h)
+    weights: per-metric multiplicative weights, defaults to 1.0 each.
     """
+    import numpy as np
+
+    if weights is None:
+        weights = {"reading_speed": 1.0, "skip_rate": 1.0, "regression_rate": 1.0}
+
+    # Precompute human ranges per metric if needed
+    human_ranges = {}
+    if norm == "range":
+        for m in METRICS:
+            vals = []
+            for cond in TIME_CONDS:
+                if cond in human_means:
+                    vals.append(human_means[cond].get(f"{m}_mean"))
+            if len(vals) >= 2 and all(v is not None for v in vals):
+                human_ranges[m] = max(vals) - min(vals)
+            else:
+                human_ranges[m] = 1.0
+
+    def scale_for(cond: str, m: str) -> float:
+        if norm == "none":
+            return 1.0
+        if norm == "zscore":
+            # Prefer human-provided std if available; else fallback to 1
+            std = human_means.get(cond, {}).get(f"{m}_std", None)
+            return float(std) if (std is not None and std > 1e-9) else 1.0
+        if norm == "percent":
+            h = human_means.get(cond, {}).get(f"{m}_mean", 0.0)
+            return max(abs(float(h)), 1e-9)
+        if norm == "range":
+            r = human_ranges.get(m, 1.0)
+            return r if r > 1e-9 else 1.0
+        return 1.0
+
     total = 0.0
     per_metric = {m: 0.0 for m in METRICS}
     for cond in TIME_CONDS:
@@ -89,7 +128,9 @@ def loss_between(sim_means: Dict[str, Dict[str, float]],
         for m in METRICS:
             h = human_means[cond][f"{m}_mean"]
             s = sim_means[cond][f"{m}_mean"]
-            d = abs(h - s) if loss == "l1" else (h - s) ** 2
+            diff = (s - h) / scale_for(cond, m)
+            d = abs(diff) if loss == "l1" else diff ** 2
+            d *= weights.get(m, 1.0)
             total += d
             per_metric[m] += d
     return total, per_metric
@@ -192,6 +233,13 @@ def main():
     parser.add_argument(
         "--topk", type=int, default=10, help="Show top-k results in the console"
     )
+    parser.add_argument("--norm", type=str, default="zscore",
+                    choices=["none","zscore","percent","range"],
+                    help="Metric normalization: zscore (recommended), percent, range, or none")
+    parser.add_argument("--w_reading_speed", type=float, default=1.0)
+    parser.add_argument("--w_skip_rate", type=float, default=1.0)
+    parser.add_argument("--w_regression_rate", type=float, default=1.0)
+
     args = parser.parse_args()
 
     human = load_human_metrics(args.human)
@@ -207,7 +255,15 @@ def main():
             sim_means = compute_condition_means(per_ep_path)
 
             # 3) Compute loss vs human
-            total_loss, per_metric = loss_between(sim_means, human, loss=args.loss)
+            weights = {
+                "reading_speed": args.w_reading_speed,
+                "skip_rate": args.w_skip_rate,
+                "regression_rate": args.w_regression_rate,
+            }
+            total_loss, per_metric = loss_between(sim_means, human,
+                                                loss=args.loss,
+                                                norm=args.norm,
+                                                weights=weights)
 
             # 4) Read parameters
             params = read_params_from_metadata(combo / "metadata.json")
@@ -231,6 +287,10 @@ def main():
                 "loss_reading_speed": per_metric["reading_speed"],
                 "loss_skip_rate": per_metric["skip_rate"],
                 "loss_regression_rate": per_metric["regression_rate"],
+                "norm": args.norm,
+                "w_reading_speed": args.w_reading_speed,
+                "w_skip_rate": args.w_skip_rate,
+                "w_regression_rate": args.w_regression_rate,
             }
             rows.append(row)
         except Exception as e:
