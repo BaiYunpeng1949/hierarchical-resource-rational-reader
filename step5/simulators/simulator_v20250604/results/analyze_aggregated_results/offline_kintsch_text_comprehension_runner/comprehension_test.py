@@ -201,6 +201,7 @@ def run_comprehension(
     mcq_correct = 0
     mcq_by_time = defaultdict(lambda: {"n": 0, "correct": 0})
     frs_by_time = defaultdict(list)
+    mcq_accs_by_time = defaultdict(list)
 
     for t in trials:
         stim_idx = int(t.get("stimulus_index", 0))
@@ -245,6 +246,13 @@ def run_comprehension(
                 mcq_correct += 1
                 mcq_by_time[time_cond]["correct"] += 1
 
+        # NEW: per-trial MCQ accuracy (for std computation and logging)
+        trial_mcq_total = len(mcq_logs)
+        trial_mcq_correct = sum(1 for m in mcq_logs if m.get("is_correct"))
+        trial_mcq_acc = (trial_mcq_correct / trial_mcq_total) if trial_mcq_total else None
+        if trial_mcq_acc is not None:
+            mcq_accs_by_time[time_cond].append(trial_mcq_acc)
+
         # ---- Free recall generation ----
         fr_text = wm.retrieve_memory(
             question_type=const.QUESTION_TYPES["FRS"], ltm_gists=outline
@@ -261,6 +269,8 @@ def run_comprehension(
                 **t,
                 "episodic_info": {
                     "mcq_logs": mcq_logs,
+                    "mcq_accuracy": trial_mcq_acc,   # NEW: per-trial accuracy
+                    "n_mcq": trial_mcq_total,        # NEW: number of MCQs this trial
                     "free_recall_answer": fr_text,
                     "free_recall_score": fr_score,
                 },
@@ -272,6 +282,9 @@ def run_comprehension(
         "mcq_accuracy_overall": (mcq_correct / mcq_total) if mcq_total else None,
         "mcq_accuracy_by_time": {
             k: (v["correct"] / v["n"]) if v["n"] else None for k, v in mcq_by_time.items()
+        },
+        "mcq_accuracy_std_by_time": {   # NEW: std across TRIAL accuracies per time
+            k: float(np.std(v)) if v else None for k, v in mcq_accs_by_time.items()
         },
         "fr_mean_by_time": {k: float(np.mean(v)) if v else None for k, v in frs_by_time.items()},
         "fr_std_by_time": {k: float(np.std(v)) if v else None for k, v in frs_by_time.items()},

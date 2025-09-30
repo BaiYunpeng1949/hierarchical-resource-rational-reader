@@ -352,6 +352,8 @@ if __name__ == "__main__":
     # Get the current directory
     current_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+    # NOTE: half-deprecated now. Used for quick visualizations for the tested cases. --comment left on 0929
+
     # File name
     # file_name = "20250819_1700_trials1_stims9_conds3"
     # file_name = "20250907_0607_trials1_stims9_conds3"

@@ -43,11 +43,11 @@ analyze_aggregated_results/
 
 **Run:**
 ```bash
-python process_simulation_read_contents.py  20250819_1700_trials1_stims9_conds3   -o simulation_read_contents.json
+python process_simulation_read_contents.py
 ```
 Use `--indent` (default 2) to change pretty-printing. 
-For input, the folder name in `/simulator_v20250604/simulated_results/`.
-The content will be automatically stored in `assets/comprehension_results/simulation/`.
+For input, automatically reads the logs with the optimized parameters set.
+The content `simulation_read_contents.json` will be automatically stored in `assets/comprehension_results/simulation/`.
 
 ---
 

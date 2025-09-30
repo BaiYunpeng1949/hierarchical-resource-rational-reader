@@ -41,13 +41,16 @@ def transform_episode(ep: Dict[str, Any]) -> Dict[str, Any]:
 
 def main():
     ap = argparse.ArgumentParser(description="Trim simulation results to reading content fields.")
-    ap.add_argument("input_json", type=Path, help="Path to all_simulation_results.json")
+    # ap.add_argument("input_json", type=Path, help="Path to all_simulation_results.json")
     ap.add_argument("-o", "--output_json", type=Path, default=Path("simulation_read_contents.json"),
                     help="Where to write the trimmed JSON (default: simulation_read_contents.json)")
     ap.add_argument("--indent", type=int, default=2, help="Indentation for output JSON")
     args = ap.parse_args()
 
-    sim_results_filepath = f"../../simulated_results/{args.input_json}/all_simulation_results.json"
+    # sim_results_filepath = f"../../simulated_results/{args.input_json}/all_simulation_results.json"
+    sim_results_filepath = f"../../parameter_inference/simulation_data/rho_0.290__w_0.700__cov_1.30/all_simulation_results.json"    
+    # NOTE: Updated on 0929. Use the best parameter from now on.
+    
     data = load_json(sim_results_filepath)
 
     if not isinstance(data, list):

@@ -2,6 +2,8 @@
 
 Generating comprehension
 
+### Version 1: only stacking facets as ltm gist (comparison condition 1)
+
 ```bash
 python text_comprehension_pipeline_v1.py --input ../assets/comprehension_results/simulation/simulation_read_contents.json --output ../assets/comprehension_results/simulation/ltm_gists_v1.json --max_facets 5 --model gpt-4o --max_episodes 3
 ```
