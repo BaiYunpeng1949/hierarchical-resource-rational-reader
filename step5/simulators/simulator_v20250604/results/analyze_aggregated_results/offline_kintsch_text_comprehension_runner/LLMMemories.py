@@ -1203,7 +1203,7 @@ class LLMWorkingMemory:
             # )
 
             # Version 0905
-            role = "Use only the context. Reply with one letter A/B/C/D/E."
+            role = "Use exclusively **only** the context. Reply with one letter A/B/C/D/E."
             prompt = f"Context:\n{ltm_gists}\n\nQ: {question}\nOptions: {options}\nAnswer:"
 
         elif question_type == const.QUESTION_TYPES['FRS']:
@@ -1222,7 +1222,7 @@ class LLMWorkingMemory:
             # )
 
             # Version 0905
-            role = "Write one paragraph using only the context. No lists."
+            role = "Write one paragraph using exclusively **ONLY** the context. No lists."
             prompt = f"Context:\n{ltm_gists}\n\nParagraph:"
 
         else:

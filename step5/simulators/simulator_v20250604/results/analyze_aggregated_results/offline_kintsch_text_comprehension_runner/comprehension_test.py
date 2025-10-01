@@ -80,21 +80,6 @@ def _free_recall_score(pred: str, ref: str) -> float:
     except Exception:
         return 0.0
 
-# # ---- Free recall scoring (bag-of-words cosine) ----
-# def _free_recall_score(pred: str, ref: str) -> float:
-#     """Compute a very simple cosine similarity on token counts."""
-#     from sklearn.feature_extraction.text import CountVectorizer
-#     from sklearn.metrics.pairwise import cosine_similarity
-#     cv = CountVectorizer(ngram_range=(1, 2), lowercase=True, stop_words="english")
-#     X = cv.fit_transform([pred or "", ref or ""])
-#     if X.shape[0] < 2:
-#         return 0.0
-#     sim = cosine_similarity(X[0], X[1])[0, 0]
-#     try:
-#         return float(np.clip(sim, 0.0, 1.0))
-#     except Exception:
-#         return 0.0
-
 def _load_json(path: str):
     with open(path, "r") as f:
         return json.load(f)
