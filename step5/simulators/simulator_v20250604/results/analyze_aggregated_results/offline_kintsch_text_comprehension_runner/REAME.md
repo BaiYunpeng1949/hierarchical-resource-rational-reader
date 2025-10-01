@@ -8,6 +8,11 @@ Generating comprehension
 python text_comprehension_pipeline_v1.py --input ../assets/comprehension_results/simulation/simulation_read_contents.json --output ../assets/comprehension_results/simulation/ltm_gists_v1.json --max_facets 5 --model gpt-4o --max_episodes 3
 ```
 
+### Version 2: locally selecting the relevant facets, then stacking together (comparison condition 2)
+```bash
+python text_comprehension_pipeline_v2a.py --input ../assets/comprehension_results/simulation/ltm_gists_v1.json --output ../assets/comprehension_results/simulation/ltm_gists_v2a.json --k_per_step 2
+```
+
 # Reproduction
 
 Running comprehension tests
