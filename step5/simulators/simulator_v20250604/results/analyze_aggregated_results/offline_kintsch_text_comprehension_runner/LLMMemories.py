@@ -1202,9 +1202,13 @@ class LLMWorkingMemory:
             #     f"Choose the single best answer strictly from [{letters}]. Reply with exactly one letter from [{letters}] and nothing else."
             # )
 
-            # Version 0905
-            role = "Use exclusively **only** the context. Reply with one letter A/B/C/D/E."
-            prompt = f"Context:\n{ltm_gists}\n\nQ: {question}\nOptions: {options}\nAnswer:"
+            # # Version 0905
+            # role = "Use the context. Reply with one letter A/B/C/D/E."
+            # prompt = f"Do not use any outside knowledge or make any inferences. Using exclusively **ONLY** the context: Context:\n{ltm_gists}\n\nQ: {question}\nOptions: {options}\nAnswer:"
+
+            # Version 1002
+            role = "Use the context. Reply with one letter A/B/C/D/E."
+            prompt = f"Do not use any outside knowledge or make any inferences. Answer A/B/C/D only if the context contains the information that directly supports the answer. Or answer E. Using exclusively **ONLY** the context: Context:\n{ltm_gists}\n\nQ: {question}\nOptions: {options}\nAnswer:"
 
         elif question_type == const.QUESTION_TYPES['FRS']:
             # prompt = (
@@ -1221,9 +1225,13 @@ class LLMWorkingMemory:
             #     f"Content: {ltm_gists}, please write one coherent paragraph that narratively summarizes the content.."
             # )
 
-            # Version 0905
+            # # Version 0905
+            # role = "Write one paragraph using exclusively **ONLY** the context. No lists."
+            # prompt = f"Do not use any outside knowledge or make any inferences. using exclusively **ONLY** the context: Context:\n{ltm_gists}\n\nParagraph:"
+
+            # Version 1002
             role = "Write one paragraph using exclusively **ONLY** the context. No lists."
-            prompt = f"Context:\n{ltm_gists}\n\nParagraph:"
+            prompt = f"Do not use any outside knowledge or make any inferences. You may ONLY use words and phrases that appear in the Context. No new facts, no rephrasing. using exclusively **ONLY** the context: Context:\n{ltm_gists}\n\nParagraph:"
 
         else:
             raise ValueError(f"Invalid question type: {question_type}")
@@ -1269,44 +1277,6 @@ class LLMWorkingMemory:
 
         print("Failed to generate a valid single memory retrieval after maximum attempts")
         return "Failed to answer. Please try again."
-    
-    # def _get_response(self, role, prompt):
-        
-    #     if self.use_aalto_openai_api:
-    #         messages=[
-    #             {
-    #                 "role": "system",
-    #                 "content": f""" {role} """
-    #             },
-    #             {
-    #                 "role": "user",
-    #                 "content": f"""{prompt} """
-    #             }
-    #         ]
-    #         completion = self._client.chat.completions.create(
-    #             model="no_effect", # the model variable must be set, but has no effect, model selection done with URL
-    #             messages=messages,
-    #         )
-    #     else:
-    #         completion = self._client.chat.completions.create(
-    #             model=self._gpt_model,
-    #             messages=[
-    #                 {
-    #                     "role": "system",
-    #                     "content": f""" {role} """
-    #                 },
-    #                 {
-    #                     "role": "user",
-    #                     "content": f"""{prompt} """
-    #                 }
-    #             ],
-    #             temperature=.25,
-    #             max_tokens=1000,
-    #             top_p=1,
-    #             frequency_penalty=0,
-    #             presence_penalty=0
-    #         )
-    #     return completion.choices[0].message.content
 
     def get_response(self, role, prompt):
     
@@ -1323,9 +1293,9 @@ class LLMWorkingMemory:
         completion = self._client.chat.completions.create(
             model="no_effect", # the model variable must be set, but has no effect, model selection done with URL
             messages=messages,
-            temperature=.25,
+            temperature=0,
             # max_tokens=max_tokens,
-            top_p=1,
+            top_p=0,
             frequency_penalty=0,
             presence_penalty=0,
         )
