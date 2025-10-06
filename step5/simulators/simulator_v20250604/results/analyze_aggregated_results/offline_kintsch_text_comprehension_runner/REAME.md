@@ -28,7 +28,7 @@ python text_comprehension_pipeline_v3.py --input ../assets/comprehension_results
 Running comprehension tests
 
 ```bash
-python -m offline_kintsch_text_comprehension_runner.comprehension_test --ltm_gists_json assets/comprehension_results/simulation/ltm_gists_v1.json --output_dir assets/comprehension_results/simulation/comprehension_performance --max_episodes 9 --mcq_metadata assets/comprehension_results/mcq_metadata.json --input_json assets/comprehension_results/simulation/simulation_read_contents.json --stimuli_json assets/comprehension_results/stimuli_texts.json
+python -m offline_kintsch_text_comprehension_runner.comprehension_test --ltm_gists_json assets/comprehension_results/simulation/ltm_gists_v3_tau_0.35.json --output_dir assets/comprehension_results/simulation/comprehension_performance_v3 --max_episodes 27 --mcq_metadata assets/comprehension_results/mcq_metadata.json --input_json assets/comprehension_results/simulation/simulation_read_contents.json --stimuli_json assets/comprehension_results/stimuli_texts.json
 ```
 
 
@@ -41,8 +41,17 @@ python -m offline_kintsch_text_comprehension_runner.comprehension_test --ltm_gis
     - v2b (hard threshold of relevance in local sentence): 
         - v2b (tau=0.4): /comprehension_performance_v2a/comprehension_metrics_20251006-061212.json
     - v3 (hard threshold of relevance in gloabal disclosure): 
+        - v3 (tau=0.35): /comprehension_performance_v3/comprehension_metrics_20251006-134536.json
+        - v3 (tau=0.34): /comprehension_performance_v3/comprehension_metrics_20251006-142230.json
+        - v3 (tau=0.33): /comprehension_performance_v3/comprehension_metrics_20251006-144557.json
+        - v3 (tau=0.32): /comprehension_performance_v3/comprehension_metrics_20251006-150327.json
+        - v3 (tau=0.31): /comprehension_performance_v3/comprehension_metrics_20251006-160113.json
         - v3 (tau=0.3): /comprehension_performance_v3/comprehension_metrics_20251006-071108.json (re-summarise ltm gists for free recall generation) --> /comprehension_performance_v3/comprehension_metrics_20251006-092044.json (pure ltm gists as free recall)
-        - v3 (tau=0.25): /comprehension_performance_v3/comprehension_metrics_20251006-082610.json 
+        - v3 (tau=0.29): /comprehension_performance_v3/comprehension_metrics_20251006-170412.json
+        - v3 (tau=0.28): /comprehension_performance_v3/comprehension_metrics_20251006-180058.json
+        - v3 (tau=0.27):
+        - v3 (tau=0.26):
+        - v3 (tau=0.25): /comprehension_performance_v3/comprehension_metrics_20251006-082610.json
         - v3 (tau=0.2): /comprehension_performance_v3/comprehension_metrics_20251006-080633.json
     - v3a (**based on v3**, hard-threshold for removing duplicates in the ltm gists by groupping)
         - v3a (tau=0.1 new): (input from v3=0.3) /comprehension_performance_v3a/comprehension_metrics_20251006-114130.json
