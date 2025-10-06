@@ -41,9 +41,12 @@ python -m offline_kintsch_text_comprehension_runner.comprehension_test --ltm_gis
     - v2b (hard threshold of relevance in local sentence): 
         - v2b (tau=0.4): /comprehension_performance_v2a/comprehension_metrics_20251006-061212.json
     - v3 (hard threshold of relevance in gloabal disclosure): 
-        - v3 (tau=0.3): /comprehension_metrics_20251006-071108.json
-        - v3 (tau=0.25): /comprehension_metrics_20251006-082610.json
-        - v3 (tau=0.2): /comprehension_metrics_20251006-080633.json
+        - v3 (tau=0.3): /comprehension_performance_v3/comprehension_metrics_20251006-071108.json (re-summarise ltm gists for free recall generation) --> /comprehension_performance_v3/comprehension_metrics_20251006-092044.json (pure ltm gists as free recall)
+        - v3 (tau=0.25): /comprehension_performance_v3/comprehension_metrics_20251006-082610.json 
+        - v3 (tau=0.2): /comprehension_performance_v3/comprehension_metrics_20251006-080633.json
+    - v3a (**based on v3**, hard-threshold for removing duplicates in the ltm gists by groupping)
+        - v3a (tau=0.1 new): (input from v3=0.3) /comprehension_performance_v3a/comprehension_metrics_20251006-114130.json
+        - v3a (tau=0.5 new): (input from v3=0.3) /comprehension_performance_v3a/comprehension_metrics_20251006-112557.json
 
 # Technical Report (Internal)
 The global (local-based) relevance / coherence analysis, then use the threshold to filter important things, is a systematic way to do research. We build from the simplest cases (v1), all the way step-by-step to v3. While the v1 and v2a, v2b could serve as a the baselines, they also tease out why our v3 is good and working.
