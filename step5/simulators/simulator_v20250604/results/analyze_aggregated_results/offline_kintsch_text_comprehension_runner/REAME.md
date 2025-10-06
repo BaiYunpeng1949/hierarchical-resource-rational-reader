@@ -18,6 +18,11 @@ python text_comprehension_pipeline_v2a.py --input ../assets/comprehension_result
 python text_comprehension_pipeline_v2b.py --input ../assets/comprehension_results/simulation/ltm_gists_v1.json --output ../assets/comprehension_results/simulation/ltm_gists_v2b_tau0.4.json --tau_gist 0.4
 ```
 
+### Version 3 (v3): globally selecting the relevant facets (threshold-based), then stacking together.
+```bash
+python text_comprehension_pipeline_v3.py --input ../assets/comprehension_results/simulation/ltm_gists_v1.json --output ../assets/comprehension_results/simulation/ltm_gists_v3.json --tau_gist 0.3 --context_window 5 --half_life 3 --ctx_boost 1.0
+```
+
 # Reproduction
 
 Running comprehension tests
@@ -33,4 +38,14 @@ python -m offline_kintsch_text_comprehension_runner.comprehension_test --ltm_gis
     - v2a
         - v2a (top 2 facets in each sentence): /comprehension_performance_v2a/comprehension_metrics_20251002-081130.json
         - v2a (top 1 facet in each sentence): /comprehension_performance_v2a/comprehension_metrics_20251006-054303.json
-    - v2b (hard threshold of relevance in local sentence): /comprehension_performance_v2a/comprehension_metrics_20251006-061212.json
+    - v2b (hard threshold of relevance in local sentence): 
+        - v2b (tau=0.4): /comprehension_performance_v2a/comprehension_metrics_20251006-061212.json
+    - v3 (hard threshold of relevance in gloabal disclosure): 
+        - v3 (tau=0.3): /comprehension_metrics_20251006-071108.json
+        - v3 (tau=0.25): /comprehension_metrics_20251006-082610.json
+        - v3 (tau=0.2): /comprehension_metrics_20251006-080633.json
+
+# Technical Report (Internal)
+The global (local-based) relevance / coherence analysis, then use the threshold to filter important things, is a systematic way to do research. We build from the simplest cases (v1), all the way step-by-step to v3. While the v1 and v2a, v2b could serve as a the baselines, they also tease out why our v3 is good and working.
+
+Local relevance analysis naturally captures the reading time's effect: for repeatedly read sentences, it has more chances to have more propositions with higher relevance scores, thus later with richer ltm gists. And the global relevance analysis greatly inherited this trait.

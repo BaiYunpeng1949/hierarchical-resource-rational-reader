@@ -1229,9 +1229,12 @@ class LLMWorkingMemory:
             # role = "Write one paragraph using exclusively **ONLY** the context. No lists."
             # prompt = f"Do not use any outside knowledge or make any inferences. using exclusively **ONLY** the context: Context:\n{ltm_gists}\n\nParagraph:"
 
-            # Version 1002
-            role = "Write one paragraph using exclusively **ONLY** the context. No lists."
-            prompt = f"Do not use any outside knowledge or make any inferences. You may ONLY use words and phrases that appear in the Context. No new facts, no rephrasing. using exclusively **ONLY** the context: Context:\n{ltm_gists}\n\nParagraph:"
+            # # Version 1002
+            # role = "Write one paragraph using exclusively **ONLY** the context. No lists."
+            # prompt = f"Do not use any outside knowledge or make any inferences. You may ONLY use words and phrases that appear in the Context. No new facts, no rephrasing. using exclusively **ONLY** the context: Context:\n{ltm_gists}\n\nParagraph:"
+
+            # Version 1006 -- directly adding all facets together.
+            return ltm_gists
 
         else:
             raise ValueError(f"Invalid question type: {question_type}")
