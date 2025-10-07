@@ -1,0 +1,19 @@
+BEST FILE: comprehension_metrics_20251006-150327.json
+FULL PATH: ../../assets/comprehension_results/simulation/comprehension_performance_v3/comprehension_metrics_20251006-150327.json
+SSE TOTAL: 0.065130
+
+Per-cell SSE:
+  mcq_30s: 0.010563
+  fr_30s: 0.008825
+  mcq_60s: 0.000591
+  fr_60s: 0.019333
+  mcq_90s: 0.000625
+  fr_90s: 0.025192
+
+Sim means:
+  MCQ 30s: 0.488889
+  MCQ 60s: 0.755556
+  MCQ 90s: 0.800000
+  FR  30s: 0.535791
+  FR  60s: 0.671790
+  FR  90s: 0.676323

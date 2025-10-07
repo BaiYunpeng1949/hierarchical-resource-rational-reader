@@ -28,7 +28,7 @@ python text_comprehension_pipeline_v3.py --input ../assets/comprehension_results
 Running comprehension tests
 
 ```bash
-python -m offline_kintsch_text_comprehension_runner.comprehension_test --ltm_gists_json assets/comprehension_results/simulation/ltm_gists_v3_tau_0.35.json --output_dir assets/comprehension_results/simulation/comprehension_performance_v3 --max_episodes 27 --mcq_metadata assets/comprehension_results/mcq_metadata.json --input_json assets/comprehension_results/simulation/simulation_read_contents.json --stimuli_json assets/comprehension_results/stimuli_texts.json
+python -m offline_kintsch_text_comprehension_runner.comprehension_test --ltm_gists_json assets/comprehension_results/simulation/ltm_gists_v3_tau_0.26.json --output_dir assets/comprehension_results/simulation/comprehension_performance_v3 --max_episodes 27 --mcq_metadata assets/comprehension_results/mcq_metadata.json --input_json assets/comprehension_results/simulation/simulation_read_contents.json --stimuli_json assets/comprehension_results/stimuli_texts.json
 ```
 
 
@@ -49,8 +49,8 @@ python -m offline_kintsch_text_comprehension_runner.comprehension_test --ltm_gis
         - v3 (tau=0.3): /comprehension_performance_v3/comprehension_metrics_20251006-071108.json (re-summarise ltm gists for free recall generation) --> /comprehension_performance_v3/comprehension_metrics_20251006-092044.json (pure ltm gists as free recall)
         - v3 (tau=0.29): /comprehension_performance_v3/comprehension_metrics_20251006-170412.json
         - v3 (tau=0.28): /comprehension_performance_v3/comprehension_metrics_20251006-180058.json
-        - v3 (tau=0.27):
-        - v3 (tau=0.26):
+        - v3 (tau=0.27): /comprehension_performance_v3/comprehension_metrics_20251007-051223.json
+        - v3 (tau=0.26): /comprehension_performance_v3/comprehension_metrics_20251007-052842.json
         - v3 (tau=0.25): /comprehension_performance_v3/comprehension_metrics_20251006-082610.json
         - v3 (tau=0.2): /comprehension_performance_v3/comprehension_metrics_20251006-080633.json
     - v3a (**based on v3**, hard-threshold for removing duplicates in the ltm gists by groupping)
@@ -61,3 +61,18 @@ python -m offline_kintsch_text_comprehension_runner.comprehension_test --ltm_gis
 The global (local-based) relevance / coherence analysis, then use the threshold to filter important things, is a systematic way to do research. We build from the simplest cases (v1), all the way step-by-step to v3. While the v1 and v2a, v2b could serve as a the baselines, they also tease out why our v3 is good and working.
 
 Local relevance analysis naturally captures the reading time's effect: for repeatedly read sentences, it has more chances to have more propositions with higher relevance scores, thus later with richer ltm gists. And the global relevance analysis greatly inherited this trait.
+
+# Parameter Inference
+```bash
+python infer_parameter.py --sims_dir ../.
+./assets/comprehension_results/simulation/comprehension_performance_v3 --human_mcq ../../assets/comprehension_res
+ults/human/mcq_acc/human_mcq_acc_metrics.json --human_fr ../../assets/comprehension_results/human/new_free_recall
+_scores/human_free_recall_metrics.json --out_dir .
+```
+
+Best parameter logs will be stored in the ```best_simulation.txt```
+
+# Plot
+```bash
+python plot.py --human_mcq ../../assets/comprehension_results/human/mcq_acc/human_mcq_acc_metrics.json --human_fr ../../assets/comprehension_results/human/new_free_recall_scores/human_free_recall_metrics.json --v3 ../../assets/comprehension_results/simulation/comprehension_performance_v3/comprehension_metrics_20251006-150327.json --v1 ../../assets/comprehension_results/simulation/comprehension_performance_v1/comprehension_metrics_20251002-071341.json --v2b ../../assets/comprehension_results/simulation/comprehension_performance_v2b/comprehension_metrics_20251007-063005.json --out comprehension_comparison.png
+```
