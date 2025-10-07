@@ -74,5 +74,9 @@ Best parameter logs will be stored in the ```best_simulation.txt```
 
 # Plot
 ```bash
-python plot.py --human_mcq ../../assets/comprehension_results/human/mcq_acc/human_mcq_acc_metrics.json --human_fr ../../assets/comprehension_results/human/new_free_recall_scores/human_free_recall_metrics.json --v3 ../../assets/comprehension_results/simulation/comprehension_performance_v3/comprehension_metrics_20251006-150327.json --v1 ../../assets/comprehension_results/simulation/comprehension_performance_v1/comprehension_metrics_20251002-071341.json --v2b ../../assets/comprehension_results/simulation/comprehension_performance_v2b/comprehension_metrics_20251007-063005.json --out comprehension_comparison.png
+python plot.py --human_mcq ../../assets/comprehension_results/human/mcq_acc/human_mcq_acc_metrics.json --human_fr ../../assets/comprehension_results/human/new_free_recall_scores/human_free_recall_metrics.json --v3 ../../assets/comprehension_results/simulation/comprehension_performance_v3/comprehension_metrics_20251006-150327.json --v1 ../../assets/comprehension_results/simulation/comprehension_performance_v1/comprehension_metrics_20251002-071341.json --v2b ../../assets/comprehension_results/simulation/comprehension_performance_v2b/comprehension_metrics_20251007-063005.json --out comprehension_comparison.png --title ""
 ```
+
+These color looks nice: 
+- blue:         "human": "#1f77b4"
+- green:        "simulation":    "#2ca02c",  
