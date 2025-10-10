@@ -140,8 +140,8 @@ class RL:
             )
 
         # Get the environment class
-        # env_class = WordRecognitionEnv          # Choose from WordRecognitionEnv, SentenceReadingUnderTimePressureEnv, TextReadingUnderTimePressureEnv
-        env_class = SentenceReadingUnderTimePressureEnv
+        env_class = WordRecognitionEnv          # Choose from WordRecognitionEnv, SentenceReadingUnderTimePressureEnv, TextReadingUnderTimePressureEnv
+        # env_class = SentenceReadingUnderTimePressureEnv
         # env_class = TextReadingUnderTimePressureEnv
 
         # Read the total dataset if training the general oculomotor controller model.
@@ -382,30 +382,6 @@ class RL:
                 f'Episode:{episode}     Score:{score} \n'
                 f'{"-" * 50}\n'
             )
-
-        #     # Collect episode log after each episode
-        #     episode_log = self._env.unwrapped.get_episode_log()
-        #     episode_log['score'] = score
-        #     all_episode_logs.append(episode_log)
-
-        # print(f'Time elapsed for running the DEBUG/TEST: {time.time() - start_time} seconds')
-
-        # # Save logs to JSON file in the specified folder structure
-        # # Folder: simulated_results/<checkpoint_folder>__<model_name>__<num_episodes>
-        # checkpoint_folder = self._checkpoints_folder_name if hasattr(self, '_checkpoints_folder_name') else 'unknown_checkpoint'
-        # model_name = self._loaded_model_name if hasattr(self, '_loaded_model_name') else 'unknown_model'
-        # num_episodes = self._num_episodes if hasattr(self, '_num_episodes') else 'unknown_episodes'
-        # results_dir = os.path.join(
-        #     os.path.dirname(os.path.abspath(__file__)),
-        #     'sentence_read_v0604',
-        #     'simulated_results',
-        #     f'{checkpoint_folder}__{model_name}__{num_episodes}'
-        # )
-        # os.makedirs(results_dir, exist_ok=True)
-        # results_path = os.path.join(results_dir, 'simulated_episode_logs.json')
-        # with open(results_path, 'w') as f:
-        #     json.dump(all_episode_logs, f, indent=2)
-        # print(f"Saved episode logs to {results_path}")
     
     def _sentence_reading_test(self):
         """

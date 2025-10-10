@@ -1,11 +1,11 @@
 simulator_name: 'step5'
 
 rl:
-  mode: simulate   # Options: train, continual_train, test, debug, simulate (run modules), and grid_test.
+  mode: train   # Options: train, continual_train, test, debug, simulate (run modules), and grid_test.
 
   train:
     total_timesteps: 200000000
-    checkpoints_folder_name: 0910_sentence_reaidng_v091007
+    checkpoints_folder_name: 1010_word_recognition_gamma_0dot2
     num_workers: 20   # Smaller than the server's number of processes: 16 - should not be the maximum capacity of the processors, otherwise the local memory will overflow.
     num_steps: 10000   # Don't change this parameter -- previously 5000
     batch_size: 1000  # We recommend using a `batch_size` that is a factor of `n_steps * n_envs` -- previously 500
@@ -18,7 +18,7 @@ rl:
       initial_value: 1e-5
       min_value: 1e-7
       threshold: 0.8
-    gamma: 0.99    # 0.99
+    gamma: 0.20    # 0.99
     device: 'cuda'     # 'cuda' for default
     save_freq: 10000000  # Save a checkpoint every 0.50 million steps
 
