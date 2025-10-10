@@ -192,6 +192,10 @@ Each simulation run generates:
 ## Reproduction
 Procedure
 1. To run simulation for batches (when fixed with optimized parameters, single trial) `cd step5/simulators/simulator_v20250604/`, then `python simulator.py single` for default. Or `python simulator.py single --stimuli 0-8 --conds 30s,60s,90s --trials 1 \ --rho_inflation_percentage 0.22 --w_skip_degradation_factor 0.78 --coverage_factor 1.2 # Optional: --out simulated_results/custom_run_folder` for specific parameters.
+   - Version 1010 best params: 
+      ```bash
+      python simulator.py single --stimuli 0-8 --conds 30s,60s,90s --trials 1 --rho_inflation_percentage 0.29 --w_skip_degradation_factor 0.7 --coverage_factor 1.30
+      ```
 2. Find the simulated results here: `/home/baiy4/reader-agent-zuco/step5/simulators/simulator_v20250604/simulated_results`, copy the folder name, e.g., `20250710_1023_trials1_stims9_conds3`.
 3. `cd step5/simulators/simulator_v20250604/utils/`, paste the folder name in `analyze_data.py`, then `python analyze_data.py`, find the plotted figures in the same copied folder.
 
