@@ -354,7 +354,8 @@ if __name__ == "__main__":
     current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     # File name
-    file_name = "20251010_0920_trials1_stims9_conds3"       # word recognition gamma = 0.2 only.
+    # file_name = "20251010_0920_trials1_stims9_conds3"       # word recognition gamma = 0.2 only.
+    file_name = "20251011_0827_trials1_stims9_conds3"       # text readingn gamma = 0.2 only.
 
     input_file = os.path.join(current_dir, "simulated_results", file_name, "all_simulation_results.json")
     output_file = os.path.join(current_dir, "simulated_results", file_name, "processed_reading_metrics.json")
