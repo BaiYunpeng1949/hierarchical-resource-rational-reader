@@ -360,10 +360,11 @@ def plot_panel(human: 'HumanTargets', sim_four, scatter_x, scatter_y, out_png: s
         if y_low is not None and y_high is not None:
             ax_scatter.fill_between(x_line, y_low, y_high, color=SIM_COLOR, alpha=CI_ALPHA)
 
-        ax_scatter.plot(x_line, y_hat, REG_LINESTYLE, linewidth=LINE_WIDTH, color=SIM_COLOR, label="Simulation (fit)")
+        ax_scatter.plot(x_line, y_hat, REG_LINESTYLE, linewidth=LINE_WIDTH, color=SIM_COLOR, label="Simulation")
         if SHOW_SCATTER:
             ax_scatter.scatter(scatter_x, scatter_y, s=SCATTER_SIZE, facecolor='none',
-                               edgecolor=SIM_COLOR, linewidth=SCATTER_EDGEWIDTH, label="Simulation (binned)")
+                               edgecolor=SIM_COLOR, linewidth=SCATTER_EDGEWIDTH)
+                            #    , label="Simulation (binned)")
 
     ax_scatter.set_xlabel("Initial Appraisal Score")
     ax_scatter.set_ylabel("Proportion Regressed")
