@@ -78,3 +78,6 @@ So the best way would be use the grid search to roughly find some good start. Th
 ```bash
 python plot.py --grid_dir parameter_inference/bayes_runs --human human_data/analyzed_human_metrics.json --topk 3
 ```
+
+# Plot the final unified figures for the paper
+Go to `\plot\`
