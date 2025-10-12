@@ -1,0 +1,9 @@
+panel_index	panel_name	series	intercept	slope	r2	n
+1	skip_vs_length	human	0.578817	-0.028716	0.697028	20
+1	skip_vs_length	simulation	0.541209	-0.022851	0.726898	20
+2	skip_vs_logit_predictability	human	0.563805	0.032961	0.407609	12
+2	skip_vs_logit_predictability	simulation	0.539613	0.031521	0.200970	12
+3	skip_vs_log_frequency	human	0.288834	0.061071	0.703177	12
+3	skip_vs_log_frequency	simulation	0.380550	0.027402	0.739356	12
+4	regression_vs_difficulty	human	-0.038656	0.211648	0.896404	12
+4	regression_vs_difficulty	simulation	-0.058396	0.285148	0.510718	12
