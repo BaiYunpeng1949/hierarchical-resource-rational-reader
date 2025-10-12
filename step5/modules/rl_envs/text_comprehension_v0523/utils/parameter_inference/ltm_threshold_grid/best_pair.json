@@ -7,8 +7,8 @@
     "lowcoh_low": 0.291
   },
   "best": {
-    "high_threshold": 0.838,
-    "low_threshold": 0.844,
+    "high_threshold": 0.8380000000000001,
+    "low_threshold": 0.8440000000000001,
     "sim_fully_high": 0.49700598802395207,
     "sim_fully_low": 0.39520958083832336,
     "sim_min_high": 0.4375,

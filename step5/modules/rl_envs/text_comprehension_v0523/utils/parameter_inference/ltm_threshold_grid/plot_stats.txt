@@ -1,0 +1,11 @@
+section	coherence	knowledge	series	value
+bar	High	High-K	Human	0.484000
+bar	High	High-K	Sim	0.497006
+bar	High	Low-K	Human	0.381000
+bar	High	Low-K	Sim	0.395210
+bar	Low	High-K	Human	0.417000
+bar	Low	High-K	Sim	0.437500
+bar	Low	Low-K	Human	0.291000
+bar	Low	Low-K	Sim	0.232143
+section	series	intercept	slope	r2	n
+scatter_regression	simulation	0.656489	-0.715531	0.939874	11

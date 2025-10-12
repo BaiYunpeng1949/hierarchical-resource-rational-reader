@@ -122,4 +122,4 @@ Procedure:
 3. `python main.py`
 4. `cd step5/modules/rl_envs/text_comprehension_v0516/utils`
 5. Configure the correct json file, e.g., `/home/baiy4/reader-agent-zuco/step5/modules/rl_envs/text_comprehension_v0516/temp_sim_data/0708_text_comprehension_v0516_no_time_decay_softmin_reward_function_hierarchical_discrete_actions_limited_episodes_03_rl_model_40000000_steps/1000ep/raw_sim_results.json`
-6. `python plot.py`
+6. `python plot.py` for the heatmap figure; `python plot_density.py` for the line figure.
