@@ -74,7 +74,7 @@ def bounded_yerr(means, stds, lo=0.0, hi=1.0):
 def _prepare_handles_for_legend(baseline_labels, hatch_cycle):
     import matplotlib.patches as mpatches
     h_human = mpatches.Patch(facecolor=HUMAN_COLOR, edgecolor=HUMAN_COLOR, label="Human")
-    h_sim   = mpatches.Patch(facecolor=SIM_COLOR, edgecolor=SIM_COLOR, label="Simulation (V3)")
+    h_sim   = mpatches.Patch(facecolor=SIM_COLOR, edgecolor=SIM_COLOR, label="Simulation")
     baseline_handles = []
     for i, lab in enumerate(baseline_labels):
         hatch = hatch_cycle[i % len(hatch_cycle)]
