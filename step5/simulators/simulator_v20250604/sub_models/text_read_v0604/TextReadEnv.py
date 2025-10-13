@@ -232,7 +232,9 @@ class TextReadingUnderTimePressureEnv(Env):
                     apply=False
                 )
                 # Update the sentences' appraisal scores
-                self._already_read_sentences_appraisal_scores_distribution[self.current_sentence_index] = new_scores[self.current_sentence_index]
+                # self._already_read_sentences_appraisal_scores_distribution[self.current_sentence_index] = new_scores[self.current_sentence_index]     # TODO uncomment later, only for full memory agent.
+                self._already_read_sentences_appraisal_scores_distribution[self.current_sentence_index] = 1.0                                           # TODO: comment later when doing the normal tests.
+
                 # Update the elapsed time
                 if self._get_data_from_other_agents:
                     self._elapsed_time = time_info["elapsed_time"]

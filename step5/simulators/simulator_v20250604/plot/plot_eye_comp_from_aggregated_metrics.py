@@ -64,7 +64,7 @@ def _bar_group(ax, centers, means_h, stds_h, means_s, stds_s, ylabel=None, xlabe
     rects_s = ax.bar(offsets_s, means_s, bar_w,
                      yerr=stds_s, capsize=BAR_CAPSIZE,
                      edgecolor=SIM_COLOR, linewidth=BAR_LINEWIDTH, color=SIM_COLOR,
-                     label="Simulation (V3)")
+                     label="Simulation")
 
     if ylabel:
         ax.set_ylabel(ylabel)
