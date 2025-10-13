@@ -49,7 +49,11 @@ Use `--indent` (default 2) to change pretty-printing.
 For input, automatically reads the logs with the optimized parameters set.
 The content `simulation_read_contents.json` will be automatically stored in `assets/comprehension_results/simulation/`.
 
-For running baseline read content, customize the json filenames by `-o`:
+For running baseline read content, 
+
+update the `all_simulation_results.json` filepath in the `process_simulation_read_contents.py`
+
+customize the json filenames by `-o`:
 ```bash
 python process_simulation_read_contents.py -o simulation_read_contents_baseline_text_reader_gamma_0dot2.json
 ```

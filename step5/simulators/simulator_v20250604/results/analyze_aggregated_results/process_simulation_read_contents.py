@@ -53,7 +53,8 @@ def main():
 
     # # NOTE comment later, doing the sequentiality baseline for text reader with gamma=0.2
     # sim_results_filepath = f"/home/baiy4/reader-agent-zuco/step5/simulators/simulator_v20250604/simulated_results/20251011_0827_trials1_stims9_conds3/all_simulation_results.json"
-    
+    sim_results_filepath = f"/home/baiy4/reader-agent-zuco/step5/simulators/simulator_v20250604/simulated_results/20251013_1650_trials1_stims9_conds3/all_simulation_results.json"
+
     data = load_json(sim_results_filepath)
 
     if not isinstance(data, list):

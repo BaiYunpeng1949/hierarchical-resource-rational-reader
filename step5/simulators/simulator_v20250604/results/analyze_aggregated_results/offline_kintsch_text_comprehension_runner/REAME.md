@@ -10,6 +10,8 @@ python text_comprehension_pipeline_v1.py --input ../assets/comprehension_results
 If run the baseline reading contents:
 ```bash
 python text_comprehension_pipeline_v1.py --input ../assets/comprehension_results/simulation/simulation_read_contents_baseline_text_reader_gamma_0dot2.json --output ../assets/comprehension_results/simulation/lt m_gists_v1_baseline_text_reader_gamma_0dot2.json --max_facets 5 --model gpt-4o --max_episodes 27
+
+python text_comprehension_pipeline_v1.py --input ../assets/comprehension_results/simulation/simulation_read_contents_baseline_text_reader_gamma_0dot6.json --output ../assets/comprehension_results/simulation/ltm_gists_v1_baseline_text_reader_gamma_0dot6.json --max_facets 5 --model gpt-4o --max_episodes 27
 ```
 
 ### Version 2a (v2a): locally selecting the relevant facets (top k, k as an argument), then stacking together (comparison condition 2)
@@ -29,6 +31,8 @@ python text_comprehension_pipeline_v3.py --input ../assets/comprehension_results
 Run for the baseline model's results:
 ```bash
 python text_comprehension_pipeline_v3.py --input ../assets/comprehension_results/simulation/ltm_gists_v1_baseline_text_reader_gamma_0dot2.json --output ../assets/comprehension_results/simulation/ltm_gists_v3_baseline_text_reader_gamma_0dot2.json --tau_gist 0.32 --context_window 5 --half_life 3 --ctx_boost 1.0
+
+python text_comprehension_pipeline_v3.py --input ../assets/comprehension_results/simulation/ltm_gists_v1_baseline_text_reader_gamma_0dot6.json --output ../assets/comprehension_results/simulation/ltm_gists_v3_baseline_text_reader_gamma_0dot6.json --tau_gist 0.32 --context_window 5 --half_life 3 --ctx_boost 1.0
 ```
 
 # Reproduction
@@ -40,7 +44,9 @@ python -m offline_kintsch_text_comprehension_runner.comprehension_test --ltm_gis
 ```
 Run for the baseline results:
 ```bash
-python -m offline_kintsch_text_comprehension_runner.comprehension_test --ltm_gists_json assets/comprehension_results/simulation/ltm_gists_v3_baseline_text_reader_gamma_0dot2.json --output_dir assets/comprehension_results/simulation/comprehension_perfo rmance_v3 --max_episodes 27 --mcq_metadata assets/comprehension_results/mcq_metadata.json --input_json assets/comprehension_results/simulation/simulation_read_contents.json --stimuli_json assets/comprehension_results/stimuli_texts.json
+python -m offline_kintsch_text_comprehension_runner.comprehension_test --ltm_gists_json assets/comprehension_results/simulation/ltm_gists_v3_baseline_text_reader_gamma_0dot2.json --output_dir assets/comprehension_results/simulation/comprehension_performance_v3 --max_episodes 27 --mcq_metadata assets/comprehension_results/mcq_metadata.json --input_json assets/comprehension_results/simulation/simulation_read_contents.json --stimuli_json assets/comprehension_results/stimuli_texts.json
+
+python -m offline_kintsch_text_comprehension_runner.comprehension_test --ltm_gists_json assets/comprehension_results/simulation/ltm_gists_v3_baseline_text_reader_gamma_0dot6.json --output_dir assets/comprehension_results/simulation/comprehension_performance_v3 --max_episodes 27 --mcq_metadata assets/comprehension_results/mcq_metadata.json --input_json assets/comprehension_results/simulation/simulation_read_contents.json --stimuli_json assets/comprehension_results/stimuli_texts.json
 ```
 
 # Simulation Results (Documentation)
