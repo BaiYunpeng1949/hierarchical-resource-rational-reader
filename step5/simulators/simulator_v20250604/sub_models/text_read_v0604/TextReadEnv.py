@@ -27,8 +27,8 @@ if not logger.handlers:               # avoid duplicate handlers when workers fo
     logger.addHandler(handler)
 
 
-# DATA_SOURCE = "real_stimuli"
-DATA_SOURCE = "generated_stimuli"    # NOTE: please set this when training the model
+DATA_SOURCE = "real_stimuli"
+# DATA_SOURCE = "generated_stimuli"    # NOTE: please set this when training the model
 
 
 class TextReadingUnderTimePressureEnv(Env):
