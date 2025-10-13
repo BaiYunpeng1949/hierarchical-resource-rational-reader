@@ -48,11 +48,11 @@ def main():
     args = ap.parse_args()
 
     # sim_results_filepath = f"../../simulated_results/{args.input_json}/all_simulation_results.json"
-    # sim_results_filepath = f"../../parameter_inference/simulation_data/rho_0.290__w_0.700__cov_1.30/all_simulation_results.json"    # TODO uncomment later, after sequentiality baseline check
+    sim_results_filepath = f"../../parameter_inference/simulation_data/rho_0.290__w_0.700__cov_1.30/all_simulation_results.json"   
     # NOTE: Updated on 0929. Use the best parameter from now on.
 
-    # TODO comment later, doing the sequentiality baseline for text reader with gamma=0.2
-    sim_results_filepath = f"/home/baiy4/reader-agent-zuco/step5/simulators/simulator_v20250604/simulated_results/20251011_0827_trials1_stims9_conds3/all_simulation_results.json"
+    # # NOTE comment later, doing the sequentiality baseline for text reader with gamma=0.2
+    # sim_results_filepath = f"/home/baiy4/reader-agent-zuco/step5/simulators/simulator_v20250604/simulated_results/20251011_0827_trials1_stims9_conds3/all_simulation_results.json"
     
     data = load_json(sim_results_filepath)
 

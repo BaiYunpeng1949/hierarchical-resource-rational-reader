@@ -35,8 +35,8 @@ simulate:
   rl_models:
     text_reader:
       env_name: TextReadingUnderTimePressureEnv
-      checkpoints_folder_name: '1012_text_reading_baseline_full_memory' # NOTE: '0710_text_reading_under_time_pressure_v0604_04' # The formal version I should use
-      loaded_model_name: 'rl_model_20000000_steps' # NOTE: 'rl_model_200000000_steps' # The formal version I should use
+      checkpoints_folder_name: '0710_text_reading_under_time_pressure_v0604_04' # NOTE: '0710_text_reading_under_time_pressure_v0604_04' # The formal version I should use
+      loaded_model_name: 'rl_model_200000000_steps' # NOTE: 'rl_model_200000000_steps' # The formal version I should use
     sentence_reader:
       env_name: SentenceReadingUnderTimePressureEnv           
       checkpoints_folder_name: '0910_sentence_reaidng_v091007' # NOTE: '0910_sentence_reaidng_v091007'  # The formal version I should use

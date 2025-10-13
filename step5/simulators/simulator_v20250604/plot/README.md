@@ -1,4 +1,4 @@
-Plot for the paper figure. Unified.
+# Plot for the paper figure. Unified.
 
 First, generate plotable files from the human data and prior-aggregation simulation data. Get a unified mean, std format.
 ```bash
@@ -14,4 +14,15 @@ cd plot
 python plot_eye_comp_from_aggregated_metrics.py 
 ```
 
-TODO: later plot the comparison data here as well.
+# Plot for the baseline comparisons. Unified.
+
+Generate usable data metrics in json.
+```bash
+cd assets
+python build_aggregated_panel_metrics_baseline.py --folder simulation_data_baselines/ 
+```
+
+Plot
+```bash
+python plot_eye_comp_and_baselines_from_aggregated_metrics.py 
+```
