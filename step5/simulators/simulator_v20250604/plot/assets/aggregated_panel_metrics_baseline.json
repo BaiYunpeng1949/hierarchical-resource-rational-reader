@@ -179,6 +179,93 @@
         }
       }
     },
+    "sentence_reader_gamma_0dot6": {
+      "reading_speed": {
+        "30s": {
+          "mean": 0.0,
+          "std": 0.0,
+          "n": 9
+        },
+        "60s": {
+          "mean": 0.0,
+          "std": 0.0,
+          "n": 9
+        },
+        "90s": {
+          "mean": 0.0,
+          "std": 0.0,
+          "n": 9
+        }
+      },
+      "skip_rate": {
+        "30s": {
+          "mean": 0.0,
+          "std": 0.0,
+          "n": 9
+        },
+        "60s": {
+          "mean": 0.0,
+          "std": 0.0,
+          "n": 9
+        },
+        "90s": {
+          "mean": 0.0,
+          "std": 0.0,
+          "n": 9
+        }
+      },
+      "regression_rate": {
+        "30s": {
+          "mean": 0.0,
+          "std": 0.0,
+          "n": 9
+        },
+        "60s": {
+          "mean": 0.0,
+          "std": 0.0,
+          "n": 9
+        },
+        "90s": {
+          "mean": 0.0,
+          "std": 0.0,
+          "n": 9
+        }
+      },
+      "mcq_accuracy": {
+        "30s": {
+          "mean": 0.0,
+          "std": 0.0,
+          "n": 27
+        },
+        "60s": {
+          "mean": 0.0,
+          "std": 0.0,
+          "n": 27
+        },
+        "90s": {
+          "mean": 0.0,
+          "std": 0.0,
+          "n": 27
+        }
+      },
+      "free_recall_score": {
+        "30s": {
+          "mean": 0.0,
+          "std": 0.0,
+          "n": 27
+        },
+        "60s": {
+          "mean": 0.0,
+          "std": 0.0,
+          "n": 27
+        },
+        "90s": {
+          "mean": 0.0,
+          "std": 0.0,
+          "n": 27
+        }
+      }
+    },
     "text_reader_gamma_0dot2": {
       "reading_speed": {
         "30s": {
@@ -265,13 +352,102 @@
           "n": 27
         }
       }
+    },
+    "text_reader_gamma_0dot6": {
+      "reading_speed": {
+        "30s": {
+          "mean": 72.22222222222223,
+          "std": 45.115900128939515,
+          "n": 9
+        },
+        "60s": {
+          "mean": 33.0,
+          "std": 17.428425057933374,
+          "n": 9
+        },
+        "90s": {
+          "mean": 21.703703703703702,
+          "std": 11.823287337149095,
+          "n": 9
+        }
+      },
+      "skip_rate": {
+        "30s": {
+          "mean": 0.34986921530613846,
+          "std": 0.21749535384390978,
+          "n": 9
+        },
+        "60s": {
+          "mean": 0.3054103863373437,
+          "std": 0.1814300236198347,
+          "n": 9
+        },
+        "90s": {
+          "mean": 0.30388483332437644,
+          "std": 0.18026017271023273,
+          "n": 9
+        }
+      },
+      "regression_rate": {
+        "30s": {
+          "mean": 0.5028370299031022,
+          "std": 0.1333823266333294,
+          "n": 9
+        },
+        "60s": {
+          "mean": 0.5262615682550322,
+          "std": 0.14641083019477202,
+          "n": 9
+        },
+        "90s": {
+          "mean": 0.5484837904772546,
+          "std": 0.10985216078901314,
+          "n": 9
+        }
+      },
+      "mcq_accuracy": {
+        "30s": {
+          "mean": 0.06666666666666667,
+          "std": 0.09428090415820635,
+          "n": 27
+        },
+        "60s": {
+          "mean": 0.06666666666666667,
+          "std": 0.09428090415820635,
+          "n": 27
+        },
+        "90s": {
+          "mean": 0.06666666666666667,
+          "std": 0.13333333333333336,
+          "n": 27
+        }
+      },
+      "free_recall_score": {
+        "30s": {
+          "mean": 0.3532601272066434,
+          "std": 0.1228510080429163,
+          "n": 27
+        },
+        "60s": {
+          "mean": 0.38116514682769775,
+          "std": 0.20078571028342626,
+          "n": 27
+        },
+        "90s": {
+          "mean": 0.38948453466097516,
+          "std": 0.23213755926840018,
+          "n": 27
+        }
+      }
     }
   },
   "meta": {
     "variants": [
       "full_memory",
       "sentence_reader_gamma_0dot2",
-      "text_reader_gamma_0dot2"
+      "sentence_reader_gamma_0dot6",
+      "text_reader_gamma_0dot2",
+      "text_reader_gamma_0dot6"
     ],
     "files": {
       "full_memory": {
@@ -282,9 +458,17 @@
         "eye": "simulation_eye_movement_metrics_baseline_sentence_reader_gamma_0dot2.json",
         "comprehension": "comprehension_metrics_20251013-101849_baseline_sentence_reader_gamma_0dot2.json"
       },
+      "sentence_reader_gamma_0dot6": {
+        "eye": "simulation_eye_movement_metrics_baseline_sentence_reader_gamma_0dot6.json",
+        "comprehension": "comprehension_metrics_20251013-101849_baseline_sentence_reader_gamma_0dot6.json"
+      },
       "text_reader_gamma_0dot2": {
         "eye": "simulation_eye_movement_metrics_baseline_text_reader_gamma_0dot2.json",
         "comprehension": "comprehension_metrics_20251013-101849_baseline_text_reader_gamma_0dot2.json"
+      },
+      "text_reader_gamma_0dot6": {
+        "eye": "simulation_eye_movement_metrics_baseline_text_reader_gamma_0dot6.json",
+        "comprehension": "comprehension_metrics_20251013-175113_baseline_text_reader_gamma_0dot6.json"
       }
     }
   }

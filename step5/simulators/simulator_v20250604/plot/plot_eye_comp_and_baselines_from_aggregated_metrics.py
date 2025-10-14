@@ -17,7 +17,11 @@ SIM_COLOR   = "#2ca02c"     # green
 
 BASELINE_FILL   = "#bdbdbd" # grey fill
 BASELINE_EDGE   = SIM_COLOR # green edge
-BASELINE_HATCHES = ["/", "\\\\", ".", "///", "xx"]  # cycle textures
+# BASELINE_HATCHES = ["/", "\\\\", ".", "///", "xx"]  # cycle textures
+BASELINE_HATCHES = ["/", "\\", ".", "xx", "oo", "++", "--"]  # cycle textures
+
+# For bounded metrics, draw a tiny bar when mean==0 so the outline/hatch is visible
+MIN_VISIBLE_BAR = 0.005   # in [0,1] units; set None to disable
 
 FONT_SIZE_BASE = 14
 TICK_SIZE      = 12
@@ -28,8 +32,8 @@ BAR_LINEWIDTH   = 1.2
 BAR_CAPSIZE     = 3
 
 # Per-axes size (inches)
-AX_W_IN = 3.2
-AX_H_IN = 3.6
+AX_W_IN = 5.0
+AX_H_IN = 3.0
 
 # Absolute gaps (inches)
 H_GAP_IN = 0.8   # horizontal gap between columns
@@ -97,13 +101,20 @@ def _bar_cluster(ax, centers, series, colors, edges, hatches, ylab=None, xlabels
             yerr = bounded_yerr(y["mean"], y.get("std", [0]*len(centers)), lo=0.0, hi=1.0)
         else:
             yerr = y.get("std")
-
+        
+        vals = np.array(y["mean"], dtype=float)
+        if is_bounded and MIN_VISIBLE_BAR is not None:
+            vals_plot = np.where(vals == 0.0, MIN_VISIBLE_BAR, vals)
+        else:
+            vals_plot = vals
+        
         rects = ax.bar(
-            offs, y["mean"], bar_w,
+            offs, vals_plot, bar_w,
             yerr=yerr, capsize=BAR_CAPSIZE,
             facecolor=colors[i], edgecolor=edges[i],
             linewidth=BAR_LINEWIDTH, hatch=hatches[i]
         )
+
         rect_groups.append(rects)
 
     if ylab:
@@ -142,8 +153,10 @@ def main():
     variants = data_base["meta"]["variants"]
     pretty = {
         "full_memory": "Sim with unlimited memory",
-        "text_reader_gamma_0dot2": "Sim text reader (\u03B3=0.2)",
-        "sentence_reader_gamma_0dot2": "Sim sentence reader (\u03B3=0.2)",
+        "text_reader_gamma_0dot2": "Sim myopic text reader (\u03B3=0.2)",
+        "text_reader_gamma_0dot6": "Sim myopic text reader (\u03B3=0.6)",
+        "sentence_reader_gamma_0dot2": "Sim myopic sentence reader (\u03B3=0.2)",
+        "sentence_reader_gamma_0dot6": "Sim myopic sentence reader (\u03B3=0.6)",
     }
     baseline_labels = [pretty.get(v, v.replace("_"," ")) for v in variants]
 
