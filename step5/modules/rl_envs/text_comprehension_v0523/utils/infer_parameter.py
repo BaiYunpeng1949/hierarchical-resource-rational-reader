@@ -66,15 +66,15 @@ BIN_COUNT_SCATTER = 20
 
 # ---- Per-axes sizing controls ----
 # Keep consistent axes sizes for side-by-side panels
-PANEL_AX_WIDTH_IN   = 6.0
-PANEL_AX_HEIGHT_IN  = 4.0
+PANEL_AX_WIDTH_IN   = 5.0
+PANEL_AX_HEIGHT_IN  = 3.0
 SUBPLOT_WSPACE      = 0.05   # keep tiny; we’ll use an absolute spacer column
 # Absolute widths for the middle area
-LEGEND_WIDTH_IN     = 2.5   # width reserved for legend
+LEGEND_WIDTH_IN     = 3.0   # width reserved for legend
 LEGEND_SPACER_IN    = 0.1   # tiny spacer between legend and right plot
 # Legend placement (in the dedicated legend column)
 LEGEND_LOC         = "middle left"
-LEGEND_ANCHOR_X    = 0.7    # 0 = left edge of legend column
+LEGEND_ANCHOR_X    = 0.8    # 0 = left edge of legend column
 LEGEND_ANCHOR_Y    = 1.0   # raise/lower legend: 0 (bottom) … 1 (top)
 
 # Legend placement

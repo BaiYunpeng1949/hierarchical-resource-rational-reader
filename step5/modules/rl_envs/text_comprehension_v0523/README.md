@@ -244,6 +244,9 @@ Results are formatted as percentages and can be compared with human data from th
 
 
 # Parameter inference and Plotting
+
+NOTE: you have to infer the parameters to plot haha.
+
 ```bash
 python infer_parameter.py --input_json ../assets/organized_example_propositions_v0527.json --calc_path . --out_dir parameter_inference/ltm_threshold_grid/ --high_range 0.8 1.0 0.001 --low_range 0.8 1.0 0.001 --sim_json ../../text_comprehension_v0516/temp_sim_data/0708_text_comprehension_v0516_no_time_decay_softmin_reward_function_hierarchical_discrete_actions_limited_episodes_03_rl_model_40000000_steps/1000ep/raw_sim_results.json
 ```
