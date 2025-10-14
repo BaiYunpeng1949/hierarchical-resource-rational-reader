@@ -14,13 +14,13 @@ FONT_SIZE_BASE = 14
 TICK_SIZE      = 12
 LEGEND_SIZE    = 14
 
-BAR_GROUP_WIDTH = 0.70
+BAR_GROUP_WIDTH = 0.80
 BAR_CAPSIZE     = 3
 BAR_LINEWIDTH   = 1.0
 
 # ---- Per-axes size (inches) ----
-PANEL_AX_WIDTH_IN   = 3.2
-PANEL_AX_HEIGHT_IN  = 4.0
+PANEL_AX_WIDTH_IN   = 3
+PANEL_AX_HEIGHT_IN  = 3
 
 # ---- Absolute gaps (inches) between panels ----
 # 4 gaps for 5 panels; these DO NOT shrink the panels
