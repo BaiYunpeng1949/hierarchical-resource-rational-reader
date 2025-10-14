@@ -36,8 +36,8 @@ BIN_COUNT_CONT = 12
 
 # ---- Per-axes sizing controls ----
 # Keep the SAME axes size even if you have 2, 3, or 4 panels.
-PANEL_AX_WIDTH_IN   = 6.0
-PANEL_AX_HEIGHT_IN  = 4.0
+PANEL_AX_WIDTH_IN   = 5.0
+PANEL_AX_HEIGHT_IN  = 3.0
 SUBPLOT_WSPACE      = 0.25  # relative spacing between subplots
 # ----------------------------------
 

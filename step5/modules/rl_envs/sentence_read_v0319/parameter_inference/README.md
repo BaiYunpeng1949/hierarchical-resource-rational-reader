@@ -74,7 +74,9 @@ python sentence_read_grid_test.py
 
 ---
 
-## 3) Run the grid scorer + generate figures
+## 3) Run the grid scorer + **generate figures**
+
+NOTE: if you want to update figures, you need to re-run from parameter inference, i.e., from here. Sorry haha.
 
 From `parameter_inference/`:
 
