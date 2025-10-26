@@ -26,3 +26,15 @@ Plot
 ```bash
 python plot_eye_comp_and_baselines_from_aggregated_metrics.py 
 ```
+
+# Plot for the French corpus effects replication
+Generate non-aggregated (by episode) data
+```bash
+cd assets
+python build_french_corpus_effects_metrics.py   --root simulation_data_effects_replication/rho_0.290__w_0.700__cov_1.30   --lang en   --out analyzed_by_episode_fixation_metrics.json
+```
+
+Plot
+```bash
+python plot_french_corpus_effects.py --input assets/analyzed_by_episode_fixation_metrics.json --out french_corpus_effects_panel.png
+```
