@@ -171,7 +171,8 @@ def plot_trial_on_image(trial: Dict[str, Any],
                         dot_size: float,
                         line_width: float,
                         alpha_dots: float,
-                        alpha_lines: float):
+                        alpha_lines: float,
+                        y_offset_px: float = 0.0):
     img = Image.open(img_path).convert("RGB")
     W, H = img.size
 
@@ -186,15 +187,15 @@ def plot_trial_on_image(trial: Dict[str, Any],
     fixes = extract_fixations(trial)
     if len(fixes) >= 1:
         xs = [f["x"] for f in fixes]
-        ys = [f["y"] for f in fixes]
+        ys = [f["y"] + y_offset_px for f in fixes]  # apply vertical offset
 
         # Classify saccades + destination regression flags
         labels, is_reg_fix = classify_saccades_by_rules(fixes)
 
         # Draw saccades segment-by-segment for proper coloring
         for i in range(len(fixes) - 1):
-            x0, y0 = fixes[i]["x"], fixes[i]["y"]
-            x1, y1 = fixes[i+1]["x"], fixes[i+1]["y"]
+            x0, y0 = xs[i], ys[i]
+            x1, y1 = xs[i+1], ys[i+1]
             lab = labels[i]
             if lab == "regression":
                 color = "green"
@@ -224,14 +225,7 @@ def plot_trial_on_image(trial: Dict[str, Any],
             if xs_reg:
                 ax.scatter(xs_reg, ys_reg, s=dot_size, color="green", alpha=alpha_dots, edgecolors="none", zorder=4)
 
-    stim = trial.get("stimulus_index", "NA")
-    # participant = trial_participant(trial, None)
-    # label = trial_participant_label(trial, participant)
-    participant = participant
-    label = label
-    tc = trial_time_constraint(trial)
-
-    ax.set_title(f"Stim {stim} | {label} | time={tc}", fontsize=10)
+    # No title or in-figure annotations: trial info is only in the filename.
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     if out_path.exists():
@@ -241,14 +235,13 @@ def plot_trial_on_image(trial: Dict[str, Any],
 
 def main():
     ap = argparse.ArgumentParser(description="Plot scanpaths on stimulus images for each trial in JSON files.")
-    # ap.add_argument("--images_dir", "-i", type=Path, required=True, help="Directory containing stimulus images (indexed 0..N).")
     ap.add_argument("--out_root", "-o", type=Path, default=Path("scanpath_plots"), help="Base output directory.")
     ap.add_argument("--sim_out_dir", type=Path, default=None, help="Override output directory for simulation plots.")
     ap.add_argument("--human_out_dir", type=Path, default=None, help="Override output directory for human plots.")
-    # ap.add_argument("--dot_size", type=float, default=48.0, help="Fixation dot size (default 48).")
-    # ap.add_argument("--line_width", type=float, default=2.0, help="Saccade line width (default 2.0).")
-    # ap.add_argument("--alpha_dots", type=float, default=0.6, help="Dot transparency (0..1, default 0.6).")
-    # ap.add_argument("--alpha_lines", type=float, default=0.6, help="Line transparency (0..1, default 0.6).")
+    ap.add_argument("--human_y_offset_px", type=float, default=0.0,
+                    help="Vertical pixel offset added to human fixation y-coordinates (use negative to shift up).")
+    ap.add_argument("--sim_y_offset_px", type=float, default=0.0,
+                    help="Vertical pixel offset added to simulation fixation y-coordinates.")
     ap.add_argument("json_files", nargs="+", type=Path, help="One or more scanpath JSON files (each is a list of trials).")
     ap.add_argument("--default_participant", type=str, default=None, help="Fallback participant label if missing in trials.")
     args = ap.parse_args()
@@ -280,8 +273,16 @@ def main():
             tc = trial_time_constraint(trial)
 
             out_dir = choose_out_dir(args.out_root, args.sim_out_dir, args.human_out_dir, participant)
-            out_name = f"stim{stim_idx}_{label}_time{tc}.png"
+            out_name = f"stim{stim_idx}_{label}_time{tc}.pdf"
             out_path = out_dir / out_name
+
+            # Choose y-offset based on participant type
+            if participant.lower() == "human":
+                y_offset_px = args.human_y_offset_px
+            elif participant.lower() == "simulation":
+                y_offset_px = args.sim_y_offset_px
+            else:
+                y_offset_px = 0.0
 
             try:
                 plot_trial_on_image(
@@ -290,6 +291,7 @@ def main():
                     line_width=2,
                     alpha_dots=0.3,
                     alpha_lines=0.3,
+                    y_offset_px=y_offset_px,
                 )
                 print(f"[ok] Wrote {out_path}")
             except Exception as e:
