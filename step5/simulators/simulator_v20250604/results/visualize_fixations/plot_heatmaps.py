@@ -13,7 +13,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-IMG_EXTS = [".png", ".jpg", ".jpeg", ".webp"]
+IMG_EXTS = [".pdf", ".png", ".jpg", ".jpeg", ".webp"]
+
+# TODO: plot, no other stuff, only the content, into the pdf;
 
 # ----------------------- IO helpers -----------------------
 
@@ -55,7 +57,7 @@ def find_image(images_dir: Path, stimulus_index: int, verbose: bool=False) -> Op
                     return cand
 
     if verbose:
-        samples = list(images_dir.rglob("*.png"))[:5]
+        samples = list(images_dir.rglob("*.pdf"))[:5]
         samples += list(images_dir.rglob("*.jpg"))[:5]
         print(f"[warn] No image for stimulus_index={idx} under {images_dir}. Example files: {[str(s) for s in samples]}")
     return None
@@ -242,8 +244,11 @@ def overlay_heatmap_on_image(img: Image.Image,
     ax = plt.gca()
     ax.imshow(img, extent=[0, W, H, 0])
     ax.imshow(rgba, extent=[0, W, H, 0])
-    ax.set_xlim(0, W); ax.set_ylim(H, 0)
-    ax.set_xticks([]); ax.set_yticks([])
+    ax.set_xlim(0, W)
+    ax.set_ylim(H, 0)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_axis_off()
     return fig, ax
 
 # ---------------- Main plotting ----------------
@@ -325,13 +330,6 @@ def plot_heat_for_trial(trial: Dict[str, Any],
         vmax_ms=vmax_ms
     )
 
-    # Title: include participant label, time constraint, totals, and vmax if fixed
-    title_bits = [f"Stim {stim_idx}", f"{label}", f"time={tc}"]
-    if getattr(plot_heat_for_trial, "_show_totals_flag", False):
-        title_bits.append(f"sum={int(total_ms)} ms{scale_info}")
-    if vmax_ms is not None:
-        title_bits.append(f"vmax={int(vmax_ms)} ms")
-    ax.set_title(" | ".join(title_bits), fontsize=10)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     if out_path.exists():
@@ -394,7 +392,7 @@ def main():
 
             out_dir = choose_out_dir(args.out_root, args.sim_out_dir, args.human_out_dir, participant)
             stim_idx = trial.get("stimulus_index", "NA")
-            out_name = f"stim{stim_idx}_{label}_time{tc}.png"
+            out_name = f"stim{stim_idx}_{label}_time{tc}.pdf"
             out_path = out_dir / out_name
 
             try:
