@@ -15,7 +15,7 @@ from matplotlib.ticker import MaxNLocator
 HUMAN_COLOR = "#1f77b4"
 SIM_COLOR   = "#2ca02c"
 
-FONT_SIZE_BASE = 14
+FONT_SIZE_BASE = 12
 TICK_SIZE      = 12
 
 BAR_GROUP_WIDTH = 0.80
@@ -103,6 +103,13 @@ def main():
 
         _bar_group(ax, centers, h_means, h_stds, s_means, s_stds,
                    ylabel=ylabel, xlabels=conditions)
+
+        # === X-axis label control for consistent axes size ===
+        if metric_key == "reading_speed":
+            ax.set_xlabel("Time Constraints", fontsize=FONT_SIZE_BASE)
+        else:
+            # Reserve identical x-label space without showing text
+            ax.set_xlabel(" ", fontsize=FONT_SIZE_BASE)
 
         # No legend: color mapping is implicit (blue=Human, green=Simulation)
 
