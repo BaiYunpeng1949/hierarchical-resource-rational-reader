@@ -80,11 +80,11 @@ def main():
     data = json.loads(Path("assets/aggregated_panel_metrics.json").read_text(encoding="utf-8"))
     conditions = data["conditions"]
     metrics = [
-        ("reading_speed", "Reading speed (WPM)"),
-        ("skip_rate", "Skip rate"),
-        ("regression_rate", "Regression rate"),
-        ("mcq_accuracy", "MCQ accuracy"),
-        ("free_recall_score", "Free recall"),
+        ("reading_speed", "Reading Speed (WPM)"),
+        ("skip_rate", "Skip Rate"),
+        ("regression_rate", "Regression Rate"),
+        ("mcq_accuracy", "MCQ Accuracy"),
+        ("free_recall_score", "Free Recall"),
     ]
 
     _set_fonts()
