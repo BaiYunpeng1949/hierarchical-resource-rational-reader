@@ -470,29 +470,34 @@ def plot_panel(human: 'HumanTargets', sim_four, scatter_x, scatter_y,
           ncol=1,
           fontsize=AX_TICK_SIZE)
     
-        # ======= High-K / Low-K text annotations =======
+    # ======= High-K / Low-K text annotations =======
 
-    # Find max height among the 4 bars
-    ymax = max(Hh, fch, Hl, fcl, Mh, mch, Ml, mcl)
+    # x-positions: midpoints of the bar pairs in each cluster
+    x_highk_0 = 0.5 * (r1[0] + r2[0])  # High coherence, High-K pair
+    x_lowk_0  = 0.525 * (r3[0] + r4[0])  # High coherence, Low-K pair
 
-    # A bit of vertical padding above tallest bar
-    y_text_high = fch + 0.01   # tune as you like
-    y_text_low = fcl + 0.01   # tune as you like
+    x_highk_1 = 0.5 * (r1[1] + r2[1])  # Low coherence, High-K pair
+    x_lowk_1  = 0.51 * (r3[1] + r4[1])  # Low coherence, Low-K pair
 
-    # x-positions: midpoint of each 2-bar cluster
-    x_highk = 0.5 * (r1[0] + r2[0])
-    x_lowk  = 0.55 * (r3[0] + r4[0])
+    # y-positions: a little above the taller bar in each pair
+    y_high_0 = max(Hh, fch) + 0.01
+    y_low_0  = max(Hl, fcl) + 0.01
+    y_high_1 = max(Mh, mch) + 0.01
+    y_low_1  = max(Ml, mcl) + 0.01
 
-    ax.text(x_highk, y_text_high, "High-K",
-            ha="center", va="bottom",
-            fontsize=AX_TEXT_SIZE)
+    ax.text(x_highk_0, y_high_0, "High-K",
+            ha="center", va="bottom", fontsize=AX_TEXT_SIZE)
+    ax.text(x_lowk_0,  y_low_0,  "Low-K",
+            ha="center", va="bottom", fontsize=AX_TEXT_SIZE)
 
-    ax.text(x_lowk,  y_text_low, "Low-K",
-            ha="center", va="bottom",
-            fontsize=AX_TEXT_SIZE)
+    ax.text(x_highk_1, y_high_1, "High-K",
+            ha="center", va="bottom", fontsize=AX_TEXT_SIZE)
+    ax.text(x_lowk_1,  y_low_1,  "Low-K",
+            ha="center", va="bottom", fontsize=AX_TEXT_SIZE)
 
-    # Expand y-limit so text is not clipped
-    ax.set_ylim(0, max(y_text_high, y_text_low) + 0.05)
+    # Expand y-limit so no text is clipped
+    y_top = max(y_high_0, y_low_0, y_high_1, y_low_1)
+    ax.set_ylim(0, y_top + 0.05)
 
     # SAVE BAR PDF
     base, _ = os.path.splitext(out_png)
