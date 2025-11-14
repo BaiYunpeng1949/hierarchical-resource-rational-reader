@@ -124,6 +124,9 @@ def post_plot(human_csv: str, sim_root: str, best_folder: str, sim_relpath: str)
     plot_module.plot_in_a_row(panels, save_path)
     print(f"Saved four-panel figure to: {save_path}")
 
+    plot_module.save_panels_separately(panels, figures_dir, base_name="probabilities")
+    print(f"Saved panels to: {figures_dir}")
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--human", type=str, default=HUMAN_DEFAULT)

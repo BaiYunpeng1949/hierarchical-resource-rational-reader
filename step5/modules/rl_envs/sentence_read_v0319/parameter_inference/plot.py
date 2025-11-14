@@ -20,9 +20,9 @@ SCATTER_SIZE      = 36       # matplotlib scatter size (points^2)
 SCATTER_EDGEWIDTH = 1.0
 
 # Font/size controls (adjust once here)
-FONT_SIZE_BASE = 14
+FONT_SIZE_BASE = 12
 TICK_SIZE      = 12
-LEGEND_SIZE    = 14
+LEGEND_SIZE    = 12
 
 # Tick granularity (set to None to auto, or an int for max # major ticks)
 MAX_X_TICKS = 6
@@ -36,7 +36,7 @@ BIN_COUNT_CONT = 12
 
 # ---- Per-axes sizing controls ----
 # Keep the SAME axes size even if you have 2, 3, or 4 panels.
-PANEL_AX_WIDTH_IN   = 5.0
+PANEL_AX_WIDTH_IN   = 3.0
 PANEL_AX_HEIGHT_IN  = 3.0
 SUBPLOT_WSPACE      = 0.25  # relative spacing between subplots
 # ----------------------------------
@@ -338,3 +338,72 @@ def plot_in_a_row(panels, save_path):
             lines.append(f"{i}\t{panel_name}\t{series}\t{s['intercept']:.6f}\t{s['slope']:.6f}\t{s['r2']:.6f}\t{s['n']}")
     with open(os.path.join(dirn, f"{base}_{REGRESSION_TXTNAME}"), "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
+
+def save_panels_separately(panels, output_dir, base_name="panel"):
+    """
+    Save each panel in `panels` as an individual PDF with identical axes size.
+    - Only the first panel shows its y-label; others use a blank placeholder
+      to preserve left margin for alignment in Illustrator.
+    - Legend is only shown on the first panel (as in plot_in_a_row).
+    """
+    _ensure_dir(output_dir)
+    _set_global_fonts()
+
+    for idx, panel in enumerate(panels, start=1):
+        fig, ax = plt.subplots(
+            1, 1,
+            figsize=(PANEL_AX_WIDTH_IN, PANEL_AX_HEIGHT_IN),
+            constrained_layout=False,
+        )
+
+        # Read CSVs (same as in plot_in_a_row)
+        human_df = pd.read_csv(panel["human_csv"])
+        sim_df   = pd.read_csv(panel["sim_csv"])
+
+        x_h = human_df[panel["x_col"]].values
+        y_h = human_df[panel["y_col"]].values
+        x_s = sim_df[panel["x_col"]].values
+        y_s = sim_df[panel["y_col"]].values
+
+        force_int = bool(panel.get("x_integer", False))
+
+        human_stats = _plot_regression_binned(
+            ax, x_h, y_h,
+            label="Human",
+            color=HUMAN_COLOR,
+            force_integer_x=force_int,
+        )
+        sim_stats = _plot_regression_binned(
+            ax, x_s, y_s,
+            label="Simulation",
+            color=SIM_COLOR,
+            force_integer_x=force_int,
+        )
+
+        # Axis labels
+        ax.set_xlabel(panel["x_label"])
+
+        # First panel: real y-label (if provided)
+        # Other panels: placeholder to keep margin identical
+        y_lab = panel.get("y_label", None)
+        if idx == 1 and y_lab is not None:
+            ax.set_ylabel(y_lab)
+        elif idx == 4 and y_lab is not None:
+            ax.set_ylabel(y_lab)
+        else:
+            ax.set_ylabel(" ")
+
+        _style_axes(ax, force_integer_x=force_int)
+
+        if force_int:
+            x_all = np.concatenate([x_h, x_s])
+            x_all = x_all[np.isfinite(x_all)]
+            if x_all.size:
+                xmin, xmax = int(np.floor(x_all.min())), int(np.ceil(x_all.max()))
+                ax.set_xlim(xmin, xmax)
+
+        out_path = os.path.join(output_dir, f"{base_name}_{idx}.pdf")
+        fig.savefig(out_path, dpi=300, bbox_inches="tight", pad_inches=0.05)
+        plt.close(fig)
+
+        print(f"Saved: {out_path}")
