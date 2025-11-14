@@ -32,6 +32,7 @@ import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 from matplotlib.ticker import MaxNLocator
 import matplotlib.gridspec as gridspec
 
@@ -276,130 +277,265 @@ def load_appraisals_from_json(json_path):
 
 # ---------------- plotting (bar + scatter) ----------------
 
-def plot_panel(human: 'HumanTargets', sim_four, scatter_x, scatter_y, out_png: str, out_stats_txt: str):
+# def plot_panel(human: 'HumanTargets', sim_four, scatter_x, scatter_y, out_png: str, out_stats_txt: str):
+#     """
+#     Two subplots:
+#       Left: grouped bar chart (Human vs Sim) across coherence × knowledge.
+#       Right: binned dots + regression + 95% CI.
+#     """
+#     plt.rcParams.update({'font.size': FONT_SIZE_BASE})
+#     plt.rc('xtick', labelsize=TICK_SIZE)
+#     plt.rc('ytick', labelsize=TICK_SIZE)
+
+#     # fig, (ax_bar, ax_scatter) = plt.subplots(1, 2, figsize=(PANEL_AX_WIDTH_IN*2, PANEL_AX_HEIGHT_IN))
+#     # fig.subplots_adjust(wspace=SUBPLOT_WSPACE)
+
+#     # Figure width = left panel + GAP + right panel
+#     fig = plt.figure(figsize=(PANEL_AX_WIDTH_IN*2 + LEGEND_WIDTH_IN + LEGEND_SPACER_IN, PANEL_AX_HEIGHT_IN))
+
+#     # 3-column layout: [bar] [gap] [scatter]
+#     gs = gridspec.GridSpec(
+#         ncols=4, nrows=1, figure=fig,
+#         width_ratios=[PANEL_AX_WIDTH_IN, LEGEND_WIDTH_IN, LEGEND_SPACER_IN, PANEL_AX_WIDTH_IN],
+#         wspace=SUBPLOT_WSPACE
+#     )
+
+#     ax_bar     = fig.add_subplot(gs[0, 0])
+#     ax_legend  = fig.add_subplot(gs[0, 1])  # dedicated legend column
+#     ax_pad     = fig.add_subplot(gs[0, 2])  # tiny spacer to keep legend off the right plot
+#     ax_scatter = fig.add_subplot(gs[0, 3])
+
+#     # Hide the middle axes visuals
+#     ax_legend.axis("off")
+#     ax_pad.axis("off")
+
+#     # --- Left: grouped bar ---
+#     fch, fcl, mch, mcl = sim_four
+#     Hh, Hl, Mh, Ml = human.highcoh_high, human.highcoh_low, human.lowcoh_high, human.lowcoh_low
+
+#     bar_width = 0.18
+#     x_groups = np.arange(2)  # 0: High coherence, 1: Low coherence
+#     r1 = x_groups
+#     r2 = r1 + bar_width
+#     r3 = r2 + bar_width
+#     r4 = r3 + bar_width
+
+#     ax_bar.bar(r1, [Hh, Mh], width=bar_width, label="Human (High-K)", color=HUMAN_COLOR, hatch="/")
+#     ax_bar.bar(r2, [fch, mch], width=bar_width, label="Sim (High-K)",   color=SIM_COLOR,   hatch="/")
+#     ax_bar.bar(r3, [Hl, Ml], width=bar_width, label="Human (Low-K)",  color=HUMAN_COLOR, hatch=".")
+#     ax_bar.bar(r4, [fcl, mcl], width=bar_width, label="Sim (Low-K)",    color=SIM_COLOR,   hatch=".")
+
+#     # Style first, then set custom ticks so the locator doesn’t override them
+#     style_axes(ax_bar)
+#     ax_bar.set_xlabel("Text Coherence Level")
+#     ax_bar.set_ylabel("Proportional Recall")
+
+#     # Put labels *under* the two clusters (center = r1 + 1.5*bar_width), remove tick marks
+#     group_centers = r1 + 1.5 * bar_width
+#     ax_bar.set_xticks(group_centers)
+#     ax_bar.set_xticklabels(["High Coherence", "Low Coherence"])
+#     ax_bar.tick_params(axis="x", length=0, labelsize=12)
+
+#     # Keep legend handles to place a figure-level legend in the gap
+#     handles, labels = ax_bar.get_legend_handles_labels()
+#     bylabel = dict(zip(labels, handles))
+
+#     # place legend anchored to the *left* of the legend column
+#     # ax_legend.legend(bylabel.values(), bylabel.keys(), loc="center left", frameon=False, fontsize=LEGEND_SIZE)
+#     # ax_gap.legend(handles, labels, loc="center", frameon=False, fontsize=LEGEND_SIZE)
+#     ax_legend.legend(
+#         bylabel.values(), bylabel.keys(),
+#         loc=LEGEND_LOC,
+#         bbox_to_anchor=(LEGEND_ANCHOR_X, LEGEND_ANCHOR_Y),  # <— raise via Y
+#         frameon=False,
+#         fontsize=LEGEND_SIZE
+#     )
+
+#     # --- Right: scatter (binned) + regression + CI ---
+#     scatter_stats = None
+#     if scatter_x is not None and scatter_y is not None and scatter_x.size > 0 and scatter_y.size > 0:
+#         x_line, y_hat, y_low, y_high, stats = regress_and_ci(scatter_x, scatter_y)
+#         a, b, r2, n = stats
+#         scatter_stats = (a, b, r2, n)
+
+#         if y_low is not None and y_high is not None:
+#             ax_scatter.fill_between(x_line, y_low, y_high, color=SIM_COLOR, alpha=CI_ALPHA)
+
+#         ax_scatter.plot(x_line, y_hat, REG_LINESTYLE, linewidth=LINE_WIDTH, color=SIM_COLOR, label="Simulation")
+#         if SHOW_SCATTER:
+#             ax_scatter.scatter(scatter_x, scatter_y, s=SCATTER_SIZE, facecolor='none',
+#                                edgecolor=SIM_COLOR, linewidth=SCATTER_EDGEWIDTH)
+#                             #    , label="Simulation (binned)")
+
+#     ax_scatter.set_xlabel("Initial Appraisal Score")
+#     ax_scatter.set_ylabel("Proportion Regressed")
+#     style_axes(ax_scatter)
+#     ax_scatter.legend(loc=LEGEND_LOC, fontsize=LEGEND_SIZE, frameon=False)
+
+#     # # Figure-level legend centered in the *gap* between subplots
+#     # pos_left  = ax_bar.get_position()
+#     # pos_right = ax_scatter.get_position()
+#     # mid_x = (pos_left.x1 + pos_right.x0) / 2.0
+#     # # Put it slightly above the vertical center to reduce any overlap
+#     # mid_y = 0.5 * (pos_left.y0 + pos_left.y1) + 0.1
+#     # fig.legend(handles, labels, loc='center', bbox_to_anchor=(mid_x, mid_y),
+#     #            frameon=False, fontsize=LEGEND_SIZE)
+
+#     # --- Write stats file (bar data + scatter regression) ---
+#     with open(out_stats_txt, "w", encoding="utf-8") as f:
+#         f.write("section\tcoherence\tknowledge\tseries\tvalue\n")
+#         f.write(f"bar\tHigh\tHigh-K\tHuman\t{Hh:.6f}\n")
+#         f.write(f"bar\tHigh\tHigh-K\tSim\t{fch:.6f}\n")
+#         f.write(f"bar\tHigh\tLow-K\tHuman\t{Hl:.6f}\n")
+#         f.write(f"bar\tHigh\tLow-K\tSim\t{fcl:.6f}\n")
+#         f.write(f"bar\tLow\tHigh-K\tHuman\t{Mh:.6f}\n")
+#         f.write(f"bar\tLow\tHigh-K\tSim\t{mch:.6f}\n")
+#         f.write(f"bar\tLow\tLow-K\tHuman\t{Ml:.6f}\n")
+#         f.write(f"bar\tLow\tLow-K\tSim\t{mcl:.6f}\n")
+#         f.write("section\tseries\tintercept\tslope\tr2\tn\n")
+#         if scatter_stats is not None:
+#             a, b, r2, n = scatter_stats
+#             f.write(f"scatter_regression\tsimulation\t{a:.6f}\t{b:.6f}\t{r2:.6f}\t{n}\n")
+#         else:
+#             f.write("scatter_regression\tsimulation\tNA\tNA\tNA\t0\n")
+
+#     fig.savefig(out_png, dpi=300, bbox_inches="tight", pad_inches=0.05)
+#     plt.close(fig)
+
+# === Figure size constants (you can tune later) ===
+BAR_FIG_WIDTH  = 3
+BAR_FIG_HEIGHT = 3
+SCATTER_FIG_WIDTH  = 3
+SCATTER_FIG_HEIGHT = 3
+
+# === Font / size constants (you can tune freely) ===
+AX_LABEL_SIZE   = 12
+AX_TICK_SIZE    = 12
+AX_TEXT_SIZE    = 12        # for annotations like High-K / Low-K
+
+def plot_panel(human: 'HumanTargets', sim_four, scatter_x, scatter_y,
+               out_png: str, out_stats_txt: str):
     """
-    Two subplots:
-      Left: grouped bar chart (Human vs Sim) across coherence × knowledge.
-      Right: binned dots + regression + 95% CI.
+    Modified plotting:
+        - No combined PNG panel
+        - No legends
+        - Outputs two PDFs:
+            * <base>_bar.pdf
+            * <base>_scatter.pdf
     """
-    plt.rcParams.update({'font.size': FONT_SIZE_BASE})
-    plt.rc('xtick', labelsize=TICK_SIZE)
-    plt.rc('ytick', labelsize=TICK_SIZE)
 
-    # fig, (ax_bar, ax_scatter) = plt.subplots(1, 2, figsize=(PANEL_AX_WIDTH_IN*2, PANEL_AX_HEIGHT_IN))
-    # fig.subplots_adjust(wspace=SUBPLOT_WSPACE)
-
-    # Figure width = left panel + GAP + right panel
-    fig = plt.figure(figsize=(PANEL_AX_WIDTH_IN*2 + LEGEND_WIDTH_IN + LEGEND_SPACER_IN, PANEL_AX_HEIGHT_IN))
-
-    # 3-column layout: [bar] [gap] [scatter]
-    gs = gridspec.GridSpec(
-        ncols=4, nrows=1, figure=fig,
-        width_ratios=[PANEL_AX_WIDTH_IN, LEGEND_WIDTH_IN, LEGEND_SPACER_IN, PANEL_AX_WIDTH_IN],
-        wspace=SUBPLOT_WSPACE
-    )
-
-    ax_bar     = fig.add_subplot(gs[0, 0])
-    ax_legend  = fig.add_subplot(gs[0, 1])  # dedicated legend column
-    ax_pad     = fig.add_subplot(gs[0, 2])  # tiny spacer to keep legend off the right plot
-    ax_scatter = fig.add_subplot(gs[0, 3])
-
-    # Hide the middle axes visuals
-    ax_legend.axis("off")
-    ax_pad.axis("off")
-
-    # --- Left: grouped bar ---
+    # Unpack values as before
     fch, fcl, mch, mcl = sim_four
-    Hh, Hl, Mh, Ml = human.highcoh_high, human.highcoh_low, human.lowcoh_high, human.lowcoh_low
+    Hh, Hl, Mh, Ml = (human.highcoh_high,
+                      human.highcoh_low,
+                      human.lowcoh_high,
+                      human.lowcoh_low)
+
+    # ========= BAR FIGURE (PDF) =========
+    fig_bar = plt.figure(figsize=(BAR_FIG_WIDTH, BAR_FIG_HEIGHT))
+    ax = fig_bar.add_subplot(1, 1, 1)
 
     bar_width = 0.18
-    x_groups = np.arange(2)  # 0: High coherence, 1: Low coherence
+    x_groups = np.arange(2)
     r1 = x_groups
     r2 = r1 + bar_width
     r3 = r2 + bar_width
     r4 = r3 + bar_width
 
-    ax_bar.bar(r1, [Hh, Mh], width=bar_width, label="Human (High-K)", color=HUMAN_COLOR, hatch="/")
-    ax_bar.bar(r2, [fch, mch], width=bar_width, label="Sim (High-K)",   color=SIM_COLOR,   hatch="/")
-    ax_bar.bar(r3, [Hl, Ml], width=bar_width, label="Human (Low-K)",  color=HUMAN_COLOR, hatch=".")
-    ax_bar.bar(r4, [fcl, mcl], width=bar_width, label="Sim (Low-K)",    color=SIM_COLOR,   hatch=".")
+    # Bars
+    ax.bar(r1, [Hh, Mh], width=bar_width, color=HUMAN_COLOR, hatch="/")
+    ax.bar(r2, [fch, mch], width=bar_width, color=SIM_COLOR, hatch="/")
+    ax.bar(r3, [Hl, Ml], width=bar_width, color=HUMAN_COLOR, hatch=".")
+    ax.bar(r4, [fcl, mcl], width=bar_width, color=SIM_COLOR, hatch=".")
 
-    # Style first, then set custom ticks so the locator doesn’t override them
-    style_axes(ax_bar)
-    ax_bar.set_xlabel("Text Coherence Level")
-    ax_bar.set_ylabel("Proportional Recall")
+    # Axes styling
+    style_axes(ax)
+    ax.set_xlabel("Text Coherence Level", fontsize=AX_LABEL_SIZE)
+    ax.set_ylabel("Proportional Recall", fontsize=AX_LABEL_SIZE)
+    ax.tick_params(axis="both", labelsize=AX_TICK_SIZE)
 
-    # Put labels *under* the two clusters (center = r1 + 1.5*bar_width), remove tick marks
     group_centers = r1 + 1.5 * bar_width
-    ax_bar.set_xticks(group_centers)
-    ax_bar.set_xticklabels(["High Coherence", "Low Coherence"])
-    ax_bar.tick_params(axis="x", length=0, labelsize=12)
+    ax.set_xticks(group_centers)
+    ax.set_xticklabels(["High", "Low"])
+    ax.tick_params(axis="x", length=0)
 
-    # Keep legend handles to place a figure-level legend in the gap
-    handles, labels = ax_bar.get_legend_handles_labels()
-    bylabel = dict(zip(labels, handles))
+    # ---- NEW LEGEND (bottom-center, solid colors only) ----
+    human_patch = mpatches.Patch(color=HUMAN_COLOR, label="Human")
+    sim_patch   = mpatches.Patch(color=SIM_COLOR,   label="Simulation")
+    ax.legend(handles=[human_patch, sim_patch],
+          loc="lower center",
+          bbox_to_anchor=(0.5, 0.10),   # moves the legend below the axes
+          frameon=True,                  # white box
+          facecolor="white",
+          ncol=1,
+          fontsize=AX_TICK_SIZE)
+    
+        # ======= High-K / Low-K text annotations =======
 
-    # place legend anchored to the *left* of the legend column
-    # ax_legend.legend(bylabel.values(), bylabel.keys(), loc="center left", frameon=False, fontsize=LEGEND_SIZE)
-    # ax_gap.legend(handles, labels, loc="center", frameon=False, fontsize=LEGEND_SIZE)
-    ax_legend.legend(
-        bylabel.values(), bylabel.keys(),
-        loc=LEGEND_LOC,
-        bbox_to_anchor=(LEGEND_ANCHOR_X, LEGEND_ANCHOR_Y),  # <— raise via Y
-        frameon=False,
-        fontsize=LEGEND_SIZE
-    )
+    # Find max height among the 4 bars
+    ymax = max(Hh, fch, Hl, fcl, Mh, mch, Ml, mcl)
 
-    # --- Right: scatter (binned) + regression + CI ---
-    scatter_stats = None
-    if scatter_x is not None and scatter_y is not None and scatter_x.size > 0 and scatter_y.size > 0:
+    # A bit of vertical padding above tallest bar
+    y_text_high = fch + 0.01   # tune as you like
+    y_text_low = fcl + 0.01   # tune as you like
+
+    # x-positions: midpoint of each 2-bar cluster
+    x_highk = 0.5 * (r1[0] + r2[0])
+    x_lowk  = 0.55 * (r3[0] + r4[0])
+
+    ax.text(x_highk, y_text_high, "High-K",
+            ha="center", va="bottom",
+            fontsize=AX_TEXT_SIZE)
+
+    ax.text(x_lowk,  y_text_low, "Low-K",
+            ha="center", va="bottom",
+            fontsize=AX_TEXT_SIZE)
+
+    # Expand y-limit so text is not clipped
+    ax.set_ylim(0, max(y_text_high, y_text_low) + 0.05)
+
+    # SAVE BAR PDF
+    base, _ = os.path.splitext(out_png)
+    bar_pdf = f"{base}_bar.pdf"
+    fig_bar.savefig(bar_pdf, dpi=300, bbox_inches="tight", pad_inches=0.05)
+    plt.close(fig_bar)
+
+    # ========= SCATTER FIGURE (PDF) =========
+
+    fig_sc = plt.figure(figsize=(SCATTER_FIG_WIDTH, SCATTER_FIG_HEIGHT))
+    ax_sc = fig_sc.add_subplot(1, 1, 1)
+
+    # Regression line + scatter
+    if scatter_x is not None and scatter_y is not None and len(scatter_x) > 0:
         x_line, y_hat, y_low, y_high, stats = regress_and_ci(scatter_x, scatter_y)
-        a, b, r2, n = stats
-        scatter_stats = (a, b, r2, n)
-
-        if y_low is not None and y_high is not None:
-            ax_scatter.fill_between(x_line, y_low, y_high, color=SIM_COLOR, alpha=CI_ALPHA)
-
-        ax_scatter.plot(x_line, y_hat, REG_LINESTYLE, linewidth=LINE_WIDTH, color=SIM_COLOR, label="Simulation")
+        if y_low is not None:
+            ax_sc.fill_between(x_line, y_low, y_high, color=SIM_COLOR, alpha=0.2)
+        ax_sc.plot(x_line, y_hat, color=SIM_COLOR, linewidth=2)
         if SHOW_SCATTER:
-            ax_scatter.scatter(scatter_x, scatter_y, s=SCATTER_SIZE, facecolor='none',
-                               edgecolor=SIM_COLOR, linewidth=SCATTER_EDGEWIDTH)
-                            #    , label="Simulation (binned)")
+            ax_sc.scatter(scatter_x, scatter_y, s=SCATTER_SIZE,
+                          facecolor='none', edgecolor=SIM_COLOR)
 
-    ax_scatter.set_xlabel("Initial Appraisal Score")
-    ax_scatter.set_ylabel("Proportion Regressed")
-    style_axes(ax_scatter)
-    ax_scatter.legend(loc=LEGEND_LOC, fontsize=LEGEND_SIZE, frameon=False)
+    ax_sc.set_xlabel("Initial Appraisal Score", fontsize=AX_LABEL_SIZE)
+    ax_sc.set_ylabel("Proportion Recalled", fontsize=AX_LABEL_SIZE)
+    style_axes(ax_sc)
+    ax_sc.tick_params(axis="both", labelsize=AX_TICK_SIZE)
 
-    # # Figure-level legend centered in the *gap* between subplots
-    # pos_left  = ax_bar.get_position()
-    # pos_right = ax_scatter.get_position()
-    # mid_x = (pos_left.x1 + pos_right.x0) / 2.0
-    # # Put it slightly above the vertical center to reduce any overlap
-    # mid_y = 0.5 * (pos_left.y0 + pos_left.y1) + 0.1
-    # fig.legend(handles, labels, loc='center', bbox_to_anchor=(mid_x, mid_y),
-    #            frameon=False, fontsize=LEGEND_SIZE)
+    # Save plots
+    scatter_pdf = f"{base}_scatter.pdf"
+    fig_sc.savefig(scatter_pdf, dpi=300, bbox_inches="tight", pad_inches=0.05)
+    plt.close(fig_sc)
 
-    # --- Write stats file (bar data + scatter regression) ---
-    with open(out_stats_txt, "w", encoding="utf-8") as f:
+    # Write stats unchanged
+    with open(out_stats_txt, "w") as f:
         f.write("section\tcoherence\tknowledge\tseries\tvalue\n")
-        f.write(f"bar\tHigh\tHigh-K\tHuman\t{Hh:.6f}\n")
-        f.write(f"bar\tHigh\tHigh-K\tSim\t{fch:.6f}\n")
-        f.write(f"bar\tHigh\tLow-K\tHuman\t{Hl:.6f}\n")
-        f.write(f"bar\tHigh\tLow-K\tSim\t{fcl:.6f}\n")
-        f.write(f"bar\tLow\tHigh-K\tHuman\t{Mh:.6f}\n")
-        f.write(f"bar\tLow\tHigh-K\tSim\t{mch:.6f}\n")
-        f.write(f"bar\tLow\tLow-K\tHuman\t{Ml:.6f}\n")
-        f.write(f"bar\tLow\tLow-K\tSim\t{mcl:.6f}\n")
-        f.write("section\tseries\tintercept\tslope\tr2\tn\n")
-        if scatter_stats is not None:
-            a, b, r2, n = scatter_stats
-            f.write(f"scatter_regression\tsimulation\t{a:.6f}\t{b:.6f}\t{r2:.6f}\t{n}\n")
-        else:
-            f.write("scatter_regression\tsimulation\tNA\tNA\tNA\t0\n")
-
-    fig.savefig(out_png, dpi=300, bbox_inches="tight", pad_inches=0.05)
-    plt.close(fig)
+        f.write(f"bar\tHigh\tHigh-K\tHuman\t{Hh}\n")
+        f.write(f"bar\tHigh\tHigh-K\tSim\t{fch}\n")
+        f.write(f"bar\tHigh\tLow-K\tHuman\t{Hl}\n")
+        f.write(f"bar\tHigh\tLow-K\tSim\t{fcl}\n")
+        f.write(f"bar\tLow\tHigh-K\tHuman\t{Mh}\n")
+        f.write(f"bar\tLow\tHigh-K\tSim\t{mch}\n")
+        f.write(f"bar\tLow\tLow-K\tHuman\t{Ml}\n")
+        f.write(f"bar\tLow\tLow-K\tSim\t{mcl}\n")
 
 
 # ---------------- main ----------------
