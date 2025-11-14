@@ -20,9 +20,9 @@ SCATTER_SIZE      = 36       # matplotlib scatter size (points^2)
 SCATTER_EDGEWIDTH = 1.0
 
 # Font/size controls (adjust once here)
-FONT_SIZE_BASE = 14
+FONT_SIZE_BASE = 12
 TICK_SIZE      = 12
-LEGEND_SIZE    = 14
+LEGEND_SIZE    = 12
 
 # Tick granularity (set to None to auto, or an int for max # major ticks)
 MAX_X_TICKS = 6
@@ -31,7 +31,7 @@ MAX_Y_TICKS = 6
 # ---- Per-axes sizing controls ----
 # Define the desired width/height for each subplot (inches). This lets you keep
 # the SAME axes size even if you have 2, 3, or 4 panels.
-PANEL_AX_WIDTH_IN   = 5.0
+PANEL_AX_WIDTH_IN   = 3.0
 PANEL_AX_HEIGHT_IN  = 3.0
 SUBPLOT_WSPACE      = 0.25  # relative spacing between subplots
 # ----------------------------------
@@ -237,6 +237,44 @@ def plot_in_a_row(panels, save_path):
     stats_path = _write_regression_stats(all_stats, os.path.dirname(save_path))
     print(f"Saved regression stats to: {stats_path}")
 
+def save_panels_separately(panels, save_dir):
+    """
+    Save each panel as an individual PDF with identical axis size and styling.
+    Panels without a ylabel will still reserve the same left margin.
+    """
+    _ensure_dir(save_dir)
+    _set_global_fonts()
+
+    for idx, panel in enumerate(panels, start=1):
+        fig, ax = plt.subplots(
+            1, 1,
+            figsize=(PANEL_AX_WIDTH_IN, PANEL_AX_HEIGHT_IN),
+            constrained_layout=False
+        )
+
+        # Force placeholder ylabel if the user left it empty
+        y_label = panel.get("y_label", None)
+        if y_label is None or y_label.strip() == "":
+            y_label = " "     # ← keeps the left margin consistent
+
+        compare_one(
+            ax=ax,
+            human_csv=panel["human_csv"],
+            sim_csv=panel["sim_csv"],
+            x_col=panel["x_col"],
+            y_col=panel["y_col"],
+            x_label=panel["x_label"],
+            y_label=y_label,                # ← always pass a label (even blank)
+            want_legend=True if idx == 1 else False,
+            x_integer=panel.get("x_integer", False),
+        )
+
+        out_path = os.path.join(save_dir, f"panel_{idx}.pdf")
+        fig.savefig(out_path, dpi=300, bbox_inches="tight", pad_inches=0.05)
+        plt.close(fig)
+
+        print(f"Saved: {out_path}")
+
 # Backward-compatible wrapper for 3 panels
 def plot_three_in_a_row(panels, save_path):
     assert len(panels) == 3, "Exactly three panels are required."
@@ -280,3 +318,8 @@ if __name__ == "__main__":
     out_path = os.path.join(save_dir, "gaze_duration_three_panel.png")
     plot_in_a_row(panels, out_path)
     print(f"Saved figure to: {out_path}")
+
+    # Save each panel as an individual PDF
+    save_panels_separately(panels, save_dir)
+    print(f"Saved panels to: {save_dir}")
+
