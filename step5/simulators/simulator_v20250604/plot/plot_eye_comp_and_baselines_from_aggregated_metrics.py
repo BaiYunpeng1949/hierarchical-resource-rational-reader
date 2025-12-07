@@ -143,16 +143,17 @@ def main():
     data_base = json.loads(AGG_BASE_PATH.read_text(encoding="utf-8"))
 
     conditions = data_main["conditions"]
+    pretty_conditions = [c.replace("s", " s") for c in conditions]
     centers    = list(range(len(conditions)))
 
     row1 = [
-        ("reading_speed", "Reading Speed (WPM)"),
-        ("skip_rate", "Skip Rate"),
-        ("regression_rate", "Regression Rate"),
+        ("reading_speed", "Reading speed (WPM)"),
+        ("skip_rate", "Skip rate"),
+        ("regression_rate", "Regression rate"),
     ]
     row2 = [
-        ("mcq_accuracy", "MCQ Accuracy"),
-        ("free_recall_score", "Free Recall"),
+        ("mcq_accuracy", "MCQ accuracy"),
+        ("free_recall_score", "Free recall"),
     ]
 
     variants = data_base["meta"]["variants"]
@@ -222,13 +223,13 @@ def main():
     for ax, (metric, ylab) in zip([ax_speed, ax_skip, ax_regr], row1):
         series, colors, edges, hatches = series_for(metric)
         _bar_cluster(ax, centers, series, colors, edges, hatches,
-                     ylab=ylab, xlabels=conditions, metric_key=metric)
+                     ylab=ylab, xlabels=pretty_conditions, metric_key=metric)
 
     # Plot row 2
     for ax, (metric, ylab) in zip([ax_mcq, ax_free], row2):
         series, colors, edges, hatches = series_for(metric)
         _bar_cluster(ax, centers, series, colors, edges, hatches,
-                     ylab=ylab, xlabels=conditions, metric_key=metric)
+                     ylab=ylab, xlabels=pretty_conditions, metric_key=metric)
 
     # Legend in bottom-right blank panel
     handles = _prepare_handles_for_legend(baseline_labels, BASELINE_HATCHES)

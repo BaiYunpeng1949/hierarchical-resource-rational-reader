@@ -91,8 +91,15 @@ def main():
     args = ap.parse_args()
 
     data = json.loads(args.input.read_text(encoding="utf-8"))
-    conds = order_conditions(list(data["by_condition"].keys()))
-    cond_labels = conds  # show exactly "30s, 60s, 90s"
+
+    raw_conds = list(data["by_condition"].keys())
+    conds = order_conditions(raw_conds)  # still: ["30s", "60s", "90s"]
+
+    # Pretty labels for the x-axis: "30 s", "60 s", "90 s"
+    cond_labels = [c.replace("s", " s") for c in conds]
+    # or more robust:
+    # import re
+    # cond_labels = [re.sub(r"(\d+)([a-zA-Z]+)$", r"\1 \2", c) for c in conds]
 
     # Build series for each metric
     series = {}
@@ -144,7 +151,7 @@ def main():
 if __name__ == "__main__":
 
     """
-    python plot_french_corpus_effects.py --input assets/analyzed_by_episode_fixation_metrics.json --out french_corpus_effects_panel.png
+    python plot_french_corpus_effects.py --input assets/analyzed_by_episode_fixation_metrics.json --out french_corpus_effects_panel.pdf
     """
 
     main()

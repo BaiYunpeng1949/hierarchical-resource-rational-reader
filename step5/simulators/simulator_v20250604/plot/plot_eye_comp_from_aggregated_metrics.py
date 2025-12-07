@@ -81,6 +81,8 @@ def _bar_group(ax, centers, means_h, stds_h, means_s, stds_s, ylabel=None, xlabe
 def main():
     data = json.loads(Path("assets/aggregated_panel_metrics.json").read_text(encoding="utf-8"))
     conditions = data["conditions"]
+    # Turn "30s" -> "30 s"
+    pretty_conditions = [c.replace("s", " s") for c in conditions]
     metrics = [
         ("reading_speed", "Reading speed (WPM)"),
         ("skip_rate", "Skip rate"),
@@ -132,7 +134,7 @@ def main():
         s_stds  = [data["simulation"][metric_key][c]["std"]  for c in conditions]
 
         rects_h, rects_s = _bar_group(ax, centers, h_means, h_stds, s_means, s_stds,
-                                      ylabel=ylabel, xlabels=conditions)
+                                      ylabel=ylabel, xlabels=pretty_conditions)
         if legend_handles is None:
             legend_handles = [rects_h[0], rects_s[0]]
 
@@ -151,7 +153,7 @@ def main():
         fontsize=LEGEND_SIZE,
     )
 
-    out = Path("eye_comp_panel_from_aggregated_abs_gap.png")
+    out = Path("eye_comp_panel_from_aggregated_abs_gap.pdf")
     fig.savefig(out, dpi=300, bbox_inches="tight", pad_inches=0.05)
     plt.close(fig)
     print("Saved:", out)

@@ -36,5 +36,5 @@ python build_french_corpus_effects_metrics.py   --root simulation_data_effects_r
 
 Plot
 ```bash
-python plot_french_corpus_effects.py --input assets/analyzed_by_episode_fixation_metrics.json --out french_corpus_effects_panel.png
+python plot_french_corpus_effects.py --input assets/analyzed_by_episode_fixation_metrics.json --out french_corpus_effects_panel.pdf
 ```
