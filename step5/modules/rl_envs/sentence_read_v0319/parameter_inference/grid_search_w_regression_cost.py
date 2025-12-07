@@ -9,13 +9,13 @@ SIM_REL_DEFAULT = "all_words_regression_and_skip_probabilities.csv"
 # Four-panel figure definitions (skip + regression probabilities)
 PANELS_DEF = [
     # 1) Skip vs Word Length (integer x)
-    ("skip_vs_length", "length", "skip_probability", "Word Length", "Skip Probability", True),
+    ("skip_vs_length", "length", "skip_probability", "Word length", "Skip probability", True),
     # 2) Skip vs Logit Predictability
-    ("skip_vs_logit_predictability", "logit_predictability", "skip_probability", "Logit Predictability", "", False),
+    ("skip_vs_logit_predictability", "logit_predictability", "skip_probability", "Logit predictability", "", False),
     # 3) Skip vs Log Frequency
-    ("skip_vs_log_frequency", "log_frequency", "skip_probability", "Log Frequency", "", False),
+    ("skip_vs_log_frequency", "log_frequency", "skip_probability", "Log frequency", "", False),
     # 4) Regression vs Difficulty
-    ("regression_vs_difficulty", "difficulty", "regression_probability", "Word Difficulty", "Regression Probability", False),
+    ("regression_vs_difficulty", "difficulty", "regression_probability", "Word difficulty", "Regression probability", False),
 ]
 
 # For scoring during grid search (slope/intercept difference on overlapping ranges)
