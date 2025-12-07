@@ -79,12 +79,13 @@ def _bar_group(ax, centers, means_h, stds_h, means_s, stds_s, ylabel=None, xlabe
 def main():
     data = json.loads(Path("assets/aggregated_panel_metrics.json").read_text(encoding="utf-8"))
     conditions = data["conditions"]
+    pretty_labels = [c.replace("s", " s") for c in conditions]  
     metrics = [
-        ("reading_speed", "Reading Speed (WPM)"),
-        ("skip_rate", "Skip Rate"),
-        ("regression_rate", "Regression Rate"),
-        ("mcq_accuracy", "MCQ Accuracy"),
-        ("free_recall_score", "Free Recall"),
+        ("reading_speed", "Reading speed (WPM)"),
+        ("skip_rate", "Skip rate"),
+        ("regression_rate", "Regression rate"),
+        ("mcq_accuracy", "MCQ accuracy"),
+        ("free_recall_score", "Free recall"),
     ]
 
     _set_fonts()
@@ -102,7 +103,7 @@ def main():
         s_stds  = [data["simulation"][metric_key][c]["std"]  for c in conditions]
 
         _bar_group(ax, centers, h_means, h_stds, s_means, s_stds,
-                   ylabel=ylabel, xlabels=conditions)
+                   ylabel=ylabel, xlabels=pretty_labels)
 
         # === X-axis label control for consistent axes size ===
         if metric_key == "reading_speed":
