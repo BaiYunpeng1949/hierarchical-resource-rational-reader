@@ -292,8 +292,8 @@ if __name__ == "__main__":
             "sim_csv":   os.path.join(sim_data_dir,   "gaze_duration_vs_word_length.csv"),
             "x_col": "word_length",
             "y_col": "average_gaze_duration",
-            "x_label": "Word Length",
-            "y_label": "Average Gaze Duration (ms)",
+            "x_label": "Word length",
+            "y_label": "Average gaze duration (ms)",
             "x_integer": True,  # <- force integer ticks for word length
         },
         {
@@ -301,7 +301,7 @@ if __name__ == "__main__":
             "sim_csv":   os.path.join(sim_data_dir,   "gaze_duration_vs_word_log_frequency_binned.csv"),
             "x_col": "log_frequency",
             "y_col": "average_gaze_duration",
-            "x_label": "Log Frequency",
+            "x_label": "Log frequency",
             "y_label": "",  # ylabel optional
         },
         {
@@ -309,7 +309,7 @@ if __name__ == "__main__":
             "sim_csv":   os.path.join(sim_data_dir,   "gaze_duration_vs_word_logit_predictability_binned.csv"),
             "x_col": "logit_predictability",
             "y_col": "average_gaze_duration",
-            "x_label": "Logit Predictability",
+            "x_label": "Logit predictability",
             "y_label": "",  # keep empty for consistency
         },
     ]
