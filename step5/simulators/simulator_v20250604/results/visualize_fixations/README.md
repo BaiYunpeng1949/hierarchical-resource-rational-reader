@@ -262,3 +262,8 @@ Feel free to change the simulation folder: `20250819_0856_trials1_stims9_conds3`
 ### Outputs
 - `letter_index_plots/abs_letter_index_len{L}.png` — absolute counts for length `L`
 - `letter_index_plots/norm_letter_index_{DIV}_bins{B}.png` — normalized distribution
+
+## Generate videos
+```bash
+python make_scanpath_video.py --human_json assets/11_18_17_40_integrated_corrected_human_scanpath.json --sim_json assets/simulation_scanpaths.json --stimulus_index 0 --human_participant_index 23 --sim_participant_index 0 --time_condition 30s --out_human videos/human/human_stim0_pid0_30s.mp4 --out_sim videos/sim/sim_stim0_pid0_30s.mp4
+```
