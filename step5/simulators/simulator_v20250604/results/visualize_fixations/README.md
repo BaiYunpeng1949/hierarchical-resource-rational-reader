@@ -118,20 +118,16 @@ python process_sim_results.py \
 
 **Simulation only** (to a dedicated folder):
 ```bash
-python plot_scanpaths.py \
-  --out_root scanpaths \
-  --sim_out_dir scanpaths/simulation \
-  --default_participant simulation \
-  assets/simulation_scanpaths.json
+
 ```
 
 **Human only** (separate destination):
 ```bash
 python plot_scanpaths.py \
-  --out_root scanpaths \
-  --human_out_dir scanpaths/human \
-  --default_participant human \
-  assets/11_18_17_40_integrated_corrected_human_scanpath.json
+    assets/11_18_17_40_integrated_corrected_human_scanpath.json \
+    --noise_sigma_px 5 \
+    --noise_seed 123 \
+    --out_root scanpath_plots_noisy\human
 ```
 
 **Both**, auto‑split under `vis/`:

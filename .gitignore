@@ -262,3 +262,7 @@ sysinfo.txt
 /step5/modules/rl_envs/sentence_read_v0319/parameter_inference/simulation_data
 /step5/simulators/simulator_v20250604/parameter_inference/simulation_data
 /step5/simulators/simulator_v20250604/parameter_inference/bayes_runs
+
+/step5/simulators/simulator_v20250604/results/visualize_fixations/scanpath_plots_noisyhuman
+/step5/simulators/simulator_v20250604/results/visualize_fixations/scanpath_plots_noisysimulation
+/step5/simulators/simulator_v20250604/results/visualize_fixations/scanpath_plots_fixed
