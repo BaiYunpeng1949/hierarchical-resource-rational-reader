@@ -236,3 +236,13 @@ sysinfo.txt
 /step5/data/sim_results/sentence_reading/
 /results/section2/_raw_simulated_results/_archived
 /results/section2/processed_simulated_results/_archived
+/data/human_data
+# analyzed_data
+# /data/human_data/bai_read_under_time_pressure/comprehension_data
+# /data/human_data/bai_read_under_time_pressure/processed_data
+# /data/human_data/bai_read_under_time_pressure/corrected_data_by_fix8
+step5/simulators/simulator_v20250604/parameter_inference
+step5/modules/rl_envs/sentence_read_v0319/parameter_inference/simulation_data
+step5/modules/rl_envs/word_activation_v0218/parameter_inference
+step5/modules/rl_envs/text_comprehension_v0516/temp_sim_data/
+step5/simulators/simulator_v20250604
