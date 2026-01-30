@@ -4,14 +4,14 @@ This repository contains the code and example data associated with the paper:
 > [**Hierarchical Resource Rationality Explains Human Reading Behavior**](https://osf.io/preprints/psyarxiv/26hb8)  
 > Yunpeng Bai, Xiaofu Jin, Shengdong Zhao, Antti Oulasvirta
 
-The code implements a hierarchical, resource-rational computational model of human reading that integrates perceptual, memory, and decision-making constraints to simulate eye-movement behavior and comprehension under varying task demands. We also include results reproduction and experiment running in the repository.
+The code implements a hierarchical, resource-rational computational model of human reading that integrates perceptual, memory, and decision-making constraints to simulate eye-movement behavior and comprehension under varying task demands. WThe repository also includes scripts for running experiments and reproducing key results reported in the paper.
 
 
 ---
 
 ## 1. Overview
 
-### What does the codes do?
+### What does the code do?
 The codes simulate human reading as a sequential decision-making process under bounded cognitive resources. It generates predicted eye-movement patterns (e.g., fixation durations, skipping, regressions) and comprehension-related measures under different experimental conditions (e.g., time pressure) at different cognitive levels (word, sentence, and text levels).
 
 ### Key components
@@ -20,7 +20,7 @@ The codes simulate human reading as a sequential decision-making process under b
 - Simulation and inference code for fitting model parameters
 - Analysis scripts for generating figures and metrics reported in the paper
 
-A detailed methodology description and POMDP tuple designs are provided in **Supplementary Information, Section 1.3 and 1.4** of the manuscript.
+A detailed description of the modeling framework and POMDP formulations is provided in Supplementary Information, Sections 1.3 and 1.4 of the manuscript.
 
 
 ---
@@ -49,7 +49,7 @@ A detailed methodology description and POMDP tuple designs are provided in **Sup
 
 ## 3. Software (packages) Dependencies
 
-All required dependencies with exact version numbers are listed in `reqirements.txt` in the root folder.
+All required dependencies with **exact version numbers** are listed in `reqirements.txt` in the root directory. The code has been tested using the versions specified in `requirements.txt`. Results reported in the paper were generated using these versions.
 
 Key dependencies preview:
 -  numpy
@@ -62,7 +62,7 @@ Key dependencies preview:
 ## 4. Installation Guide
 
 ### Typical installation time
-Approximately **20 minutes** on a normal server. I strongly recommend implement your codes in a Ubuntu server that has Nvidia GPU because there's a lot of packages better-maintained.
+Approximately **20 minutes** on a standard Linux workstation or server. I strongly recommend set up your environment in a Ubuntu server that has Nvidia GPU.
 
 ### Installation steps
 I strongly recommend using `conda` to manage your virtual environments.
@@ -82,7 +82,10 @@ pip install -r requirements.txt
 ## 5. Demo: Running experiments
 
 ### Datasets
-We only use human datasets for comparing against simulation results, but not training. Due to their big size, github does not hold them. I will provide them in a google folder or you may download them here: `https://osf.io/q2dm6/overview`.
+Human eye-tracking datasets are used only for comparison with simulation results, not for training the model. Due to their size, these datasets are not hosted directly on GitHub. Publicly available datasets and newly collected data can be accessed via OSF:
+`https://osf.io/q2dm6/`
+
+The simulations themselves do not require human data as input. Once the environment and configuration files are set correctly, simulations can be run independently. Pre-trained policy network weights are provided in relevant branches.
 
 ### Word-level recognition simulation (grid_test)
 ```bash
@@ -121,7 +124,7 @@ cd step5/simulators/simulator_v20250604
 python simulator.py
 ```
 
-Please find the detailed instructions, description and explanation of the output (usually eye movement data in `json` files) in each branch's folder I listed above.
+Please find the detailed instructions, description and explanation of the output (usually eye movement data in `json` files) in each branch's folder I listed above. Simulation outputs are typically stored as JSON files containing eye-movement trajectories (fixation positions within words and sentences) and associated behavioral metrics.
 
 ### Typical runtime
 -  For eyemovement inference: 10-20 mins.
