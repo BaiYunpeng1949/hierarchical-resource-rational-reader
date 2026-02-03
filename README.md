@@ -87,6 +87,12 @@ Human eye-tracking datasets are used only for comparison with simulation results
 
 The simulations themselves do not require human data as input. Once the environment, configuration files, and reinforcement learning models are set correctly, simulations can be run independently. Pre-trained policy network weights are provided in relevant branches.
 
+
+### Activate the environment
+```bash
+conda activate reader_agent
+```
+
 ### Word-level recognition simulation (grid_test)
 Results refer to the Section Results "Deciding when and where to fixate in a word". Figure 3(a).
 ```bash
