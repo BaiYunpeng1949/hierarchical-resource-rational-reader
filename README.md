@@ -93,9 +93,13 @@ The simulations themselves do not require human data as input. Once the environm
 conda activate reader_agent
 ```
 
-### Word-level recognition simulation (grid_test)
+### Word-level recognition simulation
 Results refer to the Section Results "Deciding when and where to fixate in a word". Figure 3(a).
+
+> ***NOTE:*** Detailed descriptions and instructions could be found in `step5/modules/rl_envs/word_activation_v0218/README.md`.
+
 ```bash
+# Change to the correct branch (must do this)
 git checkout word_recognition/gaze-duration-effects
 
 cd step5/
@@ -103,6 +107,7 @@ cd step5/
 python main.py
 ```
 If you just want to run a single batch simulation, change to `mode: test` in `\step5\config.yaml`.
+
 
 ### Sentence-level reading simulation
 Results refer to the Section Results "Deciding where to fixate in a sentence". Figure 3(b).
