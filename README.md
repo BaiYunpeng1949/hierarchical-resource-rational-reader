@@ -1,101 +1,167 @@
-# CR-ReadAgent
-Official codes for the computationally rational model on reading simulation. "Computationally Rational Read Agent".
+# Hierarchical Resource-Rational Reader
+This repository contains the code and example data associated with the paper:
 
-## Publications
-[publication_name](publication_link), VENUE'XX
+> [**Hierarchical Resource Rationality Explains Human Reading Behavior**](https://osf.io/preprints/psyarxiv/26hb8)  
+> Yunpeng Bai, Xiaofu Jin, Shengdong Zhao, Antti Oulasvirta
 
-## Word Skipping Mechanism
+The code implements a hierarchical, resource-rational computational model of human reading that integrates perceptual, memory, and decision-making constraints to simulate eye-movement behavior and comprehension under varying task demands. WThe repository also includes scripts for running experiments and reproducing key results reported in the paper.
 
-### Current Implementation
-The model implements a sophisticated word skipping mechanism that reflects human reading behavior:
+---
 
-1. **Uncertainty-based Comprehension**
-   - Compares predicted word meaning with actual word embedding
-   - Uncertainty affects comprehension at multiple levels:
-     * Reduces the input (predicted word state)
-     * Reduces the previous comprehension state
-     * Reduces the new hidden state
-   - Higher uncertainty leads to lower comprehension, reflecting reduced understanding when skipping difficult words
+## 1. Overview
 
-2. **State Propagation**
-   - Reduced comprehension from skipped words affects subsequent word processing
-   - Maintains cognitive plausibility where poor understanding of skipped words impacts overall sentence comprehension
+### What does the code do?
+The codes simulate human reading as a sequential decision-making process under bounded cognitive resources. It generates predicted eye-movement patterns (e.g., fixation durations, skipping, regressions) and comprehension-related measures under different experimental conditions (e.g., time pressure) at different cognitive levels (word, sentence, and text levels).
 
-### Future Enhancements: Preview Effects
-The model will be enhanced with preview effects to better simulate human reading:
+### Key components
+- Hierarchical reader model (word-, sentence-, and text-level control)
+- Environment interface for reading tasks and stimuli
+- Simulation and inference code for fitting model parameters
+- Analysis scripts for generating figures and metrics reported in the paper
 
-1. **Parafoveal Preview**
-   - First few letters of upcoming words (e.g., "com" for "comprehension")
-   - Word length information
-   - Word shape features (ascenders/descenders)
-
-2. **Prediction Mechanism**
-   - Context-based prediction combined with preview information
-   - Higher likelihood of skipping when:
-     * Word is predictable from context
-     * Preview information matches prediction
-     * Word is frequent/familiar
-
-3. **Uncertainty Calculation**
-   - Will incorporate both contextual and visual information
-   - Lower uncertainty when preview confirms predictions
-   - More realistic skipping behavior for common/predictable words
-
-This implementation aims to capture the cognitive processes involved in word skipping during natural reading, where readers make decisions based on both contextual understanding and visual preview information.
-
-## Contact person
-[Bai Yunpeng](https://baiyunpeng1949.github.io/bai.yunpeng/)
+A detailed description of the modeling framework and POMDP formulations is provided in Supplementary Information, Sections 1.3 and 1.4 of the manuscript.
 
 
-## Project links
-- Project folder: [here](https://drive.google.com/drive/folders/1nIytcHTvDBfrBHHSch3Z0VPFiFVQEY3m?ths=true)
-- Documentation: [here](guide_link)
-- [Version info](VERSION.md)
+---
 
+## 2. System Requirements (For both training and testing/simulating)
 
-[//]: # (## Requirements)
+### Operating systems tested
+- Ubuntu 24.04.3 LTS
 
-[//]: # (See requirements.txt)
+### Programming language
+- Python ≥ 3.10 (we used 3.10)
 
+### Hardware we used
+- GPU: 
+   -  NVIDIA Tesla V100 (PCIe)
+   -  VRAM: 16 GB
+   -  Driver: 560.35.05
+   -  CUDA runtime: 12.6
+- CPU:
+   -  CPU model: Intel Xeon Gold 6130 @ 2.10 GHz
+   -  Sockets: 2
+   -  Cores per socket: 16
+   -  Threads per core: 2
+   -  Total logical cores: 64
+   -  NUMA nodes: 2
 
-## Installation
-Option 1: Use requirement.txt to install the dependencies
+## 3. Software (packages) Dependencies (For both training and testing/simulating)
+
+All required dependencies with **exact version numbers** are listed in `reqirements.txt` in the root directory. The code has been tested using the versions specified in `requirements.txt`. Results reported in the paper were generated using these versions.
+
+Key dependencies preview:
+-  numpy
+-  gym
+-  PyTorch
+-  Stable-Baselines3
+
+---
+
+## 4. Installation Guide
+
+### Typical installation time
+Approximately **20 minutes** on a standard Linux workstation or server. We strongly recommend set up your environment in a Ubuntu server that has Nvidia GPU. GPU is needed for both training and testing/simulation.
+
+### Installation steps
+We strongly recommend using `conda` to manage your virtual environments.
 ```bash
+git clone https://github.com/BaiYunpeng1949/hierarchical-resource-rational-reader.git
+
+cd hierarchical-resource-rational-reader
+
+conda create -n reader_model python=3.10
+
+conda activate reader_model
+
 pip install -r requirements.txt
 ```
-Option 2: Use setup.py to install the package
+
+--- 
+## 5. Demo: Running experiments
+
+### Datasets
+Human eye-tracking datasets are used only for comparison with simulation results, not for training the model. Due to their size, these datasets are not hosted directly on GitHub. Publicly available datasets and newly collected data can be accessed via OSF:
+`https://osf.io/q2dm6/`
+
+The simulations themselves do not require human data as input. Once the environment, configuration files, and reinforcement learning models are set correctly, simulations can be run independently. Pre-trained policy network weights are provided in relevant branches.
+
+
+### Activate the environment
 ```bash
-pip install -e .
-```
-**NOTE**: Some env setup issues:
-
-1. When installing **gym==0.21.0**, you may face wheel errors, please run this command on your terminal
-    ```bash
-    pip install setuptools==65.5.0 "wheel<0.40.0"
-    ```
-    [Reference to solving this issue.](https://stackoverflow.com/questions/76129688/why-is-pip-install-gym-failing-with-python-setup-py-egg-info-did-not-run-succ)
-    
-    One could install other versions of gym, but it may not be compatible with the code.
-    For example, they require gym envs to have seed. You may need to modify our source code to make it work.
-
-2. When installing **annoy**, if you are using windows, Microsoft Visual C++ 14.0 or greater is required. Need to get it with "Microsoft C++ Build Tools": https://visualstudio.microsoft.com/visual-cpp-build-tools/
-
-## Application Execution 
-Run main.py on different folders.
-```bash
-python /path/to/main.py
+conda activate reader_agent
 ```
 
+### Word-level recognition simulation
+Results refer to the Section Results "Deciding when and where to fixate in a word". Figure 3(a).
 
-## References
+> ***NOTE:*** Detailed descriptions and instructions could be found in `step5/modules/rl_envs/word_activation_v0218/README.md`.
+
+```bash
+# Change to the correct branch (must do this)
+git checkout word_recognition/gaze-duration-effects
+
+cd step5/
+
+python main.py
+```
+If you just want to run a single batch simulation, change to `mode: test` in `\step5\config.yaml`.
 
 
-## Contributors
-Bai Yunpeng
+### Sentence-level reading simulation
+Results refer to the Section Results "Deciding where to fixate in a sentence". Figure 3(b).
 
-Antti Oulasvirta
+> ***NOTE:*** Detailed descriptions and instructions could be found in `step5/modules/rl_envs/sentence_read_v0319/README.md`.
 
-Shengdong Zhao
+```bash
+# Change to the correct branch (must do this)
+git checkout sentence_reading/skip-regression-effects
 
-David Hsu
+cd step5/
 
+python main.py
+```
+
+### Text-level reading simulation
+Results refer to the Section Results "Text comprehension and deciding where to read in text". Figure 3(c).
+
+> ***NOTE:*** Detailed descriptions and instructions could be found in `step5/modules/rl_envs/text_comprehension_v0516/README.md` and `step5/modules/rl_envs/text_comprehension_v0523/README.md`.
+
+```bash
+git checkout text_comprehension/effects
+
+cd step5/
+
+python main.py
+```
+
+### Read under time pressure
+Results refer to the Section Results "Speed-accuracy trade-off when reading under time pressure" and "Validating the necessity of hierarchical resource rationality". Figure 3(d). Figure 5, and Extended Data Figure 10.
+
+
+> ***NOTE:*** Detailed descriptions and instructions could be found in `steps/simulators/simulator_v20250604/README.md`.
+
+```bash
+git checkout read_under_time_pressure
+
+cd step5/simulators/simulator_v20250604
+
+python simulator.py
+```
+
+Please find the detailed instructions, description and explanation of the output (usually eye movement data in `json` files) in each branch's folder we listed above. Simulation outputs are typically stored as JSON files containing eye-movement trajectories (fixation positions within words and sentences) and associated behavioral metrics.
+
+### Typical runtime
+-  For eyemovement inference: 10-20 mins.
+-  For comprehension inference: 2 hours.
+-  For model training: 24 hours.
+
+
+---
+## 6. Reproduction 
+Details could be found in specific branches, as mentioned above (Demo: running experiments). 
+
+---
+## 7. Contributors
+- Yunpeng Bai (白云鹏)
+- Antti Oulasvirta

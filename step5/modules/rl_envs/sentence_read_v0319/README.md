@@ -1,13 +1,23 @@
 # Sentence Reading Environment (v0319)
 
-This environment implements a cognitively-inspired model of sentence reading behavior, using neural language models to track comprehension and simulate human-like reading patterns.
+This environment simulates human‑like sentence reading eye movement behavior. 
 
-## Architecture Overview
+It corresponds to the `sentence reader` of the model described in the paper, and is used to generate the results reported in Figure 3b ("Deciding where to fixate in a sentence").
 
-The environment uses a three-component architecture:
-1. **Language Model (BERT)**: Converts words into contextual embeddings
-2. **GRU Network**: Tracks cumulative comprehension as we read
-3. **Uncertainty Estimation**: Guides reading behavior decisions
+
+
+## Overview
+The directory `step5/modules/rl_envs/sentence_read_v0319` defines a POMDP-based sentence reading environment, including:
+- State dynamics / transition function `TransitionFunction.py`
+- Reward specification `RewardFunction.py`
+- Lexical and word statistics management `SentencesManager.py`, `Constants.py`
+- Environment wrapper `SentenceReadingEnv.py`
+- Utilities and helpers `Utilities.py`
+These components jointly specify the POMDP tuple underlying the sentence-level reading model.
+
+> ***NOTE:*** Detailed theoretical motivation, model assumptions, and formal definitions are provided in the Methods and Supplementary Information of the paper.
+
+
 
 ## Data Processing Pipeline
 
@@ -29,6 +39,7 @@ The environment uses a three-component architecture:
     "integration_difficulty": 0.7
   }
   ```
+
 
 ### 2. Word Prediction System
 - **Preview Mechanism**:
@@ -76,239 +87,177 @@ The environment uses a three-component architecture:
   }
   ```
 
-### 3. Processing Pipeline
-1. **Initial Processing**:
-   - Load raw sentence dataset
-   - Compute integration difficulty scores
-   - Save intermediate results
-
-2. **Prediction Processing**:
-   - Load dataset with integration scores
-   - Compute word predictions with preview
-   - Add prediction metadata and candidates
-   - Save final processed dataset
-
-3. **Quality Control**:
-   - Filter out special tokens and duplicates
-   - Handle subword tokenization
-   - Normalize probabilities
-   - Provide fallback for no predictions
-
-## Key Mechanisms
-
-### 1. Comprehension Tracking
-- **Two-Layer GRU**:
-  - Layer 1: Captures local word relationships and immediate context
-  - Layer 2: Processes higher-level sentence meaning and global context
-- **State Representation**:
-  - Hidden states maintain cumulative understanding
-  - Each layer processes different levels of meaning
-  - Shape: [num_layers=2, batch_size=1, hidden_size=768]
-- **Comprehension Measurement**:
-  - Global comprehension: Weighted average of processed word states
-  - Exponential weighting scheme:
-    - Recent words receive higher weights (recency effect)
-    - Earlier context maintains influence but with reduced weight
-    - Prevents comprehension dilution with sentence length
-  - Vector norm as comprehension strength indicator:
-    - Larger norm = stronger/more confident understanding
-    - Smaller norm = weaker/less certain understanding
-  - Cognitive plausibility:
-    - Recency effect: Aligns with human working memory, where recent information is more accessible
-    - Cumulative processing: Maintains influence of earlier context while emphasizing new information
-    - Dynamic updating: Comprehension grows with each word rather than being diluted
-    - Working memory constraints: Natural decay of older information without complete loss
-
-### Individual Differences in Reading
-- **Random GRU Initialization**:
-  - Each environment instance initializes GRU weights randomly
-  - Results in slightly different comprehension values for the same word
-  - Models individual differences in reading comprehension
-- **Cognitive Plausibility**:
-  - Different readers process the same text differently
-  - Initial mental states vary between reading sessions
-  - Base comprehension strength varies across individuals
-  - Aligns with empirical observations of reading variability
-- **Implementation Details**:
-  - Non-deterministic processing through random GRU initialization
-  - Same word can yield different comprehension values:
-    - Across different reading sessions
-    - Even with identical context and reading actions
-  - Maintains unpredictability in reading behavior
-- **Benefits**:
-  - Natural modeling of reader variability
-  - Avoids overly deterministic text processing
-  - Captures session-to-session reading variations
-  - Enables exploration of individual reading strategies
-
-### 2. Integration Difficulty
-- **Computation**: Euclidean distance between:
-  - Processed comprehension (GRU's global state)
-  - Raw context (averaged word embeddings)
-- **Rationale**:
-  - Measures how much new information changes existing understanding
-  - Aligns with cognitive theories of surprisal and prediction error -- There's a large body of psycholinguistics/computational linguistics research showing that language-model surprisal correlates quite well with human reading difficulty metrics (eye-tracking data, self-paced reading times, etc.). Psycholinguistic Basis: A large body of research shows that reading times, fixation durations, and neural signals (EEG N400 amplitude) often correlate well with LM-based surprisal.
-  - Example: "The man bit the dog" - semantically related but difficult to integrate
-
-### 3. Word Skipping Mechanism
-- **Prediction**:
-  - Uses context window to predict skipped word meaning
-  - Weights context by distance (more recent words → higher weight)
-  - Modulated by word predictability
-- **Uncertainty Estimation**:
-  - Based on cosine similarity between predicted and context states
-  - Range [0,1]: 0=certain, 1=uncertain
-  - Affects comprehension integration through confidence weighting:
-    - High confidence → stronger contribution to global state
-    - Low confidence → reduced impact on comprehension
-- **Dual State Update**:
-  1. Skipped Word:
-     - Predicted meaning from context
-     - Uncertainty-weighted comprehension
-  2. Next Word:
-     - Normal reading comprehension update
-     - Integration with accumulated context
-
-### 4. Regression Mechanism
-- **Trigger**: High uncertainty or integration difficulty
-- **Process**:
-  - Returns to previous word
-  - Recomputes comprehension with updated context
-  - Strengthens representation by combining:
-    - Original word embedding
-    - Full context (including words that triggered regression)
-- **Effect**: 
-  - Improves integration of difficult content
-  - Strengthens overall comprehension through bidirectional context
-  - Increases confidence through multiple processing passes
-
-## Implementation Details
-
-### State Management
-- **Word States**: Track for each word:
-  - Embedding: Raw word representation
-  - Comprehension: Processed understanding (GRU state)
-  - Difficulty: Integration/uncertainty measure
-- **Global Comprehension**:
-  - Maintained as running average of processed states
-  - Reflects overall sentence understanding
-  - Updates dynamically with each reading action
-
-### Context Processing
-- **Window Size**: Configurable context window
-- **Integration**: 
-  - Compares processed vs. raw context
-  - Handles local and global comprehension
-- **Memory**: Optional decay mechanism for distant context
-
-## Future Improvements
-
-1. **Parafoveal Preview**:
-   - Adjustable preview length (currently fixed at 2)
-   - More sophisticated letter similarity groups
-   - Integration with word frequency effects
-
-2. **Enhanced Prediction**:
-   - Dynamic noise thresholds based on word length
-   - Better handling of compound words
-   - Improved candidate filtering
-
-3. **Cognitive Alignment**:
-   - Individual differences in preview accuracy
-   - Word frequency effects on prediction
-   - More realistic length estimation
-
-## Limitations
-
-- Fixed preview length (2 letters)
-- Simplified letter similarity groups
-- Basic noise threshold model
-- Limited handling of compound words
-- No word frequency effects
-
-## Reproducing Results
-
-To reproduce the current results:
-
-1. Navigate to the step5 directory:
-   ```bash
-   cd step5/
-   ```
-
-2. Configure the `config.yaml`:
-   - Set appropriate model paths
-   - Set to "test" model in rl-mode
-
-3. Run the main script:
-   ```bash
-   python main.py
-   ```
-
-4. Copy simulation results:
-   - Source: `/step5/data/sim_results/sentence_reading/model_path_name/raw_simulated_results.json`
-   - Destination: `results/section2/_raw_simulated_results`
-
-5. Run analysis script:
-   ```bash
-   python analyze_sim_results_word_regression_and_skip_probabilities.py
-   ```
-
-6. Copy processed results:
-   - Source: `/_simulated_effects_analysis/all_words_regression_and_skip_probabilities.csv`
-   - Destination: `/processed_simulated_results`
-
-7. Generate plots:
-   ```bash
-   python plot.py
-   ```
-
-8. Find generated figures in `/figures`
-
-**Note**: These results are from an unoptimized parameter set. The results are preserved in a separate, unpulled branch for reproducibility.
-
-## References
-
-The implementation draws from cognitive theories of reading comprehension, including:
-- Predictive processing in reading
-- Integration difficulty measures
-- Working memory constraints
-- Eye movement control in reading
-- Parafoveal preview effects
-- Word length estimation in reading 
-
-## Experiment Logs
-PPO87 (f63f13e) has the best skipping probability (best alignment to human data), but no regressions leared. A hacky version if without regressions.
-PPO88 (97d66b8) now learns regressions, but the skippings are worse. But a usable version.
-PPO89 (24095d5) not better regressions, but the skippings are even worse compared to ppo88.
-
-## Analysis
-So now our explanation to the skipping totally works. But for regression, we need a better problem framing.
-
-## Improvement method:
-- [High priority] Change the regression's benefit (either give more rewards, or cognitively, gain more information).
-- [Low priority] Change the regression mechanism. Not simply regress the previous word because its integration value is not high.
-- [Medium priority] For generalizability: use the normalized rank rather than bins to represent words integration values.
 
 
+## Quick Start: Sentence-Level Simulation
 
-# Technical Details -- POMDP formulation
-- State (S): 
-  - (Ext): the reading word position (word index in sentence), sentence content, parafoveal previewed letters, (time) 
-  - (Int): words intergrations, context (a few words before the fixation), next word (hold a belief)
-- Action (A):
-  - (Ext): eye movement within the sentence (word index), (time)
-  - (Int): last word integration value (appraisal)
-- Obervation (O):
-  - (Ext): the reading word position, (time)
-  - (Int): belief - highest prediction of the next word, last word integration, current word integration, overall on-going comprehension.
-- Transition Function (T):
-  - (Ext): static (fixations always apply to the desired place)
-  - (Int): next word prediction (belief): t(s_int'|a, s_int_and_ext) (context and previewing)
-- Reward Function (R): r(t) = U + c(t)
+Prerequisite: Pre-trained RL model and ZuCo corpus (processed by us already). Retraining is not required to reproduce Figure 3b; the provided checkpoint corresponds to the model used in the paper.
 
-# Reproduction
+This environment requires a pre-trained RL policy. We provide a ready-to-use model checkpoint here: 
+
+```bash
+step5/modules/rl_envs/sentence_read_v0319/pretrained_rl_model_weights/
+```
+
+Copy the entire folder to: 
+```bash
+step5/training/saved_models/
+```
+
+> ***NOTE:*** The processed ZuCo-related datasets will be prepared soon.
+
+Run the simulation
+```bash
+conda activate reader_agent
+cd step5
 python main.py
-copy paste /step5/data/sim_results/sentence_reading/0410_sentence_read_v0319_more_plausible_regression_mechanism_v9_rl_model_150000000_steps/1000ep/raw_simulated_results.json to /home/baiy4/reader-agent-zuco/results/section2/_raw_simulated_results
-python analyze_sim_results_word_regression_and_skip_probabilities.py
-copy paste results/section2/_simulation_effects_analysis/all_words_regression_and_skip_probabilities.csv to results/section2/processed_simulated_results
-python plot.py
+```
+This runs the sentence-level reading simulation using deterministic parameters and the provided pre-trained policy.
+
+
+
+## Parameter Inference (Grid Test and Grid Search over $w_{reg}$ -- weighted regression cost)
+
+This section automates **(1) running a $w_{reg}$ sweep (grid test)**, **(2) aggregating per‑$w_{reg}$ episodes**, **(3) producing analyzed CSVs**, and **(4) selecting the best $w_{reg}$** by minimizing a discrepancy to human data.
+
+### 1) Configure the grid test
+Edit `step5/config.yaml`:
+```yaml
+rl:
+  mode: grid_test         # <-- enables the sweep
+  train:
+    checkpoints_folder_name: 0410_sentence_read_v0319_more_plausible_regression_mechanism_v9
+  test:
+    loaded_model_name: rl_model_150000000_steps
+    params:
+      w_regression_cost: [0, 1.0, 0.02]   # [start, end, step]  (end is inclusive)
+```
+Interpretation:
+- The sweep runs $w_{reg}$ = 0, 0.02, …, 1.0 (inclusive).
+- For **each $w_{reg}$** it runs **self._num_episodes** episodes and aggregates **all episodes** for that $w_{reg}$.
+
+
+### 2) Run the grid test
+From the project root:
+```bash
+cd step5
+python main.py
+```
+What’s produced (per $w_{reg}$):
+```
+step5/modules/rl_envs/sentence_read_v0319/parameter_inference/simulation_data/
+  w_regression_cost_0p0/
+    all_words_regression_and_skip_probabilities.csv                               # all episodes for $w_{reg}=0$
+    analysis_summary.txt
+    raw_simulated_results.json
+    simulated_word_analysis.csv
+    word_features.json
+    word_regression_analysis.csv
+    word_skipping_analysis.csv
+  w_regression_cost_0p02/
+    ...
+  ...
+```
+
+**Runtime Warning:** 
+A full sweep of $w_{reg}$ may take several hours. For a quick inspection or plotting, we recommend either: 
+- Running a reduced sweep, e.g., 
+  ```bash
+  w_regression_cost: [0.6, 0.8, 0.05]
+  ```
+- Or directly using our pre-computed best-$w_{reg}$ results:
+  ```bash
+  step5/modules/rl_envs/sentence_read_v0319/parameter_inference/figures/best_param.txt
+
+  # According to the content in best_param.txt, find this folder:
+  step5/modules/rl_envs/sentence_read_v0319/parameter_inference/simulation_data/w_regression_cost_0p8
+  ```
+The plots reported in Figure 3b could be found in:
+  ```bash
+  step5/modules/rl_envs/sentence_read_v0319/parameter_inference/figures/probabilities_x.pdf
+  ```
+
+
+### 3) Human reference data
+```bash
+# Already prepared and processed
+step5/modules/rl_envs/sentence_read_v0319/parameter_inference/human_data
+```
+
+
+### 4) Run the grid **search** (pick the best $w_{reg}$)
+
+> ***NOTE:*** Randomness arises from stochastic policy execution and episode sampling. It might result in different simulation results. So we recommend using our searched out best $w_{reg}$. 
+
+The scorer compares **linear regression lines** (slope + intercept, via `numpy.polyfit`) between human and simulation curves on the *overlap* of x‑ranges, exactly as in `plot.py`:
+
+- Skip vs **length**
+- Skip vs **logit predictability**
+- Skip vs **log frequency**
+- **Regression** vs **difficulty**
+
+The objective for a folder is:
+$F = \sum_{\text{curves}} \Big[ (s_{\text{sim}} - s_{\text{hum}})^2 + (b_{\text{sim}} - b_{\text{hum}})^2 \Big]$
+where $s$ is slope and $b$ is intercept from `np.polyfit(x, y, deg=1)` on the **overlap** of the human and sim x‑ranges. This objective emphasizes matching effect directions and magnitudes rather than absolute probabilities.
+
+---
+
+#### a. Expected layout
+
+```
+parameter_inference/
+  grid_search_w_regression_cost.py
+  plot.py
+  human_data/
+    all_words_regression_and_skip_probabilities.csv
+  simulation_data/
+    w_regression_cost_0p00/
+      all_words_regression_and_skip_probabilities.csv
+    w_regression_cost_0p02/
+      all_words_regression_and_skip_probabilities.csv
+    ...
+  figures/                # created by the grid search when plotting
+```
+
+- Each `w_regression_cost_*` folder should contain the **analyzed** CSV
+  `all_words_regression_and_skip_probabilities.csv` (produced from the raw logs).
+- The human CSV must include columns:
+  `length, logit_predictability, log_frequency, difficulty,
+   skip_probability, regression_probability`.
+
+---
+
+#### b. Run the grid scorer + **generate figures**
+
+From `parameter_inference/`:
+
+```bash
+cd step5/modules/rl_envs/sentence_read_v0319/parameter_inference
+
+# Grid search + plotting together
+python grid_search_w_regression_cost.py   --human human_data/all_words_regression_and_skip_probabilities.csv   --sim_root simulation_data
+```
+
+> ***NOTE:*** ALL simulated results folders must be put under `\simulation_data` for the grid search or plotting.
+
+**Outputs**
+- **Ranking CSV:** `simulation_data/grid_search_w_regression_cost_results.csv`
+- **Console:** prints best `w_regression_cost`, per‑curve losses, and `F_total`
+- **Figures:** `parameter_inference/figures/`
+  - `skip_vs_length_binned_only_regression.png`
+  - `skip_vs_logit_predictability_binned_only_regression.png`
+  - `skip_vs_log_frequency_binned_only_regression.png`
+  - `regression_vs_difficulty_binned_only_regression.png`
+- **Best record:** `parameter_inference/figures/best_param.txt`
+
+> Figures are generated by importing your `plot.py` and passing the human vs best‑sim data frames. No plotting happens during simulation—only after the best setting is found.
+
+Figures are written to its configured `figures/` directory (see the script).
+
+
+
+
+
+## Final Notes for Editors and Reviewers
+
+This README documents all steps required to reproduce the sentence-level simulation and $w_{reg}$-selection results reported in Figure 3b. Higher-level modeling assumptions and derivations are described in the paper’s Methods and Supplementary Information.

@@ -29,7 +29,7 @@ rl:
     dataset_for_testing: 'simulate'   # OPTIONS: 'test', 'train', 'simulate'
     post_analyze: true
     params:
-      w_regression_cost: [0, 1.0, 0.02]
+      w_regression_cost: [0, 1.0, 0.5]
   
 resources:
   img_env_dir: 10_27_15_58_100_images_W1920H1080WS16_LS40_MARGIN400 # "10_07_13_47_1000_images_W1920H1080WS16_LS40_MARGIN400"  # 10_07_13_47_1000_images_W1920H1080WS16_LS40_MARGIN400, 10_11_08_22_1250_images_W1920H1080WS16_LS40_MARGIN400, 10_10_14_21_2000_images_W1920H1080WS16_LS40_MARGIN400
