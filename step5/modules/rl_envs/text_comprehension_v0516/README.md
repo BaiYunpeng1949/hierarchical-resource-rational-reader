@@ -1,125 +1,45 @@
-##Documentation
-Adaptive reading strategy / reading actions: revisit the sentences with lower appraisal levels. Prioritize the sentences with lower appraisals first.
+# Text Reading Environment (v0516)
 
-NOTE: something to improve: 
-From the Kintsch's paper, he mentioned something like "The mechanism of only a limited number of propositions could be processed in one cycle due to the STM limit, is akin to having a reading strategy where only the most relevant or recently processed information is actively maintained, while the rest may be dropped if not reinforced by further processing."
-Action: so later I could introduce a memory decay over sentences (in a higher level, not micro-propositions), showing the similar trend.
-Warning: to make the above-mentioned effect clear, maybe need to make the agent's initial appraisals range from an overall higher region. 
+This environment simulates human‑like text reading eye movement behavior and comprehension (mostly proposition-based, following Kiontsch's theoretical framework).
 
-## Proportion of Sentences Regressed Analysis
+It corresponds to the `text reader` of the model described in the paper, and is used to generate the results reported in Figure 3c ("Text comprehension and deciding where to read in text").
 
-### Motivation
-The key hypothesis of adaptive reading is that agents should prioritize sentences with lower appraisal scores for regression, as these represent comprehension gaps that need to be addressed. This analysis validates whether the RL agent has learned this adaptive strategy by examining the relationship between initial sentence appraisal scores and regression frequency.
 
-### Implementation
-The analysis is implemented in `utils/plot_density.py` and calculates:
 
-1. **Binning**: Appraisal scores (0.0-1.0) are divided into 20 bins (0.0-0.05, 0.05-0.1, ..., 0.95-1.0)
-2. **Counting**: For each bin:
-   - `all_counts[i]`: Total number of sentences with appraisal scores in that bin
-   - `regress_counts[i]`: Number of regressed sentences with appraisal scores in that bin
-3. **Proportion Calculation**: 
-   - `proportions[i] = regress_counts[i] / all_counts[i]` (for bins with data)
-   - This gives the fraction (0 to 1) of sentences in each appraisal range that were regressed
-4. **Visualization**: Line chart showing regression proportion vs. appraisal score
 
-### Interpretation
-- **Downward Trend**: If the line slopes downward from left to right, low-appraisal sentences are more likely to be regressed
-- **Flat Line**: No relationship between appraisal score and regression likelihood
-- **Upward Trend**: High-appraisal sentences are more likely to be regressed (counter to adaptive strategy)
+## Overview
+The directory `step5/modules/rl_envs/text_comprehension_v0516` defines a POMDP-based text reading environment, including:
+- State dynamics / transition function `TransitionFunction.py`
+- Reward specification `RewardFunction.py`
+- Lexical and word statistics management `TextManager.py`, `Constants.py`
+- Environment wrapper `TextComprehensionEnv.py`
+- Utilities and helpers `Utilities.py`
+These components jointly specify the POMDP tuple underlying the text-level reading model.
 
-### Expected Results
-For an adaptive reading agent, we expect:
-- Higher regression proportions for low appraisal scores (<0.5)
-- Lower regression proportions for high appraisal scores (≥0.5)
-- Overall downward trend indicating prioritization of comprehension gaps
+> ***NOTE:*** Detailed theoretical motivation, model assumptions, and formal definitions are provided in the Methods and Supplementary Information of the paper.
 
-### Usage
+
+
+
+## Quick Start: Text-Level Simulation
+
+Prerequisite: Pre-trained RL model. Retraining is not required to reproduce Figure 3c; the provided checkpoint corresponds to the model used in the paper, and we provide it (a ready-to-use model checkpoint) here: 
+
 ```bash
-cd step5/modules/rl_envs/text_comprehension_v0516/utils
-python plot_density.py
+step5/modules/rl_envs/text_comprehension_v0516/pretrained_rl_model_weights/
 ```
-This generates `proportion_regressed_by_appraisal_score.png` showing the relationship between appraisal scores and regression frequency.
 
-## Why use softmin instead of geometric mean for comprehension aggregation?
+Copy the entire folder to: 
+```bash
+step5/training/saved_models/
+```
 
-Previously, the geometric mean was used to aggregate sentence appraisals:
-- The geometric mean hides big gaps: progress on any sentence boosts the mean, so after a few high-score sentences, low outliers hardly move the needle.
-- Raising a low score (e.g., 0.3 → 0.6) earns less than raising a high score (0.9 → 1.0), even though the first jump is more useful for comprehension.
-- This leads the agent to prefer easy top-ups over patching the biggest gaps, which is not optimal for comprehension.
+Run the simulation
+```bash
+conda activate reader_agent
+cd step5
+python main.py
+```
+This runs the sentence-level reading simulation using deterministic parameters and the provided pre-trained policy.
 
-**Softmin** is now used instead:
-- Softmin is a differentiable, risk-averse utility that acts like an "almost-minimum"; it gives much more weight to the lowest scores.
-- For typical temperature values (τ in [0.15, 0.30]), one bad sentence dominates the utility enough that the agent is incentivized to repair it first.
-- This means the agent receives much stronger reinforcement for closing the biggest gaps, rather than just topping up already high scores.
-- Softmin is smooth and differentiable, so it works well with gradient-based RL algorithms.
-
-**Intuition:**
-> Softmin acts like a risk-averse utility: the colder the temperature, the more the agent behaves as if "the weakest link sets the value of the whole chain," so the rational move is to close the biggest gap first.
-
-## Metrics Calculation and Visualization
-
-### Regression Detection
-- **Detection Method**: Compare `actual_reading_sentence_index` with previous sentence index
-- **Regression Event**: When `actual_reading_sentence_index < current_sentence_index`
-- **Progression Event**: When `actual_reading_sentence_index > current_sentence_index`
-
-### Comprehension Metrics
-- **Ongoing Comprehension**: `on_going_comprehension_log_scalar` from each step
-- **Comprehension Change**: `comprehension_after - comprehension_before` for regression events
-- **Normalization**: All comprehension scores are between 0 and 1
-
-### Appraisal Metrics
-- **Initial Appraisals**: `init_sentence_appraisal_scores_distribution` for each episode
-- **Appraisal vs Regression**: Count regressions to sentences with different appraisal scores
-- **Low vs High Appraisal**: Threshold at 0.5 (low: <0.5, high: ≥0.5)
-
-### Timing Metrics
-- **Normalized Steps**: `step_index / max_steps` (0 = start, 1 = end of longest episode)
-- **Episode Length**: Total number of steps excluding termination step
-- **Regression Timing**: When regressions occur relative to episode progress
-
-### Visualization Methods
-
-#### 1. Box Plots (Regression Timing Analysis)
-- **X-axis**: Reading action types (Read Next vs Regress)
-- **Y-axis**: Normalized reading steps (0-1)
-- **Box Elements**: 
-  - Box: Interquartile range (Q1 to Q3)
-  - Line: Median (50th percentile)
-  - Whiskers: Full data range
-  - Outliers: Individual points beyond whiskers
-
-#### 2. Histograms and Scatter Plots (Appraisal vs Regression)
-- **Histogram**: Bins appraisal scores (0-1) and counts regressions per bin
-- **Scatter Plot**: Appraisal scores vs regression counts with trend line
-- **Correlation**: Pearson correlation coefficient between appraisal and regression frequency
-
-#### 3. Scatter Plot (Comprehension Impact)
-- **X-axis**: Number of regressions (1, 2, 3, ...)
-- **Y-axis**: Comprehension scores after each regression
-- **Trend Line**: Linear regression showing relationship
-- **Correlation**: Measures if more regressions improve comprehension
-
-### Statistical Analysis
-- **Mean/Median**: Central tendency measures for all metrics
-- **Percentiles**: Q1 (25th), Q3 (75th) for distribution analysis
-- **Correlation Coefficients**: Relationship strength between variables
-- **Percentage Analysis**: Proportion of positive/negative comprehension changes
-
-## Tunable parameters
-1. apply stm limit or not [Kintsch's];
-2. apply memory gist or not [Kintsch's];
-3. stm size s [Kintsch's].
-4. prior knowledge classification [Are Good Texts Alawys Better?] (currently by LLM's inputted prompts).
-5. (low prority) propositions' integration and inference (currently we do not differentiate this, all done by LLM itself).
-
-## Reproduction
-Procedure: 
-
-1. `cd step5/`
-2. Configure the `config.yaml`, set to `test` mode and `num_episodes`
-3. `python main.py`
-4. `cd step5/modules/rl_envs/text_comprehension_v0516/utils`
-5. Configure the correct json file, e.g., `/home/baiy4/reader-agent-zuco/step5/modules/rl_envs/text_comprehension_v0516/temp_sim_data/0708_text_comprehension_v0516_no_time_decay_softmin_reward_function_hierarchical_discrete_actions_limited_episodes_03_rl_model_40000000_steps/1000ep/raw_sim_results.json`
-6. `python plot.py` for the heatmap figure; `python plot_density.py` for the line figure.
+> ***NOTE:*** All required data for eye movement analysis are ready here. Text comprehension analysis were done by parsing propositions and using language models to calculate relevance score, further determining the memory storage threshold. How to reproduce results, further see: `step5/modules/rl_envs/text_comprehension_v0523/README.md`.
