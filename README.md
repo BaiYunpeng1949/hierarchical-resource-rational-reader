@@ -111,7 +111,11 @@ If you just want to run a single batch simulation, change to `mode: test` in `\s
 
 ### Sentence-level reading simulation
 Results refer to the Section Results "Deciding where to fixate in a sentence". Figure 3(b).
+
+> ***NOTE:*** Detailed descriptions and instructions could be found in `step5/modules/rl_envs/sentence_read_v0319/README.md`.
+
 ```bash
+# Change to the correct branch (must do this)
 git checkout sentence_reading/skip-regression-effects
 
 cd step5/
@@ -121,6 +125,9 @@ python main.py
 
 ### Text-level reading simulation
 Results refer to the Section Results "Text comprehension and deciding where to read in text". Figure 3(c).
+
+> ***NOTE:*** Detailed descriptions and instructions could be found in `step5/modules/rl_envs/text_comprehension_v0516/README.md` and `step5/modules/rl_envs/text_comprehension_v0523/README.md`.
+
 ```bash
 git checkout text_comprehension/effects
 
@@ -131,6 +138,10 @@ python main.py
 
 ### Read under time pressure
 Results refer to the Section Results "Speed-accuracy trade-off when reading under time pressure" and "Validating the necessity of hierarchical resource rationality". Figure 3(d). Figure 5, and Extended Data Figure 10.
+
+
+> ***NOTE:*** Detailed descriptions and instructions could be found in `steps/simulators/simulator_v20250604/README.md`.
+
 ```bash
 git checkout read_under_time_pressure
 
@@ -149,4 +160,4 @@ Please find the detailed instructions, description and explanation of the output
 
 ---
 ## 6. Reproduction 
-Details could be found in specific branches. We will merge them to here by 15 Feb 2026.
+Details could be found in specific branches, as mentioned above (Demo: running experiments). We will merge them to here by 15 Feb 2026.
