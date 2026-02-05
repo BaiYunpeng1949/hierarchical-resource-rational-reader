@@ -147,3 +147,8 @@ Please find the detailed instructions, description and explanation of the output
 ---
 ## 6. Reproduction 
 Details could be found in specific branches. We will merge them to here by 15 Feb 2026.
+
+---
+## 7. Contributors
+- Yunpeng Bai (白云鹏)
+- Antti Oulasvirta
