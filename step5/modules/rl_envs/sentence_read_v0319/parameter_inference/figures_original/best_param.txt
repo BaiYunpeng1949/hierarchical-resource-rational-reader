@@ -4,6 +4,4 @@ skip_vs_length: 0.04369991875581948
 skip_vs_logit_predictability: 0.016187164884286006
 skip_vs_log_frequency: 0.013826637021066448
 regression_vs_difficulty: 0.044450520228857676
-regression_vs_ambiguity: 0.002926358559281876
-skip_vs_ambiguity: 0.0018132389898567142
-F_total: 0.1229038384391682
+F_total: 0.11816424089002961
