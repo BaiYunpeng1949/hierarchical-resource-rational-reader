@@ -32,6 +32,8 @@ python infer_parameter.py --input_json ../assets/organized_example_propositions_
 
 All results will be generated and stored in `step5/modules/rl_envs/text_comprehension_v0523/utils/parameter_inference/ltm_threshold_grid`. Plots used in Figure 3c are `panel_best_params_and_regression_*.pdf`.
 
+> ***NOTE***: Sentences were grouped into bins based on their initial appraisal scores. For each bin, we computed the proportion of sentences that later received a regression, providing an estimate of the probability of rereading as a function of appraisal. For each bin b, $N_b$ = number of sentences whose appraisals falls in the bin, $R_b$ = number of those sentences that later triggered a regression. Compute the probability of rereading as $P_b = R_b / N_b$. 
+
 
 ## Final Notes for Editors and Reviewers
 

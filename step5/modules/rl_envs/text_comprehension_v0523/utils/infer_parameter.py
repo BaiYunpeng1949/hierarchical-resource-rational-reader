@@ -394,7 +394,7 @@ def plot_panel(human: 'HumanTargets', sim_four, scatter_x, scatter_y,
                           facecolor='none', edgecolor=SIM_COLOR)
 
     ax_sc.set_xlabel("Initial appraisal score", fontsize=AX_LABEL_SIZE)
-    ax_sc.set_ylabel("Proportion recalled", fontsize=AX_LABEL_SIZE)
+    ax_sc.set_ylabel("Rereading probability", fontsize=AX_LABEL_SIZE)
     style_axes(ax_sc)
     ax_sc.tick_params(axis="both", labelsize=AX_TICK_SIZE)
 
