@@ -164,53 +164,6 @@ def score_folder(
     scores["F_total"] = total
     return scores
 
-
-# =========================================================
-# Plotting (still uses original 4-panel plot)
-# =========================================================
-# def post_plot(human_csv: str, sim_root: str, best_folder: str, sim_relpath: str):
-#     """
-#     Create ONE 1x4 panel figure using plot.py's plot_in_a_row
-#     for the original word-level metrics.
-#     """
-#     import importlib.util
-#     import sys
-
-#     here = os.path.dirname(os.path.abspath(__file__))
-#     plot_path = os.path.join(here, "plot.py")
-#     if not os.path.exists(plot_path):
-#         print("plot.py not found; skipping figures.")
-#         return
-
-#     spec = importlib.util.spec_from_file_location("plot_module", plot_path)
-#     plot_module = importlib.util.module_from_spec(spec)
-#     sys.modules["plot_module"] = plot_module
-#     spec.loader.exec_module(plot_module)
-
-#     figures_dir = os.path.join(here, "figures")
-#     os.makedirs(figures_dir, exist_ok=True)
-
-#     save_path = os.path.join(figures_dir, "probabilities_four_panel.png")
-
-#     panels = []
-#     for panel_name, x_col, y_col, x_label, y_label, x_integer in PANELS_DEF:
-#         panels.append({
-#             "panel_name": panel_name,
-#             "human_csv": human_csv,
-#             "sim_csv":   os.path.join(sim_root, best_folder, sim_relpath),
-#             "x_col": x_col,
-#             "y_col": y_col,
-#             "x_label": x_label,
-#             "y_label": y_label,
-#             "x_integer": x_integer,
-#         })
-
-#     plot_module.plot_in_a_row(panels, save_path)
-#     print(f"Saved four-panel figure to: {save_path}")
-
-#     plot_module.save_panels_separately(panels, figures_dir, base_name="probabilities")
-#     print(f"Saved panels to: {figures_dir}")
-
 def post_plot(
     human_csv: str,
     sim_root: str,
@@ -279,7 +232,7 @@ def post_plot(
             "x_col": x_col,
             "y_col": y_col,
             "x_label": x_label,
-            "y_label": '',
+            "y_label": '   ',
             "x_integer": x_integer,
         })
 
