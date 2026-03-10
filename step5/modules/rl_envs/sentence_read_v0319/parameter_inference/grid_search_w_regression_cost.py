@@ -52,6 +52,10 @@ AMBIG_CURVES_FOR_SCORE = [
 WEIGHT_SLOPE = 1.0
 WEIGHT_INTER = 1.0
 
+AMBIG_Y_LIMITS = {
+    "regression_vs_ambiguity": (0.00, 0.40),
+    "skip_vs_ambiguity": (0.25, 0.50),
+}
 
 # =========================================================
 # Helpers
@@ -232,8 +236,9 @@ def post_plot(
             "x_col": x_col,
             "y_col": y_col,
             "x_label": x_label,
-            "y_label": '   ',
+            "y_label": ' ',
             "x_integer": x_integer,
+            "y_lim": AMBIG_Y_LIMITS.get(panel_name, None)
         })
 
     plot_module.save_panels_separately(

@@ -395,6 +395,9 @@ def save_panels_separately(panels, output_dir, base_name="panel"):
 
         _style_axes(ax, force_integer_x=force_int)
 
+        if panel.get("y_lim") is not None:
+            ax.set_ylim(panel["y_lim"])
+
         if force_int:
             x_all = np.concatenate([x_h, x_s])
             x_all = x_all[np.isfinite(x_all)]
