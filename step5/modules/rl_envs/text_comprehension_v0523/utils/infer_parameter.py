@@ -286,134 +286,147 @@ AX_LABEL_SIZE   = 12
 AX_TICK_SIZE    = 12
 AX_TEXT_SIZE    = 12        # for annotations like High-K / Low-K
 
+
 def plot_panel(human: 'HumanTargets', sim_four, scatter_x, scatter_y,
                out_png: str, out_stats_txt: str):
-    """
-    Modified plotting:
-        - No combined PNG panel
-        - No legends
-        - Outputs two PDFs:
-            * <base>_bar.pdf
-            * <base>_scatter.pdf
-    """
 
-    # Unpack values as before
-    fch, fcl, mch, mcl = sim_four
-    Hh, Hl, Mh, Ml = (human.highcoh_high,
-                      human.highcoh_low,
-                      human.lowcoh_high,
-                      human.lowcoh_low)
+    import numpy as np
+    import matplotlib.pyplot as plt
 
-    # ========= BAR FIGURE (PDF) =========
-    fig_bar = plt.figure(figsize=(BAR_FIG_WIDTH, BAR_FIG_HEIGHT))
-    ax = fig_bar.add_subplot(1, 1, 1)
+    # -----------------------------
+    # Human benchmark (Staub & Clifton 2006)
+    # -----------------------------
+    human_x = np.array([0, 1], dtype=float)
+    human_y = np.array([0.19, 0.068], dtype=float)
 
-    bar_width = 0.18
-    x_groups = np.arange(2)
-    r1 = x_groups
-    r2 = r1 + bar_width
-    r3 = r2 + bar_width
-    r4 = r3 + bar_width
+    fig = plt.figure(figsize=(SCATTER_FIG_WIDTH, SCATTER_FIG_HEIGHT))
+    gs = fig.add_gridspec(
+        nrows=2,
+        ncols=1,
+        height_ratios=[0.9, 1.1],
+        hspace=0.30
+    )
 
-    # Bars
-    ax.bar(r1, [Hh, Mh], width=bar_width, color=HUMAN_COLOR, hatch="/")
-    ax.bar(r2, [fch, mch], width=bar_width, color=SIM_COLOR, hatch="/")
-    ax.bar(r3, [Hl, Ml], width=bar_width, color=HUMAN_COLOR, hatch=".")
-    ax.bar(r4, [fcl, mcl], width=bar_width, color=SIM_COLOR, hatch=".")
+    ax_top = fig.add_subplot(gs[0, 0])
+    ax_bot = fig.add_subplot(gs[1, 0])
 
-    # Axes styling
-    style_axes(ax)
-    ax.set_xlabel("Text coherence level", fontsize=AX_LABEL_SIZE)
-    ax.set_ylabel("Proportional recall", fontsize=AX_LABEL_SIZE)
-    ax.tick_params(axis="both", labelsize=AX_TICK_SIZE)
+    # =============================
+    # Top panel — Human benchmark
+    # =============================
+    ax_top.plot(
+        human_x, human_y,
+        color=HUMAN_COLOR,
+        linewidth=LINE_WIDTH,
+        linestyle=REG_LINESTYLE
+    )
 
-    group_centers = r1 + 1.5 * bar_width
-    ax.set_xticks(group_centers)
-    ax.set_xticklabels(["High", "Low"])
-    ax.tick_params(axis="x", length=0)
+    ax_top.scatter(
+        human_x, human_y,
+        s=SCATTER_SIZE,
+        facecolor="none",
+        edgecolor=HUMAN_COLOR,
+        linewidth=SCATTER_EDGEWIDTH,
+        zorder=3
+    )
 
-    # ---- NEW LEGEND (bottom-center, solid colors only) ----
-    human_patch = mpatches.Patch(color=HUMAN_COLOR, label="Human")
-    sim_patch   = mpatches.Patch(color=SIM_COLOR,   label="Simulation")
-    ax.legend(handles=[human_patch, sim_patch],
-          loc="lower center",
-          bbox_to_anchor=(0.5, 0.10),   # moves the legend below the axes
-          frameon=True,                  # white box
-          facecolor="white",
-          ncol=1,
-          fontsize=AX_TICK_SIZE)
-    
-    # ======= High-K / Low-K text annotations =======
+    style_axes(ax_top)
 
-    # x-positions: midpoints of the bar pairs in each cluster
-    x_highk_0 = 0.5 * (r1[0] + r2[0])  # High coherence, High-K pair
-    x_lowk_0  = 0.525 * (r3[0] + r4[0])  # High coherence, Low-K pair
+    ax_top.set_ylabel("Regression\nprobability", fontsize=AX_LABEL_SIZE, linespacing=0.9)
+    ax_top.set_xticks([0, 1])
+    ax_top.set_xticklabels(["Ambiguous", "Unambiguous"], fontsize=AX_TICK_SIZE)
 
-    x_highk_1 = 0.5 * (r1[1] + r2[1])  # Low coherence, High-K pair
-    x_lowk_1  = 0.51 * (r3[1] + r4[1])  # Low coherence, Low-K pair
+    ax_top.set_xlim(-0.15, 1.15)
+    ax_top.set_ylim(0.0, 0.22)
 
-    # y-positions: a little above the taller bar in each pair
-    y_high_0 = max(Hh, fch) + 0.01
-    y_low_0  = max(Hl, fcl) + 0.01
-    y_high_1 = max(Mh, mch) + 0.01
-    y_low_1  = max(Ml, mcl) + 0.01
+    # sparse Y ticks with two decimals
+    ax_top.set_yticks([0.00, 0.10, 0.20])
+    ax_top.set_yticklabels(["0.00", "0.10", "0.20"], fontsize=AX_TICK_SIZE, linespacing=0.9)
 
-    ax.text(x_highk_0, y_high_0, "High-K",
-            ha="center", va="bottom", fontsize=AX_TEXT_SIZE)
-    ax.text(x_lowk_0,  y_low_0,  "Low-K",
-            ha="center", va="bottom", fontsize=AX_TEXT_SIZE)
+    ax_top.tick_params(axis="x", labelsize=AX_TICK_SIZE)
 
-    ax.text(x_highk_1, y_high_1, "High-K",
-            ha="center", va="bottom", fontsize=AX_TEXT_SIZE)
-    ax.text(x_lowk_1,  y_low_1,  "Low-K",
-            ha="center", va="bottom", fontsize=AX_TEXT_SIZE)
-
-    # Expand y-limit so no text is clipped
-    y_top = max(y_high_0, y_low_0, y_high_1, y_low_1)
-    ax.set_ylim(0, y_top + 0.05)
-
-    # SAVE BAR PDF
-    base, _ = os.path.splitext(out_png)
-    bar_pdf = f"{base}_bar.pdf"
-    fig_bar.savefig(bar_pdf, dpi=300, bbox_inches="tight", pad_inches=0.05)
-    plt.close(fig_bar)
-
-    # ========= SCATTER FIGURE (PDF) =========
-
-    fig_sc = plt.figure(figsize=(SCATTER_FIG_WIDTH, SCATTER_FIG_HEIGHT))
-    ax_sc = fig_sc.add_subplot(1, 1, 1)
-
-    # Regression line + scatter
+    # =============================
+    # Bottom panel — Simulation
+    # =============================
     if scatter_x is not None and scatter_y is not None and len(scatter_x) > 0:
+
         x_line, y_hat, y_low, y_high, stats = regress_and_ci(scatter_x, scatter_y)
+
         if y_low is not None:
-            ax_sc.fill_between(x_line, y_low, y_high, color=SIM_COLOR, alpha=0.2)
-        ax_sc.plot(x_line, y_hat, color=SIM_COLOR, linewidth=2)
+            ax_bot.fill_between(
+                x_line, y_low, y_high,
+                color=SIM_COLOR, alpha=0.2
+            )
+
+        ax_bot.plot(
+            x_line, y_hat,
+            color=SIM_COLOR,
+            linewidth=LINE_WIDTH,
+            linestyle=REG_LINESTYLE
+        )
+
         if SHOW_SCATTER:
-            ax_sc.scatter(scatter_x, scatter_y, s=SCATTER_SIZE,
-                          facecolor='none', edgecolor=SIM_COLOR)
+            ax_bot.scatter(
+                scatter_x, scatter_y,
+                s=SCATTER_SIZE,
+                facecolor="none",
+                edgecolor=SIM_COLOR,
+                linewidth=SCATTER_EDGEWIDTH,
+                zorder=3
+            )
+    else:
+        stats = (np.nan, np.nan, np.nan, 0)
 
-    ax_sc.set_xlabel("Initial appraisal score", fontsize=AX_LABEL_SIZE)
-    ax_sc.set_ylabel("Rereading probability", fontsize=AX_LABEL_SIZE)
-    style_axes(ax_sc)
-    ax_sc.tick_params(axis="both", labelsize=AX_TICK_SIZE)
+    style_axes(ax_bot)
 
-    # Save plots
-    scatter_pdf = f"{base}_scatter.pdf"
-    fig_sc.savefig(scatter_pdf, dpi=300, bbox_inches="tight", pad_inches=0.05)
-    plt.close(fig_sc)
+    ax_bot.set_xlabel("Initial appraisal score", fontsize=AX_LABEL_SIZE)
+    ax_bot.set_ylabel("Rereading\nprobability", fontsize=AX_LABEL_SIZE)
 
-    # Write stats unchanged
+    ax_bot.set_xlim(0.0, 1.0)
+
+    # sparse X ticks (5)
+    ax_bot.set_xticks([0.0, 0.30, 0.60, 0.90])
+
+    # fixed Y ticks for rereading probability
+    ax_bot.set_yticks([0.00, 0.35, 0.70])
+    ax_bot.set_yticklabels(["0.00", "0.35", "0.70"], fontsize=AX_TICK_SIZE)
+
+    ax_bot.tick_params(axis="x", labelsize=AX_TICK_SIZE)
+
+    # -----------------------------
+    # Save
+    # -----------------------------
+    base, _ = os.path.splitext(out_png)
+
+    stacked_pdf = f"{base}_stacked_human_simulation.pdf"
+    stacked_png = f"{base}_stacked_human_simulation.png"
+
+    fig.savefig(stacked_pdf, dpi=300, bbox_inches="tight", pad_inches=0.05)
+    fig.savefig(stacked_png, dpi=300, bbox_inches="tight", pad_inches=0.05)
+
+    plt.close(fig)
+
+    # -----------------------------
+    # Save stats
+    # -----------------------------
     with open(out_stats_txt, "w") as f:
-        f.write("section\tcoherence\tknowledge\tseries\tvalue\n")
-        f.write(f"bar\tHigh\tHigh-K\tHuman\t{Hh}\n")
-        f.write(f"bar\tHigh\tHigh-K\tSim\t{fch}\n")
-        f.write(f"bar\tHigh\tLow-K\tHuman\t{Hl}\n")
-        f.write(f"bar\tHigh\tLow-K\tSim\t{fcl}\n")
-        f.write(f"bar\tLow\tHigh-K\tHuman\t{Mh}\n")
-        f.write(f"bar\tLow\tHigh-K\tSim\t{mch}\n")
-        f.write(f"bar\tLow\tLow-K\tHuman\t{Ml}\n")
-        f.write(f"bar\tLow\tLow-K\tSim\t{mcl}\n")
+
+        f.write("section\tseries\tx\ty\n")
+
+        f.write(f"human\tambiguous\t0\t{human_y[0]}\n")
+        f.write(f"human\tunambiguous\t1\t{human_y[1]}\n")
+
+        if scatter_x is not None and scatter_y is not None and len(scatter_x) > 0:
+
+            for x, y in zip(scatter_x, scatter_y):
+                f.write(f"simulation_binned\tscatter\t{x}\t{y}\n")
+
+            a, b, r2, n = stats
+
+            f.write("\n")
+            f.write(f"simulation_regression_intercept\t{a}\n")
+            f.write(f"simulation_regression_slope\t{b}\n")
+            f.write(f"simulation_regression_r2\t{r2}\n")
+            f.write(f"simulation_regression_n\t{n}\n")
 
 
 # ---------------- main ----------------

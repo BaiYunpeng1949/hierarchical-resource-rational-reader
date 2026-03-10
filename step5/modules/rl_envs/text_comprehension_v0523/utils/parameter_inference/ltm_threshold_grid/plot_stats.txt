@@ -1,9 +1,19 @@
-section	coherence	knowledge	series	value
-bar	High	High-K	Human	0.484
-bar	High	High-K	Sim	0.49700598802395207
-bar	High	Low-K	Human	0.381
-bar	High	Low-K	Sim	0.39520958083832336
-bar	Low	High-K	Human	0.417
-bar	Low	High-K	Sim	0.4375
-bar	Low	Low-K	Human	0.291
-bar	Low	Low-K	Sim	0.23214285714285715
+section	series	x	y
+human	ambiguous	0	0.19
+human	unambiguous	1	0.068
+simulation_binned	scatter	0.025	0.6216216216216216
+simulation_binned	scatter	0.125	0.5751633986928104
+simulation_binned	scatter	0.225	0.5373831775700935
+simulation_binned	scatter	0.275	0.5232198142414861
+simulation_binned	scatter	0.42500000000000004	0.3774104683195592
+simulation_binned	scatter	0.525	0.25940959409594094
+simulation_binned	scatter	0.5750000000000001	0.13365483982087495
+simulation_binned	scatter	0.675	0.08804306036139946
+simulation_binned	scatter	0.8250000000000001	0.04892798240791644
+simulation_binned	scatter	0.925	0.03525954946131244
+simulation_binned	scatter	0.9750000000000001	0.03220338983050847
+
+simulation_regression_intercept	0.6564890649181696
+simulation_regression_slope	-0.7155305502558458
+simulation_regression_r2	0.9398742733277642
+simulation_regression_n	11

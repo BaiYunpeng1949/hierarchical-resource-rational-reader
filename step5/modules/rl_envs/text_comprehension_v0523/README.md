@@ -30,9 +30,11 @@ cd step5/modules/rl_envs/text_comprehension_v0523/utils/
 python infer_parameter.py --input_json ../assets/organized_example_propositions_v0527.json --calc_path . --out_dir parameter_inference/ltm_threshold_grid/ --high_range 0.8 1.0 0.001 --low_range 0.8 1.0 0.001 --sim_json ../../text_comprehension_v0516/temp_sim_data/0708_text_comprehension_v0516_no_time_decay_softmin_reward_function_hierarchical_discrete_actions_limited_episodes_03_rl_model_40000000_steps/1000ep/raw_sim_results.json
 ```
 
-All results will be generated and stored in `step5/modules/rl_envs/text_comprehension_v0523/utils/parameter_inference/ltm_threshold_grid`. Plots used in Figure 3c are `panel_best_params_and_regression_*.pdf`.
+All results will be generated and stored in `step5/modules/rl_envs/text_comprehension_v0523/utils/parameter_inference/ltm_threshold_grid`. Plots used in Figure 3c are `panel_best_params_and_regression_*.pdf` and `panel_best_params_and_regression_stacked_human_simulation.pdf` for human simulation conceptualized trends comparison.
 
 > ***NOTE***: Sentences were grouped into bins based on their initial appraisal scores. For each bin, we computed the proportion of sentences that later received a regression, providing an estimate of the probability of rereading as a function of appraisal. For each bin b, $N_b$ = number of sentences whose appraisals falls in the bin, $R_b$ = number of those sentences that later triggered a regression. Compute the probability of rereading as $P_b = R_b / N_b$. 
+
+> ***NOTE***: To conceptually compare human data, we use Table 1 from paper 'Syntactic Prediction in Language Comprehension: Evidence From Either…or'. For ambiguious text, the regression percent is 19.0%, for the unambiguious text, the regression percent is 6.8%.
 
 
 ## Final Notes for Editors and Reviewers
