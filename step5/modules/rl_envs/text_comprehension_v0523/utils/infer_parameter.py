@@ -275,6 +275,118 @@ def load_appraisals_from_json(json_path):
 
     return np.asarray(all_appraisals, dtype=float), np.asarray(regressed_appraisals, dtype=float)
 
+def extract_sentence_level_records_from_json(json_path):
+    """
+    From raw_sim_results.json, extract one record per sentence instance:
+      - appraisal score
+      - whether that sentence was ever regressed to
+
+    Returns a DataFrame with columns:
+      appraisal, regressed
+    """
+    with open(json_path, "r") as f:
+        data = json.load(f)
+
+    rows = []
+
+    for episode in data:
+        init_appraisals = episode.get("init_sentence_appraisal_scores_distribution", [])
+        if not isinstance(init_appraisals, list):
+            continue
+
+        # collect sentence indices that received at least one regression
+        regressed_sentence_indices = set()
+        for step in episode.get("step_wise_log", []):
+            if step.get("is_regress"):
+                idx = step.get("actual_reading_sentence_index")
+                if isinstance(idx, int) and 0 <= idx < len(init_appraisals):
+                    score = init_appraisals[idx]
+                    if isinstance(score, (int, float)) and score >= 0:
+                        regressed_sentence_indices.add(idx)
+
+        # one row per valid sentence appraisal
+        for idx, score in enumerate(init_appraisals):
+            if isinstance(score, (int, float)) and score >= 0:
+                rows.append({
+                    "appraisal": float(score),
+                    "regressed": int(idx in regressed_sentence_indices),
+                })
+
+    return pd.DataFrame(rows)
+
+
+def classify_ambiguity_from_appraisal(df, split_method="median", threshold=0.5):
+    """
+    Convert continuous appraisal into binary ambiguity labels.
+
+    split_method:
+      - 'median': ambiguous = appraisal < median, unambiguous = appraisal >= median
+      - 'fixed' : ambiguous = appraisal < threshold, unambiguous = appraisal >= threshold
+    """
+    df = df.copy()
+
+    if df.empty:
+        df["ambiguity"] = pd.Series(dtype=str)
+        return df, np.nan
+
+    if split_method == "median":
+        split_value = float(df["appraisal"].median())
+    elif split_method == "fixed":
+        split_value = float(threshold)
+    else:
+        raise ValueError(f"Unknown split_method: {split_method}")
+
+    df["ambiguity"] = np.where(
+        df["appraisal"] < split_value,
+        "Ambiguous",
+        "Unambiguous"
+    )
+
+    return df, split_value
+
+
+def compute_regression_probabilities_binary(df):
+    """
+    Compute P(regression | ambiguity class).
+
+    Returns:
+      {
+        "Ambiguous": {"prob": ..., "n_total": ..., "n_regressed": ...},
+        "Unambiguous": {"prob": ..., "n_total": ..., "n_regressed": ...},
+      }
+    """
+    out = {}
+
+    for label in ["Ambiguous", "Unambiguous"]:
+        sub = df[df["ambiguity"] == label]
+        n_total = int(len(sub))
+        n_regressed = int(sub["regressed"].sum())
+        prob = (n_regressed / n_total) if n_total > 0 else np.nan
+
+        out[label] = {
+            "prob": float(prob),
+            "n_total": n_total,
+            "n_regressed": n_regressed,
+        }
+
+    return out
+
+
+def load_aligned_binary_probs_from_json(json_path, split_method="median", threshold=0.5):
+    """
+    Full pipeline:
+      raw sim json -> sentence records -> binary ambiguity -> regression probabilities
+    """
+    df = extract_sentence_level_records_from_json(json_path)
+    df, split_value = classify_ambiguity_from_appraisal(
+        df,
+        split_method=split_method,
+        threshold=threshold
+    )
+    probs = compute_regression_probabilities_binary(df)
+    return df, probs, split_value
+
+
 # === Figure size constants (you can tune later) ===
 BAR_FIG_WIDTH  = 3
 BAR_FIG_HEIGHT = 3
@@ -287,146 +399,261 @@ AX_TICK_SIZE    = 12
 AX_TEXT_SIZE    = 12        # for annotations like High-K / Low-K
 
 
-def plot_panel(human: 'HumanTargets', sim_four, scatter_x, scatter_y,
-               out_png: str, out_stats_txt: str):
+# def plot_panel(human: 'HumanTargets', sim_four, scatter_x, scatter_y,
+#                out_png: str, out_stats_txt: str):
+
+#     import numpy as np
+#     import matplotlib.pyplot as plt
+
+#     # -----------------------------
+#     # Human benchmark (Staub & Clifton 2006)
+#     # -----------------------------
+#     human_x = np.array([0, 1], dtype=float)
+#     human_y = np.array([0.19, 0.068], dtype=float)
+
+#     fig = plt.figure(figsize=(SCATTER_FIG_WIDTH, SCATTER_FIG_HEIGHT))
+#     gs = fig.add_gridspec(
+#         nrows=2,
+#         ncols=1,
+#         height_ratios=[0.9, 1.1],
+#         hspace=0.30
+#     )
+
+#     ax_top = fig.add_subplot(gs[0, 0])
+#     ax_bot = fig.add_subplot(gs[1, 0])
+
+#     # =============================
+#     # Top panel — Human benchmark
+#     # =============================
+#     ax_top.plot(
+#         human_x, human_y,
+#         color=HUMAN_COLOR,
+#         linewidth=LINE_WIDTH,
+#         linestyle=REG_LINESTYLE
+#     )
+
+#     ax_top.scatter(
+#         human_x, human_y,
+#         s=SCATTER_SIZE,
+#         facecolor="none",
+#         edgecolor=HUMAN_COLOR,
+#         linewidth=SCATTER_EDGEWIDTH,
+#         zorder=3
+#     )
+
+#     style_axes(ax_top)
+
+#     ax_top.set_ylabel("Regression\nprobability", fontsize=AX_LABEL_SIZE, linespacing=0.9)
+#     ax_top.set_xticks([0, 1])
+#     ax_top.set_xticklabels(["Ambiguous", "Unambiguous"], fontsize=AX_TICK_SIZE)
+
+#     ax_top.set_xlim(-0.15, 1.15)
+#     ax_top.set_ylim(0.0, 0.22)
+
+#     # sparse Y ticks with two decimals
+#     ax_top.set_yticks([0.00, 0.10, 0.20])
+#     ax_top.set_yticklabels(["0.00", "0.10", "0.20"], fontsize=AX_TICK_SIZE, linespacing=0.9)
+
+#     ax_top.tick_params(axis="x", labelsize=AX_TICK_SIZE)
+
+#     # =============================
+#     # Bottom panel — Simulation
+#     # =============================
+#     if scatter_x is not None and scatter_y is not None and len(scatter_x) > 0:
+
+#         x_line, y_hat, y_low, y_high, stats = regress_and_ci(scatter_x, scatter_y)
+
+#         if y_low is not None:
+#             ax_bot.fill_between(
+#                 x_line, y_low, y_high,
+#                 color=SIM_COLOR, alpha=0.2
+#             )
+
+#         ax_bot.plot(
+#             x_line, y_hat,
+#             color=SIM_COLOR,
+#             linewidth=LINE_WIDTH,
+#             linestyle=REG_LINESTYLE
+#         )
+
+#         if SHOW_SCATTER:
+#             ax_bot.scatter(
+#                 scatter_x, scatter_y,
+#                 s=SCATTER_SIZE,
+#                 facecolor="none",
+#                 edgecolor=SIM_COLOR,
+#                 linewidth=SCATTER_EDGEWIDTH,
+#                 zorder=3
+#             )
+#     else:
+#         stats = (np.nan, np.nan, np.nan, 0)
+
+#     style_axes(ax_bot)
+
+#     ax_bot.set_xlabel("Initial appraisal score", fontsize=AX_LABEL_SIZE)
+#     ax_bot.set_ylabel("Rereading\nprobability", fontsize=AX_LABEL_SIZE)
+
+#     ax_bot.set_xlim(0.0, 1.0)
+
+#     # sparse X ticks (5)
+#     ax_bot.set_xticks([0.0, 0.30, 0.60, 0.90])
+
+#     # fixed Y ticks for rereading probability
+#     ax_bot.set_yticks([0.00, 0.35, 0.70])
+#     ax_bot.set_yticklabels(["0.00", "0.35", "0.70"], fontsize=AX_TICK_SIZE)
+
+#     ax_bot.tick_params(axis="x", labelsize=AX_TICK_SIZE)
+
+#     # -----------------------------
+#     # Save
+#     # -----------------------------
+#     base, _ = os.path.splitext(out_png)
+
+#     stacked_pdf = f"{base}_stacked_human_simulation.pdf"
+#     stacked_png = f"{base}_stacked_human_simulation.png"
+
+#     fig.savefig(stacked_pdf, dpi=300, bbox_inches="tight", pad_inches=0.05)
+#     fig.savefig(stacked_png, dpi=300, bbox_inches="tight", pad_inches=0.05)
+
+#     plt.close(fig)
+
+#     # -----------------------------
+#     # Save stats
+#     # -----------------------------
+#     with open(out_stats_txt, "w") as f:
+
+#         f.write("section\tseries\tx\ty\n")
+
+#         f.write(f"human\tambiguous\t0\t{human_y[0]}\n")
+#         f.write(f"human\tunambiguous\t1\t{human_y[1]}\n")
+
+#         if scatter_x is not None and scatter_y is not None and len(scatter_x) > 0:
+
+#             for x, y in zip(scatter_x, scatter_y):
+#                 f.write(f"simulation_binned\tscatter\t{x}\t{y}\n")
+
+#             a, b, r2, n = stats
+
+#             f.write("\n")
+#             f.write(f"simulation_regression_intercept\t{a}\n")
+#             f.write(f"simulation_regression_slope\t{b}\n")
+#             f.write(f"simulation_regression_r2\t{r2}\n")
+#             f.write(f"simulation_regression_n\t{n}\n")
+
+
+def plot_panel(human_probs, sim_probs, out_png: str, out_stats_txt: str):
+    """
+    Unified aligned plot:
+      x-axis: Ambiguous / Unambiguous
+      y-axis: Regression probability
+      blue: human
+      green: simulation
+    """
 
     import numpy as np
     import matplotlib.pyplot as plt
 
-    # -----------------------------
-    # Human benchmark (Staub & Clifton 2006)
-    # -----------------------------
-    human_x = np.array([0, 1], dtype=float)
-    human_y = np.array([0.19, 0.068], dtype=float)
+    x = np.array([0, 1], dtype=float)
+    x_human = x - 0.03
+    x_sim   = x + 0.03
 
-    fig = plt.figure(figsize=(SCATTER_FIG_WIDTH, SCATTER_FIG_HEIGHT))
-    gs = fig.add_gridspec(
-        nrows=2,
-        ncols=1,
-        height_ratios=[0.9, 1.1],
-        hspace=0.30
-    )
+    y_human = np.array([
+        human_probs["Ambiguous"],
+        human_probs["Unambiguous"]
+    ], dtype=float)
 
-    ax_top = fig.add_subplot(gs[0, 0])
-    ax_bot = fig.add_subplot(gs[1, 0])
+    y_sim = np.array([
+        sim_probs["Ambiguous"]["prob"],
+        sim_probs["Unambiguous"]["prob"]
+    ], dtype=float)
 
-    # =============================
-    # Top panel — Human benchmark
-    # =============================
-    ax_top.plot(
-        human_x, human_y,
+    fig, ax = plt.subplots(figsize=(BAR_FIG_WIDTH, BAR_FIG_HEIGHT))
+
+    # Human
+    ax.plot(
+        x_human, y_human,
         color=HUMAN_COLOR,
         linewidth=LINE_WIDTH,
         linestyle=REG_LINESTYLE
     )
-
-    ax_top.scatter(
-        human_x, human_y,
+    ax.scatter(
+        x_human, y_human,
         s=SCATTER_SIZE,
         facecolor="none",
         edgecolor=HUMAN_COLOR,
         linewidth=SCATTER_EDGEWIDTH,
-        zorder=3
+        zorder=3,
+        label="Human"
     )
 
-    style_axes(ax_top)
+    # Simulation
+    ax.plot(
+        x_sim, y_sim,
+        color=SIM_COLOR,
+        linewidth=LINE_WIDTH,
+        linestyle=REG_LINESTYLE
+    )
+    ax.scatter(
+        x_sim, y_sim,
+        s=SCATTER_SIZE,
+        facecolor="none",
+        edgecolor=SIM_COLOR,
+        linewidth=SCATTER_EDGEWIDTH,
+        zorder=3,
+        label="Simulation"
+    )
 
-    ax_top.set_ylabel("Regression\nprobability", fontsize=AX_LABEL_SIZE, linespacing=0.9)
-    ax_top.set_xticks([0, 1])
-    ax_top.set_xticklabels(["Ambiguous", "Unambiguous"], fontsize=AX_TICK_SIZE)
+    style_axes(ax)
 
-    ax_top.set_xlim(-0.15, 1.15)
-    ax_top.set_ylim(0.0, 0.22)
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels(["Ambiguous", "Unambiguous"], fontsize=AX_TICK_SIZE)
 
-    # sparse Y ticks with two decimals
-    ax_top.set_yticks([0.00, 0.10, 0.20])
-    ax_top.set_yticklabels(["0.00", "0.10", "0.20"], fontsize=AX_TICK_SIZE, linespacing=0.9)
+    ax.set_ylabel(
+        "Regression\nprobability",
+        fontsize=AX_LABEL_SIZE,
+        labelpad=2,
+        linespacing=0.9
+    )
 
-    ax_top.tick_params(axis="x", labelsize=AX_TICK_SIZE)
+    ax.set_xlim(-0.2, 1.2)
 
-    # =============================
-    # Bottom panel — Simulation
-    # =============================
-    if scatter_x is not None and scatter_y is not None and len(scatter_x) > 0:
+    ymax = np.nanmax(np.concatenate([y_human, y_sim]))
+    ylim_top = max(0.20, np.ceil((ymax + 0.02) / 0.05) * 0.05)
+    ax.set_ylim(0.00, ylim_top)
 
-        x_line, y_hat, y_low, y_high, stats = regress_and_ci(scatter_x, scatter_y)
+    yticks = np.linspace(0.00, ylim_top, 3)
+    ax.set_yticks(yticks)
+    ax.set_yticklabels([f"{t:.2f}" for t in yticks], fontsize=AX_TICK_SIZE)
 
-        if y_low is not None:
-            ax_bot.fill_between(
-                x_line, y_low, y_high,
-                color=SIM_COLOR, alpha=0.2
-            )
+    ax.tick_params(axis="x", labelsize=AX_TICK_SIZE)
 
-        ax_bot.plot(
-            x_line, y_hat,
-            color=SIM_COLOR,
-            linewidth=LINE_WIDTH,
-            linestyle=REG_LINESTYLE
-        )
+    ax.legend(
+        frameon=False,
+        fontsize=LEGEND_SIZE,
+        loc="upper right",
+        handlelength=1.6
+    )
 
-        if SHOW_SCATTER:
-            ax_bot.scatter(
-                scatter_x, scatter_y,
-                s=SCATTER_SIZE,
-                facecolor="none",
-                edgecolor=SIM_COLOR,
-                linewidth=SCATTER_EDGEWIDTH,
-                zorder=3
-            )
-    else:
-        stats = (np.nan, np.nan, np.nan, 0)
-
-    style_axes(ax_bot)
-
-    ax_bot.set_xlabel("Initial appraisal score", fontsize=AX_LABEL_SIZE)
-    ax_bot.set_ylabel("Rereading\nprobability", fontsize=AX_LABEL_SIZE)
-
-    ax_bot.set_xlim(0.0, 1.0)
-
-    # sparse X ticks (5)
-    ax_bot.set_xticks([0.0, 0.30, 0.60, 0.90])
-
-    # fixed Y ticks for rereading probability
-    ax_bot.set_yticks([0.00, 0.35, 0.70])
-    ax_bot.set_yticklabels(["0.00", "0.35", "0.70"], fontsize=AX_TICK_SIZE)
-
-    ax_bot.tick_params(axis="x", labelsize=AX_TICK_SIZE)
-
-    # -----------------------------
-    # Save
-    # -----------------------------
     base, _ = os.path.splitext(out_png)
+    aligned_pdf = f"{base}_aligned_regression_probability.pdf"
+    aligned_png = f"{base}_aligned_regression_probability.png"
 
-    stacked_pdf = f"{base}_stacked_human_simulation.pdf"
-    stacked_png = f"{base}_stacked_human_simulation.png"
-
-    fig.savefig(stacked_pdf, dpi=300, bbox_inches="tight", pad_inches=0.05)
-    fig.savefig(stacked_png, dpi=300, bbox_inches="tight", pad_inches=0.05)
-
+    fig.savefig(aligned_pdf, dpi=300, pad_inches=0.02)
+    fig.savefig(aligned_png, dpi=300, pad_inches=0.02)
     plt.close(fig)
 
-    # -----------------------------
-    # Save stats
-    # -----------------------------
     with open(out_stats_txt, "w") as f:
+        f.write("source\tcondition\tprobability\n")
+        f.write(f"human\tAmbiguous\t{y_human[0]:.6f}\n")
+        f.write(f"human\tUnambiguous\t{y_human[1]:.6f}\n")
+        f.write(f"simulation\tAmbiguous\t{y_sim[0]:.6f}\n")
+        f.write(f"simulation\tUnambiguous\t{y_sim[1]:.6f}\n")
 
-        f.write("section\tseries\tx\ty\n")
-
-        f.write(f"human\tambiguous\t0\t{human_y[0]}\n")
-        f.write(f"human\tunambiguous\t1\t{human_y[1]}\n")
-
-        if scatter_x is not None and scatter_y is not None and len(scatter_x) > 0:
-
-            for x, y in zip(scatter_x, scatter_y):
-                f.write(f"simulation_binned\tscatter\t{x}\t{y}\n")
-
-            a, b, r2, n = stats
-
-            f.write("\n")
-            f.write(f"simulation_regression_intercept\t{a}\n")
-            f.write(f"simulation_regression_slope\t{b}\n")
-            f.write(f"simulation_regression_r2\t{r2}\n")
-            f.write(f"simulation_regression_n\t{n}\n")
+        f.write("\n")
+        f.write(f"simulation_n_total_ambiguous\t{sim_probs['Ambiguous']['n_total']}\n")
+        f.write(f"simulation_n_regressed_ambiguous\t{sim_probs['Ambiguous']['n_regressed']}\n")
+        f.write(f"simulation_n_total_unambiguous\t{sim_probs['Unambiguous']['n_total']}\n")
+        f.write(f"simulation_n_regressed_unambiguous\t{sim_probs['Unambiguous']['n_regressed']}\n")
 
 
 # ---------------- main ----------------
@@ -440,13 +667,25 @@ def main():
     ap.add_argument("--high_range", type=float, nargs=3, default=[0.0, 1.0, 0.05], metavar=("START","END","STEP"))
     ap.add_argument("--low_range",  type=float, nargs=3, default=[0.0, 1.0, 0.05], metavar=("START","END","STEP"))
     ap.add_argument("--out_dir", type=str, default=DEFAULT_OUT, help="Output directory for results.")
-    ap.add_argument("--sse", action="store_true", help="Use SSE instead of MAE (default is MAE)."
-    )
+    ap.add_argument("--sse", action="store_true", help="Use SSE instead of MAE (default is MAE).")
     # Human targets
     ap.add_argument("--human_highcoh_high", type=float, default=DEFAULT_HUMAN["highcoh_high"])
     ap.add_argument("--human_highcoh_low",  type=float, default=DEFAULT_HUMAN["highcoh_low"])
     ap.add_argument("--human_lowcoh_high",  type=float, default=DEFAULT_HUMAN["lowcoh_high"])
     ap.add_argument("--human_lowcoh_low",   type=float, default=DEFAULT_HUMAN["lowcoh_low"])
+    ap.add_argument(
+        "--appraisal_split_method",
+        type=str,
+        default="median",
+        choices=["median", "fixed"],
+        help="How to binarize appraisal into Ambiguous / Unambiguous."
+    )
+    ap.add_argument(
+        "--appraisal_threshold",
+        type=float,
+        default=0.5,
+        help="Threshold used when --appraisal_split_method fixed."
+    )
 
     # Optional JSON with raw sim logs to compute appraisal->regression scatter
     ap.add_argument("--sim_json", type=str, default=DEFAULT_SIM_JSON,
@@ -522,6 +761,15 @@ def main():
             + f"Total loss: {best_row['loss_total']:.6f}\n"
         )
 
+        # # write the extra section separately
+        # f.write("\nAligned regression comparison:\n")
+        # f.write("  Human ambiguous regression prob    : 0.190\n")
+        # f.write("  Human unambiguous regression prob  : 0.068\n")
+        # f.write(f"  Simulation ambiguous regression prob   : {sim_probs['Ambiguous']['prob']:.6f}\n")
+        # f.write(f"  Simulation unambiguous regression prob : {sim_probs['Unambiguous']['prob']:.6f}\n")
+        # f.write(f"  Appraisal split method: {args.appraisal_split_method}\n")
+        # f.write(f"  Appraisal split value : {split_value:.6f}\n")
+
     best_json = os.path.join(args.out_dir, "best_pair.json")
     with open(best_json, "w", encoding="utf-8") as f:
         json.dump(
@@ -531,21 +779,48 @@ def main():
             f, indent=2
         )
 
-    # Build right subplot data from sim JSON (if provided)
-    scatter_centers = None
-    scatter_props = None
+    # # Build right subplot data from sim JSON (if provided)
+    # scatter_centers = None
+    # scatter_props = None
+    # if args.sim_json:
+    #     if os.path.exists(args.sim_json):
+    #         all_app, reg_app = load_appraisals_from_json(args.sim_json)
+    #         centers, props = bin_proportion_regressed(all_app, reg_app, n_bins=BIN_COUNT_SCATTER)
+    #         scatter_centers, scatter_props = centers, props
+    #     else:
+    #         print(f"[WARN] --sim_json not found: {args.sim_json}. Right subplot will be empty.")
+    
+    # Build aligned binary regression probabilities from sim JSON
+    sim_probs = {
+        "Ambiguous": {"prob": np.nan, "n_total": 0, "n_regressed": 0},
+        "Unambiguous": {"prob": np.nan, "n_total": 0, "n_regressed": 0},
+    }
+    split_value = np.nan
+
     if args.sim_json:
         if os.path.exists(args.sim_json):
-            all_app, reg_app = load_appraisals_from_json(args.sim_json)
-            centers, props = bin_proportion_regressed(all_app, reg_app, n_bins=BIN_COUNT_SCATTER)
-            scatter_centers, scatter_props = centers, props
+            sim_df, sim_probs, split_value = load_aligned_binary_probs_from_json(
+                args.sim_json,
+                split_method=args.appraisal_split_method,
+                threshold=args.appraisal_threshold
+            )
         else:
-            print(f"[WARN] --sim_json not found: {args.sim_json}. Right subplot will be empty.")
+            print(f"[WARN] --sim_json not found: {args.sim_json}. Aligned regression plot will use NaNs.")
 
-    # Plot combined panel
+
+    # # Plot combined panel
+    # out_png = os.path.join(args.out_dir, "panel_best_params_and_regression.png")
+    # out_stats = os.path.join(args.out_dir, "plot_stats.txt")
+    # plot_panel(human, best_sim_four, scatter_centers, scatter_props, out_png, out_stats)
+
+    human_regression_probs = {
+        "Ambiguous": 0.19,
+        "Unambiguous": 0.068,
+    }
+
     out_png = os.path.join(args.out_dir, "panel_best_params_and_regression.png")
     out_stats = os.path.join(args.out_dir, "plot_stats.txt")
-    plot_panel(human, best_sim_four, scatter_centers, scatter_props, out_png, out_stats)
+    plot_panel(human_regression_probs, sim_probs, out_png, out_stats)
 
     print(f"\nSaved grid CSV: {csv_path}")
     print(f"Saved best summary: {best_txt}")

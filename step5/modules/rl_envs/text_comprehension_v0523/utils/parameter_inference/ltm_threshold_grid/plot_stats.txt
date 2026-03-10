@@ -1,19 +1,10 @@
-section	series	x	y
-human	ambiguous	0	0.19
-human	unambiguous	1	0.068
-simulation_binned	scatter	0.025	0.6216216216216216
-simulation_binned	scatter	0.125	0.5751633986928104
-simulation_binned	scatter	0.225	0.5373831775700935
-simulation_binned	scatter	0.275	0.5232198142414861
-simulation_binned	scatter	0.42500000000000004	0.3774104683195592
-simulation_binned	scatter	0.525	0.25940959409594094
-simulation_binned	scatter	0.5750000000000001	0.13365483982087495
-simulation_binned	scatter	0.675	0.08804306036139946
-simulation_binned	scatter	0.8250000000000001	0.04892798240791644
-simulation_binned	scatter	0.925	0.03525954946131244
-simulation_binned	scatter	0.9750000000000001	0.03220338983050847
+source	condition	probability
+human	Ambiguous	0.190000
+human	Unambiguous	0.068000
+simulation	Ambiguous	0.447678
+simulation	Unambiguous	0.122810
 
-simulation_regression_intercept	0.6564890649181696
-simulation_regression_slope	-0.7155305502558458
-simulation_regression_r2	0.9398742733277642
-simulation_regression_n	11
+simulation_n_total_ambiguous	3402
+simulation_n_regressed_ambiguous	1523
+simulation_n_total_unambiguous	11644
+simulation_n_regressed_unambiguous	1430
