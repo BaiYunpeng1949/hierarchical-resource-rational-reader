@@ -1,10 +1,14 @@
-source	condition	probability
-human	Ambiguous	0.190000
-human	Unambiguous	0.068000
-simulation	Ambiguous	0.447678
-simulation	Unambiguous	0.122810
+source	condition	mean_probability	mean_percent	se_percent	sd_percent	n
+human	Ambiguous	0.190000	19.000	4.500	22.045	24
+human	Unambiguous	0.068000	6.800	2.800	13.717	24
+simulation	Ambiguous	0.362893	36.289	0.615	48.087	6112
+simulation	Unambiguous	0.082270	8.227	0.291	27.479	8934
 
-simulation_n_total_ambiguous	3402
-simulation_n_regressed_ambiguous	1523
-simulation_n_total_unambiguous	11644
-simulation_n_regressed_unambiguous	1430
+# Notes
+# Human SE values are reported directly in Staub & Clifton (2006), Table 1.
+# Human SD values are estimated as SE * sqrt(n), using n = 24 participants.
+# Simulation SD/SE are computed across sentence instances within each ambiguity class.
+# Simulation probability = n_regressed / n_total.
+
+simulation_n_regressed_ambiguous	2218
+simulation_n_regressed_unambiguous	735

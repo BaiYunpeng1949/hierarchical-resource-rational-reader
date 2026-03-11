@@ -67,7 +67,7 @@ BIN_COUNT_SCATTER = 20
 
 # ---- Per-axes sizing controls ----
 # Keep consistent axes sizes for side-by-side panels
-PANEL_AX_WIDTH_IN   = 5.0
+PANEL_AX_WIDTH_IN   = 3.0
 PANEL_AX_HEIGHT_IN  = 3.0
 SUBPLOT_WSPACE      = 0.05   # keep tiny; we’ll use an absolute spacer column
 # Absolute widths for the middle area
@@ -347,12 +347,18 @@ def classify_ambiguity_from_appraisal(df, split_method="median", threshold=0.5):
 
 def compute_regression_probabilities_binary(df):
     """
-    Compute P(regression | ambiguity class).
+    Compute P(regression | ambiguity class), plus SD and SE across sentence instances.
 
     Returns:
       {
-        "Ambiguous": {"prob": ..., "n_total": ..., "n_regressed": ...},
-        "Unambiguous": {"prob": ..., "n_total": ..., "n_regressed": ...},
+        "Ambiguous": {
+            "prob": ...,
+            "n_total": ...,
+            "n_regressed": ...,
+            "std": ...,
+            "se": ...
+        },
+        "Unambiguous": {...}
       }
     """
     out = {}
@@ -361,12 +367,25 @@ def compute_regression_probabilities_binary(df):
         sub = df[df["ambiguity"] == label]
         n_total = int(len(sub))
         n_regressed = int(sub["regressed"].sum())
-        prob = (n_regressed / n_total) if n_total > 0 else np.nan
+
+        if n_total > 0:
+            values = sub["regressed"].astype(float).to_numpy()
+            prob = float(values.mean())
+
+            # sample SD across sentence instances
+            std = float(np.std(values, ddof=1)) if n_total > 1 else 0.0
+            se = float(std / np.sqrt(n_total)) if n_total > 0 else np.nan
+        else:
+            prob = np.nan
+            std = np.nan
+            se = np.nan
 
         out[label] = {
-            "prob": float(prob),
+            "prob": prob,
             "n_total": n_total,
             "n_regressed": n_regressed,
+            "std": std,
+            "se": se,
         }
 
     return out
@@ -399,147 +418,6 @@ AX_TICK_SIZE    = 12
 AX_TEXT_SIZE    = 12        # for annotations like High-K / Low-K
 
 
-# def plot_panel(human: 'HumanTargets', sim_four, scatter_x, scatter_y,
-#                out_png: str, out_stats_txt: str):
-
-#     import numpy as np
-#     import matplotlib.pyplot as plt
-
-#     # -----------------------------
-#     # Human benchmark (Staub & Clifton 2006)
-#     # -----------------------------
-#     human_x = np.array([0, 1], dtype=float)
-#     human_y = np.array([0.19, 0.068], dtype=float)
-
-#     fig = plt.figure(figsize=(SCATTER_FIG_WIDTH, SCATTER_FIG_HEIGHT))
-#     gs = fig.add_gridspec(
-#         nrows=2,
-#         ncols=1,
-#         height_ratios=[0.9, 1.1],
-#         hspace=0.30
-#     )
-
-#     ax_top = fig.add_subplot(gs[0, 0])
-#     ax_bot = fig.add_subplot(gs[1, 0])
-
-#     # =============================
-#     # Top panel — Human benchmark
-#     # =============================
-#     ax_top.plot(
-#         human_x, human_y,
-#         color=HUMAN_COLOR,
-#         linewidth=LINE_WIDTH,
-#         linestyle=REG_LINESTYLE
-#     )
-
-#     ax_top.scatter(
-#         human_x, human_y,
-#         s=SCATTER_SIZE,
-#         facecolor="none",
-#         edgecolor=HUMAN_COLOR,
-#         linewidth=SCATTER_EDGEWIDTH,
-#         zorder=3
-#     )
-
-#     style_axes(ax_top)
-
-#     ax_top.set_ylabel("Regression\nprobability", fontsize=AX_LABEL_SIZE, linespacing=0.9)
-#     ax_top.set_xticks([0, 1])
-#     ax_top.set_xticklabels(["Ambiguous", "Unambiguous"], fontsize=AX_TICK_SIZE)
-
-#     ax_top.set_xlim(-0.15, 1.15)
-#     ax_top.set_ylim(0.0, 0.22)
-
-#     # sparse Y ticks with two decimals
-#     ax_top.set_yticks([0.00, 0.10, 0.20])
-#     ax_top.set_yticklabels(["0.00", "0.10", "0.20"], fontsize=AX_TICK_SIZE, linespacing=0.9)
-
-#     ax_top.tick_params(axis="x", labelsize=AX_TICK_SIZE)
-
-#     # =============================
-#     # Bottom panel — Simulation
-#     # =============================
-#     if scatter_x is not None and scatter_y is not None and len(scatter_x) > 0:
-
-#         x_line, y_hat, y_low, y_high, stats = regress_and_ci(scatter_x, scatter_y)
-
-#         if y_low is not None:
-#             ax_bot.fill_between(
-#                 x_line, y_low, y_high,
-#                 color=SIM_COLOR, alpha=0.2
-#             )
-
-#         ax_bot.plot(
-#             x_line, y_hat,
-#             color=SIM_COLOR,
-#             linewidth=LINE_WIDTH,
-#             linestyle=REG_LINESTYLE
-#         )
-
-#         if SHOW_SCATTER:
-#             ax_bot.scatter(
-#                 scatter_x, scatter_y,
-#                 s=SCATTER_SIZE,
-#                 facecolor="none",
-#                 edgecolor=SIM_COLOR,
-#                 linewidth=SCATTER_EDGEWIDTH,
-#                 zorder=3
-#             )
-#     else:
-#         stats = (np.nan, np.nan, np.nan, 0)
-
-#     style_axes(ax_bot)
-
-#     ax_bot.set_xlabel("Initial appraisal score", fontsize=AX_LABEL_SIZE)
-#     ax_bot.set_ylabel("Rereading\nprobability", fontsize=AX_LABEL_SIZE)
-
-#     ax_bot.set_xlim(0.0, 1.0)
-
-#     # sparse X ticks (5)
-#     ax_bot.set_xticks([0.0, 0.30, 0.60, 0.90])
-
-#     # fixed Y ticks for rereading probability
-#     ax_bot.set_yticks([0.00, 0.35, 0.70])
-#     ax_bot.set_yticklabels(["0.00", "0.35", "0.70"], fontsize=AX_TICK_SIZE)
-
-#     ax_bot.tick_params(axis="x", labelsize=AX_TICK_SIZE)
-
-#     # -----------------------------
-#     # Save
-#     # -----------------------------
-#     base, _ = os.path.splitext(out_png)
-
-#     stacked_pdf = f"{base}_stacked_human_simulation.pdf"
-#     stacked_png = f"{base}_stacked_human_simulation.png"
-
-#     fig.savefig(stacked_pdf, dpi=300, bbox_inches="tight", pad_inches=0.05)
-#     fig.savefig(stacked_png, dpi=300, bbox_inches="tight", pad_inches=0.05)
-
-#     plt.close(fig)
-
-#     # -----------------------------
-#     # Save stats
-#     # -----------------------------
-#     with open(out_stats_txt, "w") as f:
-
-#         f.write("section\tseries\tx\ty\n")
-
-#         f.write(f"human\tambiguous\t0\t{human_y[0]}\n")
-#         f.write(f"human\tunambiguous\t1\t{human_y[1]}\n")
-
-#         if scatter_x is not None and scatter_y is not None and len(scatter_x) > 0:
-
-#             for x, y in zip(scatter_x, scatter_y):
-#                 f.write(f"simulation_binned\tscatter\t{x}\t{y}\n")
-
-#             a, b, r2, n = stats
-
-#             f.write("\n")
-#             f.write(f"simulation_regression_intercept\t{a}\n")
-#             f.write(f"simulation_regression_slope\t{b}\n")
-#             f.write(f"simulation_regression_r2\t{r2}\n")
-#             f.write(f"simulation_regression_n\t{n}\n")
-
 
 def plot_panel(human_probs, sim_probs, out_png: str, out_stats_txt: str):
     """
@@ -557,9 +435,24 @@ def plot_panel(human_probs, sim_probs, out_png: str, out_stats_txt: str):
     x_human = x - 0.03
     x_sim   = x + 0.03
 
+    # Human data from Staub & Clifton (2006), spillover region
+    # Means are in percent in the paper; convert to proportions here
+    human_mean_percent = {
+        "Ambiguous": 19.0,   # No-either S-coordination
+        "Unambiguous": 6.8,  # Either S-coordination
+    }
+    human_se_percent = {
+        "Ambiguous": 4.5,
+        "Unambiguous": 2.8,
+    }
+    human_n = 24  # participants reported in the paper
+    human_sd_percent = {
+        k: v * np.sqrt(human_n) for k, v in human_se_percent.items()
+    }
+
     y_human = np.array([
-        human_probs["Ambiguous"],
-        human_probs["Unambiguous"]
+        human_mean_percent["Ambiguous"] / 100.0,
+        human_mean_percent["Unambiguous"] / 100.0
     ], dtype=float)
 
     y_sim = np.array([
@@ -567,7 +460,19 @@ def plot_panel(human_probs, sim_probs, out_png: str, out_stats_txt: str):
         sim_probs["Unambiguous"]["prob"]
     ], dtype=float)
 
-    fig, ax = plt.subplots(figsize=(BAR_FIG_WIDTH, BAR_FIG_HEIGHT))
+    # y_human = np.array([
+    #     human_probs["Ambiguous"],
+    #     human_probs["Unambiguous"]
+    # ], dtype=float)
+
+    # y_sim = np.array([
+    #     sim_probs["Ambiguous"]["prob"],
+    #     sim_probs["Unambiguous"]["prob"]
+    # ], dtype=float)
+
+    # fig, ax = plt.subplots(figsize=(BAR_FIG_WIDTH, BAR_FIG_HEIGHT))
+    fig, ax = plt.subplots(figsize=(PANEL_AX_WIDTH_IN, PANEL_AX_HEIGHT_IN))
+    fig.subplots_adjust(left=0.24, bottom=0.16, right=0.98, top=0.98)
 
     # Human
     ax.plot(
@@ -605,11 +510,11 @@ def plot_panel(human_probs, sim_probs, out_png: str, out_stats_txt: str):
 
     style_axes(ax)
 
-    ax.set_xticks([0, 1])
+    ax.set_xticks([0, 0.875])
     ax.set_xticklabels(["Ambiguous", "Unambiguous"], fontsize=AX_TICK_SIZE)
 
     ax.set_ylabel(
-        "Regression\nprobability",
+        "Regression probability",
         fontsize=AX_LABEL_SIZE,
         labelpad=2,
         linespacing=0.9
@@ -617,22 +522,15 @@ def plot_panel(human_probs, sim_probs, out_png: str, out_stats_txt: str):
 
     ax.set_xlim(-0.2, 1.2)
 
-    ymax = np.nanmax(np.concatenate([y_human, y_sim]))
-    ylim_top = max(0.20, np.ceil((ymax + 0.02) / 0.05) * 0.05)
-    ax.set_ylim(0.00, ylim_top)
+    # ymax = np.nanmax(np.concatenate([y_human, y_sim]))
+    # ylim_top = max(0.20, np.ceil((ymax + 0.02) / 0.05) * 0.05)
+    # ax.set_ylim(0.00, ylim_top)
 
-    yticks = np.linspace(0.00, ylim_top, 3)
-    ax.set_yticks(yticks)
-    ax.set_yticklabels([f"{t:.2f}" for t in yticks], fontsize=AX_TICK_SIZE)
+    ax.set_ylim(0.00, 0.50)
+    ax.set_yticks([0.00, 0.25, 0.50])
+    ax.set_yticklabels(["0.00", "0.25", "0.50"], fontsize=AX_TICK_SIZE)
 
     ax.tick_params(axis="x", labelsize=AX_TICK_SIZE)
-
-    ax.legend(
-        frameon=False,
-        fontsize=LEGEND_SIZE,
-        loc="upper right",
-        handlelength=1.6
-    )
 
     base, _ = os.path.splitext(out_png)
     aligned_pdf = f"{base}_aligned_regression_probability.pdf"
@@ -643,16 +541,53 @@ def plot_panel(human_probs, sim_probs, out_png: str, out_stats_txt: str):
     plt.close(fig)
 
     with open(out_stats_txt, "w") as f:
-        f.write("source\tcondition\tprobability\n")
-        f.write(f"human\tAmbiguous\t{y_human[0]:.6f}\n")
-        f.write(f"human\tUnambiguous\t{y_human[1]:.6f}\n")
-        f.write(f"simulation\tAmbiguous\t{y_sim[0]:.6f}\n")
-        f.write(f"simulation\tUnambiguous\t{y_sim[1]:.6f}\n")
+        f.write("source\tcondition\tmean_probability\tmean_percent\tse_percent\tsd_percent\tn\n")
+
+        # Human: from Staub & Clifton (2006)
+        f.write(
+            f"human\tAmbiguous\t"
+            f"{human_mean_percent['Ambiguous']/100.0:.6f}\t"
+            f"{human_mean_percent['Ambiguous']:.3f}\t"
+            f"{human_se_percent['Ambiguous']:.3f}\t"
+            f"{human_sd_percent['Ambiguous']:.3f}\t"
+            f"{human_n}\n"
+        )
+        f.write(
+            f"human\tUnambiguous\t"
+            f"{human_mean_percent['Unambiguous']/100.0:.6f}\t"
+            f"{human_mean_percent['Unambiguous']:.3f}\t"
+            f"{human_se_percent['Unambiguous']:.3f}\t"
+            f"{human_sd_percent['Unambiguous']:.3f}\t"
+            f"{human_n}\n"
+        )
+
+        # Simulation
+        f.write(
+            f"simulation\tAmbiguous\t"
+            f"{sim_probs['Ambiguous']['prob']:.6f}\t"
+            f"{sim_probs['Ambiguous']['prob']*100:.3f}\t"
+            f"{sim_probs['Ambiguous']['se']*100:.3f}\t"
+            f"{sim_probs['Ambiguous']['std']*100:.3f}\t"
+            f"{sim_probs['Ambiguous']['n_total']}\n"
+        )
+        f.write(
+            f"simulation\tUnambiguous\t"
+            f"{sim_probs['Unambiguous']['prob']:.6f}\t"
+            f"{sim_probs['Unambiguous']['prob']*100:.3f}\t"
+            f"{sim_probs['Unambiguous']['se']*100:.3f}\t"
+            f"{sim_probs['Unambiguous']['std']*100:.3f}\t"
+            f"{sim_probs['Unambiguous']['n_total']}\n"
+        )
 
         f.write("\n")
-        f.write(f"simulation_n_total_ambiguous\t{sim_probs['Ambiguous']['n_total']}\n")
+        f.write("# Notes\n")
+        f.write("# Human SE values are reported directly in Staub & Clifton (2006), Table 1.\n")
+        f.write("# Human SD values are estimated as SE * sqrt(n), using n = 24 participants.\n")
+        f.write("# Simulation SD/SE are computed across sentence instances within each ambiguity class.\n")
+        f.write("# Simulation probability = n_regressed / n_total.\n")
+
+        f.write("\n")
         f.write(f"simulation_n_regressed_ambiguous\t{sim_probs['Ambiguous']['n_regressed']}\n")
-        f.write(f"simulation_n_total_unambiguous\t{sim_probs['Unambiguous']['n_total']}\n")
         f.write(f"simulation_n_regressed_unambiguous\t{sim_probs['Unambiguous']['n_regressed']}\n")
 
 
