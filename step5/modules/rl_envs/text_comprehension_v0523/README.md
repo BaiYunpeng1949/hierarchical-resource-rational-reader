@@ -22,6 +22,17 @@ We assume you already run the simulation in `step5/modules/rl_envs/text_comprehe
 
 ## Reproduction: Parameter Inference and Plotting
 
+Since we need to replicate the text ambiguity's effect on eye movement (regression probability), we first need to map the paper's (Syntactic Prediction in Language Comprehension: Evidence From  Either...or, Adrian Staub and Charles Clifton Jr., 2006 March) sentence appraisals to ours.
+
+```bash
+cd step5/modules/rl_envs/text_comprehension_v0523/utils/parameter_inference
+
+python calibrate_stimuli_appraisal.py --input_txt assets/human_stimuli.txt --out_dir assets/
+```
+Then in the `step5/modules/rl_envs/text_comprehension_v0523/utils/parameter_inference/assets/stimuli_appraisal_summary.txt`, we could find the range approximately as 'ambiguious' for [0.6, 0.7], and 'unambiguous' for [0.7, 0.8]; then set these values in the 'step5/modules/rl_envs/text_comprehension_v0523/utils/infer_parameter.py' accordingly.
+
+Now, run experiments for parameter inference and plot the eye movement data figure. This one: `step5/modules/rl_envs/text_comprehension_v0523/utils/parameter_inference/ltm_threshold_grid/panel_best_params_and_regression_aligned_regression_probability.pdf`.
+
 > ***NOTE:***: you need to infer the parameters, then plots used in the paper (Figure 3c) will be automatically generated.
 
 ```bash

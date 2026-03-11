@@ -315,6 +315,36 @@ def extract_sentence_level_records_from_json(json_path):
     return pd.DataFrame(rows)
 
 
+def classify_ambiguity_from_ranges(
+    df,
+    ambiguous_min=0.60,
+    ambiguous_max=0.68,
+    unambiguous_min=0.70,
+    unambiguous_max=0.78,
+):
+    """
+    Classify sentence instances using calibrated appraisal ranges.
+
+    Rules:
+      - Ambiguous    if ambiguous_min <= appraisal <= ambiguous_max
+      - Unambiguous  if unambiguous_min <= appraisal <= unambiguous_max
+      - Exclude      otherwise
+    """
+    df = df.copy()
+
+    labels = []
+    for score in df["appraisal"]:
+        if ambiguous_min <= score <= ambiguous_max:
+            labels.append("Ambiguous")
+        elif unambiguous_min <= score <= unambiguous_max:
+            labels.append("Unambiguous")
+        else:
+            labels.append("Exclude")
+
+    df["ambiguity"] = labels
+    return df
+
+
 def classify_ambiguity_from_appraisal(df, split_method="median", threshold=0.5):
     """
     Convert continuous appraisal into binary ambiguity labels.
@@ -347,7 +377,7 @@ def classify_ambiguity_from_appraisal(df, split_method="median", threshold=0.5):
 
 def compute_regression_probabilities_binary(df):
     """
-    Compute P(regression | ambiguity class), plus SD and SE across sentence instances.
+    Compute P(regression | ambiguity class), excluding rows with ambiguity == 'Exclude'.
 
     Returns:
       {
@@ -358,7 +388,8 @@ def compute_regression_probabilities_binary(df):
             "std": ...,
             "se": ...
         },
-        "Unambiguous": {...}
+        "Unambiguous": {...},
+        "Excluded": {"n_total": ...}
       }
     """
     out = {}
@@ -371,8 +402,6 @@ def compute_regression_probabilities_binary(df):
         if n_total > 0:
             values = sub["regressed"].astype(float).to_numpy()
             prob = float(values.mean())
-
-            # sample SD across sentence instances
             std = float(np.std(values, ddof=1)) if n_total > 1 else 0.0
             se = float(std / np.sqrt(n_total)) if n_total > 0 else np.nan
         else:
@@ -388,7 +417,37 @@ def compute_regression_probabilities_binary(df):
             "se": se,
         }
 
+    out["Excluded"] = {
+        "n_total": int((df["ambiguity"] == "Exclude").sum())
+    }
+
     return out
+
+
+def load_aligned_binary_probs_from_json_with_ranges(
+    json_path,
+    ambiguous_min=0.60,
+    ambiguous_max=0.68,
+    unambiguous_min=0.70,
+    unambiguous_max=0.78,
+):
+    """
+    Full pipeline using calibrated appraisal ranges:
+      raw sim json -> sentence records -> range-based ambiguity classes -> regression probabilities
+    """
+    df = extract_sentence_level_records_from_json(json_path)
+
+    df = classify_ambiguity_from_ranges(
+        df,
+        ambiguous_min=ambiguous_min,
+        ambiguous_max=ambiguous_max,
+        unambiguous_min=unambiguous_min,
+        unambiguous_max=unambiguous_max,
+    )
+
+    probs = compute_regression_probabilities_binary(df)
+    return df, probs
+
 
 
 def load_aligned_binary_probs_from_json(json_path, split_method="median", threshold=0.5):
@@ -460,16 +519,6 @@ def plot_panel(human_probs, sim_probs, out_png: str, out_stats_txt: str):
         sim_probs["Unambiguous"]["prob"]
     ], dtype=float)
 
-    # y_human = np.array([
-    #     human_probs["Ambiguous"],
-    #     human_probs["Unambiguous"]
-    # ], dtype=float)
-
-    # y_sim = np.array([
-    #     sim_probs["Ambiguous"]["prob"],
-    #     sim_probs["Unambiguous"]["prob"]
-    # ], dtype=float)
-
     # fig, ax = plt.subplots(figsize=(BAR_FIG_WIDTH, BAR_FIG_HEIGHT))
     fig, ax = plt.subplots(figsize=(PANEL_AX_WIDTH_IN, PANEL_AX_HEIGHT_IN))
     fig.subplots_adjust(left=0.24, bottom=0.16, right=0.98, top=0.98)
@@ -526,9 +575,9 @@ def plot_panel(human_probs, sim_probs, out_png: str, out_stats_txt: str):
     # ylim_top = max(0.20, np.ceil((ymax + 0.02) / 0.05) * 0.05)
     # ax.set_ylim(0.00, ylim_top)
 
-    ax.set_ylim(0.00, 0.50)
-    ax.set_yticks([0.00, 0.25, 0.50])
-    ax.set_yticklabels(["0.00", "0.25", "0.50"], fontsize=AX_TICK_SIZE)
+    ax.set_ylim(0.00, 0.40)
+    ax.set_yticks([0.00, 0.20, 0.40])
+    ax.set_yticklabels(["0.00", "0.20", "0.40"], fontsize=AX_TICK_SIZE)
 
     ax.tick_params(axis="x", labelsize=AX_TICK_SIZE)
 
@@ -589,6 +638,11 @@ def plot_panel(human_probs, sim_probs, out_png: str, out_stats_txt: str):
         f.write("\n")
         f.write(f"simulation_n_regressed_ambiguous\t{sim_probs['Ambiguous']['n_regressed']}\n")
         f.write(f"simulation_n_regressed_unambiguous\t{sim_probs['Unambiguous']['n_regressed']}\n")
+        f.write(f"simulation_n_excluded\t{sim_probs['Excluded']['n_total']}\n")
+        f.write("ambiguous_range_min\t0.620\n")
+        f.write("ambiguous_range_max\t0.680\n")
+        f.write("unambiguous_range_min\t0.705\n")
+        f.write("unambiguous_range_max\t0.780\n")
 
 
 # ---------------- main ----------------
@@ -696,15 +750,6 @@ def main():
             + f"Total loss: {best_row['loss_total']:.6f}\n"
         )
 
-        # # write the extra section separately
-        # f.write("\nAligned regression comparison:\n")
-        # f.write("  Human ambiguous regression prob    : 0.190\n")
-        # f.write("  Human unambiguous regression prob  : 0.068\n")
-        # f.write(f"  Simulation ambiguous regression prob   : {sim_probs['Ambiguous']['prob']:.6f}\n")
-        # f.write(f"  Simulation unambiguous regression prob : {sim_probs['Unambiguous']['prob']:.6f}\n")
-        # f.write(f"  Appraisal split method: {args.appraisal_split_method}\n")
-        # f.write(f"  Appraisal split value : {split_value:.6f}\n")
-
     best_json = os.path.join(args.out_dir, "best_pair.json")
     with open(best_json, "w", encoding="utf-8") as f:
         json.dump(
@@ -713,40 +758,31 @@ def main():
              "best": best_row},
             f, indent=2
         )
-
-    # # Build right subplot data from sim JSON (if provided)
-    # scatter_centers = None
-    # scatter_props = None
-    # if args.sim_json:
-    #     if os.path.exists(args.sim_json):
-    #         all_app, reg_app = load_appraisals_from_json(args.sim_json)
-    #         centers, props = bin_proportion_regressed(all_app, reg_app, n_bins=BIN_COUNT_SCATTER)
-    #         scatter_centers, scatter_props = centers, props
-    #     else:
-    #         print(f"[WARN] --sim_json not found: {args.sim_json}. Right subplot will be empty.")
     
-    # Build aligned binary regression probabilities from sim JSON
+    # Build aligned binary regression probabilities from sim JSON using calibrated ranges
     sim_probs = {
-        "Ambiguous": {"prob": np.nan, "n_total": 0, "n_regressed": 0},
-        "Unambiguous": {"prob": np.nan, "n_total": 0, "n_regressed": 0},
+        "Ambiguous": {"prob": np.nan, "n_total": 0, "n_regressed": 0, "std": np.nan, "se": np.nan},
+        "Unambiguous": {"prob": np.nan, "n_total": 0, "n_regressed": 0, "std": np.nan, "se": np.nan},
+        "Excluded": {"n_total": 0},
     }
-    split_value = np.nan
+
+    # calibrated from human stimuli
+    ambiguous_min = 0.6
+    ambiguous_max = 0.68
+    unambiguous_min = 0.7
+    unambiguous_max = 0.78
 
     if args.sim_json:
         if os.path.exists(args.sim_json):
-            sim_df, sim_probs, split_value = load_aligned_binary_probs_from_json(
+            sim_df, sim_probs = load_aligned_binary_probs_from_json_with_ranges(
                 args.sim_json,
-                split_method=args.appraisal_split_method,
-                threshold=args.appraisal_threshold
+                ambiguous_min=ambiguous_min,
+                ambiguous_max=ambiguous_max,
+                unambiguous_min=unambiguous_min,
+                unambiguous_max=unambiguous_max,
             )
         else:
             print(f"[WARN] --sim_json not found: {args.sim_json}. Aligned regression plot will use NaNs.")
-
-
-    # # Plot combined panel
-    # out_png = os.path.join(args.out_dir, "panel_best_params_and_regression.png")
-    # out_stats = os.path.join(args.out_dir, "plot_stats.txt")
-    # plot_panel(human, best_sim_four, scatter_centers, scatter_props, out_png, out_stats)
 
     human_regression_probs = {
         "Ambiguous": 0.19,

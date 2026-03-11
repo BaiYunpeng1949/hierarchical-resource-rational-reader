@@ -1,0 +1,29 @@
+S-Coordination Sentences:
+
+[Either] John borrowed a rake or his wife bought one.
+[Either] Ms. Haywood planned a picnic or the kids went swimming.
+[Either] the Congress passed the bill or the President issued an order.
+[Either] Linda bought the red car or her husband leased the green one.
+[Either] Dr. Wendell will perform the surgery or the nurse will make a splint.
+[Either] Liza will sing her famous song or the host will dance with a bear.
+[Either] Rudolph will pull the sleigh or the leader will organize a team.
+[Either] the pitcher will throw a ball or the slugger will hit a home run.
+[Either] Igor will discover a cure or the patients will continue to suffer.
+[Either] Jones will win the battle or the natives will keep their land.
+[Either] Brown defeated the space aliens or the ship was swallowed up.
+[Either] Louise punished the children or the parents decided to let it slide.
+
+NP-Coordination Sentences:
+
+The team took [either] the train or the subway to get to the game.
+My friend wrote [either] a short story or an essay in the school magazine.
+Some ants ate through [either] the door or the window to get into the kitchen.
+Most of the animals [either] the straw or the leaves as their bedding.
+The maid stole [either] a necklace or a bracelet at the end of each day.
+The farmers built [either] a barn or a meeting hall each summer.
+The lawyer will play [either] the recording or the videotape during the trial.
+Many factories emit [either] chemicals or waste sludge into the river.
+Many of the tourists will see [either] the shrine or the monastery this afternoon.
+The detective will visit [either] the casino or the horse track before breakfast.
+The defendant will wear [either] the jacket or the sweater during the trial.
+My dog will chase [either] a ball or a frisbee with great enthusiasm.

@@ -1,0 +1,25 @@
+section,condition,has_either,sentence,appraisal
+S,unambiguous,1,Either John borrowed a rake or his wife bought one.,0.78
+S,ambiguous,0,John borrowed a rake or his wife bought one.,0.68
+S,unambiguous,1,Either Ms. Haywood planned a picnic or the kids went swimming.,0.759090909090909
+S,ambiguous,0,Ms. Haywood planned a picnic or the kids went swimming.,0.68
+S,unambiguous,1,Either the Congress passed the bill or the President issued an order.,0.74
+S,ambiguous,0,the Congress passed the bill or the President issued an order.,0.6622727272727273
+S,unambiguous,1,Either Linda bought the red car or her husband leased the green one.,0.735
+S,ambiguous,0,Linda bought the red car or her husband leased the green one.,0.65
+S,unambiguous,1,Either Dr. Wendell will perform the surgery or the nurse will make a splint.,0.715
+S,ambiguous,0,Dr. Wendell will perform the surgery or the nurse will make a splint.,0.635
+S,unambiguous,1,Either Liza will sing her famous song or the host will dance with a bear.,0.7050000000000001
+S,ambiguous,0,Liza will sing her famous song or the host will dance with a bear.,0.6200000000000001
+S,unambiguous,1,Either Rudolph will pull the sleigh or the leader will organize a team.,0.735
+S,ambiguous,0,Rudolph will pull the sleigh or the leader will organize a team.,0.65
+S,unambiguous,1,Either the pitcher will throw a ball or the slugger will hit a home run.,0.7050000000000001
+S,ambiguous,0,the pitcher will throw a ball or the slugger will hit a home run.,0.6200000000000001
+S,unambiguous,1,Either Igor will discover a cure or the patients will continue to suffer.,0.7326923076923076
+S,ambiguous,0,Igor will discover a cure or the patients will continue to suffer.,0.65
+S,unambiguous,1,Either Jones will win the battle or the natives will keep their land.,0.735
+S,ambiguous,0,Jones will win the battle or the natives will keep their land.,0.65
+S,unambiguous,1,Either Brown defeated the space aliens or the ship was swallowed up.,0.7466666666666667
+S,ambiguous,0,Brown defeated the space aliens or the ship was swallowed up.,0.6640909090909091
+S,unambiguous,1,Either Louise punished the children or the parents decided to let it slide.,0.7296153846153846
+S,ambiguous,0,Louise punished the children or the parents decided to let it slide.,0.6466666666666667
