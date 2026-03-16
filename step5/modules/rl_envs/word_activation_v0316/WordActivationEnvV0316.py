@@ -92,6 +92,13 @@ class WordActivationRLEnv(Env):
         # Define the word that is recognized
         self._word_to_activate = None
 
+        # Fixation position variables
+        self._intended_action = None
+        self._executed_action = None
+
+        # Whether to use the oculomotor noise
+        self._apply_fixation_noise = True
+
         # Define the action 
         self._action = None
         
@@ -200,6 +207,10 @@ class WordActivationRLEnv(Env):
             self.param_kappa = params['kappa']
         else:
             self.param_kappa = 3.75     # An default value from the literature
+        
+        # Reset the fixation variables
+        self._intended_action = -1
+        self._executed_action = -1
 
         return self._get_obs(), self._get_logs(is_initialization=True, mode=self._mode)
 
@@ -214,48 +225,115 @@ class WordActivationRLEnv(Env):
         # info = {}
         reward = 0
 
-        self._action = action
+        # Original precise eye movement control
+        # self._action = action
+        self._intended_action = int(action)
+        self._executed_action = int(action)
+
+        # # Move to the next step
+        # self._steps += 1
+
+        # # Update states
+        # if action <= self.MAX_WORD_LEN - 1:     # Still fixating on the letters
+
+        #     if action <= self._word_len - 1:    # The action is a valid fixation, sampling letters
+                
+        #         self._sampled_letters_so_far_representation, self._sampled_letters_so_far_with_spaces = self.transition_function.update_state_sampled_letters_so_far_include_non_contiguous_letters(
+        #             action=action, norm_gt_word_rep=self._normalized_ground_truth_word_representation, 
+        #             seen_letters_representation=self._sampled_letters_so_far_representation, 
+        #             seen_letters=self._sampled_letters_so_far_with_spaces, word=self._word, word_len=self._word_len
+        #         )
+
+        #         assert self._sampled_letters_so_far_with_spaces != "NO_LETTER_SAMPLED", f"no letters sampled so far, the word is {self._word}, the action is {action}, the word length is {self._word_len}"
+                
+        #         self._prior_distribution_dict_parallel_activation_with_k_words, self._normalized_belief_distribution_dict_parallel_activation_with_k_words, self._normalized_belief_distribution_parallel_activation_with_k_words, self._likelihood_dict_parallel_activation_with_k_words = self.transition_function.update_state_normalized_belief_distribution_dict(
+        #             sampled_letters_so_far_with_spaces=self._sampled_letters_so_far_with_spaces, word_to_recognize=self._word, 
+        #             parallelly_activated_words_beliefs_dict=self._normalized_belief_distribution_dict_parallel_activation_with_k_words,
+        #             lexicon_manager=self.lex_manager
+        #         ) 
+
+        #         # Calculate the entropy change
+        #         self._calculate_entropy_diff()
+
+        #         # # Get the fixation durations
+        #         # self._calculate_gaze_duration()
+
+        #         # Get the reward
+        #         reward = self.reward_function.get_step_wise_effort_cost(is_action_valid=True)
+            
+        #     else:   # The action is invalid, sampling nothing, doing nothing, wasting time
+                
+        #         reward = self.reward_function.get_step_wise_effort_cost(is_action_valid=False)
+
+        # else:   # Stop the sampling and recognize the word
+        #     reward, self._done = self._terminate_step()
+
+        #     # Get the total gaze duration
+        #     self._calc_gaze_duration()
+
 
         # Move to the next step
         self._steps += 1
 
         # Update states
-        if action <= self.MAX_WORD_LEN - 1:     # Still fixating on the letters
+        if action <= self.MAX_WORD_LEN - 1:  # still fixating on letters
 
-            if action <= self._word_len - 1:    # The action is a valid fixation, sampling letters
-                
-                self._sampled_letters_so_far_representation, self._sampled_letters_so_far_with_spaces = self.transition_function.update_state_sampled_letters_so_far_include_non_contiguous_letters(
-                    action=action, norm_gt_word_rep=self._normalized_ground_truth_word_representation, 
-                    seen_letters_representation=self._sampled_letters_so_far_representation, 
-                    seen_letters=self._sampled_letters_so_far_with_spaces, word=self._word, word_len=self._word_len
+            if action <= self._word_len - 1:  # valid fixation target
+
+                # Apply fixation noise only to genuine within-word fixation actions
+                if self._apply_fixation_noise:
+                    noisy_action = self._sample_noisy_fixation_action(int(action))
+                else:
+                    noisy_action = int(action)
+
+                self._executed_action = noisy_action
+                self._action = noisy_action   # use executed action for state transition / observation
+
+                self._sampled_letters_so_far_representation, self._sampled_letters_so_far_with_spaces = (
+                    self.transition_function.update_state_sampled_letters_so_far_include_non_contiguous_letters(
+                        action=noisy_action,
+                        norm_gt_word_rep=self._normalized_ground_truth_word_representation,
+                        seen_letters_representation=self._sampled_letters_so_far_representation,
+                        seen_letters=self._sampled_letters_so_far_with_spaces,
+                        word=self._word,
+                        word_len=self._word_len
+                    )
                 )
 
-                assert self._sampled_letters_so_far_with_spaces != "NO_LETTER_SAMPLED", f"no letters sampled so far, the word is {self._word}, the action is {action}, the word length is {self._word_len}"
-                
-                self._prior_distribution_dict_parallel_activation_with_k_words, self._normalized_belief_distribution_dict_parallel_activation_with_k_words, self._normalized_belief_distribution_parallel_activation_with_k_words, self._likelihood_dict_parallel_activation_with_k_words = self.transition_function.update_state_normalized_belief_distribution_dict(
-                    sampled_letters_so_far_with_spaces=self._sampled_letters_so_far_with_spaces, word_to_recognize=self._word, 
-                    parallelly_activated_words_beliefs_dict=self._normalized_belief_distribution_dict_parallel_activation_with_k_words,
-                    lexicon_manager=self.lex_manager
-                ) 
+                assert self._sampled_letters_so_far_with_spaces != "NO_LETTER_SAMPLED", (
+                    f"no letters sampled so far, the word is {self._word}, "
+                    f"the intended action is {action}, the executed action is {noisy_action}, "
+                    f"the word length is {self._word_len}"
+                )
 
-                # Calculate the entropy change
+                self._prior_distribution_dict_parallel_activation_with_k_words, \
+                self._normalized_belief_distribution_dict_parallel_activation_with_k_words, \
+                self._normalized_belief_distribution_parallel_activation_with_k_words, \
+                self._likelihood_dict_parallel_activation_with_k_words = (
+                    self.transition_function.update_state_normalized_belief_distribution_dict(
+                        sampled_letters_so_far_with_spaces=self._sampled_letters_so_far_with_spaces,
+                        word_to_recognize=self._word,
+                        parallelly_activated_words_beliefs_dict=self._normalized_belief_distribution_dict_parallel_activation_with_k_words,
+                        lexicon_manager=self.lex_manager
+                    )
+                )
+
                 self._calculate_entropy_diff()
-
-                # # Get the fixation durations
-                # self._calculate_gaze_duration()
-
-                # Get the reward
                 reward = self.reward_function.get_step_wise_effort_cost(is_action_valid=True)
-            
-            else:   # The action is invalid, sampling nothing, doing nothing, wasting time
-                
+
+            else:
+                # Invalid fixation action: outside current word
+                self._action = int(action)
+                self._executed_action = int(action)
                 reward = self.reward_function.get_step_wise_effort_cost(is_action_valid=False)
 
-        else:   # Stop the sampling and recognize the word
+        else:
+            # Stop sampling and recognize the word
+            self._action = int(action)
+            self._executed_action = int(action)
             reward, self._done = self._terminate_step()
-
-            # Get the total gaze duration
             self._calc_gaze_duration()
+
 
         if self._steps >= self.ep_len:     # Truncation case
             reward, self._done = self._terminate_step()
@@ -280,6 +358,29 @@ class WordActivationRLEnv(Env):
 
         return reward, done
     
+    def _sample_noisy_fixation_action(self, intended_action: int) -> int:
+        """
+        Sample the actually executed fixation position from the local neighborhood
+        {left, target, right}, clipped to the valid word range.
+
+        This models oculomotor noise: the agent intends to fixate one letter,
+        but the executed fixation may land on an adjacent letter instead.
+        """
+        if intended_action < 0:
+            return intended_action
+
+        # Only valid letter positions are noised.
+        if intended_action > self._word_len - 1:
+            return intended_action
+
+        # NOTE: use a fixed range now -- [target-1, target, target+1]
+        candidates = [
+            pos for pos in [intended_action - 1, intended_action, intended_action + 1]
+            if 0 <= pos <= self._word_len - 1
+        ]
+
+        return int(np.random.choice(candidates))
+    
     @staticmethod
     def _calculate_entropy(probability_distribution):
         """
@@ -298,7 +399,8 @@ class WordActivationRLEnv(Env):
 
         # Encode the discrete action into a one-hot vector
         action_obs = np.zeros(self.MAX_WORD_LEN + 1 + 1)        # three types of actions -1, fixations, stop
-        action_obs[self._action + 1] = 1
+        # action_obs[self._action + 1] = 1    # The orginal
+        action_obs[self._executed_action + 1] = 1   # The updated version: noisy oculomotor control
 
         stateful_obs = np.concatenate([self._normalized_belief_distribution_parallel_activation_with_k_words, self._sampled_letters_so_far_representation, [self._word_len], action_obs, [self._prior_type]])
 
@@ -350,6 +452,8 @@ class WordActivationRLEnv(Env):
                 self.log_cumulative_version["fixations"].append({
                     "steps": self._steps,
                     "action": self._action,
+                    "intended_action": self._intended_action,
+                    "executed_action": self._executed_action,
                     "done": self._done,
                     "word_likelihood": self.lex_manager.get_likelihood_by_sampled_letters_so_far(
                         sampled_letters_so_far=self._sampled_letters_so_far_with_spaces, candidate_word=self._word, original_word=self._word

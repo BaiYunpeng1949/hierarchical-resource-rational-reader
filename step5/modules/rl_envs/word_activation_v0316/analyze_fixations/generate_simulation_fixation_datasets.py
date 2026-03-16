@@ -2,7 +2,10 @@ import json
 from collections import defaultdict
 import pandas as pd
 
-INPUT_JSON = "/home/baiy4/reader-agent-zuco/step5/data/sim_results/word_activation/0316_word_activation_v0316_00_baseline/rl_model_10000000_steps/10ep/logs.json"             # Default: the baseline model with a pesudo dataset.
+# Default: the baseline model with a pesudo dataset.
+INPUT_JSON = "/home/baiy4/reader-agent-zuco/step5/data/sim_results/word_activation/0316_word_activation_v0316_00_baseline/rl_model_10000000_steps/10ep/logs.json"             
+
+
 
 OUT_FORWARD_MULTIPLE = "sim_forward_fixations_multiple.csv"
 OUT_FORWARD_SINGLE = "sim_forward_fixations_single_only.csv"
