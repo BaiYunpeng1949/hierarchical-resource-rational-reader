@@ -1,5 +1,7 @@
 # Word Recognition Environment
 
+NOTE: this is a repo working to present within word fixation locations, replicating human preferred viewing location and regressions. As requested by the reviewers.
+
 This environment simulates human‑like word recognition eye movement behavior.
 
 It corresponds to the `word recognizer` of the model described in the paper, and is used to generate the results reported in Figure 3a (“Deciding when and where to fixate in a word”).
@@ -32,11 +34,6 @@ step5/training/saved_models/
 ```
 
 Run the simulation
-
-Ensure two configurations before execute any codes:
-1. `/home/baiy4/reader-agent-zuco/step5/config.yaml` should be exactly the same as `step5/modules/rl_envs/word_activation_v0218/config.yaml`
-2. in `step5/STB3RL.py`, uncomment `from modules.rl_envs.word_activation_v0218.WordActivationEnvV0218 import WordActivationRLEnv`, comment **all** other `WordActivationRLEnv`.
-
 ```bash
 conda activate reader_agent
 cd step5

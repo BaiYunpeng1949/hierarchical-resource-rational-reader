@@ -55,7 +55,8 @@ from step5.modules.rl_envs.SentenceLevelControllerEnv_v1014 import SentenceLevel
 from modules.rl_envs.GeneralOculomotorControllerEnv_v1126 import GeneralOculomotorControllerEnv
 from modules.rl_envs.OMCRLEnvV0128 import OculomotorControllerRLEnv
 # from modules.rl_envs.WordActivationEnvV0205 import WordActivationRLEnv
-from modules.rl_envs.word_activation_v0218.WordActivationEnvV0218 import WordActivationRLEnv
+# from modules.rl_envs.word_activation_v0218.WordActivationEnvV0218 import WordActivationRLEnv    # NOTE: uncomment, use this one for general gaze duration vs. lexcial feature analysis
+from modules.rl_envs.word_activation_v0316.WordActivationEnvV0316 import WordActivationRLEnv      # NOTE: uncomment, use this one for specific fixation location analysis
 
 _MODES = {
     'train': 'train',
@@ -330,7 +331,7 @@ class RL:
             )
 
         # Get the environment class
-        env_class = WordActivationRLEnv # OculomotorControllerRLEnv # GeneralOculomotorControllerEnv           # GeneralOculomotorControllerEnv, SentenceLevelControllerEnv, SupervisoryControllerEnv
+        env_class = WordActivationRLEnv 
 
         # Load the dataset (if needed)
         shared_dataset_metadata_of_stimuli = None
