@@ -3,7 +3,10 @@ from collections import defaultdict
 import pandas as pd
 
 # Default: the baseline model with a pesudo dataset.
-INPUT_JSON = "/home/baiy4/reader-agent-zuco/step5/data/sim_results/word_activation/0316_word_activation_v0316_00_baseline/rl_model_10000000_steps/10ep/logs.json"             
+# INPUT_JSON = "/home/baiy4/reader-agent-zuco/step5/data/sim_results/word_activation/0316_word_activation_v0316_00_baseline/rl_model_10000000_steps/10ep/logs.json" 
+
+# Variation 1: noisy oculomotor controller
+INPUT_JSON = "/home/baiy4/reader-agent-zuco/step5/data/sim_results/word_activation/0316_word_activation_v0316_01_noisy_oculomotor/rl_model_10000000_steps/10000ep/logs.json"
 
 
 
@@ -31,7 +34,7 @@ def fixation_actions_from_episode(ep: dict):
         if fx.get("done", False):
             continue
 
-        action = fx.get("action")
+        action = fx.get("executed_action")
         if action is None:
             continue
 
