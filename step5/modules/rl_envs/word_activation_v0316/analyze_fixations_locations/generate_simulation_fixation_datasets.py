@@ -10,9 +10,9 @@ INPUT_JSON = "/home/baiy4/reader-agent-zuco/step5/data/sim_results/word_activati
 
 
 
-OUT_FORWARD_MULTIPLE = "sim_forward_fixations_multiple.csv"
-OUT_FORWARD_SINGLE = "sim_forward_fixations_single_only.csv"
-OUT_REG_INTRAWORD = "sim_intraword_regressions_only.csv"
+OUT_FORWARD_MULTIPLE = "data/simulation/sim_forward_fixations_multiple.csv"
+OUT_FORWARD_SINGLE = "data/simulation/sim_forward_fixations_single_only.csv"
+OUT_REG_INTRAWORD = "data/simulation/sim_intraword_regressions_only.csv"
 
 
 def load_logs(path: str):
