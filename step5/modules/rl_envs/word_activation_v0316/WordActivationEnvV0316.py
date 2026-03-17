@@ -16,7 +16,17 @@ from modules.rl_envs.word_activation_v0218.LexiconManager import LexiconManager
 class WordActivationRLEnv(Env):
     """
     Oculomotor Controller RL Environment
+    Coarse-region version:
+      0 = beginning
+      1 = middle
+      2 = ending
+      3 = stop
     """
+
+    REGION_BEGINNING = 0
+    REGION_MIDDLE = 1
+    REGION_ENDING = 2
+    ACTION_STOP = 3
 
     def __init__(self):
         
@@ -26,7 +36,7 @@ class WordActivationRLEnv(Env):
         with open(os.path.join(root_dir, "config.yaml")) as f:
             self._config = yaml.load(f, Loader=yaml.FullLoader)
 
-        print(f"Word Activation (No Vision) Environment V0218 -- Deploying the environment in the {self._config['rl']['mode']} mode.")
+        print(f"Word Activation (No Vision) Environment V0316 -- Deploying the environment in the {self._config['rl']['mode']} mode.")
 
         self._mode = self._config["rl"]["mode"]
 
@@ -64,6 +74,7 @@ class WordActivationRLEnv(Env):
         self._word_predictability_prob = None    # The predictability of the word to be recognized (actually the likelihood prob) -- ranges from 0 to 1
         self._word_dynamic_predictability_prob = None    # The dynamic predictability of the word to be recognized (actually the likelihood prob) -- ranges from 0 to 1, it changes as the agent samples new letters
         self._word_prior_prob = None     # The prior probability of the word to be recognized -- ranges from 0 to 1, which is a combination of the frequency and predictability
+        self._raw_occurance = None
         self._sampled_letters_so_far_with_spaces = None    # The letters that have been sampled
 
         # Entropy
@@ -92,23 +103,34 @@ class WordActivationRLEnv(Env):
         # Define the word that is recognized
         self._word_to_activate = None
 
-        # Fixation position variables
-        self._intended_action = None
-        self._executed_action = None
-
         # Whether to use the oculomotor noise
         self._apply_fixation_noise = True
 
         # Define the action 
         self._action = None
+        # Fixation position variables
+        self._intended_action = None
+        self._executed_action = None
+        self._sampled_region_window  = None # For logging
         
-        # Define the action space: 
-        self.action_space = Discrete(self.MAX_WORD_LEN + 1)    # 0-9: fixate on the letter at the position, 10: stop the sampling and recognize the word
+        # # Define the action space:      NOTE: the original, disable
+        # self.action_space = Discrete(self.MAX_WORD_LEN + 1)    # 0-9: fixate on the letter at the position, 10: stop the sampling and recognize the word
+
+        # Action space: 0=beginning, 1=middle, 2=ending, 3=stop
+        self.action_space = Discrete(4)
 
         # Define the observation space:
         self.STATEFUL_OBS = "stateful_obs"
         self.ACTION_OBS = "action_obs"
-        self._num_stateful_obs = len(self._normalized_belief_distribution_parallel_activation_with_k_words) + len(self._word_representation) + 1 + (self.MAX_WORD_LEN + 1 + 1) + 1 # Belief distribution, word representation with sampled letters, word length, prior type
+        self._num_action_obs = 5        # action obs size = 1 init slot + 4 action slots
+        # self._num_stateful_obs = len(self._normalized_belief_distribution_parallel_activation_with_k_words) + len(self._word_representation) + 1 + (self.MAX_WORD_LEN + 1 + 1) + 1 # Belief distribution, word representation with sampled letters, word length, prior type   NOTE: disable, the original
+        self._num_stateful_obs = (
+            len(self._normalized_belief_distribution_parallel_activation_with_k_words)
+            + len(self._word_representation)
+            + 1
+            + self._num_action_obs
+            + 1
+        )
         self.observation_space = Box(low=-1, high=1, shape=(self._num_stateful_obs,))
 
         # Initialize the reward function
@@ -149,6 +171,10 @@ class WordActivationRLEnv(Env):
 
         # Initialize the action
         self._action = -1
+        # Reset the fixation variables
+        self._intended_action = -1
+        self._executed_action = -1
+        self._sampled_region_window  = None
 
         # Reset the belief distribution
         non_word = Constants.NON_WORD
@@ -191,11 +217,6 @@ class WordActivationRLEnv(Env):
             self._word, self._word_prior_prob, self._raw_occurance = self.lex_manager.get_word()
 
         self._word_len = len(self._word)
-        # self._word_prior_prob = self.lex_manager.prior_dict[self._word] 
-
-        # weight_prior_pred_to_freq = self.lex_manager.weight_prior_pred_to_freq    # NOTE we separetely analyze word frequency and predictability's effect
-        # self._word_freq_prob = math.sqrt(self._word_prior_prob / weight_prior_pred_to_freq)    # Only for training and testing, for actual simulation, need to use actual LLMs  NOTE: could set as controllable parameters
-        # self._word_predictability_prob = self._word_freq_prob * weight_prior_pred_to_freq    # Only for training and testing, for actual simulation, need to use actual LLMs   NOTE: could set as controllable parameters
         self._word_to_activate = None
 
         # Initialize the ground truth representation -- the word to be recognize is encoded as:
@@ -207,146 +228,120 @@ class WordActivationRLEnv(Env):
             self.param_kappa = params['kappa']
         else:
             self.param_kappa = 3.75     # An default value from the literature
-        
-        # Reset the fixation variables
-        self._intended_action = -1
-        self._executed_action = -1
 
         return self._get_obs(), self._get_logs(is_initialization=True, mode=self._mode)
 
     def step(self, action):
         """
-        Take an action and return the response
-        """
+        Take an action and return the response.
 
-        # Initialize variables
+        Action semantics:
+            0 = beginning
+            1 = middle
+            2 = ending
+            3 = stop
+        """
         self._done = False
         self._truncated = False
-        # info = {}
         reward = 0
 
-        # Original precise eye movement control
-        # self._action = action
-        self._intended_action = int(action)
-        self._executed_action = int(action)
+        action = int(action)
+        self._intended_action = action
+        self._action = action
 
-        # # Move to the next step
-        # self._steps += 1
-
-        # # Update states
-        # if action <= self.MAX_WORD_LEN - 1:     # Still fixating on the letters
-
-        #     if action <= self._word_len - 1:    # The action is a valid fixation, sampling letters
-                
-        #         self._sampled_letters_so_far_representation, self._sampled_letters_so_far_with_spaces = self.transition_function.update_state_sampled_letters_so_far_include_non_contiguous_letters(
-        #             action=action, norm_gt_word_rep=self._normalized_ground_truth_word_representation, 
-        #             seen_letters_representation=self._sampled_letters_so_far_representation, 
-        #             seen_letters=self._sampled_letters_so_far_with_spaces, word=self._word, word_len=self._word_len
-        #         )
-
-        #         assert self._sampled_letters_so_far_with_spaces != "NO_LETTER_SAMPLED", f"no letters sampled so far, the word is {self._word}, the action is {action}, the word length is {self._word_len}"
-                
-        #         self._prior_distribution_dict_parallel_activation_with_k_words, self._normalized_belief_distribution_dict_parallel_activation_with_k_words, self._normalized_belief_distribution_parallel_activation_with_k_words, self._likelihood_dict_parallel_activation_with_k_words = self.transition_function.update_state_normalized_belief_distribution_dict(
-        #             sampled_letters_so_far_with_spaces=self._sampled_letters_so_far_with_spaces, word_to_recognize=self._word, 
-        #             parallelly_activated_words_beliefs_dict=self._normalized_belief_distribution_dict_parallel_activation_with_k_words,
-        #             lexicon_manager=self.lex_manager
-        #         ) 
-
-        #         # Calculate the entropy change
-        #         self._calculate_entropy_diff()
-
-        #         # # Get the fixation durations
-        #         # self._calculate_gaze_duration()
-
-        #         # Get the reward
-        #         reward = self.reward_function.get_step_wise_effort_cost(is_action_valid=True)
-            
-        #     else:   # The action is invalid, sampling nothing, doing nothing, wasting time
-                
-        #         reward = self.reward_function.get_step_wise_effort_cost(is_action_valid=False)
-
-        # else:   # Stop the sampling and recognize the word
-        #     reward, self._done = self._terminate_step()
-
-        #     # Get the total gaze duration
-        #     self._calc_gaze_duration()
-
-
-        # Move to the next step
         self._steps += 1
 
-        # Update states
-        if action <= self.MAX_WORD_LEN - 1:  # still fixating on letters
-
-            if action <= self._word_len - 1:  # valid fixation target
-
-                # Apply fixation noise only to genuine within-word fixation actions
-                if self._apply_fixation_noise:
-                    noisy_action = self._sample_noisy_fixation_action(int(action))
-                else:
-                    noisy_action = int(action)
-
-                self._executed_action = noisy_action
-                self._action = noisy_action   # use executed action for state transition / observation
-
-                self._sampled_letters_so_far_representation, self._sampled_letters_so_far_with_spaces = (
-                    self.transition_function.update_state_sampled_letters_so_far_include_non_contiguous_letters(
-                        action=noisy_action,
-                        norm_gt_word_rep=self._normalized_ground_truth_word_representation,
-                        seen_letters_representation=self._sampled_letters_so_far_representation,
-                        seen_letters=self._sampled_letters_so_far_with_spaces,
-                        word=self._word,
-                        word_len=self._word_len
-                    )
-                )
-
-                assert self._sampled_letters_so_far_with_spaces != "NO_LETTER_SAMPLED", (
-                    f"no letters sampled so far, the word is {self._word}, "
-                    f"the intended action is {action}, the executed action is {noisy_action}, "
-                    f"the word length is {self._word_len}"
-                )
-
-                self._prior_distribution_dict_parallel_activation_with_k_words, \
-                self._normalized_belief_distribution_dict_parallel_activation_with_k_words, \
-                self._normalized_belief_distribution_parallel_activation_with_k_words, \
-                self._likelihood_dict_parallel_activation_with_k_words = (
-                    self.transition_function.update_state_normalized_belief_distribution_dict(
-                        sampled_letters_so_far_with_spaces=self._sampled_letters_so_far_with_spaces,
-                        word_to_recognize=self._word,
-                        parallelly_activated_words_beliefs_dict=self._normalized_belief_distribution_dict_parallel_activation_with_k_words,
-                        lexicon_manager=self.lex_manager
-                    )
-                )
-
-                self._calculate_entropy_diff()
-                reward = self.reward_function.get_step_wise_effort_cost(is_action_valid=True)
-
-            else:
-                # Invalid fixation action: outside current word
-                self._action = int(action)
-                self._executed_action = int(action)
-                reward = self.reward_function.get_step_wise_effort_cost(is_action_valid=False)
-
-        else:
-            # Stop sampling and recognize the word
-            self._action = int(action)
-            self._executed_action = int(action)
+        if action == self.ACTION_STOP:
+            self._executed_action = action
             reward, self._done = self._terminate_step()
             self._calc_gaze_duration()
 
+        else:
+            executed_letter_idx = self._sample_executed_action_from_region(action)
+            self._executed_action = executed_letter_idx
 
-        if self._steps >= self.ep_len:     # Truncation case
+            self._sampled_letters_so_far_representation, self._sampled_letters_so_far_with_spaces = (
+                self.transition_function.update_state_sampled_letters_so_far_include_non_contiguous_letters(
+                    action=executed_letter_idx,
+                    norm_gt_word_rep=self._normalized_ground_truth_word_representation,
+                    seen_letters_representation=self._sampled_letters_so_far_representation,
+                    seen_letters=self._sampled_letters_so_far_with_spaces,
+                    word=self._word,
+                    word_len=self._word_len,
+                )
+            )
+
+            assert self._sampled_letters_so_far_with_spaces != "NO_LETTER_SAMPLED", (
+                f"no letters sampled so far, the word is {self._word}, "
+                f"the region action is {action}, the executed action is {executed_letter_idx}, "
+                f"the word length is {self._word_len}"
+            )
+
+            (
+                self._prior_distribution_dict_parallel_activation_with_k_words,
+                self._normalized_belief_distribution_dict_parallel_activation_with_k_words,
+                self._normalized_belief_distribution_parallel_activation_with_k_words,
+                self._likelihood_dict_parallel_activation_with_k_words,
+            ) = self.transition_function.update_state_normalized_belief_distribution_dict(
+                sampled_letters_so_far_with_spaces=self._sampled_letters_so_far_with_spaces,
+                word_to_recognize=self._word,
+                parallelly_activated_words_beliefs_dict=self._normalized_belief_distribution_dict_parallel_activation_with_k_words,
+                lexicon_manager=self.lex_manager,
+            )
+
+            self._calculate_entropy_diff()
+            reward = self.reward_function.get_step_wise_effort_cost(is_action_valid=True)
+
+        if self._steps >= self.ep_len:
             reward, self._done = self._terminate_step()
             self._truncated = True
 
-        return self._get_obs(), reward, self._done, self._truncated, self._get_logs(is_initialization=False, mode=self._mode)
+        return (
+            self._get_obs(),
+            reward,
+            self._done,
+            self._truncated,
+            self._get_logs(is_initialization=False, mode=self._mode),
+        )
 
     def render(self, mode='human'):
         pass
     
+    def _get_region_window(self, region_action: int):
+        """
+        Return a 3-letter window as valid integer indices within the word.
+
+        Examples:
+            len=5  -> beginning [0,1,2], middle [1,2,3], ending [2,3,4]
+            len=10 -> beginning [0,1,2], middle [4,5,6], ending [7,8,9]
+
+        For word lengths 1,2,3 all regions map to the whole word.
+        """
+        if self._word_len <= 3:
+            return list(range(self._word_len))
+
+        if region_action == self.REGION_BEGINNING:
+            start = 0
+        elif region_action == self.REGION_MIDDLE:
+            start = int(math.ceil((self._word_len - 3) / 2.0))
+        elif region_action == self.REGION_ENDING:
+            start = self._word_len - 3
+        else:
+            raise ValueError(f"Invalid region action: {region_action}")
+
+        return [start, start + 1, start + 2]
+    
+
+    def _sample_executed_action_from_region(self, region_action: int) -> int:
+        window = self._get_region_window(region_action)
+        self._sampled_region_window = window.copy()
+        return int(np.random.choice(window))
+
+    
     def _terminate_step(self):
         self._word_to_activate = self.transition_function.activate_a_word(
-            normalized_belief_distribution_dict=self._normalized_belief_distribution_dict_parallel_activation_with_k_words, deterministic=Constants.DETERMINISTIC_WORD_ACTIVATION
+            normalized_belief_distribution_dict=self._normalized_belief_distribution_dict_parallel_activation_with_k_words, 
+            deterministic=Constants.DETERMINISTIC_WORD_ACTIVATION
         )
             
         reward = self.reward_function.get_terminate_reward(
@@ -392,21 +387,62 @@ class WordActivationRLEnv(Env):
                 entropy -= prob * math.log(prob)
         return entropy
 
-    def _get_obs(self):   
+    # def _get_obs(self):   
+    #     """
+    #     Get the current observation
+    #     """
+
+    #     # Encode the discrete action into a one-hot vector
+    #     action_obs = np.zeros(self.MAX_WORD_LEN + 1 + 1)        # three types of actions -1, fixations, stop
+    #     # action_obs[self._action + 1] = 1    # The orginal
+    #     action_obs[self._executed_action + 1] = 1   # The updated version: noisy oculomotor control
+
+    #     stateful_obs = np.concatenate([self._normalized_belief_distribution_parallel_activation_with_k_words, self._sampled_letters_so_far_representation, [self._word_len], action_obs, [self._prior_type]])
+
+    #     assert len(stateful_obs) == self._num_stateful_obs, f"expected {self._num_stateful_obs} but got {len(stateful_obs)}"
+
+    #     return stateful_obs
+
+    def _get_obs(self):
         """
-        Get the current observation
+        Observation uses coarse-action one-hot, not exact letter-position one-hot.
+
+        Slots:
+            0 -> initialization / no previous action
+            1 -> beginning
+            2 -> middle
+            3 -> ending
+            4 -> stop
         """
+        action_obs = np.zeros(self._num_action_obs)
 
-        # Encode the discrete action into a one-hot vector
-        action_obs = np.zeros(self.MAX_WORD_LEN + 1 + 1)        # three types of actions -1, fixations, stop
-        # action_obs[self._action + 1] = 1    # The orginal
-        action_obs[self._executed_action + 1] = 1   # The updated version: noisy oculomotor control
+        if self._action == -1:
+            action_obs[0] = 1
+        elif self._action == self.REGION_BEGINNING:
+            action_obs[1] = 1
+        elif self._action == self.REGION_MIDDLE:
+            action_obs[2] = 1
+        elif self._action == self.REGION_ENDING:
+            action_obs[3] = 1
+        elif self._action == self.ACTION_STOP:
+            action_obs[4] = 1
+        else:
+            raise ValueError(f"Unexpected action for observation encoding: {self._action}")
 
-        stateful_obs = np.concatenate([self._normalized_belief_distribution_parallel_activation_with_k_words, self._sampled_letters_so_far_representation, [self._word_len], action_obs, [self._prior_type]])
+        stateful_obs = np.concatenate([
+            self._normalized_belief_distribution_parallel_activation_with_k_words,
+            self._sampled_letters_so_far_representation,
+            [self._word_len],
+            action_obs,
+            [self._prior_type]
+        ])
 
-        assert len(stateful_obs) == self._num_stateful_obs, f"expected {self._num_stateful_obs} but got {len(stateful_obs)}"
+        assert len(stateful_obs) == self._num_stateful_obs, (
+            f"expected {self._num_stateful_obs} but got {len(stateful_obs)}"
+        )
 
         return stateful_obs
+
 
     def _calculate_entropy_diff(self):
         """
@@ -417,6 +453,7 @@ class WordActivationRLEnv(Env):
         self._previous_step_entropy = self._current_step_entropy
         self._entropy_diffs_list.append(self._entropy_diff)
 
+
     def _calc_gaze_duration(self):
         """
         Calculate the gaze duration
@@ -425,39 +462,39 @@ class WordActivationRLEnv(Env):
 
     
     def _get_logs(self, is_initialization=False, mode="train"):
-        """
-        Obtain the logs
-        """        
         if mode == "train":
             return {}
-        elif mode == "debug" or mode == "test" or mode == "grid_test":
-            if is_initialization:   # Return the initializations, mainly the 
 
+        elif mode in ["debug", "test", "grid_test"]:
+            if is_initialization:
                 self.log_cumulative_version = {
-                    "episode_idnex": "TBD",   # The episode index, to be filled
+                    "episode_idnex": "TBD",
                     "word": self._word,
-                    "word_len": self._word_len,     # Used for analyzing the length's effect
-                    "prior_type": self._prior_type,     # Used for analyzing the prior's effect
-                    "word_prior_prob": self._word_prior_prob,     # Used for analyzing the prior's effect
-                    "occurance": self._raw_occurance,     # Used for analyzing the frequency's effect
-                    "word_frequency": self._word_freq_prob,     # Used for analyzing the frequency's effect
-                    "word_predictability": self._word_predictability_prob,    # Used for analyzing the predictability's effect
-                    "word_representation": self._word_representation,   
+                    "word_len": self._word_len,
+                    "prior_type": self._prior_type,
+                    "word_prior_prob": self._word_prior_prob,
+                    "occurance": self._raw_occurance,
+                    "word_frequency": self._word_freq_prob,
+                    "word_predictability": self._word_predictability_prob,
+                    "word_representation": self._word_representation,
                     "normalized_ground_truth_word_representation": self._normalized_ground_truth_word_representation,
                     "fixations": [],
                 }
-
                 return self.log_cumulative_version
+
             else:
                 self.log_cumulative_version["fixations"].append({
                     "steps": self._steps,
-                    "action": self._action,
-                    "intended_action": self._intended_action,
-                    "executed_action": self._executed_action,
+                    "action": self._action,  # coarse region action
+                    "intended_action": self._intended_action,  # coarse region action
+                    "executed_action": self._executed_action,  # actual sampled letter index
+                    "sampled_region_window": None if self._sampled_region_window is None else self._sampled_region_window.copy(),
                     "done": self._done,
                     "word_likelihood": self.lex_manager.get_likelihood_by_sampled_letters_so_far(
-                        sampled_letters_so_far=self._sampled_letters_so_far_with_spaces, candidate_word=self._word, original_word=self._word
-                        ),    # The likelihood probability: P(sampled letters so far | word)
+                        sampled_letters_so_far=self._sampled_letters_so_far_with_spaces,
+                        candidate_word=self._word,
+                        original_word=self._word,
+                    ),
                     "sampled_letters_so_far": self._sampled_letters_so_far_with_spaces,
                     "sampled_letters_so_far_representation": self._sampled_letters_so_far_representation.copy(),
                     "word_to_activate": self._word_to_activate,
@@ -470,7 +507,7 @@ class WordActivationRLEnv(Env):
                     "current_fixation_duration": self._current_fixation_duration,
                     "individual_fixations_durations_list": self._individual_fixations_durations_list.copy(),
                     "gaze_duration": self._gaze_duration,
-                    "accurate_recognition": self._word_to_activate == self._word if self._done else None
+                    "accurate_recognition": self._word_to_activate == self._word if self._done else None,
                 })
                 return self.log_cumulative_version
             
