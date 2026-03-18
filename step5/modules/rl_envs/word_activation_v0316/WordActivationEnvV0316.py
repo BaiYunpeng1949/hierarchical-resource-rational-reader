@@ -333,7 +333,7 @@ class WordActivationRLEnv(Env):
         Strategy:
         - beginning always starts at 0
         - ending always starts at word_len - 3
-        - mid_left and mid_right are placed evenly between them
+        - mid_left and mid_right are placed by centering between 0-middle and middle-end
         - for short words, overlap is allowed naturally
 
         Examples:
@@ -349,9 +349,12 @@ class WordActivationRLEnv(Env):
 
         max_start = self._word_len - 3
 
-        # Evenly place 4 region starts between left and right boundaries
+        # Calculate region starts
         region_starts = [
-            int(round(x)) for x in np.linspace(0, max_start, 4)
+            0,  # beginning
+            int((0 + (self._word_len // 2)) // 2),  # mid_left
+            int(((self._word_len // 2) + (self._word_len - 1)) // 2),  # mid_right
+            max_start  # ending
         ]
 
         if region_action == self.REGION_BEGINNING:
