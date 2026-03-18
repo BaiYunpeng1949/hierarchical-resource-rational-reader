@@ -320,9 +320,25 @@ class WordActivationRLEnv(Env):
     def render(self, mode='human'):
         pass
     
+    def _get_adaptive_region_window_size(self) -> int:
+        """
+        Adapt region window size to word length.
+
+        Suggested mapping:
+            word_len <= 6  -> 3
+            word_len <= 9  -> 4
+            word_len >= 10 -> 5
+        """
+        if self._word_len <= 6:
+            return 3
+        elif self._word_len <= 9:
+            return 4
+        else:
+            return 5
+    
     def _get_region_window(self, region_action: int):
         """
-        Return a 3-letter window as valid integer indices within the word.
+        Return an adaptive window of valid integer indices within the word.
 
         Regions:
             0 = beginning
@@ -330,31 +346,25 @@ class WordActivationRLEnv(Env):
             2 = mid_right
             3 = ending
 
-        Strategy:
-        - beginning always starts at 0
-        - ending always starts at word_len - 3
-        - mid_left and mid_right are placed by centering between 0-middle and middle-end
-        - for short words, overlap is allowed naturally
-
-        Examples:
-            len=5  -> starts [0,1,1,2]
-                    windows: [0,1,2], [1,2,3], [1,2,3], [2,3,4]
-            len=6  -> starts [0,1,2,3]
-                    windows: [0,1,2], [1,2,3], [2,3,4], [3,4,5]
-            len=10 -> starts [0,2,5,7]
-                    windows: [0,1,2], [2,3,4], [5,6,7], [7,8,9]
+        Window size is adaptive:
+            word_len <= 6  -> 3
+            word_len <= 9  -> 4
+            word_len >= 10 -> 5
         """
-        if self._word_len <= 3:
+        window_size = self._get_adaptive_region_window_size()
+
+        # If the word is shorter than the desired window, just return the whole word
+        if self._word_len <= window_size:
             return list(range(self._word_len))
 
-        max_start = self._word_len - 3
+        max_start = self._word_len - window_size
 
-        # Calculate region starts
+        # Mid anchors based on proportional positions in the word
         region_starts = [
-            0,  # beginning
-            int((0 + (self._word_len // 2)) // 2),  # mid_left
-            int(((self._word_len // 2) + (self._word_len - 1)) // 2),  # mid_right
-            max_start  # ending
+            0,                                   # beginning
+            int(round(max_start * 0.25)),        # mid_left
+            int(round(max_start * 0.60)),        # mid_right
+            max_start                            # ending
         ]
 
         if region_action == self.REGION_BEGINNING:
@@ -368,7 +378,7 @@ class WordActivationRLEnv(Env):
         else:
             raise ValueError(f"Invalid region action: {region_action}")
 
-        return [start, start + 1, start + 2]
+        return list(range(start, start + window_size))
     
 
     def _sample_target_action_from_region(self, region_action: int) -> int:
