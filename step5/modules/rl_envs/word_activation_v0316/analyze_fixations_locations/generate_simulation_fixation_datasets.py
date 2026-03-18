@@ -44,22 +44,54 @@ def count_positions(actions, counter, word_len):
         counter[(word_len, a)] += 1
 
 
+# def counts_to_proportion_df(counter, value_name):
+#     totals_by_length = defaultdict(int)
+#     for (word_length, letter_number), count in counter.items():
+#         totals_by_length[word_length] += count
+
+#     rows = []
+#     for (word_length, letter_number), count in sorted(counter.items()):
+#         total = totals_by_length[word_length]
+#         value = count / total if total > 0 else 0.0
+#         rows.append({
+#             "word_length": word_length,
+#             "letter_number": letter_number,
+#             value_name: value
+#         })
+
+#     return pd.DataFrame(rows)
+
+
 def counts_to_proportion_df(counter, value_name):
     totals_by_length = defaultdict(int)
+    max_letter_by_length = defaultdict(int)
+
+    # compute totals and max letter index per word length
     for (word_length, letter_number), count in counter.items():
         totals_by_length[word_length] += count
+        max_letter_by_length[word_length] = max(
+            max_letter_by_length[word_length], letter_number
+        )
 
     rows = []
-    for (word_length, letter_number), count in sorted(counter.items()):
+
+    # iterate through ALL positions, not just observed ones
+    for word_length in sorted(totals_by_length.keys()):
         total = totals_by_length[word_length]
-        value = count / total if total > 0 else 0.0
-        rows.append({
-            "word_length": word_length,
-            "letter_number": letter_number,
-            value_name: value
-        })
+
+        # IMPORTANT: use full word length range
+        for letter_number in range(word_length):
+            count = counter.get((word_length, letter_number), 0)
+            value = count / total if total > 0 else 0.0
+
+            rows.append({
+                "word_length": word_length,
+                "letter_number": letter_number,
+                value_name: value
+            })
 
     return pd.DataFrame(rows)
+
 
 
 def main():

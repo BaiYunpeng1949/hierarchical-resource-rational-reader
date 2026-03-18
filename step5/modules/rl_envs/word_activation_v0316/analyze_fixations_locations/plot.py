@@ -13,7 +13,7 @@ CI_ALPHA    = 0.5
 # Line/marker styles
 LINE_WIDTH        = 2.0
 REGRESSION_DASHED = True
-REG_LINESTYLE     = "--" if REGRESSION_DASHED else "-"
+REG_LINESTYLE     = "-" if REGRESSION_DASHED else "-"
 SHOW_SCATTER      = True
 SCATTER_SIZE      = 36
 SCATTER_EDGEWIDTH = 1.0
@@ -123,25 +123,6 @@ def _load_and_filter(csv_path, word_length, y_col, is_human=False):
 
     return df
 
-
-# def _plot_series(ax, df, y_col, color, linestyle="-"):
-#     ax.plot(
-#         df["letter_number"].values,
-#         _snap_to_zero(df[y_col].values), # df[y_col].values,
-#         linestyle=linestyle,
-#         linewidth=LINE_WIDTH,
-#         color=color,
-#     )
-#     if SHOW_SCATTER:
-#         ax.scatter(
-#             df["letter_number"].values,
-#             df[y_col].values,
-#             s=SCATTER_SIZE,
-#             facecolor="none",
-#             edgecolor=color,
-#             linewidth=SCATTER_EDGEWIDTH,
-#         )
-
 def _plot_series(ax, df, y_col, color, linestyle="-"):
     y_vals = _snap_to_zero(df[y_col].values)
 
@@ -188,16 +169,6 @@ def _plot_word_length_comparison(
         constrained_layout=False
     )
 
-    # _plot_series(ax, human_df, y_col=y_col, color=HUMAN_COLOR, linestyle="-")
-    # _plot_series(ax, sim_df,   y_col=y_col, color=SIM_COLOR, linestyle=sim_linestyle)
-
-    # # Trim before plotting
-    # if not human_df.empty:
-    #     human_df = _trim_trailing_zeros(human_df, y_col)
-
-    # if not sim_df.empty:
-    #     sim_df = _trim_trailing_zeros(sim_df, y_col)
-
     # Plotting
     if not human_df.empty:
         _plot_series(ax, human_df, y_col=y_col, color=HUMAN_COLOR, linestyle="-")
@@ -209,11 +180,6 @@ def _plot_word_length_comparison(
     ax.set_ylabel(y_label)
 
     _style_axes(ax, force_integer_x=True)
-
-    # xmax = max(
-    #     int(human_df["letter_number"].max()),
-    #     int(sim_df["letter_number"].max())
-    # )
 
     x_candidates = []
 
