@@ -9,7 +9,10 @@ import pandas as pd
 # INPUT_JSON = "/home/baiy4/reader-agent-zuco/step5/data/sim_results/word_activation/0316_word_activation_v0316_01_noisy_oculomotor/rl_model_10000000_steps/10000ep/logs.json"
 
 # Variation 2: noisy action and observation about the word length
-INPUT_JSON = "/home/baiy4/reader-agent-zuco/step5/data/sim_results/word_activation/0317_word_activation_v0316_02_laggy_action_and_observation/rl_model_10000000_steps/10000ep/logs.json"
+# INPUT_JSON = "/home/baiy4/reader-agent-zuco/step5/data/sim_results/word_activation/0317_word_activation_v0316_02_laggy_action_and_observation/rl_model_10000000_steps/10000ep/logs.json"
+
+# Variation 3: noisy action and observation + noisy oculomotor control
+INPUT_JSON = "/home/baiy4/reader-agent-zuco/step5/data/sim_results/word_activation/0318_word_activation_v0316_02_laggy_action_and_observation_and_noisy_oculomotor/rl_model_20000000_steps/10000ep/logs.json"
 
 
 OUT_FORWARD_MULTIPLE = "data/simulation/sim_forward_fixations_multiple.csv"
