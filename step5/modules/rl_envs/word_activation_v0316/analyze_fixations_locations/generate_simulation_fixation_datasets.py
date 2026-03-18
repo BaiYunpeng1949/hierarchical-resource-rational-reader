@@ -6,8 +6,10 @@ import pandas as pd
 # INPUT_JSON = "/home/baiy4/reader-agent-zuco/step5/data/sim_results/word_activation/0316_word_activation_v0316_00_baseline/rl_model_10000000_steps/10ep/logs.json" 
 
 # Variation 1: noisy oculomotor controller
-INPUT_JSON = "/home/baiy4/reader-agent-zuco/step5/data/sim_results/word_activation/0316_word_activation_v0316_01_noisy_oculomotor/rl_model_10000000_steps/10000ep/logs.json"
+# INPUT_JSON = "/home/baiy4/reader-agent-zuco/step5/data/sim_results/word_activation/0316_word_activation_v0316_01_noisy_oculomotor/rl_model_10000000_steps/10000ep/logs.json"
 
+# Variation 2: noisy action and observation about the word length
+INPUT_JSON = "/home/baiy4/reader-agent-zuco/step5/data/sim_results/word_activation/0317_word_activation_v0316_02_laggy_action_and_observation/rl_model_10000000_steps/10000ep/logs.json"
 
 
 OUT_FORWARD_MULTIPLE = "data/simulation/sim_forward_fixations_multiple.csv"
@@ -21,30 +23,16 @@ def load_logs(path: str):
 
 
 def fixation_actions_from_episode(ep: dict):
-    """
-    Keep only genuine fixation actions.
-
-    Important:
-    - If a step has done == True, it is treated as an activation/termination phase
-      and is NOT counted as a fixation.
-    - Action 15 is also excluded as a terminal action.
-    """
     actions = []
     for fx in ep.get("fixations", []):
         if fx.get("done", False):
             continue
 
-        action = fx.get("executed_action")
-        if action is None:
+        executed_action = fx.get("executed_action")
+        if executed_action is None:
             continue
 
-        action = int(action)
-
-        # terminal / non-fixation action
-        if action == 15:
-            continue
-
-        actions.append(action)
+        actions.append(int(executed_action))
     return actions
 
 
