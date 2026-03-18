@@ -111,6 +111,7 @@ class WordActivationRLEnv(Env):
         # Fixation position variables
         self._intended_action = None
         self._executed_action = None
+        self._target_action = None
         self._sampled_region_window  = None # For logging
         
         # # Define the action space:      NOTE: the original, disable
@@ -174,6 +175,7 @@ class WordActivationRLEnv(Env):
         # Reset the fixation variables
         self._intended_action = -1
         self._executed_action = -1
+        self._target_action = -1
         self._sampled_region_window  = None
 
         # Reset the belief distribution
@@ -257,7 +259,14 @@ class WordActivationRLEnv(Env):
             self._calc_gaze_duration()
 
         else:
-            executed_letter_idx = self._sample_executed_action_from_region(action)
+            # Step 1: choose a target letter within the selected coarse region
+            target_letter_idx = self._sample_target_action_from_region(action)
+            self._target_action = target_letter_idx
+
+            # Step 2: apply local oculomotor uncertainty around that target
+            executed_letter_idx = self._sample_landed_action_from_target(target_letter_idx)
+
+            # Final landed fixation location
             self._executed_action = executed_letter_idx
 
             self._sampled_letters_so_far_representation, self._sampled_letters_so_far_with_spaces = (
@@ -273,7 +282,8 @@ class WordActivationRLEnv(Env):
 
             assert self._sampled_letters_so_far_with_spaces != "NO_LETTER_SAMPLED", (
                 f"no letters sampled so far, the word is {self._word}, "
-                f"the region action is {action}, the executed action is {executed_letter_idx}, "
+                f"the region action is {action}, the target letter is {target_letter_idx}, "
+                f"the executed action is {executed_letter_idx}, "
                 f"the word length is {self._word_len}"
             )
 
@@ -332,7 +342,10 @@ class WordActivationRLEnv(Env):
         return [start, start + 1, start + 2]
     
 
-    def _sample_executed_action_from_region(self, region_action: int) -> int:
+    def _sample_target_action_from_region(self, region_action: int) -> int:
+        """
+        Sample an intended target letter uniformly from the selected region.
+        """
         window = self._get_region_window(region_action)
         self._sampled_region_window = window.copy()
         return int(np.random.choice(window))
@@ -353,27 +366,15 @@ class WordActivationRLEnv(Env):
 
         return reward, done
     
-    def _sample_noisy_fixation_action(self, intended_action: int) -> int:
+    def _sample_landed_action_from_target(self, target_action: int) -> int:
         """
-        Sample the actually executed fixation position from the local neighborhood
-        {left, target, right}, clipped to the valid word range.
-
-        This models oculomotor noise: the agent intends to fixate one letter,
-        but the executed fixation may land on an adjacent letter instead.
+        Given a sampled target letter, sample the actual landed fixation
+        from [target-1, target, target+1], clipped to valid word boundaries.
         """
-        if intended_action < 0:
-            return intended_action
-
-        # Only valid letter positions are noised.
-        if intended_action > self._word_len - 1:
-            return intended_action
-
-        # NOTE: use a fixed range now -- [target-1, target, target+1]
         candidates = [
-            pos for pos in [intended_action - 1, intended_action, intended_action + 1]
+            pos for pos in [target_action - 1, target_action, target_action + 1]
             if 0 <= pos <= self._word_len - 1
         ]
-
         return int(np.random.choice(candidates))
     
     @staticmethod
@@ -386,22 +387,6 @@ class WordActivationRLEnv(Env):
             if prob > 0:
                 entropy -= prob * math.log(prob)
         return entropy
-
-    # def _get_obs(self):   
-    #     """
-    #     Get the current observation
-    #     """
-
-    #     # Encode the discrete action into a one-hot vector
-    #     action_obs = np.zeros(self.MAX_WORD_LEN + 1 + 1)        # three types of actions -1, fixations, stop
-    #     # action_obs[self._action + 1] = 1    # The orginal
-    #     action_obs[self._executed_action + 1] = 1   # The updated version: noisy oculomotor control
-
-    #     stateful_obs = np.concatenate([self._normalized_belief_distribution_parallel_activation_with_k_words, self._sampled_letters_so_far_representation, [self._word_len], action_obs, [self._prior_type]])
-
-    #     assert len(stateful_obs) == self._num_stateful_obs, f"expected {self._num_stateful_obs} but got {len(stateful_obs)}"
-
-    #     return stateful_obs
 
     def _get_obs(self):
         """
@@ -488,6 +473,7 @@ class WordActivationRLEnv(Env):
                     "action": self._action,  # coarse region action
                     "intended_action": self._intended_action,  # coarse region action
                     "executed_action": self._executed_action,  # actual sampled letter index
+                    "target_action": self._target_action,
                     "sampled_region_window": None if self._sampled_region_window is None else self._sampled_region_window.copy(),
                     "done": self._done,
                     "word_likelihood": self.lex_manager.get_likelihood_by_sampled_letters_so_far(
