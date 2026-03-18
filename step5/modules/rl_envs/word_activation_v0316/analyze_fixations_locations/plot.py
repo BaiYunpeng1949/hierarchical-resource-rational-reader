@@ -208,7 +208,7 @@ def plot_previewed_fixation_locations():
             sim_csv=FIXATION_SIM_CSV,
             y_col="proportion_of_fixation",
             word_length=word_length,
-            y_label="Proportion of fixation",
+            y_label="Proportion of first fixation",
             save_path=out_path,
             sim_linestyle="-",
         )
@@ -225,7 +225,7 @@ def plot_intraword_regressions():
             sim_csv=REGRESSION_SIM_CSV,
             y_col="probability_of_regression",
             word_length=word_length,
-            y_label="Probability of regression",
+            y_label="Probability of regressions",
             save_path=out_path,
             sim_linestyle=REG_LINESTYLE,
         )

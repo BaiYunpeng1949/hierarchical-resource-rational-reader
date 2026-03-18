@@ -1,7 +1,7 @@
 simulator_name: 'step5'
 
 rl:
-  mode: train   # Options: train, continual_train, test, debug, simulate (run modules), and grid_test.
+  mode: test   # Options: train, continual_train, test, debug, simulate (run modules), and grid_test.
 
   train:
     total_timesteps: 100000000
