@@ -398,10 +398,17 @@ class WordActivationRLEnv(Env):
     def _sample_landed_action_from_target(self, target_action: int) -> int:
         """
         Given a sampled target letter, sample the actual landed fixation
-        from [target-1, target, target+1], clipped to valid word boundaries.
+        from [target-2, target-1, target, target+1, target+2],
+        clipped to valid word boundaries.
         """
         candidates = [
-            pos for pos in [target_action - 1, target_action, target_action + 1]
+            pos for pos in [
+                target_action - 2,
+                target_action - 1,
+                target_action,
+                target_action + 1,
+                target_action + 2,
+            ]
             if 0 <= pos <= self._word_len - 1
         ]
         return int(np.random.choice(candidates))
