@@ -17,16 +17,18 @@ class WordActivationRLEnv(Env):
     """
     Oculomotor Controller RL Environment
     Coarse-region version:
-      0 = beginning
-      1 = middle
-      2 = ending
-      3 = stop
+    0 = beginning
+    1 = mid_left
+    2 = mid_right
+    3 = ending
+    4 = stop
     """
 
     REGION_BEGINNING = 0
-    REGION_MIDDLE = 1
-    REGION_ENDING = 2
-    ACTION_STOP = 3
+    REGION_MID_LEFT = 1
+    REGION_MID_RIGHT = 2
+    REGION_ENDING = 3
+    ACTION_STOP = 4
 
     def __init__(self):
         
@@ -117,13 +119,13 @@ class WordActivationRLEnv(Env):
         # # Define the action space:      NOTE: the original, disable
         # self.action_space = Discrete(self.MAX_WORD_LEN + 1)    # 0-9: fixate on the letter at the position, 10: stop the sampling and recognize the word
 
-        # Action space: 0=beginning, 1=middle, 2=ending, 3=stop
-        self.action_space = Discrete(4)
+        # Action space: 0=beginning, 1=mid_left, 2=mid_right, 3=ending, 4=stop
+        self.action_space = Discrete(5)
 
         # Define the observation space:
         self.STATEFUL_OBS = "stateful_obs"
         self.ACTION_OBS = "action_obs"
-        self._num_action_obs = 5        # action obs size = 1 init slot + 4 action slots
+        self._num_action_obs = 6        # 1 init slot + 5 action slots
         # self._num_stateful_obs = len(self._normalized_belief_distribution_parallel_activation_with_k_words) + len(self._word_representation) + 1 + (self.MAX_WORD_LEN + 1 + 1) + 1 # Belief distribution, word representation with sampled letters, word length, prior type   NOTE: disable, the original
         self._num_stateful_obs = (
             len(self._normalized_belief_distribution_parallel_activation_with_k_words)
@@ -239,9 +241,10 @@ class WordActivationRLEnv(Env):
 
         Action semantics:
             0 = beginning
-            1 = middle
-            2 = ending
-            3 = stop
+            1 = mid_left
+            2 = mid_right
+            3 = ending
+            4 = stop
         """
         self._done = False
         self._truncated = False
@@ -321,21 +324,44 @@ class WordActivationRLEnv(Env):
         """
         Return a 3-letter window as valid integer indices within the word.
 
-        Examples:
-            len=5  -> beginning [0,1,2], middle [1,2,3], ending [2,3,4]
-            len=10 -> beginning [0,1,2], middle [4,5,6], ending [7,8,9]
+        Regions:
+            0 = beginning
+            1 = mid_left
+            2 = mid_right
+            3 = ending
 
-        For word lengths 1,2,3 all regions map to the whole word.
+        Strategy:
+        - beginning always starts at 0
+        - ending always starts at word_len - 3
+        - mid_left and mid_right are placed evenly between them
+        - for short words, overlap is allowed naturally
+
+        Examples:
+            len=5  -> starts [0,1,1,2]
+                    windows: [0,1,2], [1,2,3], [1,2,3], [2,3,4]
+            len=6  -> starts [0,1,2,3]
+                    windows: [0,1,2], [1,2,3], [2,3,4], [3,4,5]
+            len=10 -> starts [0,2,5,7]
+                    windows: [0,1,2], [2,3,4], [5,6,7], [7,8,9]
         """
         if self._word_len <= 3:
             return list(range(self._word_len))
 
+        max_start = self._word_len - 3
+
+        # Evenly place 4 region starts between left and right boundaries
+        region_starts = [
+            int(round(x)) for x in np.linspace(0, max_start, 4)
+        ]
+
         if region_action == self.REGION_BEGINNING:
-            start = 0
-        elif region_action == self.REGION_MIDDLE:
-            start = int(math.ceil((self._word_len - 3) / 2.0))
+            start = region_starts[0]
+        elif region_action == self.REGION_MID_LEFT:
+            start = region_starts[1]
+        elif region_action == self.REGION_MID_RIGHT:
+            start = region_starts[2]
         elif region_action == self.REGION_ENDING:
-            start = self._word_len - 3
+            start = region_starts[3]
         else:
             raise ValueError(f"Invalid region action: {region_action}")
 
@@ -390,14 +416,15 @@ class WordActivationRLEnv(Env):
 
     def _get_obs(self):
         """
-        Observation uses coarse-action one-hot, not exact letter-position one-hot.
+        Observation uses coarse-action one-hot.
 
         Slots:
             0 -> initialization / no previous action
             1 -> beginning
-            2 -> middle
-            3 -> ending
-            4 -> stop
+            2 -> mid_left
+            3 -> mid_right
+            4 -> ending
+            5 -> stop
         """
         action_obs = np.zeros(self._num_action_obs)
 
@@ -405,12 +432,14 @@ class WordActivationRLEnv(Env):
             action_obs[0] = 1
         elif self._action == self.REGION_BEGINNING:
             action_obs[1] = 1
-        elif self._action == self.REGION_MIDDLE:
+        elif self._action == self.REGION_MID_LEFT:
             action_obs[2] = 1
-        elif self._action == self.REGION_ENDING:
+        elif self._action == self.REGION_MID_RIGHT:
             action_obs[3] = 1
-        elif self._action == self.ACTION_STOP:
+        elif self._action == self.REGION_ENDING:
             action_obs[4] = 1
+        elif self._action == self.ACTION_STOP:
+            action_obs[5] = 1
         else:
             raise ValueError(f"Unexpected action for observation encoding: {self._action}")
 
