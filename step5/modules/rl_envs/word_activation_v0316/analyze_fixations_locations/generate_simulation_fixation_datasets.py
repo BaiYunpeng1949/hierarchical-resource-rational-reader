@@ -21,8 +21,11 @@ import pandas as pd
 # INPUT_JSON = "/home/baiy4/reader-agent-zuco/step5/data/sim_results/word_activation/0318_word_activation_v0316_05_laggy_action_and_observation_and_noisy_oculomotor_five_actions/rl_model_10000000_steps/10000ep/logs.json"
 
 # Variation 4.2: noise stuff + five fine-tuned action, 5 noisy oculomotor control
-INPUT_JSON = "/home/baiy4/reader-agent-zuco/step5/data/sim_results/word_activation/0318_word_activation_v0316_06_laggy_action_and_observation_and_noisy_oculomotor_5_five_actions/rl_model_10000000_steps/10000ep/logs.json"
+# INPUT_JSON = "/home/baiy4/reader-agent-zuco/step5/data/sim_results/word_activation/0318_word_activation_v0316_06_laggy_action_and_observation_and_noisy_oculomotor_5_five_actions/rl_model_10000000_steps/10000ep/logs.json"
 
+# Variation 4.3: noisy action + five actions, 5 noisy oculo, adaptive region window size
+# INPUT_JSON = "/home/baiy4/reader-agent-zuco/step5/data/sim_results/word_activation/0318_word_activation_v0316_06_laggy_action_and_observation_and_noisy_oculomotor_5_five_actions_adaptive_region_window_size/rl_model_10000000_steps/10000ep/logs.json"
+INPUT_JSON = "/home/baiy4/reader-agent-zuco/step5/data/sim_results/word_activation/0318_word_activation_v0316_06_laggy_action_and_observation_and_noisy_oculomotor_5_five_actions_adaptive_region_window_size/rl_model_100000000_steps/10000ep/logs.json"
 
 OUT_FORWARD_MULTIPLE = "data/simulation/sim_forward_fixations_multiple.csv"
 OUT_FORWARD_SINGLE = "data/simulation/sim_forward_fixations_single_only.csv"
