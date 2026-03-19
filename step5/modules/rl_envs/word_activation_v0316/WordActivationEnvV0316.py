@@ -435,6 +435,24 @@ class WordActivationRLEnv(Env):
         ]
 
         return int(np.random.choice(candidates))
+
+    # def _sample_landed_action_from_target(self, target_action: int) -> int:
+    #     """
+    #     Given a sampled target letter, sample the actual landed fixation
+    #     from a fixed 3-letter window:
+    #         [target-1, target, target+1],
+    #     clipped to valid word boundaries.
+    #     """
+    #     candidates = [
+    #         pos for pos in [
+    #             target_action - 1,
+    #             target_action,
+    #             target_action + 1,
+    #         ]
+    #         if 0 <= pos <= self._word_len - 1
+    #     ]
+
+    #     return int(np.random.choice(candidates))
     
     @staticmethod
     def _calculate_entropy(probability_distribution):

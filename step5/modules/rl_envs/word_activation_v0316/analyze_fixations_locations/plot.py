@@ -49,8 +49,15 @@ FIXATION_SIM_CSV   = os.path.join(SIM_DIR,   "sim_forward_fixations_single_only.
 REGRESSION_HUMAN_CSV = os.path.join(HUMAN_DIR, "rayner_regressions_intraword_only.csv")
 REGRESSION_SIM_CSV   = os.path.join(SIM_DIR,   "sim_intraword_regressions_only.csv")
 
+FIXATION_MULTIPLE_HUMAN_CSV = os.path.join(HUMAN_DIR, "rayner_forward_fixations_multiple.csv")
+FIXATION_MULTIPLE_SIM_CSV   = os.path.join(SIM_DIR,   "sim_forward_fixations_multiple.csv")
+
+ACTION_SIM_CSV = os.path.join(SIM_DIR, "sim_first_fixation_actions.csv")
+
+FIXATION_MULTIPLE_SAVE_DIR = os.path.join(DEFAULT_SAVE_DIR, "forward_fixations_multiple")
 FIXATION_SAVE_DIR   = os.path.join(DEFAULT_SAVE_DIR, "previewed_fixation_locations")
 REGRESSION_SAVE_DIR = os.path.join(DEFAULT_SAVE_DIR, "intraword_regressions")
+ACTION_SAVE_DIR = os.path.join(DEFAULT_SAVE_DIR, "first_fixation_actions")
 
 WORD_LENGTHS_TO_PLOT = [5, 6, 7, 8, 9]
 
@@ -122,6 +129,19 @@ def _load_and_filter(csv_path, word_length, y_col, is_human=False):
         df = _normalize_human_units_if_needed(df, y_col)
 
     return df
+
+
+def _load_action_data(csv_path, word_length):
+    df = pd.read_csv(csv_path)
+
+    if "word_length" not in df.columns or "action" not in df.columns:
+        raise ValueError(f"{csv_path} must contain 'word_length' and 'action' columns.")
+
+    df = df[df["word_length"] == word_length].copy()
+    df = df.sort_values("action").reset_index(drop=True)
+
+    return df
+
 
 def _plot_series(ax, df, y_col, color, linestyle="-"):
     y_vals = _snap_to_zero(df[y_col].values)
@@ -231,6 +251,95 @@ def plot_intraword_regressions():
         )
 
 
+def _plot_action_distribution(
+    sim_csv,
+    word_length,
+    save_path
+):
+    sim_df = _load_action_data(sim_csv, word_length)
+
+    if sim_df.empty:
+        print(f"[Skip] word_length={word_length} (empty)")
+        return
+
+    _ensure_dir(os.path.dirname(save_path))
+    _set_global_fonts()
+
+    fig, ax = plt.subplots(
+        1, 1,
+        figsize=(PANEL_AX_WIDTH_IN, PANEL_AX_HEIGHT_IN),
+        constrained_layout=False
+    )
+
+    y_vals = _snap_to_zero(sim_df["proportion_of_action"].values)
+
+    # line
+    ax.plot(
+        sim_df["action"].values,
+        y_vals,
+        linestyle="-",
+        linewidth=LINE_WIDTH,
+        color=SIM_COLOR,
+    )
+
+    # scatter
+    if SHOW_SCATTER:
+        ax.scatter(
+            sim_df["action"].values,
+            y_vals,
+            s=SCATTER_SIZE,
+            facecolor="none",
+            edgecolor=SIM_COLOR,
+            linewidth=SCATTER_EDGEWIDTH,
+        )
+
+    ax.set_xlabel("Action (0=beginning, 3=ending)")
+    ax.set_ylabel("Proportion")
+
+    _style_axes(ax, force_integer_x=True)
+
+    ax.set_xlim(0, 4)
+    ax.set_ylim(bottom=0)
+
+    fig.savefig(save_path, dpi=300, bbox_inches="tight", pad_inches=0.05)
+    plt.close(fig)
+
+    print(f"Saved: {save_path}")
+
+
+def plot_first_fixation_actions():
+    for word_length in WORD_LENGTHS_TO_PLOT:
+        out_path = os.path.join(
+            ACTION_SAVE_DIR,
+            f"first_fixation_action_len{word_length}.pdf"
+        )
+
+        _plot_action_distribution(
+            sim_csv=ACTION_SIM_CSV,
+            word_length=word_length,
+            save_path=out_path,
+        )
+
+def plot_forward_fixations_multiple():
+    for word_length in WORD_LENGTHS_TO_PLOT:
+        out_path = os.path.join(
+            FIXATION_MULTIPLE_SAVE_DIR,
+            f"forward_fixation_multiple_len{word_length}.pdf"
+        )
+        _plot_word_length_comparison(
+            human_csv=FIXATION_MULTIPLE_HUMAN_CSV,
+            sim_csv=FIXATION_MULTIPLE_SIM_CSV,
+            y_col="proportion_of_fixation",
+            word_length=word_length,
+            y_label="Proportion of forward fixation",
+            save_path=out_path,
+            sim_linestyle="-",
+        )
+
+
+
 if __name__ == "__main__":
     plot_previewed_fixation_locations()
+    plot_forward_fixations_multiple()
     plot_intraword_regressions()
+    plot_first_fixation_actions()
