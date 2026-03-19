@@ -95,11 +95,25 @@ This format is easier to use for plotting and analysis.
 
 Step 1 --- Run the conversion script
 
-    python generate_dataset.py
+```bash
+python generate_dataset.py
+```
 
 Step 2 --- The script outputs
 
+```bash
     mcconkie.csv
+```
+
+Step 3 --- Process the dataset to drop out of word fixations.
+```bash
+python process_mcconkie.py
+```
+
+Step 4 --- The outputs
+```bash
+mcconkie_processed.csv
+```
 
 This file contains the cleaned dataset used for plotting.
 

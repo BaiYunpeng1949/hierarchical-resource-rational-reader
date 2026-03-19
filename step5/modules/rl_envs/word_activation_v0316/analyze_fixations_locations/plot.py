@@ -54,10 +54,15 @@ FIXATION_MULTIPLE_SIM_CSV   = os.path.join(SIM_DIR,   "sim_forward_fixations_mul
 
 ACTION_SIM_CSV = os.path.join(SIM_DIR, "sim_first_fixation_actions.csv")
 
+MCCONKIE_HUMAN_CSV = os.path.join(HUMAN_DIR, "mcconkie_processed.csv")
+MCCONKIE_SIM_CSV   = os.path.join(SIM_DIR,   "sim_initial_fixations.csv")
+
 FIXATION_MULTIPLE_SAVE_DIR = os.path.join(DEFAULT_SAVE_DIR, "forward_fixations_multiple")
 FIXATION_SAVE_DIR   = os.path.join(DEFAULT_SAVE_DIR, "previewed_fixation_locations")
 REGRESSION_SAVE_DIR = os.path.join(DEFAULT_SAVE_DIR, "intraword_regressions")
 ACTION_SAVE_DIR = os.path.join(DEFAULT_SAVE_DIR, "first_fixation_actions")
+MCCONKIE_SAVE_DIR = os.path.join(DEFAULT_SAVE_DIR, "mcconkie_initial_fixations")
+MCCONKIE_WORD_LENGTHS_TO_PLOT = [3, 4, 5, 6, 7, 8]
 
 WORD_LENGTHS_TO_PLOT = [5, 6, 7, 8, 9]
 
@@ -336,6 +341,22 @@ def plot_forward_fixations_multiple():
             sim_linestyle="-",
         )
 
+def plot_mcconkie_initial_fixations():
+    for word_length in MCCONKIE_WORD_LENGTHS_TO_PLOT:
+        out_path = os.path.join(
+            MCCONKIE_SAVE_DIR,
+            f"mcconkie_initial_fixation_len{word_length}.pdf"
+        )
+        _plot_word_length_comparison(
+            human_csv=MCCONKIE_HUMAN_CSV,
+            sim_csv=MCCONKIE_SIM_CSV,
+            y_col="proportion_of_fixation",
+            word_length=word_length,
+            y_label="Proportion of initial fixation",
+            save_path=out_path,
+            sim_linestyle="-",
+        )
+
 
 
 if __name__ == "__main__":
@@ -343,3 +364,4 @@ if __name__ == "__main__":
     plot_forward_fixations_multiple()
     plot_intraword_regressions()
     plot_first_fixation_actions()
+    plot_mcconkie_initial_fixations()
