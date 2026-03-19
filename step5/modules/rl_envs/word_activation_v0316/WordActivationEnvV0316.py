@@ -408,19 +408,32 @@ class WordActivationRLEnv(Env):
     def _sample_landed_action_from_target(self, target_action: int) -> int:
         """
         Given a sampled target letter, sample the actual landed fixation
-        from [target-2, target-1, target, target+1, target+2],
-        clipped to valid word boundaries.
+        from an adaptive local noise window around target_action.
+
+        Noise window size:
+            word_len <= 6  -> 3 positions
+            word_len <= 9  -> 4 positions
+            word_len >= 10 -> 5 positions
+
+        All positions are clipped to valid word boundaries.
         """
+        noise_window_size = self._get_adaptive_region_window_size()
+
+        if noise_window_size % 2 == 1:
+            # odd-sized window, symmetric around target
+            half = noise_window_size // 2
+            offsets = list(range(-half, half + 1))
+        else:
+            # even-sized window, slightly right-biased
+            left = noise_window_size // 2 - 1
+            right = noise_window_size // 2
+            offsets = list(range(-left, right + 1))
+
         candidates = [
-            pos for pos in [
-                target_action - 2,
-                target_action - 1,
-                target_action,
-                target_action + 1,
-                target_action + 2,
-            ]
+            pos for pos in [target_action + offset for offset in offsets]
             if 0 <= pos <= self._word_len - 1
         ]
+
         return int(np.random.choice(candidates))
     
     @staticmethod
