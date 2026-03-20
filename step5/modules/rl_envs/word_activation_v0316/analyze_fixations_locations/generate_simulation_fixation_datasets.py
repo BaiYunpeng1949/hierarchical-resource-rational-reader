@@ -31,9 +31,10 @@ import pandas as pd
 
 # Variation 4.4: noisy action + five actions, adaptive noisy oculo, adaptive region window size
 # INPUT_JSON = "/home/baiy4/reader-agent-zuco/step5/data/sim_results/word_activation/0319_word_activation_v0316_07_laggy_action_and_adaptive_noisy_oculomotor_5_actions_adaptive_region_window_size/rl_model_20000000_steps/10000ep/logs.json"
+INPUT_JSON = "/home/baiy4/reader-agent-zuco/step5/data/sim_results/word_activation/0319_word_activation_v0316_09_laggy_action_and_adaptive_noisy_oculomotor_5_actions_adaptive_region_window_size/rl_model_50000000_steps/10000ep/logs.json"
 
 # Variation 4.5: noisy action + five actions, 3 noisy oculo, adaptive region window size
-INPUT_JSON = "/home/baiy4/reader-agent-zuco/step5/data/sim_results/word_activation/0319_word_activation_v0316_08_laggy_action_and_3_noisy_oculomotor_5_actions_adaptive_region_window_size/rl_model_20000000_steps/10000ep/logs.json"
+# INPUT_JSON = "/home/baiy4/reader-agent-zuco/step5/data/sim_results/word_activation/0319_word_activation_v0316_08_laggy_action_and_3_noisy_oculomotor_5_actions_adaptive_region_window_size/rl_model_20000000_steps/10000ep/logs.json"
 
 
 
