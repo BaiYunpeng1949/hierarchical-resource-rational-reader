@@ -125,7 +125,7 @@ step5/modules/rl_envs/word_activation_v0218/parameter_inference/human_data/
 Use the helper script (place it under `parameter_inference/` and run):
 ```bash
 cd step5/modules/rl_envs/word_activation_v0218/parameter_inference
-python grid_search_kappa.py
+python grid_search_chi_square_kappa.py
 ```
 What it does:
 - Scans all `simulation_data/kappa_*` folders.

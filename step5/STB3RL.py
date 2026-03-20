@@ -760,8 +760,9 @@ class RL:
 
         # ----- output base dir (your new path) -----
         root_path = os.path.dirname(os.path.abspath(__file__))    # /home/.../step5
+        # For the earlier only when version, use "word_activation_v0218", for the lateral both when and where version, use "word_activation_v0316"
         base_dir = os.path.join(
-            root_path, "modules", "rl_envs", "word_activation_v0218",
+            root_path, "modules", "rl_envs", "word_activation_v0316",   
             "parameter_inference", "simulation_data"
         )
         os.makedirs(base_dir, exist_ok=True)
