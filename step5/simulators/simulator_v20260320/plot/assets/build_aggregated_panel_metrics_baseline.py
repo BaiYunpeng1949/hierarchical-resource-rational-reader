@@ -90,4 +90,8 @@ def main():
     print(str(Path(args.out).resolve()))
 
 if __name__ == "__main__":
+    """
+    Command:
+    python build_aggregated_panel_metrics_baseline.py --folder simulation_data_baselines/ 
+    """
     main()
