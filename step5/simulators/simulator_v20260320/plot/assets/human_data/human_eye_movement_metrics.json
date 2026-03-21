@@ -1,0 +1,29 @@
+{
+    "30s": {
+        "reading_speed_mean": 192.4047619047619,
+        "reading_speed_std": 56.21284361111856,
+        "skip_rate_mean": 0.39215056137433735,
+        "skip_rate_std": 0.09260099901135295,
+        "regression_rate_mean": 0.3198270479928921,
+        "regression_rate_std": 0.16884940563640158,
+        "num_episodes": 1
+    },
+    "60s": {
+        "reading_speed_mean": 171.48809523809524,
+        "reading_speed_std": 30.629698491908396,
+        "skip_rate_mean": 0.32265846624427996,
+        "skip_rate_std": 0.08742162714803695,
+        "regression_rate_mean": 0.4772694567224823,
+        "regression_rate_std": 0.1520480084713743,
+        "num_episodes": 1
+    },
+    "90s": {
+        "reading_speed_mean": 165.91164658634534,
+        "reading_speed_std": 29.506929022535743,
+        "skip_rate_mean": 0.310129414696708,
+        "skip_rate_std": 0.08552293191297197,
+        "regression_rate_mean": 0.5910776774666214,
+        "regression_rate_std": 0.11497130595402444,
+        "num_episodes": 1
+    }
+}

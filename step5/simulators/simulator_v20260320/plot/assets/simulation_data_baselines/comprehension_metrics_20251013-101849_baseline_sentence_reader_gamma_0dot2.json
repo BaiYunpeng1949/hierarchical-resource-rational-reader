@@ -1,0 +1,24 @@
+{
+  "mcq_accuracy_overall": 0.0,
+  "mcq_accuracy_by_time": {
+    "30s": 0.0,
+    "60s": 0.0,
+    "90s": 0.0
+  },
+  "mcq_accuracy_std_by_time": {
+    "30s": 0.0,
+    "60s": 0.0,
+    "90s": 0.0
+  },
+  "fr_mean_by_time": {
+    "30s": 0.0,
+    "60s": 0.0,
+    "90s": 0.0
+  },
+  "fr_std_by_time": {
+    "30s": 0.0,
+    "60s": 0.0,
+    "90s": 0.0
+  },
+  "n_trials": 27
+}

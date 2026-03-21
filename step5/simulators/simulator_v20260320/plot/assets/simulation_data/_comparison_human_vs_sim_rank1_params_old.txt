@@ -1,0 +1,11 @@
+{
+  "word_recognizer_params": {
+    "rho_inflation_percentage": 0.29
+  },
+  "sentence_reader_params": {
+    "w_skip_degradation_factor": 0.7
+  },
+  "text_reader_params": {
+    "coverage_factor": 1.3
+  }
+}
