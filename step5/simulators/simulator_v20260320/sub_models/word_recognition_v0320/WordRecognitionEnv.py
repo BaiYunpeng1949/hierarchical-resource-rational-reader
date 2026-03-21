@@ -207,13 +207,6 @@ class WordRecognitionEnv(Env):
         # Reset the word representation
         self._word_representation = self.transition_function.reset_state_word_representation()
 
-        # # Temporal variables
-        # self._current_fixation_duration = 0
-        # self._individual_fixations_durations_list = []
-        # self._current_saccade_duration = 0
-        # self._individual_saccades_durations_list = []
-        # self._gaze_duration = 0
-
         # Temporal variables
         self.gaze_duration_for_this_word = 0
         self.sum_saccade_duration_for_this_word = 0
@@ -223,13 +216,32 @@ class WordRecognitionEnv(Env):
         self._sampled_letters_so_far_representation = [-1] * self.MAX_WORD_LEN
         self._sampled_letters_so_far_with_spaces = ""
 
+        # # Sample the word to be recognized
+        # if inputs is not None:
+        #     self._word = inputs["word"]
+        #     self._word_prior_prob = self.lex_manager.prior_dict[self._word] 
+        #     self._raw_occurance = inputs["raw_occurance"]   # TODO, if use, fix
+        # else:
+        #     self._word, self._word_prior_prob, self._raw_occurance = self.lex_manager.get_a_generated_word()
+
         # Sample the word to be recognized
-        if inputs is not None:
+        if self._mode == 'simulate':
+        # if inputs is not None:
             self._word = inputs["word"]
-            self._word_prior_prob = self.lex_manager.prior_dict[self._word] 
-            self._raw_occurance = inputs["raw_occurance"]   # TODO, if use, fix
+            word_freq_prob = inputs["word_freq_prob"]
+            word_pred_prob = inputs["word_pred_prob"]
+            # self._word_prior_prob = self.lex_manager.prior_dict[self._word] 
+            self._word_prior_prob = max(word_freq_prob, word_pred_prob)     # NOTE Justification: usually the pred prob is very small and neglectable, we use it only if it is dominating the freq
+            self._raw_occurance = word_freq_prob * 1_000_000   # NOTE: this seem to be not used when inputting words for simulation, thus set as 0
+            assert 0 <= self._word_prior_prob <= 1, (
+                f"Invalid word prior prob, should be within [0, 1]. "
+                f"Word freq prob is: {word_freq_prob} and word pred prob is: {word_pred_prob}."
+            )
+            # Update the prior dict in the lexicon manager, register the target word there
+            self.lex_manager.update_prior_dict(word_to_recognize=self._word, prior_prob=self._word_prior_prob)
         else:
             self._word, self._word_prior_prob, self._raw_occurance = self.lex_manager.get_a_generated_word()
+
 
         self._word_len = len(self._word)
         self._word_to_activate = None
@@ -237,14 +249,6 @@ class WordRecognitionEnv(Env):
         # Initialize the ground truth representation -- the word to be recognize is encoded as:
         self._normalized_ground_truth_word_representation = self.transition_function.get_normalized_ground_truth_word_representation(target_word=self._word)
         # This is only used for identifying words and numerical computations
-
-        # print(f"Hello BYP, I am here")
-
-        # # Check whether there are out-of-model tunable parameters
-        # if params is not None:
-        #     self.param_kappa = params['kappa']
-        # else:
-        #     self.param_kappa = 3.75     # An default value from the literature
 
         # Reset the tunable parameters for the time-aware version
         self._kappa = 3.50
@@ -409,22 +413,6 @@ class WordRecognitionEnv(Env):
         self._sampled_region_window = window.copy()
         return int(np.random.choice(window))
 
-    
-    # def _terminate_step(self):
-    #     self._word_to_activate = self.transition_function.activate_a_word(
-    #         normalized_belief_distribution_dict=self._normalized_belief_distribution_dict_parallel_activation_with_k_words, 
-    #         deterministic=Constants.DETERMINISTIC_WORD_ACTIVATION
-    #     )
-            
-    #     reward = self.reward_function.get_terminate_reward(
-    #         word_to_recognize=self._word,
-    #         word_to_activate=self._word_to_activate
-    #     )       
-
-    #     done = True
-
-    #     return reward, done
-
     def _terminate_step(self):
         """
         Terminate the episode.
@@ -479,24 +467,6 @@ class WordRecognitionEnv(Env):
         ]
 
         return int(np.random.choice(candidates))
-
-    # def _sample_landed_action_from_target(self, target_action: int) -> int:
-    #     """
-    #     Given a sampled target letter, sample the actual landed fixation
-    #     from a fixed 3-letter window:
-    #         [target-1, target, target+1],
-    #     clipped to valid word boundaries.
-    #     """
-    #     candidates = [
-    #         pos for pos in [
-    #             target_action - 1,
-    #             target_action,
-    #             target_action + 1,
-    #         ]
-    #         if 0 <= pos <= self._word_len - 1
-    #     ]
-
-    #     return int(np.random.choice(candidates))
     
     @staticmethod
     def _calculate_entropy(probability_distribution):
@@ -562,23 +532,6 @@ class WordRecognitionEnv(Env):
         self._previous_step_entropy = self._current_step_entropy
         self._entropy_diffs_list.append(self._entropy_diff)
 
-
-    # def _calc_gaze_duration(self):
-    #     """
-    #     Calculate the gaze duration
-    #     """
-    #     self._gaze_duration = self.transition_function.calc_gaze_duration_ms(entropy_diffs=self._entropy_diffs_list, kappa=self.param_kappa)
-
-
-    def _calc_gaze_duration(self):
-        """
-        Calculate the gaze duration
-        """
-        self._gaze_duration = self.transition_function.calc_gaze_duration_ms(
-            entropy_diffs=self._entropy_diffs_list,
-            kappa=self.param_kappa
-        )
-
     
     def get_gaze_and_elapsed_duration_in_ms(self):
         gaze_duration, inflated_gaze_duration = self.transition_function.calc_gaze_related_duration_in_ms(
@@ -600,6 +553,77 @@ class WordRecognitionEnv(Env):
         return self.transition_function.calc_total_saccades_duration_ms(
             entropy_diffs=self._entropy_diffs_list
         )
+
+    def get_current_letter_index(self):
+        """
+        Return the actual landed fixation letter index, plus whether the env has terminated.
+        """
+        return self._executed_action, self._done
+
+    def get_recognized_word(self):
+        return self._word_to_activate
+
+    def get_valid_sampled_letters_indexes_list(self):
+        return [
+            i for i, v in enumerate(self._sampled_letters_so_far_representation)
+            if v != -1
+        ]
+    
+    def get_individual_step_log(self):
+        """
+        Get individual step log for simulation documentation and data rolling.
+
+        For the coarse-region controller:
+            - self._action / self._intended_action: coarse action
+            - self._target_action: sampled target letter index inside region
+            - self._executed_action: actual landed fixation letter index
+        """
+        if self._action == self.ACTION_STOP:
+            action_information = "activate"
+            coarse_action_name = "stop"
+        elif self._action == self.REGION_BEGINNING:
+            action_information = "sampling"
+            coarse_action_name = "beginning"
+        elif self._action == self.REGION_MID_LEFT:
+            action_information = "sampling"
+            coarse_action_name = "mid_left"
+        elif self._action == self.REGION_MID_RIGHT:
+            action_information = "sampling"
+            coarse_action_name = "mid_right"
+        elif self._action == self.REGION_ENDING:
+            action_information = "sampling"
+            coarse_action_name = "ending"
+        else:
+            action_information = "unknown"
+            coarse_action_name = "unknown"
+
+        individual_step_log = {
+            "step": self._steps,
+
+            # action semantics
+            "action_type": action_information,
+            "coarse_action": self._action,
+            "coarse_action_name": coarse_action_name,
+            "intended_action": self._intended_action,
+
+            # fixation-location semantics
+            "target_letter_index": None if self._target_action == -1 else self._target_action,
+            "current_letter_index": None if self._executed_action == -1 else self._executed_action,
+            "executed_action": None if self._executed_action == -1 else self._executed_action,
+            "sampled_region_window": None if self._sampled_region_window is None else self._sampled_region_window.copy(),
+
+            # state / outcome
+            "done": self._done,
+            "recognized_word_str": self._word_to_activate,
+            "sampled_letters_so_far": self._sampled_letters_so_far_with_spaces,
+
+            # time outputs
+            "gaze_duration_for_this_word": self.gaze_duration_for_this_word,
+            "sum_saccade_duration_for_this_word": self.sum_saccade_duration_for_this_word,
+            "total_elapsed_time_for_this_word": self.total_elapsed_time_for_this_word,
+        }
+
+        return individual_step_log
     
     def _get_logs(self, is_initialization=False, mode="train"):
         if mode == "train":

@@ -16,7 +16,7 @@ sys.path.append(os.path.join(current_file_dir, 'sub_models'))
 
 from stable_baselines3 import PPO
 
-from sub_models.word_recognition_v0807.WordRecognitionEnv import WordRecognitionEnv
+from sub_models.word_recognition_v0320.WordRecognitionEnv import WordRecognitionEnv
 from sub_models.sentence_read_v0604.SentenceReadingEnv import SentenceReadingUnderTimePressureEnv
 from sub_models.text_read_v0604.TextReadEnv import TextReadingUnderTimePressureEnv
 from sub_models.text_read_v0604.Utilities import DictActionUnwrapper

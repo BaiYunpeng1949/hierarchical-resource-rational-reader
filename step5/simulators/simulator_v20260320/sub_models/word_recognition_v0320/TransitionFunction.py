@@ -50,12 +50,15 @@ class TransitionFunction():
         # Determine the letters to be sampled using the foveal vision
         half_fovea = self._foveal_size // 2     # An symmetric foveal vision
 
-        # Calculate leftmost and rightmost positions
+        # Calculate leftmost and rightmost positions.
+        # Clamp to the fixed representation capacity to avoid out-of-range writes
+        # when the input word is longer than MAX_WORD_LEN.
+        max_repr_index = len(seen_letters_representation) - 1
         left_index = max(0, action - half_fovea)
-        right_index = min(word_len - 1, action + half_fovea)
+        right_index = min(word_len - 1, action + half_fovea, max_repr_index)
 
         # Update the seen letters representation in the foveal vision
-        for i in range(left_index, right_index+1):
+        for i in range(left_index, right_index + 1):
             seen_letters_representation[i] = norm_gt_word_rep[i]
 
         # Handle both contiguous and non-contiguous letters
