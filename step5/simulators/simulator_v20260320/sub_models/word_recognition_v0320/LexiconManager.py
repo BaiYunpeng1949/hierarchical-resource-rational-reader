@@ -3,9 +3,6 @@ import math
 import numpy as np
 from collections import Counter
 
-# from modules.rl_envs.word_activation_v0218 import Constants
-# from modules.rl_envs.word_activation_v0218.Utilities import ApproximateWordGenerator
-
 from . import Constants
 from . import Utilities
 from .Utilities import ApproximateWordGenerator

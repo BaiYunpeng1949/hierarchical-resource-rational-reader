@@ -32,7 +32,7 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
 # from modules.rl_envs.word_activation_v0218.WordActivationEnvV0218 import WordActivationRLEnv
-from word_recognition_v0807.WordRecognitionEnv import WordRecognitionEnv
+from word_recognition_v0320.WordRecognitionEnv import WordRecognitionEnv
 from sentence_read_v0604.SentenceReadingEnv import SentenceReadingUnderTimePressureEnv
 from text_read_v0604.TextReadEnv import TextReadingUnderTimePressureEnv
 from text_read_v0604.Utilities import DictActionUnwrapper
@@ -140,9 +140,9 @@ class RL:
             )
 
         # Get the environment class
-        # Choose from WordRecognitionEnv, SentenceReadingUnderTimePressureEnv, TextReadingUnderTimePressureEnv
-        # env_class = WordRecognitionEnv          
-        env_class = SentenceReadingUnderTimePressureEnv
+        # NOTE: Choose from WordRecognitionEnv, SentenceReadingUnderTimePressureEnv, TextReadingUnderTimePressureEnv
+        env_class = WordRecognitionEnv          
+        # env_class = SentenceReadingUnderTimePressureEnv
         # env_class = TextReadingUnderTimePressureEnv
 
         # Read the total dataset if training the general oculomotor controller model.

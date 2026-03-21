@@ -6,14 +6,13 @@ import math
 from gymnasium import Env
 from gymnasium.spaces import Box, Dict, Discrete, Tuple
 
-from modules.rl_envs.word_activation_v0218 import Constants
+from . import Constants
+from .TransitionFunction import TransitionFunction
+from .RewardFunction import RewardFunction
+from .LexiconManager import LexiconManager
 
-from modules.rl_envs.word_activation_v0218.TransitionFunction import TransitionFunction
-from modules.rl_envs.word_activation_v0218.RewardFunction import RewardFunction
-from modules.rl_envs.word_activation_v0218.LexiconManager import LexiconManager
 
-
-class WordActivationRLEnv(Env):
+class WordRecognitionEnv(Env):
     """
     Oculomotor Controller RL Environment
     Coarse-region version:
@@ -33,19 +32,20 @@ class WordActivationRLEnv(Env):
     def __init__(self):
         
         # Get the current root directory
-        root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-        # Get the mode from the config yaml file
+        # Load configuration
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         with open(os.path.join(root_dir, "config.yaml")) as f:
             self._config = yaml.load(f, Loader=yaml.FullLoader)
-
-        print(f"Word Activation (No Vision) Environment V0316 -- Deploying the environment in the {self._config['rl']['mode']} mode.")
-
         self._mode = self._config["rl"]["mode"]
+
+        assert self._mode in ['simulate', 'debug', 'test', 'train', 'continual_train'], f"Invalid mode: {self._mode} !!!!" 
+
+        print(f"Word Activation (No Vision) Environment V0807 (orginated from V0218) -- Deploying the environment in the {self._config['rl']['mode']} mode.")
 
         # Define constants -- configurations
         # Define word lengths
-        self.MAX_WORD_LEN = 15
-        self.MIN_WORD_LEN = 1
+        self.MAX_WORD_LEN = Constants.MAX_WORD_LEN
+        self.MIN_WORD_LEN = Constants.MIN_WORD_LEN
         # Define the top-k candidates when competing for recognition
         self._top_k = Constants.WORKING_MEMORY_SIZE     # Set as five for the STM buffer's limitation
         # Define the foveal vision size
@@ -102,13 +102,10 @@ class WordActivationRLEnv(Env):
         # self._t_0 = Constants.DEFAULT_FIXATION_DURATION    # The default average fixation duration, unit is milliseconds
         # self._lamda = Constants.GAZE_DURATION_LAMDA    # The decay rate, the larger the value, the faster the decay
 
-        # Temporal variables (time-pressure version)
-        self.gaze_duration_for_this_word = None            # fixation-only gaze duration, ms
-        self.sum_saccade_duration_for_this_word = None     # total saccade duration, ms
-        self.total_elapsed_time_for_this_word = None       # total elapsed time, ms
-
-        # Free parameters for time calculation
-        self._rho_inflation_percentage = None              # optional time-pressure / overhead inflation
+        # Temporal variables (time-aware version)
+        self.gaze_duration_for_this_word = None
+        self.sum_saccade_duration_for_this_word = None
+        self.total_elapsed_time_for_this_word = None
 
         # Define the word that is recognized
         self._word_to_activate = None
@@ -162,7 +159,8 @@ class WordActivationRLEnv(Env):
         ############################################################################################
         # Tunable Parameter
         ############################################################################################
-        self.param_kappa = None     # Out-of-model tunable parameter kappa, does not need to be trained with
+        self._kappa = None
+        self._rho_inflation_percentage = None
     
     def reset(self, seed=None, inputs=None, ep_idx=None, params=None):
         """
@@ -231,7 +229,7 @@ class WordActivationRLEnv(Env):
             self._word_prior_prob = self.lex_manager.prior_dict[self._word] 
             self._raw_occurance = inputs["raw_occurance"]   # TODO, if use, fix
         else:
-            self._word, self._word_prior_prob, self._raw_occurance = self.lex_manager.get_word()
+            self._word, self._word_prior_prob, self._raw_occurance = self.lex_manager.get_a_generated_word()
 
         self._word_len = len(self._word)
         self._word_to_activate = None
@@ -240,19 +238,20 @@ class WordActivationRLEnv(Env):
         self._normalized_ground_truth_word_representation = self.transition_function.get_normalized_ground_truth_word_representation(target_word=self._word)
         # This is only used for identifying words and numerical computations
 
+        # print(f"Hello BYP, I am here")
+
         # # Check whether there are out-of-model tunable parameters
         # if params is not None:
         #     self.param_kappa = params['kappa']
         # else:
         #     self.param_kappa = 3.75     # An default value from the literature
 
-        # Time-related free parameters
-        if params is not None:
-            self.param_kappa = params.get("kappa", 3.75)
-            self._rho_inflation_percentage = params.get("rho_inflation_percentage", 0.0)
+        # Reset the tunable parameters for the time-aware version
+        self._kappa = 3.50
+        if params is None:
+            self._rho_inflation_percentage = 0.2
         else:
-            self.param_kappa = 3.75
-            self._rho_inflation_percentage = 0.0
+            self._rho_inflation_percentage = params["rho_inflation_percentage"]
 
         return self._get_obs(), self._get_logs(is_initialization=True, mode=self._mode)
 
@@ -281,7 +280,6 @@ class WordActivationRLEnv(Env):
             self._executed_action = action
             reward, self._done = self._terminate_step()
             # self._calc_gaze_duration()
-            self._calc_temporal_measures()
 
         else:
             # Step 1: choose a target letter within the selected coarse region
@@ -329,7 +327,6 @@ class WordActivationRLEnv(Env):
 
         if self._steps >= self.ep_len:
             reward, self._done = self._terminate_step()
-            self._calc_temporal_measures()
             self._truncated = True
 
         return (
@@ -413,18 +410,42 @@ class WordActivationRLEnv(Env):
         return int(np.random.choice(window))
 
     
+    # def _terminate_step(self):
+    #     self._word_to_activate = self.transition_function.activate_a_word(
+    #         normalized_belief_distribution_dict=self._normalized_belief_distribution_dict_parallel_activation_with_k_words, 
+    #         deterministic=Constants.DETERMINISTIC_WORD_ACTIVATION
+    #     )
+            
+    #     reward = self.reward_function.get_terminate_reward(
+    #         word_to_recognize=self._word,
+    #         word_to_activate=self._word_to_activate
+    #     )       
+
+    #     done = True
+
+    #     return reward, done
+
     def _terminate_step(self):
+        """
+        Terminate the episode.
+
+        Update recognized word and time-related outputs.
+        """
         self._word_to_activate = self.transition_function.activate_a_word(
-            normalized_belief_distribution_dict=self._normalized_belief_distribution_dict_parallel_activation_with_k_words, 
+            normalized_belief_distribution_dict=self._normalized_belief_distribution_dict_parallel_activation_with_k_words,
             deterministic=Constants.DETERMINISTIC_WORD_ACTIVATION
         )
-            
+
         reward = self.reward_function.get_terminate_reward(
             word_to_recognize=self._word,
             word_to_activate=self._word_to_activate
-        )       
+        )
 
         done = True
+
+        # Time-aware outputs
+        self.gaze_duration_for_this_word, self.total_elapsed_time_for_this_word = self.get_gaze_and_elapsed_duration_in_ms()
+        self.sum_saccade_duration_for_this_word = self._get_sum_saccade_duration_for_this_word()
 
         return reward, done
     
@@ -549,44 +570,36 @@ class WordActivationRLEnv(Env):
     #     self._gaze_duration = self.transition_function.calc_gaze_duration_ms(entropy_diffs=self._entropy_diffs_list, kappa=self.param_kappa)
 
 
-    def _calc_temporal_measures(self):
+    def _calc_gaze_duration(self):
         """
-        Calculate time-related outputs for the current word.
-
-        Outputs:
-            - gaze_duration_for_this_word: fixation-only gaze duration
-            - sum_saccade_duration_for_this_word: total saccade duration
-            - total_elapsed_time_for_this_word: total time under time pressure
+        Calculate the gaze duration
         """
-        # 1) fixation-only gaze duration
-        self.gaze_duration_for_this_word = self.transition_function.calc_gaze_duration_ms(
+        self._gaze_duration = self.transition_function.calc_gaze_duration_ms(
             entropy_diffs=self._entropy_diffs_list,
-            kappa=self.param_kappa,
+            kappa=self.param_kappa
         )
 
-        # 2) total saccade duration
-        if hasattr(self.transition_function, "calc_total_saccades_duration_ms"):
-            self.sum_saccade_duration_for_this_word = self.transition_function.calc_total_saccades_duration_ms(
-                entropy_diffs=self._entropy_diffs_list
-            )
-        else:
-            # fallback: 0 if your current TransitionFunction has not yet implemented this
-            self.sum_saccade_duration_for_this_word = 0
+    
+    def get_gaze_and_elapsed_duration_in_ms(self):
+        gaze_duration, inflated_gaze_duration = self.transition_function.calc_gaze_related_duration_in_ms(
+            entropy_diffs=self._entropy_diffs_list,
+            rho_inflation_percentage=self._rho_inflation_percentage,
+        )
 
-        # 3) total elapsed time
-        self.total_elapsed_time_for_this_word = (
-            self.gaze_duration_for_this_word
-            + self.sum_saccade_duration_for_this_word
-        ) * (1.0 + self._rho_inflation_percentage)
+        saccades_sum_duration = self.transition_function.calc_total_saccades_duration_ms(
+            entropy_diffs=self._entropy_diffs_list
+        )
 
-    def get_gaze_duration_for_this_word(self):
-    return self.gaze_duration_for_this_word
+        elapsed_time = inflated_gaze_duration + saccades_sum_duration
+        return gaze_duration, elapsed_time
 
-    def get_sum_saccade_duration_for_this_word(self):
-        return self.sum_saccade_duration_for_this_word
-
-    def get_total_elapsed_time_for_this_word(self):
-        return self.total_elapsed_time_for_this_word
+    def _get_sum_saccade_duration_for_this_word(self):
+        """
+        Get the summed saccade duration for this word.
+        """
+        return self.transition_function.calc_total_saccades_duration_ms(
+            entropy_diffs=self._entropy_diffs_list
+        )
     
     def _get_logs(self, is_initialization=False, mode="train"):
         if mode == "train":
@@ -639,15 +652,12 @@ class WordActivationRLEnv(Env):
                     "accurate_recognition": self._word_to_activate == self._word if self._done else None,
                 })
                 return self.log_cumulative_version
-            
+    
+    def get_gaze_duration_for_this_word(self):
+        return self.gaze_duration_for_this_word
 
-if __name__ == "__main__":
+    def get_sum_saccade_duration_for_this_word(self):
+        return self.sum_saccade_duration_for_this_word
 
-    lex_manager = LexiconManager()
-    print(lex_manager.get_likelihood_by_sampled_letters_so_far(
-        sampled_letters_so_far="gro", candidate_word="grow", original_word="grow"
-    ))
-    print(lex_manager.get_likelihood_by_sampled_letters_so_far("gro", "gro", "grow"))
-    print(lex_manager.get_likelihood_by_sampled_letters_so_far("sil", "silk", "silk"))
-    print(lex_manager.get_likelihood_by_sampled_letters_so_far("sil", "ssil", "silk"))
-    print(lex_manager.get_likelihood_by_sampled_letters_so_far("si k", "silk", "silk"))
+    def get_total_elapsed_time_for_this_word(self):
+        return self.total_elapsed_time_for_this_word

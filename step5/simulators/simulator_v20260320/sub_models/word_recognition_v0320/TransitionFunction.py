@@ -4,9 +4,6 @@ import numpy as np
 from step5.utils import auxiliaries as aux
 from step5.utils import constants as cons
 
-# from modules.rl_envs.word_activation_v0218 import Constants
-# from modules.rl_envs.word_activation_v0218.LexiconManager import LexiconManager
-
 from . import Constants
 from .LexiconManager import LexiconManager
 
@@ -168,7 +165,7 @@ class TransitionFunction():
     def calc_fixation_duration_ms(
         entropy_diff: float,
         t_processing_baseline: float = 200,
-        kappa: float = 2.50,    # According to the parameter inference, we optimize it as 2.50    # 3.75,
+        kappa: float = 3.50,    # According to the parameter inference, we optimize it as 3.50    # 3.75,
         shape: float = 2.0,
         v_min: float = 200.0,
         v_max: float = 250.0,
