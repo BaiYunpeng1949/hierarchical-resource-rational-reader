@@ -256,7 +256,7 @@ parameter_inference/
      - Produces `grid_inference_summary.csv`, sorted by loss.  
 
 4. **Visualization**  
-   - `plot.py`: reads `grid_inference_summary.csv`, selects the top-k parameter sets, and plots **human vs simulation** using the existing plotting schema.  
+   - `plot.py`: reads `grid_inference_summary.csv`, selects the top-k parameter sets, and plots **human vs simulation** using the existing plotting schema.   
    - Figures and params text files are saved directly inside each best-run folder.
 
 ---
@@ -266,8 +266,9 @@ parameter_inference/
 ### 1. Run Parameter Inference
 ```bash
 python infer_parameters.py --grid_dir simulation_data/ --human human_data/analyzed_human_metrics.json --loss sse --norm zscore --topk 10
+```
 
-
+```bash
 python plot.py \
   --grid_dir simulation_data \
   --human human_data/analyzed_human_metrics.json \
