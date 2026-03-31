@@ -1,0 +1,18 @@
+Wrap-up Effect Regression Statistics
+========================================
+
+Human
+n = 289
+slope = -0.002343
+intercept = 0.082252
+R^2 = 0.001060
+r = -0.032561
+equation: y = -0.002343 * x + 0.082252
+
+Simulation
+n = 276
+slope = 0.007781
+intercept = 0.247287
+R^2 = 0.001005
+r = 0.031695
+equation: y = 0.007781 * x + 0.247287
