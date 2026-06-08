@@ -1,0 +1,5 @@
+panel_index	panel_name	series	n	df	intercept	slope	slope_95ci_low	slope_95ci_high	t	p	p_formatted	r2
+1	regression_vs_ambiguity	human	10	8	0.133570	0.008823	0.004858	0.012789	5.131153	0.000894816	p < 0.001	0.766959
+1	regression_vs_ambiguity	simulation	10	8	0.183264	0.028943	0.016569	0.041317	5.393700	0.000650893	p < 0.001	0.784320
+2	skip_vs_ambiguity	human	10	8	0.395261	-0.002512	-0.015019	0.009996	-0.463070	0.655651	p = 0.656	0.026104
+2	skip_vs_ambiguity	simulation	10	8	0.437799	-0.004852	-0.011019	0.001316	-1.814021	0.107229	p = 0.107	0.291450

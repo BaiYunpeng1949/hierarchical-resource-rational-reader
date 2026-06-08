@@ -3,6 +3,7 @@ import re
 import argparse
 import numpy as np
 import pandas as pd
+from scipy import stats
 
 # =========================================================
 # Default paths
@@ -218,7 +219,12 @@ def post_plot(
             "x_integer": x_integer,
         })
 
-    plot_module.plot_in_a_row(panels, save_path)
+    # plot_module.plot_in_a_row(panels, save_path)
+    plot_module.plot_in_a_row(
+        panels,
+        save_path,
+        stats_filename="sentence_word_level_regression_stats.tsv"
+    )
     print(f"Saved four-panel figure to: {save_path}")
 
     plot_module.save_panels_separately(panels, figures_dir, base_name="probabilities")
@@ -247,6 +253,10 @@ def post_plot(
         base_name="ambiguity"
     )
     print(f"Saved ambiguity panels to: {figures_dir}")
+    plot_module.write_stats_for_panels(
+        ambiguity_panels,
+        os.path.join(figures_dir, "sentence_ambiguity_regression_stats.tsv")
+    )
 
 
 # =========================================================

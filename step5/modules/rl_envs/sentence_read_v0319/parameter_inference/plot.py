@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import pandas as pd
+from scipy import stats
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
@@ -197,21 +198,61 @@ def _plot_regression_binned(ax, x, y, label, color, force_integer_x=False):
     if SHOW_SCATTER:
         ax.scatter(xb, yb, s=SCATTER_SIZE, facecolor='none', edgecolor=color, linewidth=SCATTER_EDGEWIDTH)
 
-    return {"intercept": a, "slope": b, "r2": r2, "n": n}
+    # return {"intercept": a, "slope": b, "r2": r2, "n": n}
+    stats_df = pd.DataFrame({"x": xb, "y": yb})
+    return regression_full_stats(stats_df, x_col="x", y_col="y")
 
-def _write_regression_stats(stats_dict, save_dir, base_filename):
+# def _write_regression_stats(stats_dict, save_dir, base_filename):
+#     """
+#     Write regression stats to a text file (tab-separated).
+#     Rows: series, intercept, slope, r2, n
+#     """
+#     _ensure_dir(save_dir)
+#     out_path = os.path.join(save_dir, f"{base_filename}_regression_stats.txt")
+#     lines = ["series\tintercept\tslope\tr2\tn"]
+#     for series in ("human", "simulation"):
+#         s = stats_dict[series]
+#         lines.append(f"{series}\t{s['intercept']:.6f}\t{s['slope']:.6f}\t{s['r2']:.6f}\t{s['n']}")
+#     with open(out_path, "w", encoding="utf-8") as f:
+#         f.write("\n".join(lines))
+#     return out_path
+
+def _write_regression_stats(stats_per_panel, save_dir, filename):
     """
-    Write regression stats to a text file (tab-separated).
-    Rows: series, intercept, slope, r2, n
+    Write full regression statistics to a TSV file.
     """
-    _ensure_dir(save_dir)
-    out_path = os.path.join(save_dir, f"{base_filename}_regression_stats.txt")
-    lines = ["series\tintercept\tslope\tr2\tn"]
-    for series in ("human", "simulation"):
-        s = stats_dict[series]
-        lines.append(f"{series}\t{s['intercept']:.6f}\t{s['slope']:.6f}\t{s['r2']:.6f}\t{s['n']}")
+    os.makedirs(save_dir, exist_ok=True)
+    out_path = os.path.join(save_dir, filename)
+
+    lines = [
+        "panel_index\tpanel_name\tseries\tn\tdf\tintercept\tslope\t"
+        "slope_95ci_low\tslope_95ci_high\tt\tp\tp_formatted\tr2"
+    ]
+
+    for i, panel_stats in enumerate(stats_per_panel, start=1):
+        panel_name = panel_stats.get("panel_name", f"panel_{i}")
+
+        for series in ("human", "simulation"):
+            s = panel_stats[series]
+
+            lines.append(
+                f"{i}\t{panel_name}\t{series}\t"
+                f"{s['n']}\t"
+                f"{s['df']}\t"
+                f"{s['intercept']:.6f}\t"
+                f"{s['slope']:.6f}\t"
+                f"{s['slope_95ci_low']:.6f}\t"
+                f"{s['slope_95ci_high']:.6f}\t"
+                f"{s['t']:.6f}\t"
+                f"{s['p']:.6g}\t"
+                f"{_format_p(s['p'])}\t"
+                f"{s['r2']:.6f}"
+            )
+
     with open(out_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
+
+    print(f"Saved regression stats to: {out_path}")
     return out_path
 
 def plot_comparison(x_human, y_human, x_sim, y_sim, x_name, y_name, output_dir, output_filename, x_integer=None):
@@ -268,8 +309,80 @@ def plot_comparison(x_human, y_human, x_sim, y_sim, x_name, y_name, output_dir, 
 
     _write_regression_stats({"human": human_stats, "simulation": sim_stats}, output_dir, output_filename)
 
+
+def _format_p(p):
+    if pd.isna(p):
+        return "NA"
+    if p < 0.001:
+        return "p < 0.001"
+    return f"p = {p:.3f}"
+
+
+def regression_full_stats(df, x_col, y_col):
+    """
+    Ordinary least-squares regression:
+        y = intercept + slope * x
+
+    Returns full statistics for reporting:
+    n, df, intercept, slope, 95% CI for slope, t, p, R^2.
+    """
+    work = df[[x_col, y_col]].dropna().copy()
+    x = work[x_col].to_numpy(dtype=float)
+    y = work[y_col].to_numpy(dtype=float)
+
+    n = len(x)
+    if n < 3:
+        return {
+            "n": n,
+            "df": np.nan,
+            "intercept": np.nan,
+            "slope": np.nan,
+            "slope_95ci_low": np.nan,
+            "slope_95ci_high": np.nan,
+            "t": np.nan,
+            "p": np.nan,
+            "r2": np.nan,
+        }
+
+    X = np.column_stack([np.ones(n), x])
+    beta_hat = np.linalg.lstsq(X, y, rcond=None)[0]
+    intercept, slope = beta_hat
+
+    y_hat = X @ beta_hat
+    residuals = y - y_hat
+
+    df_resid = n - 2
+    sse = np.sum(residuals ** 2)
+    mse = sse / df_resid
+
+    cov_beta = mse * np.linalg.inv(X.T @ X)
+    se_slope = np.sqrt(cov_beta[1, 1])
+
+    t_value = slope / se_slope
+    p_value = 2 * stats.t.sf(abs(t_value), df_resid)
+
+    t_crit = stats.t.ppf(0.975, df_resid)
+    ci_low = slope - t_crit * se_slope
+    ci_high = slope + t_crit * se_slope
+
+    ss_total = np.sum((y - np.mean(y)) ** 2)
+    r2 = 1 - sse / ss_total
+
+    return {
+        "n": n,
+        "df": df_resid,
+        "intercept": intercept,
+        "slope": slope,
+        "slope_95ci_low": ci_low,
+        "slope_95ci_high": ci_high,
+        "t": t_value,
+        "p": p_value,
+        "r2": r2,
+    }
+
+
 # CSV multi-panel utility
-def plot_in_a_row(panels, save_path):
+def plot_in_a_row(panels, save_path, stats_filename="regression_stats.tsv"):
     """
     Generic N-panel plot with consistent per-axes size, reading CSVs internally.
     panels: list of dicts, each with keys:
@@ -327,6 +440,15 @@ def plot_in_a_row(panels, save_path):
     fig.savefig(save_path, dpi=300, bbox_inches="tight", pad_inches=0.05)
     plt.close(fig)
 
+    for i, stats in enumerate(all_stats):
+        stats["panel_name"] = panels[i].get("panel_name", f"panel_{i + 1}")
+
+    _write_regression_stats(
+        all_stats,
+        save_dir=os.path.dirname(save_path) or ".",
+        filename=stats_filename
+    )
+
     # Write a joint regression file per panel
     base = os.path.splitext(os.path.basename(save_path))[0]
     dirn = os.path.dirname(save_path) or "."
@@ -338,6 +460,75 @@ def plot_in_a_row(panels, save_path):
             lines.append(f"{i}\t{panel_name}\t{series}\t{s['intercept']:.6f}\t{s['slope']:.6f}\t{s['r2']:.6f}\t{s['n']}")
     with open(os.path.join(dirn, f"{base}_{REGRESSION_TXTNAME}"), "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
+
+def write_stats_for_panels(panels, out_path):
+    """
+    Compute and write full regression statistics for a list of panels.
+
+    Important:
+    The statistics are computed on the same binned/averaged points used
+    for plotting, so the reported slopes, R^2, t, p, and CIs correspond
+    to the visible regression lines in the figure.
+    """
+    all_stats = []
+
+    for idx, panel in enumerate(panels):
+        human_df = pd.read_csv(panel["human_csv"])
+        sim_df = pd.read_csv(panel["sim_csv"])
+
+        force_int = bool(panel.get("x_integer", False))
+
+        # -------------------------
+        # Human data: bin first
+        # -------------------------
+        x_h = human_df[panel["x_col"]].values
+        y_h = human_df[panel["y_col"]].values
+
+        xb_h, yb_h = _bin_series(
+            x_h,
+            y_h,
+            force_integer=force_int
+        )
+
+        human_stats = regression_full_stats(
+            pd.DataFrame({"x": xb_h, "y": yb_h}),
+            x_col="x",
+            y_col="y"
+        )
+
+        # -------------------------
+        # Simulation data: bin first
+        # -------------------------
+        x_s = sim_df[panel["x_col"]].values
+        y_s = sim_df[panel["y_col"]].values
+
+        xb_s, yb_s = _bin_series(
+            x_s,
+            y_s,
+            force_integer=force_int
+        )
+
+        sim_stats = regression_full_stats(
+            pd.DataFrame({"x": xb_s, "y": yb_s}),
+            x_col="x",
+            y_col="y"
+        )
+
+        all_stats.append({
+            "panel_name": panel.get("panel_name", f"panel_{idx + 1}"),
+            "human": human_stats,
+            "simulation": sim_stats,
+        })
+
+    save_dir = os.path.dirname(out_path) or "."
+    filename = os.path.basename(out_path)
+
+    return _write_regression_stats(
+        all_stats,
+        save_dir=save_dir,
+        filename=filename
+    )
+
 
 def save_panels_separately(panels, output_dir, base_name="panel"):
     """
