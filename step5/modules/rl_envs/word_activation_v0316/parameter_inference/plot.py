@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy import stats
 from matplotlib.ticker import MaxNLocator
 
 # =========================
@@ -125,31 +126,77 @@ def _style_axes(ax, force_integer_x=False):
     if MAX_Y_TICKS is not None:
         ax.yaxis.set_major_locator(MaxNLocator(nbins=MAX_Y_TICKS, prune=None))
 
+# def _plot_regression(ax, df, x_col, y_col, label, color):
+#     """
+#     Plot regression line (dashed) + CI and raw scatter.
+#     Returns a dict with regression stats.
+#     """
+#     work = df[[x_col, y_col]].dropna().copy()
+#     work = work.sort_values(by=x_col)
+#     x = work[x_col].values
+#     y = work[y_col].values
+
+#     x_line, y_hat, y_low, y_high, stats = _regress_and_ci(x, y)
+#     a, b, r2, n = stats[0], stats[1], stats[2], stats[3]
+
+#     # CI band
+#     if y_low is not None and y_high is not None:
+#         ax.fill_between(x_line, y_low, y_high, color=color, alpha=CI_ALPHA)
+
+#     # Regression line (dashed as requested)
+#     ax.plot(x_line, y_hat, REG_LINESTYLE, linewidth=LINE_WIDTH, color=color, label=label)
+
+#     # Raw scatter
+#     if SHOW_SCATTER:
+#         ax.scatter(x, y, s=SCATTER_SIZE, facecolor='none', edgecolor=color, linewidth=SCATTER_EDGEWIDTH)
+
+#     return {"intercept": a, "slope": b, "r2": r2, "n": n}
+
+
 def _plot_regression(ax, df, x_col, y_col, label, color):
     """
-    Plot regression line (dashed) + CI and raw scatter.
-    Returns a dict with regression stats.
+    Plot regression line + CI band + raw scatter.
+    Returns full regression statistics for reporting:
+    intercept, slope, slope 95% CI, t, df, p, R^2, n.
     """
     work = df[[x_col, y_col]].dropna().copy()
     work = work.sort_values(by=x_col)
     x = work[x_col].values
     y = work[y_col].values
 
-    x_line, y_hat, y_low, y_high, stats = _regress_and_ci(x, y)
-    a, b, r2, n = stats[0], stats[1], stats[2], stats[3]
+    # This is used for plotting the fitted line and the visual CI band.
+    x_line, y_hat, y_low, y_high, _ = _regress_and_ci(x, y)
 
-    # CI band
+    # This is used for statistical reporting.
+    full_stats = regression_full_stats(work, x_col=x_col, y_col=y_col)
+
+    # CI band for visual display
     if y_low is not None and y_high is not None:
         ax.fill_between(x_line, y_low, y_high, color=color, alpha=CI_ALPHA)
 
-    # Regression line (dashed as requested)
-    ax.plot(x_line, y_hat, REG_LINESTYLE, linewidth=LINE_WIDTH, color=color, label=label)
+    # Regression line
+    ax.plot(
+        x_line,
+        y_hat,
+        REG_LINESTYLE,
+        linewidth=LINE_WIDTH,
+        color=color,
+        label=label
+    )
 
     # Raw scatter
     if SHOW_SCATTER:
-        ax.scatter(x, y, s=SCATTER_SIZE, facecolor='none', edgecolor=color, linewidth=SCATTER_EDGEWIDTH)
+        ax.scatter(
+            x,
+            y,
+            s=SCATTER_SIZE,
+            facecolor='none',
+            edgecolor=color,
+            linewidth=SCATTER_EDGEWIDTH
+        )
 
-    return {"intercept": a, "slope": b, "r2": r2, "n": n}
+    return full_stats
+
 
 def compare_one(ax, human_csv, sim_csv, x_col, y_col, x_label, y_label, want_legend=False, x_integer=False):
     """
@@ -183,21 +230,112 @@ def compare_one(ax, human_csv, sim_csv, x_col, y_col, x_label, y_label, want_leg
 
     return {"human": human_stats, "simulation": sim_stats}
 
+# def _write_regression_stats(stats_per_panel, save_dir, filename=REGRESSION_TXTNAME):
+#     """
+#     Write regression stats to a text file (tab-separated) for easy paper writing.
+#     Columns: panel_index, series, intercept, slope, r2, n
+#     """
+#     _ensure_dir(save_dir)
+#     out_path = os.path.join(save_dir, filename)
+#     lines = ["panel_index\tseries\tintercept\tslope\tr2\tn"]
+#     for i, panel_stats in enumerate(stats_per_panel, start=1):
+#         for series in ("human", "simulation"):
+#             s = panel_stats[series]
+#             lines.append(f"{i}\t{series}\t{s['intercept']:.6f}\t{s['slope']:.6f}\t{s['r2']:.6f}\t{s['n']}")
+#     with open(out_path, "w", encoding="utf-8") as f:
+#         f.write("\n".join(lines))
+#     return out_path
+
+def _format_p(p):
+    """
+    Nature-style p-value formatting:
+    exact to three decimals, but smallest reported value is p < 0.001.
+    """
+    if p < 0.001:
+        return "p < 0.001"
+    return f"p = {p:.3f}"
+
 def _write_regression_stats(stats_per_panel, save_dir, filename=REGRESSION_TXTNAME):
     """
-    Write regression stats to a text file (tab-separated) for easy paper writing.
-    Columns: panel_index, series, intercept, slope, r2, n
+    Write full regression statistics to a text file for manuscript reporting.
+
+    Columns:
+    panel_index, series, n, df, intercept, slope, slope_95ci_low,
+    slope_95ci_high, t, p, p_formatted, r2
     """
     _ensure_dir(save_dir)
     out_path = os.path.join(save_dir, filename)
-    lines = ["panel_index\tseries\tintercept\tslope\tr2\tn"]
+
+    lines = [
+        "panel_index\tseries\tn\tdf\tintercept\tslope\t"
+        "slope_95ci_low\tslope_95ci_high\tt\tp\tp_formatted\tr2"
+    ]
+
     for i, panel_stats in enumerate(stats_per_panel, start=1):
         for series in ("human", "simulation"):
             s = panel_stats[series]
-            lines.append(f"{i}\t{series}\t{s['intercept']:.6f}\t{s['slope']:.6f}\t{s['r2']:.6f}\t{s['n']}")
+
+            lines.append(
+                f"{i}\t{series}\t"
+                f"{s['n']}\t"
+                f"{s['df']}\t"
+                f"{s['intercept']:.6f}\t"
+                f"{s['slope']:.6f}\t"
+                f"{s['slope_95ci_low']:.6f}\t"
+                f"{s['slope_95ci_high']:.6f}\t"
+                f"{s['t']:.6f}\t"
+                f"{s['p']:.6g}\t"
+                f"{_format_p(s['p'])}\t"
+                f"{s['r2']:.6f}"
+            )
+
     with open(out_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
+
     return out_path
+
+def regression_full_stats(df, x_col, y_col="average_gaze_duration"):
+    work = df[[x_col, y_col]].dropna().copy()
+    x = work[x_col].to_numpy(dtype=float)
+    y = work[y_col].to_numpy(dtype=float)
+
+    n = len(x)
+    X = np.column_stack([np.ones(n), x])
+
+    beta_hat = np.linalg.lstsq(X, y, rcond=None)[0]
+    intercept, slope = beta_hat
+
+    y_hat = X @ beta_hat
+    residuals = y - y_hat
+
+    df_resid = n - 2
+    sse = np.sum(residuals ** 2)
+    mse = sse / df_resid
+
+    cov_beta = mse * np.linalg.inv(X.T @ X)
+    se_slope = np.sqrt(cov_beta[1, 1])
+
+    t_value = slope / se_slope
+    p_value = 2 * stats.t.sf(abs(t_value), df_resid)
+
+    t_crit = stats.t.ppf(0.975, df_resid)
+    ci_low = slope - t_crit * se_slope
+    ci_high = slope + t_crit * se_slope
+
+    ss_total = np.sum((y - np.mean(y)) ** 2)
+    r2 = 1 - sse / ss_total
+
+    return {
+        "n": n,
+        "df": df_resid,
+        "intercept": intercept,
+        "slope": slope,
+        "slope_95ci_low": ci_low,
+        "slope_95ci_high": ci_high,
+        "t": t_value,
+        "p": p_value,
+        "r2": r2,
+    }
 
 def plot_in_a_row(panels, save_path):
     """
@@ -219,6 +357,20 @@ def plot_in_a_row(panels, save_path):
         axes = [axes]
     fig.subplots_adjust(wspace=SUBPLOT_WSPACE)
 
+    # all_stats = []
+    # for idx, (ax, panel) in enumerate(zip(axes, panels)):
+    #     stats = compare_one(
+    #         ax=ax,
+    #         human_csv=panel["human_csv"],
+    #         sim_csv=panel["sim_csv"],
+    #         x_col=panel["x_col"],
+    #         y_col=panel["y_col"],
+    #         x_label=panel["x_label"],
+    #         y_label=panel.get("y_label", None),
+    #         want_legend=(idx == 0),               # legend inside the first subplot
+    #         x_integer=panel.get("x_integer", False),
+    #     )
+    #     all_stats.append(stats)
     all_stats = []
     for idx, (ax, panel) in enumerate(zip(axes, panels)):
         stats = compare_one(
@@ -229,9 +381,11 @@ def plot_in_a_row(panels, save_path):
             y_col=panel["y_col"],
             x_label=panel["x_label"],
             y_label=panel.get("y_label", None),
-            want_legend=(idx == 0),               # legend inside the first subplot
+            want_legend=(idx == 0),
             x_integer=panel.get("x_integer", False),
         )
+
+        stats["panel_name"] = panel.get("panel_name", f"panel_{idx + 1}")
         all_stats.append(stats)
 
     # Save figure and stats
@@ -290,31 +444,62 @@ if __name__ == "__main__":
     sim_data_dir   = "best_param_simulated_results"
     save_dir       = DEFAULT_SAVE_DIR
 
+    # panels = [
+    #     {
+    #         "human_csv": os.path.join(human_data_dir, "gaze_duration_vs_word_length.csv"),
+    #         "sim_csv":   os.path.join(sim_data_dir,   "gaze_duration_vs_word_length.csv"),
+    #         "x_col": "word_length",
+    #         "y_col": "average_gaze_duration",
+    #         "x_label": "Word length",
+    #         "y_label": "Average gaze duration (ms)",
+    #         "x_integer": True,  # <- force integer ticks for word length
+    #     },
+    #     {
+    #         "human_csv": os.path.join(human_data_dir, "gaze_duration_vs_word_log_frequency.csv"),
+    #         "sim_csv":   os.path.join(sim_data_dir,   "gaze_duration_vs_word_log_frequency_binned.csv"),
+    #         "x_col": "log_frequency",
+    #         "y_col": "average_gaze_duration",
+    #         "x_label": "Log frequency",
+    #         "y_label": "",  # ylabel optional
+    #     },
+    #     {
+    #         "human_csv": os.path.join(human_data_dir, "gaze_duration_vs_word_logit_predictability.csv"),
+    #         "sim_csv":   os.path.join(sim_data_dir,   "gaze_duration_vs_word_logit_predictability_binned.csv"),
+    #         "x_col": "logit_predictability",
+    #         "y_col": "average_gaze_duration",
+    #         "x_label": "Logit predictability",
+    #         "y_label": "",  # keep empty for consistency
+    #     },
+    # ]
+
     panels = [
         {
+            "panel_name": "GD_vs_word_length",
             "human_csv": os.path.join(human_data_dir, "gaze_duration_vs_word_length.csv"),
             "sim_csv":   os.path.join(sim_data_dir,   "gaze_duration_vs_word_length.csv"),
             "x_col": "word_length",
             "y_col": "average_gaze_duration",
             "x_label": "Word length",
             "y_label": "Average gaze duration (ms)",
-            "x_integer": True,  # <- force integer ticks for word length
+            "x_integer": True,
         },
         {
+            "panel_name": "GD_vs_log_frequency",
             "human_csv": os.path.join(human_data_dir, "gaze_duration_vs_word_log_frequency.csv"),
             "sim_csv":   os.path.join(sim_data_dir,   "gaze_duration_vs_word_log_frequency_binned.csv"),
             "x_col": "log_frequency",
             "y_col": "average_gaze_duration",
             "x_label": "Log frequency",
-            "y_label": "",  # ylabel optional
+            "y_label": "",
         },
         {
+            "panel_name": "GD_vs_logit_predictability",
             "human_csv": os.path.join(human_data_dir, "gaze_duration_vs_word_logit_predictability.csv"),
             "sim_csv":   os.path.join(sim_data_dir,   "gaze_duration_vs_word_logit_predictability_binned.csv"),
             "x_col": "logit_predictability",
             "y_col": "average_gaze_duration",
             "x_label": "Logit predictability",
-            "y_label": "",  # keep empty for consistency
+            "y_label": "",
         },
     ]
 
