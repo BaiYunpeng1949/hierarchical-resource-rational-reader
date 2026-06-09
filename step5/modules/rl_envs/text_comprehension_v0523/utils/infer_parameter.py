@@ -34,6 +34,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.ticker import MaxNLocator
+from scipy.stats import chi2_contingency
+from math import log, exp, sqrt
 import matplotlib.gridspec as gridspec
 
 
@@ -423,6 +425,93 @@ def compute_regression_probabilities_binary(df):
 
     return out
 
+def format_p(p):
+    """Nature-style p-value formatting."""
+    if p < 0.001:
+        return "p < 0.001"
+    return f"p = {p:.3f}"
+
+
+def compute_binary_contrast_stats(sim_probs):
+    """
+    Test whether regression probability differs between ambiguous and unambiguous
+    simulated sentence instances.
+
+    Uses a 2 x 2 chi-square test and reports odds ratio with 95% CI.
+    """
+
+    a = sim_probs["Ambiguous"]["n_regressed"]
+    b = sim_probs["Ambiguous"]["n_total"] - sim_probs["Ambiguous"]["n_regressed"]
+    c = sim_probs["Unambiguous"]["n_regressed"]
+    d = sim_probs["Unambiguous"]["n_total"] - sim_probs["Unambiguous"]["n_regressed"]
+
+    table = np.array([[a, b], [c, d]], dtype=float)
+
+    chi2, p, dof, expected = chi2_contingency(table, correction=False)
+
+    # Haldane-Anscombe correction protects against zero cells
+    aa, bb, cc, dd = a + 0.5, b + 0.5, c + 0.5, d + 0.5
+    log_or = log((aa * dd) / (bb * cc))
+    se_log_or = sqrt(1 / aa + 1 / bb + 1 / cc + 1 / dd)
+
+    ci_low = exp(log_or - 1.96 * se_log_or)
+    ci_high = exp(log_or + 1.96 * se_log_or)
+    odds_ratio = exp(log_or)
+
+    return {
+        "analysis": "simulation_ambiguous_vs_unambiguous_regression",
+        "test": "chi-square test of independence",
+        "n_ambiguous": int(sim_probs["Ambiguous"]["n_total"]),
+        "n_regressed_ambiguous": int(sim_probs["Ambiguous"]["n_regressed"]),
+        "mean_ambiguous": sim_probs["Ambiguous"]["prob"],
+        "n_unambiguous": int(sim_probs["Unambiguous"]["n_total"]),
+        "n_regressed_unambiguous": int(sim_probs["Unambiguous"]["n_regressed"]),
+        "mean_unambiguous": sim_probs["Unambiguous"]["prob"],
+        "chi2": chi2,
+        "df": int(dof),
+        "p": p,
+        "p_formatted": format_p(p),
+        "odds_ratio": odds_ratio,
+        "or_95ci_low": ci_low,
+        "or_95ci_high": ci_high,
+    }
+
+
+def compute_text_recall_fit_stats(human, best_row):
+    """
+    Descriptive model-fit statistics for the four text-comprehension condition means.
+    No p value is computed here because the human data are condition-level targets.
+    """
+
+    human_vals = np.array([
+        human.highcoh_high,
+        human.highcoh_low,
+        human.lowcoh_high,
+        human.lowcoh_low,
+    ], dtype=float)
+
+    sim_vals = np.array([
+        best_row["sim_fully_high"],
+        best_row["sim_fully_low"],
+        best_row["sim_min_high"],
+        best_row["sim_min_low"],
+    ], dtype=float)
+
+    errors = sim_vals - human_vals
+    mae_value = float(np.mean(np.abs(errors)))
+    rmse_value = float(np.sqrt(np.mean(errors ** 2)))
+    r_value = float(np.corrcoef(human_vals, sim_vals)[0, 1])
+
+    return {
+        "analysis": "text_comprehension_four_condition_fit",
+        "test": "descriptive model fit; no inferential p value",
+        "n_conditions": 4,
+        "mae": mae_value,
+        "rmse": rmse_value,
+        "correlation_r": r_value,
+        "p": np.nan,
+        "p_formatted": "not applicable",
+    }
 
 def load_aligned_binary_probs_from_json_with_ranges(
     json_path,
@@ -793,6 +882,23 @@ def main():
     out_stats = os.path.join(args.out_dir, "plot_stats.txt")
     plot_panel(human_regression_probs, sim_probs, out_png, out_stats)
 
+    
+    inferential_rows = []
+
+    # 1. Descriptive fit for four text-comprehension condition means
+    inferential_rows.append(compute_text_recall_fit_stats(human, best_row))
+
+    # 2. Inferential test for simulated ambiguous vs unambiguous regression probability
+    if (
+        sim_probs["Ambiguous"]["n_total"] > 0
+        and sim_probs["Unambiguous"]["n_total"] > 0
+    ):
+        inferential_rows.append(compute_binary_contrast_stats(sim_probs))
+
+    inferential_df = pd.DataFrame(inferential_rows)
+    inferential_csv = os.path.join(args.out_dir, "inferential_stats.csv")
+    inferential_df.to_csv(inferential_csv, index=False)
+
     print(f"\nSaved grid CSV: {csv_path}")
     print(f"Saved best summary: {best_txt}")
     print(f"Saved best json: {best_json}")
@@ -801,6 +907,7 @@ def main():
     print("\nBest thresholds: high={:.3f}, low={:.3f}, loss={:.6f}".format(
         best_row['high_threshold'], best_row['low_threshold'], best_row['loss_total'])
     )
+    print(f"Saved inferential stats: {inferential_csv}")
 
 if __name__ == "__main__":
     main()
