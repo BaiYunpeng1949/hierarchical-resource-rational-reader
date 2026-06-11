@@ -347,6 +347,73 @@ def _write_statistics(data, metrics, out_name="time_pressure_inferential_stats.c
         writer.writerows(rows)
 
 
+def _write_human_simulation_agreement(data, out_name="human_simulation_agreement_stats.csv"):
+    metrics = [
+        "reading_speed",
+        "skip_rate",
+        "regression_rate",
+        "mcq_accuracy",
+        "free_recall_score",
+    ]
+
+    rows = []
+    human_means = []
+    sim_means = []
+
+    for metric in metrics:
+        for cond in data["conditions"]:
+            h = float(data["human"][metric][cond]["mean"])
+            s = float(data["simulation"][metric][cond]["mean"])
+
+            human_means.append(h)
+            sim_means.append(s)
+
+            rows.append({
+                "metric": metric,
+                "condition": cond,
+                "human_mean": h,
+                "simulation_mean": s,
+                "difference_human_minus_simulation": h - s,
+                "absolute_error": abs(h - s),
+                "squared_error": (h - s) ** 2,
+            })
+
+    human_means = np.array(human_means, dtype=float)
+    sim_means = np.array(sim_means, dtype=float)
+
+    mae = float(np.mean(np.abs(human_means - sim_means)))
+    rmse = float(np.sqrt(np.mean((human_means - sim_means) ** 2)))
+    r = float(np.corrcoef(human_means, sim_means)[0, 1])
+
+    rows.append({
+        "metric": "OVERALL_15_MEANS",
+        "condition": "",
+        "human_mean": "",
+        "simulation_mean": "",
+        "difference_human_minus_simulation": "",
+        "absolute_error": mae,
+        "squared_error": rmse,
+        "pearson_r": r,
+    })
+
+    import csv
+    fieldnames = [
+        "metric",
+        "condition",
+        "human_mean",
+        "simulation_mean",
+        "difference_human_minus_simulation",
+        "absolute_error",
+        "squared_error",
+        "pearson_r",
+    ]
+
+    with open(out_name, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
 def main():
     data = _load_aggregated_json()
     conditions = data["conditions"]
@@ -393,6 +460,9 @@ def main():
 
     _write_statistics(data, metrics, "time_pressure_inferential_stats.csv")
     print("Saved:", "time_pressure_inferential_stats.csv")
+
+    _write_human_simulation_agreement(data, "human_simulation_agreement_stats.csv")
+    print("Saved:", "human_simulation_agreement_stats.csv")
 
 
 if __name__ == "__main__":

@@ -21,6 +21,10 @@ Plot.
 cd plot
 
 python plot_eye_comp_from_aggregated_metrics.py 
+
+-->
+
+python plot_eye_comp_from_aggregated_metrics_dot_mean_sd_separate.py 
 ```
 
 # Plot for the baseline comparisons. Unified.
