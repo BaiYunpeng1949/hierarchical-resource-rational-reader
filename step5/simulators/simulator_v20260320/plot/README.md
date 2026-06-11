@@ -7,6 +7,18 @@ cd assets
 python build_aggregated_panel_metrics.py --human_eye human_data/human_eye_movement_metrics.json --human_mcq human_data/human_mcq_acc_metrics.json --human_fr human_data/human_free_recall_metrics.json --sim_eye simulation_data/simulation_eye_movement_metrics.json --sim_comp simulation_data/comprehension_results_20251006-150327.json --out aggregated_panel_metrics.json
 ```
 
+```bash
+python build_aggregated_panel_metrics_with_human_pointwise.py \
+  --human_eye human_data/human_eye_movement_metrics.json \
+  --human_mcq human_data/human_mcq_acc_metrics.json \
+  --human_fr human_data/human_free_recall_metrics.json \
+  --human_eye_pointwise human_data/human_eye_movement_participant_metrics_pointwise.json \
+  --human_comp_pointwise human_data/comprehension_scores_p1_to_p32.csv \
+  --sim_eye simulation_data/simulation_eye_movement_metrics.json \
+  --sim_comp simulation_data/comprehension_results_20251006-150327.json \
+  --out aggregated_panel_metrics.json
+```
+
 Plot.
 ```bash
 cd plot

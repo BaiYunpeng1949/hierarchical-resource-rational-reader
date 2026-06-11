@@ -1,0 +1,32 @@
+{
+    "30s": {
+        "reading_speed_mean": 190.77976190476193,
+        "reading_speed_std": 37.71618218079768,
+        "skip_rate_mean": 0.3907747888653356,
+        "skip_rate_std": 0.07678492880575058,
+        "regression_rate_mean": 0.31618483190695373,
+        "regression_rate_std": 0.12070618058543495,
+        "num_participants": 28,
+        "num_trials": 84
+    },
+    "60s": {
+        "reading_speed_mean": 171.4880952380952,
+        "reading_speed_std": 30.123679506650582,
+        "skip_rate_mean": 0.32265846624428,
+        "skip_rate_std": 0.08217560230358541,
+        "regression_rate_mean": 0.4772694567224823,
+        "regression_rate_std": 0.1399488860954505,
+        "num_participants": 28,
+        "num_trials": 84
+    },
+    "90s": {
+        "reading_speed_mean": 166.48015873015873,
+        "reading_speed_std": 28.43523278007247,
+        "skip_rate_mean": 0.3130400376395385,
+        "skip_rate_std": 0.0831746708289902,
+        "regression_rate_mean": 0.5930452536321674,
+        "regression_rate_std": 0.10577398725730738,
+        "num_participants": 28,
+        "num_trials": 83
+    }
+}

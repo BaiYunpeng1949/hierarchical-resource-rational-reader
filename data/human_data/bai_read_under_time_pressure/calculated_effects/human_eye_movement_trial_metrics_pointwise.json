@@ -1,0 +1,4269 @@
+[
+  {
+    "source":"human",
+    "participant_id":5,
+    "stimulus_index":0,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":196.0,
+    "skip_rate":0.4333333333,
+    "regression_rate":0.4958677686,
+    "raw_metrics":{
+      "Number of Fixations":121,
+      "Average Saccade Length (px)":179.6370425708,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":43.3333333333,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":49.5867768595,
+      "Average Reading Speed (wpm)":196.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":5,
+    "stimulus_index":1,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":224.0,
+    "skip_rate":0.3615384615,
+    "regression_rate":0.4351145038,
+    "raw_metrics":{
+      "Number of Fixations":131,
+      "Average Saccade Length (px)":169.0398373193,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":36.1538461538,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":43.5114503817,
+      "Average Reading Speed (wpm)":224.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":5,
+    "stimulus_index":8,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":218.0,
+    "skip_rate":0.5,
+    "regression_rate":0.4444444444,
+    "raw_metrics":{
+      "Number of Fixations":117,
+      "Average Saccade Length (px)":193.548042105,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":50.0,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":44.4444444444,
+      "Average Reading Speed (wpm)":218.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":5,
+    "stimulus_index":2,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":197.0,
+    "skip_rate":0.3,
+    "regression_rate":0.622406639,
+    "raw_metrics":{
+      "Number of Fixations":241,
+      "Average Saccade Length (px)":152.8941639715,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":30.0,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":62.2406639004,
+      "Average Reading Speed (wpm)":197.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":5,
+    "stimulus_index":3,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":190.0,
+    "skip_rate":0.3221757322,
+    "regression_rate":0.6375,
+    "raw_metrics":{
+      "Number of Fixations":240,
+      "Average Saccade Length (px)":133.133663755,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":32.2175732218,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":63.75,
+      "Average Reading Speed (wpm)":190.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":5,
+    "stimulus_index":4,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":204.0,
+    "skip_rate":0.3223140496,
+    "regression_rate":0.5679012346,
+    "raw_metrics":{
+      "Number of Fixations":243,
+      "Average Saccade Length (px)":172.5950639727,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":32.2314049587,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":56.7901234568,
+      "Average Reading Speed (wpm)":204.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":5,
+    "stimulus_index":5,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":182.6666666667,
+    "skip_rate":0.2719546742,
+    "regression_rate":0.5847457627,
+    "raw_metrics":{
+      "Number of Fixations":354,
+      "Average Saccade Length (px)":135.9563348285,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":27.1954674221,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":58.4745762712,
+      "Average Reading Speed (wpm)":182.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":5,
+    "stimulus_index":6,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":186.6666666667,
+    "skip_rate":0.2507122507,
+    "regression_rate":0.6051136364,
+    "raw_metrics":{
+      "Number of Fixations":352,
+      "Average Saccade Length (px)":118.2163055807,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":25.0712250712,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":60.5113636364,
+      "Average Reading Speed (wpm)":186.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":5,
+    "stimulus_index":7,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":217.3333333333,
+    "skip_rate":0.3799472296,
+    "regression_rate":0.6789473684,
+    "raw_metrics":{
+      "Number of Fixations":380,
+      "Average Saccade Length (px)":127.3526157165,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":37.9947229551,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":67.8947368421,
+      "Average Reading Speed (wpm)":217.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":6,
+    "stimulus_index":1,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":184.0,
+    "skip_rate":0.3644859813,
+    "regression_rate":0.1574074074,
+    "raw_metrics":{
+      "Number of Fixations":108,
+      "Average Saccade Length (px)":138.1308689299,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":36.4485981308,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":15.7407407407,
+      "Average Reading Speed (wpm)":184.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":6,
+    "stimulus_index":2,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":188.0,
+    "skip_rate":0.2727272727,
+    "regression_rate":0.3693693694,
+    "raw_metrics":{
+      "Number of Fixations":111,
+      "Average Saccade Length (px)":119.3700410575,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":27.2727272727,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":36.9369369369,
+      "Average Reading Speed (wpm)":188.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":6,
+    "stimulus_index":3,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":172.0,
+    "skip_rate":0.381443299,
+    "regression_rate":0.2857142857,
+    "raw_metrics":{
+      "Number of Fixations":98,
+      "Average Saccade Length (px)":139.202718046,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":38.1443298969,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":28.5714285714,
+      "Average Reading Speed (wpm)":172.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":6,
+    "stimulus_index":0,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":137.0,
+    "skip_rate":0.2067039106,
+    "regression_rate":0.3277777778,
+    "raw_metrics":{
+      "Number of Fixations":180,
+      "Average Saccade Length (px)":114.387901343,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":20.6703910615,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":32.7777777778,
+      "Average Reading Speed (wpm)":137.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":6,
+    "stimulus_index":7,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":135.0,
+    "skip_rate":0.296969697,
+    "regression_rate":0.3554216867,
+    "raw_metrics":{
+      "Number of Fixations":166,
+      "Average Saccade Length (px)":116.2834526693,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":29.696969697,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":35.5421686747,
+      "Average Reading Speed (wpm)":135.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":6,
+    "stimulus_index":8,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":160.0,
+    "skip_rate":0.2525252525,
+    "regression_rate":0.4020100503,
+    "raw_metrics":{
+      "Number of Fixations":199,
+      "Average Saccade Length (px)":103.6599046162,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":25.2525252525,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":40.2010050251,
+      "Average Reading Speed (wpm)":160.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":6,
+    "stimulus_index":4,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":124.6666666667,
+    "skip_rate":0.2648221344,
+    "regression_rate":0.5,
+    "raw_metrics":{
+      "Number of Fixations":254,
+      "Average Saccade Length (px)":133.075049494,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":26.4822134387,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":50.0,
+      "Average Reading Speed (wpm)":124.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":6,
+    "stimulus_index":5,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":125.3333333333,
+    "skip_rate":0.2338709677,
+    "regression_rate":0.4297188755,
+    "raw_metrics":{
+      "Number of Fixations":249,
+      "Average Saccade Length (px)":110.3687640336,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":23.3870967742,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":42.9718875502,
+      "Average Reading Speed (wpm)":125.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":6,
+    "stimulus_index":6,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":120.0,
+    "skip_rate":0.1774193548,
+    "regression_rate":0.4698795181,
+    "raw_metrics":{
+      "Number of Fixations":249,
+      "Average Saccade Length (px)":111.2196163208,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":17.7419354839,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":46.9879518072,
+      "Average Reading Speed (wpm)":120.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":7,
+    "stimulus_index":3,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":178.0,
+    "skip_rate":0.4803921569,
+    "regression_rate":0.1844660194,
+    "raw_metrics":{
+      "Number of Fixations":103,
+      "Average Saccade Length (px)":158.1824303522,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":48.0392156863,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":18.4466019417,
+      "Average Reading Speed (wpm)":178.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":7,
+    "stimulus_index":4,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":170.0,
+    "skip_rate":0.3490566038,
+    "regression_rate":0.0747663551,
+    "raw_metrics":{
+      "Number of Fixations":107,
+      "Average Saccade Length (px)":128.3965959551,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":34.9056603774,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":7.476635514,
+      "Average Reading Speed (wpm)":170.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":7,
+    "stimulus_index":5,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":180.0,
+    "skip_rate":0.3539823009,
+    "regression_rate":0.1578947368,
+    "raw_metrics":{
+      "Number of Fixations":114,
+      "Average Saccade Length (px)":152.6944599625,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":35.3982300885,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":15.7894736842,
+      "Average Reading Speed (wpm)":180.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":7,
+    "stimulus_index":6,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":165.0,
+    "skip_rate":0.25,
+    "regression_rate":0.3640552995,
+    "raw_metrics":{
+      "Number of Fixations":217,
+      "Average Saccade Length (px)":113.5955042057,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":25.0,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":36.4055299539,
+      "Average Reading Speed (wpm)":165.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":7,
+    "stimulus_index":7,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":187.0,
+    "skip_rate":0.3616071429,
+    "regression_rate":0.5955555556,
+    "raw_metrics":{
+      "Number of Fixations":225,
+      "Average Saccade Length (px)":123.3331789193,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":36.1607142857,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":59.5555555556,
+      "Average Reading Speed (wpm)":187.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":7,
+    "stimulus_index":8,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":179.0,
+    "skip_rate":0.2544642857,
+    "regression_rate":0.44,
+    "raw_metrics":{
+      "Number of Fixations":225,
+      "Average Saccade Length (px)":122.1327409807,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":25.4464285714,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":44.0,
+      "Average Reading Speed (wpm)":179.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":7,
+    "stimulus_index":0,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":152.6666666667,
+    "skip_rate":0.1945288754,
+    "regression_rate":0.5181818182,
+    "raw_metrics":{
+      "Number of Fixations":330,
+      "Average Saccade Length (px)":110.8484098617,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":19.452887538,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":51.8181818182,
+      "Average Reading Speed (wpm)":152.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":7,
+    "stimulus_index":1,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":154.0,
+    "skip_rate":0.2360655738,
+    "regression_rate":0.4705882353,
+    "raw_metrics":{
+      "Number of Fixations":306,
+      "Average Saccade Length (px)":127.8225112442,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":23.606557377,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":47.0588235294,
+      "Average Reading Speed (wpm)":154.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":7,
+    "stimulus_index":2,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":150.0,
+    "skip_rate":0.184375,
+    "regression_rate":0.5887850467,
+    "raw_metrics":{
+      "Number of Fixations":321,
+      "Average Saccade Length (px)":121.9250546834,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":18.4375,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":58.8785046729,
+      "Average Reading Speed (wpm)":150.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":8,
+    "stimulus_index":2,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":188.0,
+    "skip_rate":0.2941176471,
+    "regression_rate":0.5,
+    "raw_metrics":{
+      "Number of Fixations":120,
+      "Average Saccade Length (px)":113.8505615742,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":29.4117647059,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":50.0,
+      "Average Reading Speed (wpm)":188.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":8,
+    "stimulus_index":3,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":202.0,
+    "skip_rate":0.3923076923,
+    "regression_rate":0.3740458015,
+    "raw_metrics":{
+      "Number of Fixations":131,
+      "Average Saccade Length (px)":146.446615143,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":39.2307692308,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":37.4045801527,
+      "Average Reading Speed (wpm)":202.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":8,
+    "stimulus_index":4,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":210.0,
+    "skip_rate":0.4112903226,
+    "regression_rate":0.344,
+    "raw_metrics":{
+      "Number of Fixations":125,
+      "Average Saccade Length (px)":170.3924657436,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":41.1290322581,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":34.4,
+      "Average Reading Speed (wpm)":210.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":8,
+    "stimulus_index":0,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":175.0,
+    "skip_rate":0.3378995434,
+    "regression_rate":0.5409090909,
+    "raw_metrics":{
+      "Number of Fixations":220,
+      "Average Saccade Length (px)":150.0826722705,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":33.7899543379,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":54.0909090909,
+      "Average Reading Speed (wpm)":175.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":8,
+    "stimulus_index":1,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":196.0,
+    "skip_rate":0.321888412,
+    "regression_rate":0.4444444444,
+    "raw_metrics":{
+      "Number of Fixations":234,
+      "Average Saccade Length (px)":137.2321228601,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":32.1888412017,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":44.4444444444,
+      "Average Reading Speed (wpm)":196.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":8,
+    "stimulus_index":8,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":188.0,
+    "skip_rate":0.3187772926,
+    "regression_rate":0.5043478261,
+    "raw_metrics":{
+      "Number of Fixations":230,
+      "Average Saccade Length (px)":126.1218329194,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":31.8777292576,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":50.4347826087,
+      "Average Reading Speed (wpm)":188.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":8,
+    "stimulus_index":5,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":167.3333333333,
+    "skip_rate":0.2402402402,
+    "regression_rate":0.5658682635,
+    "raw_metrics":{
+      "Number of Fixations":334,
+      "Average Saccade Length (px)":117.2079195916,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":24.024024024,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":56.5868263473,
+      "Average Reading Speed (wpm)":167.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":8,
+    "stimulus_index":6,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":192.6666666667,
+    "skip_rate":0.2630136986,
+    "regression_rate":0.6967213115,
+    "raw_metrics":{
+      "Number of Fixations":366,
+      "Average Saccade Length (px)":138.5308174823,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":26.301369863,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":69.6721311475,
+      "Average Reading Speed (wpm)":192.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":8,
+    "stimulus_index":7,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":190.6666666667,
+    "skip_rate":0.335243553,
+    "regression_rate":0.64,
+    "raw_metrics":{
+      "Number of Fixations":350,
+      "Average Saccade Length (px)":130.6337346692,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":33.5243553009,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":64.0,
+      "Average Reading Speed (wpm)":190.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":9,
+    "stimulus_index":4,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":232.0,
+    "skip_rate":0.4538461538,
+    "regression_rate":0.4885496183,
+    "raw_metrics":{
+      "Number of Fixations":131,
+      "Average Saccade Length (px)":203.649252378,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":45.3846153846,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":48.8549618321,
+      "Average Reading Speed (wpm)":232.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":9,
+    "stimulus_index":5,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":228.0,
+    "skip_rate":0.4148148148,
+    "regression_rate":0.4558823529,
+    "raw_metrics":{
+      "Number of Fixations":136,
+      "Average Saccade Length (px)":192.4519249149,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":41.4814814815,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":45.5882352941,
+      "Average Reading Speed (wpm)":228.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":9,
+    "stimulus_index":6,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":216.0,
+    "skip_rate":0.3821138211,
+    "regression_rate":0.4919354839,
+    "raw_metrics":{
+      "Number of Fixations":124,
+      "Average Saccade Length (px)":177.4267945174,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":38.2113821138,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":49.1935483871,
+      "Average Reading Speed (wpm)":216.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":9,
+    "stimulus_index":1,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":222.0,
+    "skip_rate":0.4326530612,
+    "regression_rate":0.7032520325,
+    "raw_metrics":{
+      "Number of Fixations":246,
+      "Average Saccade Length (px)":181.2299988553,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":43.2653061224,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":70.325203252,
+      "Average Reading Speed (wpm)":222.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":9,
+    "stimulus_index":2,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":231.0,
+    "skip_rate":0.3571428571,
+    "regression_rate":0.7041198502,
+    "raw_metrics":{
+      "Number of Fixations":267,
+      "Average Saccade Length (px)":173.4456980578,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":35.7142857143,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":70.4119850187,
+      "Average Reading Speed (wpm)":231.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":9,
+    "stimulus_index":3,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":225.0,
+    "skip_rate":0.3891050584,
+    "regression_rate":0.7209302326,
+    "raw_metrics":{
+      "Number of Fixations":258,
+      "Average Saccade Length (px)":150.7812741784,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":38.9105058366,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":72.0930232558,
+      "Average Reading Speed (wpm)":225.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":9,
+    "stimulus_index":0,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":215.3333333333,
+    "skip_rate":0.3783783784,
+    "regression_rate":0.781671159,
+    "raw_metrics":{
+      "Number of Fixations":371,
+      "Average Saccade Length (px)":152.2995402366,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":37.8378378378,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":78.167115903,
+      "Average Reading Speed (wpm)":215.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":9,
+    "stimulus_index":7,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":232.0,
+    "skip_rate":0.4615384615,
+    "regression_rate":0.8386243386,
+    "raw_metrics":{
+      "Number of Fixations":378,
+      "Average Saccade Length (px)":160.6932927077,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":46.1538461538,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":83.8624338624,
+      "Average Reading Speed (wpm)":232.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":9,
+    "stimulus_index":8,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":225.3333333333,
+    "skip_rate":0.4259259259,
+    "regression_rate":0.7915567282,
+    "raw_metrics":{
+      "Number of Fixations":379,
+      "Average Saccade Length (px)":162.9743795625,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":42.5925925926,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":79.1556728232,
+      "Average Reading Speed (wpm)":225.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":10,
+    "stimulus_index":6,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":210.0,
+    "skip_rate":0.5,
+    "regression_rate":0.3853211009,
+    "raw_metrics":{
+      "Number of Fixations":109,
+      "Average Saccade Length (px)":196.5260130179,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":50.0,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":38.5321100917,
+      "Average Reading Speed (wpm)":210.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":10,
+    "stimulus_index":7,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":204.0,
+    "skip_rate":0.5462962963,
+    "regression_rate":0.4678899083,
+    "raw_metrics":{
+      "Number of Fixations":109,
+      "Average Saccade Length (px)":175.3946142001,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":54.6296296296,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":46.7889908257,
+      "Average Reading Speed (wpm)":204.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":10,
+    "stimulus_index":8,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":198.0,
+    "skip_rate":0.5660377358,
+    "regression_rate":0.4485981308,
+    "raw_metrics":{
+      "Number of Fixations":107,
+      "Average Saccade Length (px)":189.7417113755,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":56.6037735849,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":44.8598130841,
+      "Average Reading Speed (wpm)":198.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":10,
+    "stimulus_index":0,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":177.0,
+    "skip_rate":0.4009661836,
+    "regression_rate":0.5336538462,
+    "raw_metrics":{
+      "Number of Fixations":208,
+      "Average Saccade Length (px)":157.2192051837,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":40.0966183575,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":53.3653846154,
+      "Average Reading Speed (wpm)":177.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":10,
+    "stimulus_index":1,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":176.0,
+    "skip_rate":0.3827751196,
+    "regression_rate":0.4952380952,
+    "raw_metrics":{
+      "Number of Fixations":210,
+      "Average Saccade Length (px)":162.2936054619,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":38.2775119617,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":49.5238095238,
+      "Average Reading Speed (wpm)":176.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":10,
+    "stimulus_index":2,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":168.0,
+    "skip_rate":0.3076923077,
+    "regression_rate":0.4354066986,
+    "raw_metrics":{
+      "Number of Fixations":209,
+      "Average Saccade Length (px)":135.0070554056,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":30.7692307692,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":43.5406698565,
+      "Average Reading Speed (wpm)":168.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":10,
+    "stimulus_index":3,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":169.3333333333,
+    "skip_rate":0.393442623,
+    "regression_rate":0.6209150327,
+    "raw_metrics":{
+      "Number of Fixations":306,
+      "Average Saccade Length (px)":135.8169445919,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":39.3442622951,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":62.091503268,
+      "Average Reading Speed (wpm)":169.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":10,
+    "stimulus_index":4,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":191.3333333333,
+    "skip_rate":0.4342507645,
+    "regression_rate":0.5884146341,
+    "raw_metrics":{
+      "Number of Fixations":328,
+      "Average Saccade Length (px)":176.5760425269,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":43.4250764526,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":58.8414634146,
+      "Average Reading Speed (wpm)":191.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":10,
+    "stimulus_index":5,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":180.0,
+    "skip_rate":0.364516129,
+    "regression_rate":0.7524115756,
+    "raw_metrics":{
+      "Number of Fixations":311,
+      "Average Saccade Length (px)":174.4063590198,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":36.4516129032,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":75.2411575563,
+      "Average Reading Speed (wpm)":180.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":11,
+    "stimulus_index":2,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":216.0,
+    "skip_rate":0.4789915966,
+    "regression_rate":0.575,
+    "raw_metrics":{
+      "Number of Fixations":120,
+      "Average Saccade Length (px)":196.6482892541,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":47.8991596639,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":57.5,
+      "Average Reading Speed (wpm)":216.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":11,
+    "stimulus_index":3,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":210.0,
+    "skip_rate":0.4715447154,
+    "regression_rate":0.4435483871,
+    "raw_metrics":{
+      "Number of Fixations":124,
+      "Average Saccade Length (px)":194.9637857203,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":47.1544715447,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":44.3548387097,
+      "Average Reading Speed (wpm)":210.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":11,
+    "stimulus_index":4,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":222.0,
+    "skip_rate":0.4634146341,
+    "regression_rate":0.5725806452,
+    "raw_metrics":{
+      "Number of Fixations":124,
+      "Average Saccade Length (px)":217.1758593885,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":46.3414634146,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":57.2580645161,
+      "Average Reading Speed (wpm)":222.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":11,
+    "stimulus_index":5,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":189.0,
+    "skip_rate":0.4304347826,
+    "regression_rate":0.6623376623,
+    "raw_metrics":{
+      "Number of Fixations":231,
+      "Average Saccade Length (px)":197.8732030418,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":43.0434782609,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":66.2337662338,
+      "Average Reading Speed (wpm)":189.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":11,
+    "stimulus_index":6,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":196.0,
+    "skip_rate":0.4,
+    "regression_rate":0.7316017316,
+    "raw_metrics":{
+      "Number of Fixations":231,
+      "Average Saccade Length (px)":173.9448243881,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":40.0,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":73.1601731602,
+      "Average Reading Speed (wpm)":196.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":11,
+    "stimulus_index":7,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":205.0,
+    "skip_rate":0.4829059829,
+    "regression_rate":0.7574468085,
+    "raw_metrics":{
+      "Number of Fixations":235,
+      "Average Saccade Length (px)":180.7990442537,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":48.2905982906,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":75.7446808511,
+      "Average Reading Speed (wpm)":205.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":11,
+    "stimulus_index":0,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":194.6666666667,
+    "skip_rate":0.4824561404,
+    "regression_rate":0.7521865889,
+    "raw_metrics":{
+      "Number of Fixations":343,
+      "Average Saccade Length (px)":168.1127770286,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":48.2456140351,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":75.2186588921,
+      "Average Reading Speed (wpm)":194.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":11,
+    "stimulus_index":1,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":200.6666666667,
+    "skip_rate":0.4215116279,
+    "regression_rate":0.7362318841,
+    "raw_metrics":{
+      "Number of Fixations":345,
+      "Average Saccade Length (px)":175.7406832026,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":42.1511627907,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":73.6231884058,
+      "Average Reading Speed (wpm)":200.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":11,
+    "stimulus_index":8,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":202.6666666667,
+    "skip_rate":0.3965517241,
+    "regression_rate":0.7392550143,
+    "raw_metrics":{
+      "Number of Fixations":349,
+      "Average Saccade Length (px)":163.2810162815,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":39.6551724138,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":73.9255014327,
+      "Average Reading Speed (wpm)":202.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":12,
+    "stimulus_index":4,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":192.0,
+    "skip_rate":0.3879310345,
+    "regression_rate":0.094017094,
+    "raw_metrics":{
+      "Number of Fixations":117,
+      "Average Saccade Length (px)":144.0604957301,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":38.7931034483,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":9.4017094017,
+      "Average Reading Speed (wpm)":192.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":12,
+    "stimulus_index":5,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":192.0,
+    "skip_rate":0.3274336283,
+    "regression_rate":0.3245614035,
+    "raw_metrics":{
+      "Number of Fixations":114,
+      "Average Saccade Length (px)":159.0983323995,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":32.7433628319,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":32.4561403509,
+      "Average Reading Speed (wpm)":192.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":12,
+    "stimulus_index":6,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":164.0,
+    "skip_rate":0.308411215,
+    "regression_rate":0.0185185185,
+    "raw_metrics":{
+      "Number of Fixations":108,
+      "Average Saccade Length (px)":131.1067297883,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":30.8411214953,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":1.8518518519,
+      "Average Reading Speed (wpm)":164.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":12,
+    "stimulus_index":1,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":179.0,
+    "skip_rate":0.2410714286,
+    "regression_rate":0.3822222222,
+    "raw_metrics":{
+      "Number of Fixations":225,
+      "Average Saccade Length (px)":126.1834975072,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":24.1071428571,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":38.2222222222,
+      "Average Reading Speed (wpm)":179.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":12,
+    "stimulus_index":2,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":179.0,
+    "skip_rate":0.2568807339,
+    "regression_rate":0.4794520548,
+    "raw_metrics":{
+      "Number of Fixations":219,
+      "Average Saccade Length (px)":126.9802859278,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":25.6880733945,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":47.9452054795,
+      "Average Reading Speed (wpm)":179.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":12,
+    "stimulus_index":3,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":181.0,
+    "skip_rate":0.3108108108,
+    "regression_rate":0.4349775785,
+    "raw_metrics":{
+      "Number of Fixations":223,
+      "Average Saccade Length (px)":123.1315117885,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":31.0810810811,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":43.4977578475,
+      "Average Reading Speed (wpm)":181.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":12,
+    "stimulus_index":0,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":186.0,
+    "skip_rate":0.3111782477,
+    "regression_rate":0.5993975904,
+    "raw_metrics":{
+      "Number of Fixations":332,
+      "Average Saccade Length (px)":143.9710232607,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":31.1178247734,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":59.9397590361,
+      "Average Reading Speed (wpm)":186.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":12,
+    "stimulus_index":7,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":174.6666666667,
+    "skip_rate":0.3227848101,
+    "regression_rate":0.5899053628,
+    "raw_metrics":{
+      "Number of Fixations":317,
+      "Average Saccade Length (px)":115.7184815876,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":32.2784810127,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":58.9905362776,
+      "Average Reading Speed (wpm)":174.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":12,
+    "stimulus_index":8,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":175.3333333333,
+    "skip_rate":0.2972136223,
+    "regression_rate":0.5462962963,
+    "raw_metrics":{
+      "Number of Fixations":324,
+      "Average Saccade Length (px)":131.7030851868,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":29.7213622291,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":54.6296296296,
+      "Average Reading Speed (wpm)":175.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":13,
+    "stimulus_index":6,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":172.0,
+    "skip_rate":0.2403846154,
+    "regression_rate":0.1047619048,
+    "raw_metrics":{
+      "Number of Fixations":105,
+      "Average Saccade Length (px)":122.8091735866,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":24.0384615385,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":10.4761904762,
+      "Average Reading Speed (wpm)":172.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":13,
+    "stimulus_index":7,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":196.0,
+    "skip_rate":0.4485981308,
+    "regression_rate":0.3333333333,
+    "raw_metrics":{
+      "Number of Fixations":108,
+      "Average Saccade Length (px)":152.3616352629,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":44.8598130841,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":33.3333333333,
+      "Average Reading Speed (wpm)":196.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":13,
+    "stimulus_index":8,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":154.0,
+    "skip_rate":0.3586956522,
+    "regression_rate":0.5161290323,
+    "raw_metrics":{
+      "Number of Fixations":93,
+      "Average Saccade Length (px)":134.6002959398,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":35.8695652174,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":51.6129032258,
+      "Average Reading Speed (wpm)":154.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":13,
+    "stimulus_index":0,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":145.0,
+    "skip_rate":0.2648648649,
+    "regression_rate":0.3655913978,
+    "raw_metrics":{
+      "Number of Fixations":186,
+      "Average Saccade Length (px)":115.0429345201,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":26.4864864865,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":36.5591397849,
+      "Average Reading Speed (wpm)":145.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":13,
+    "stimulus_index":1,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":138.0,
+    "skip_rate":0.2685714286,
+    "regression_rate":0.3806818182,
+    "raw_metrics":{
+      "Number of Fixations":176,
+      "Average Saccade Length (px)":139.8629414225,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":26.8571428571,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":38.0681818182,
+      "Average Reading Speed (wpm)":138.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":13,
+    "stimulus_index":2,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":147.0,
+    "skip_rate":0.25,
+    "regression_rate":0.4972972973,
+    "raw_metrics":{
+      "Number of Fixations":185,
+      "Average Saccade Length (px)":128.4144101817,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":25.0,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":49.7297297297,
+      "Average Reading Speed (wpm)":147.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":13,
+    "stimulus_index":3,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":145.3333333333,
+    "skip_rate":0.2957746479,
+    "regression_rate":0.5157894737,
+    "raw_metrics":{
+      "Number of Fixations":285,
+      "Average Saccade Length (px)":122.7421363512,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":29.5774647887,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":51.5789473684,
+      "Average Reading Speed (wpm)":145.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":13,
+    "stimulus_index":4,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":136.0,
+    "skip_rate":0.2689393939,
+    "regression_rate":0.4981132075,
+    "raw_metrics":{
+      "Number of Fixations":265,
+      "Average Saccade Length (px)":122.0731973553,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":26.8939393939,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":49.8113207547,
+      "Average Reading Speed (wpm)":136.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":13,
+    "stimulus_index":5,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":146.6666666667,
+    "skip_rate":0.2544802867,
+    "regression_rate":0.5428571429,
+    "raw_metrics":{
+      "Number of Fixations":280,
+      "Average Saccade Length (px)":113.3918138402,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":25.4480286738,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":54.2857142857,
+      "Average Reading Speed (wpm)":146.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":14,
+    "stimulus_index":5,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":196.0,
+    "skip_rate":0.3913043478,
+    "regression_rate":0.1810344828,
+    "raw_metrics":{
+      "Number of Fixations":116,
+      "Average Saccade Length (px)":139.754821125,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":39.1304347826,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":18.1034482759,
+      "Average Reading Speed (wpm)":196.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":14,
+    "stimulus_index":6,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":198.0,
+    "skip_rate":0.4322033898,
+    "regression_rate":0.2016806723,
+    "raw_metrics":{
+      "Number of Fixations":119,
+      "Average Saccade Length (px)":151.7639569573,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":43.2203389831,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":20.1680672269,
+      "Average Reading Speed (wpm)":198.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":14,
+    "stimulus_index":2,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":180.0,
+    "skip_rate":0.3820754717,
+    "regression_rate":0.5680751174,
+    "raw_metrics":{
+      "Number of Fixations":213,
+      "Average Saccade Length (px)":174.0781255127,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":38.2075471698,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":56.8075117371,
+      "Average Reading Speed (wpm)":180.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":14,
+    "stimulus_index":3,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":179.0,
+    "skip_rate":0.3766816143,
+    "regression_rate":0.5223214286,
+    "raw_metrics":{
+      "Number of Fixations":224,
+      "Average Saccade Length (px)":147.6637417032,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":37.668161435,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":52.2321428571,
+      "Average Reading Speed (wpm)":179.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":14,
+    "stimulus_index":4,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":179.0,
+    "skip_rate":0.4319248826,
+    "regression_rate":0.4906542056,
+    "raw_metrics":{
+      "Number of Fixations":214,
+      "Average Saccade Length (px)":158.9783614984,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":43.1924882629,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":49.0654205607,
+      "Average Reading Speed (wpm)":179.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":14,
+    "stimulus_index":0,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":164.0,
+    "skip_rate":0.3533123028,
+    "regression_rate":0.6666666667,
+    "raw_metrics":{
+      "Number of Fixations":318,
+      "Average Saccade Length (px)":139.5671533811,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":35.3312302839,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":66.6666666667,
+      "Average Reading Speed (wpm)":164.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":14,
+    "stimulus_index":1,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":192.0,
+    "skip_rate":0.3708206687,
+    "regression_rate":0.6757575758,
+    "raw_metrics":{
+      "Number of Fixations":330,
+      "Average Saccade Length (px)":175.9423633418,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":37.0820668693,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":67.5757575758,
+      "Average Reading Speed (wpm)":192.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":14,
+    "stimulus_index":8,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":192.6666666667,
+    "skip_rate":0.351744186,
+    "regression_rate":0.6405797101,
+    "raw_metrics":{
+      "Number of Fixations":345,
+      "Average Saccade Length (px)":131.0691453282,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":35.1744186047,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":64.0579710145,
+      "Average Reading Speed (wpm)":192.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":15,
+    "stimulus_index":0,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":186.0,
+    "skip_rate":0.3513513514,
+    "regression_rate":0.4464285714,
+    "raw_metrics":{
+      "Number of Fixations":112,
+      "Average Saccade Length (px)":161.5474710203,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":35.1351351351,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":44.6428571429,
+      "Average Reading Speed (wpm)":186.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":15,
+    "stimulus_index":7,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":194.0,
+    "skip_rate":0.4545454545,
+    "regression_rate":0.2792792793,
+    "raw_metrics":{
+      "Number of Fixations":111,
+      "Average Saccade Length (px)":149.5664404021,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":45.4545454545,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":27.9279279279,
+      "Average Reading Speed (wpm)":194.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":15,
+    "stimulus_index":8,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":180.0,
+    "skip_rate":0.3551401869,
+    "regression_rate":0.3148148148,
+    "raw_metrics":{
+      "Number of Fixations":108,
+      "Average Saccade Length (px)":164.5795312294,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":35.5140186916,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":31.4814814815,
+      "Average Reading Speed (wpm)":180.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":15,
+    "stimulus_index":4,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":154.0,
+    "skip_rate":0.2352941176,
+    "regression_rate":0.2780487805,
+    "raw_metrics":{
+      "Number of Fixations":205,
+      "Average Saccade Length (px)":106.7284105764,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":23.5294117647,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":27.8048780488,
+      "Average Reading Speed (wpm)":154.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":15,
+    "stimulus_index":5,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":144.0,
+    "skip_rate":0.3157894737,
+    "regression_rate":0.2827225131,
+    "raw_metrics":{
+      "Number of Fixations":191,
+      "Average Saccade Length (px)":129.6135378237,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":31.5789473684,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":28.2722513089,
+      "Average Reading Speed (wpm)":144.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":15,
+    "stimulus_index":6,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":147.0,
+    "skip_rate":0.2608695652,
+    "regression_rate":0.4134615385,
+    "raw_metrics":{
+      "Number of Fixations":208,
+      "Average Saccade Length (px)":111.9734078422,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":26.0869565217,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":41.3461538462,
+      "Average Reading Speed (wpm)":147.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":15,
+    "stimulus_index":1,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":150.6666666667,
+    "skip_rate":0.2798634812,
+    "regression_rate":0.6496598639,
+    "raw_metrics":{
+      "Number of Fixations":294,
+      "Average Saccade Length (px)":135.42263225,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":27.9863481229,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":64.9659863946,
+      "Average Reading Speed (wpm)":150.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":15,
+    "stimulus_index":2,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":154.6666666667,
+    "skip_rate":0.2595155709,
+    "regression_rate":0.6655172414,
+    "raw_metrics":{
+      "Number of Fixations":290,
+      "Average Saccade Length (px)":126.684098676,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":25.9515570934,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":66.5517241379,
+      "Average Reading Speed (wpm)":154.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":15,
+    "stimulus_index":3,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":128.0,
+    "skip_rate":0.2578397213,
+    "regression_rate":0.5208333333,
+    "raw_metrics":{
+      "Number of Fixations":288,
+      "Average Saccade Length (px)":111.4493033803,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":25.7839721254,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":52.0833333333,
+      "Average Reading Speed (wpm)":128.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":16,
+    "stimulus_index":0,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":162.0,
+    "skip_rate":0.26,
+    "regression_rate":0.2178217822,
+    "raw_metrics":{
+      "Number of Fixations":101,
+      "Average Saccade Length (px)":124.1237790997,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":26.0,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":21.7821782178,
+      "Average Reading Speed (wpm)":162.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":16,
+    "stimulus_index":1,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":166.0,
+    "skip_rate":0.2828282828,
+    "regression_rate":0.57,
+    "raw_metrics":{
+      "Number of Fixations":100,
+      "Average Saccade Length (px)":131.8238787397,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":28.2828282828,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":57.0,
+      "Average Reading Speed (wpm)":166.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":16,
+    "stimulus_index":2,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":182.0,
+    "skip_rate":0.2818181818,
+    "regression_rate":0.4144144144,
+    "raw_metrics":{
+      "Number of Fixations":111,
+      "Average Saccade Length (px)":120.5150801548,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":28.1818181818,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":41.4414414414,
+      "Average Reading Speed (wpm)":182.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":16,
+    "stimulus_index":3,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":122.0,
+    "skip_rate":0.1818181818,
+    "regression_rate":0.3244680851,
+    "raw_metrics":{
+      "Number of Fixations":188,
+      "Average Saccade Length (px)":89.9988779629,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":18.1818181818,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":32.4468085106,
+      "Average Reading Speed (wpm)":122.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":16,
+    "stimulus_index":4,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":151.0,
+    "skip_rate":0.2077294686,
+    "regression_rate":0.4375,
+    "raw_metrics":{
+      "Number of Fixations":208,
+      "Average Saccade Length (px)":92.6400012949,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":20.7729468599,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":43.75,
+      "Average Reading Speed (wpm)":151.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":16,
+    "stimulus_index":5,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":155.0,
+    "skip_rate":0.2146341463,
+    "regression_rate":0.2912621359,
+    "raw_metrics":{
+      "Number of Fixations":206,
+      "Average Saccade Length (px)":121.0121791596,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":21.4634146341,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":29.1262135922,
+      "Average Reading Speed (wpm)":155.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":16,
+    "stimulus_index":6,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":131.3333333333,
+    "skip_rate":0.2,
+    "regression_rate":0.4914089347,
+    "raw_metrics":{
+      "Number of Fixations":291,
+      "Average Saccade Length (px)":94.7034989137,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":20.0,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":49.1408934708,
+      "Average Reading Speed (wpm)":131.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":16,
+    "stimulus_index":7,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":167.3333333333,
+    "skip_rate":0.2893890675,
+    "regression_rate":0.4967948718,
+    "raw_metrics":{
+      "Number of Fixations":312,
+      "Average Saccade Length (px)":106.0309465187,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":28.9389067524,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":49.6794871795,
+      "Average Reading Speed (wpm)":167.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":16,
+    "stimulus_index":8,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":144.0,
+    "skip_rate":0.198630137,
+    "regression_rate":0.5017064846,
+    "raw_metrics":{
+      "Number of Fixations":293,
+      "Average Saccade Length (px)":107.0203662088,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":19.8630136986,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":50.1706484642,
+      "Average Reading Speed (wpm)":144.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":17,
+    "stimulus_index":5,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":140.0,
+    "skip_rate":0.3139534884,
+    "regression_rate":0.183908046,
+    "raw_metrics":{
+      "Number of Fixations":87,
+      "Average Saccade Length (px)":133.7832109332,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":31.3953488372,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":18.3908045977,
+      "Average Reading Speed (wpm)":140.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":17,
+    "stimulus_index":6,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":176.0,
+    "skip_rate":0.4356435644,
+    "regression_rate":0.0980392157,
+    "raw_metrics":{
+      "Number of Fixations":102,
+      "Average Saccade Length (px)":174.6172443804,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":43.5643564356,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":9.8039215686,
+      "Average Reading Speed (wpm)":176.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":17,
+    "stimulus_index":7,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":180.0,
+    "skip_rate":0.58,
+    "regression_rate":0.198019802,
+    "raw_metrics":{
+      "Number of Fixations":101,
+      "Average Saccade Length (px)":164.9287026363,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":58.0,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":19.801980198,
+      "Average Reading Speed (wpm)":180.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":17,
+    "stimulus_index":0,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":160.0,
+    "skip_rate":0.3195876289,
+    "regression_rate":0.4615384615,
+    "raw_metrics":{
+      "Number of Fixations":195,
+      "Average Saccade Length (px)":133.8880105815,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":31.9587628866,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":46.1538461538,
+      "Average Reading Speed (wpm)":160.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":17,
+    "stimulus_index":1,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":172.0,
+    "skip_rate":0.3917525773,
+    "regression_rate":0.4871794872,
+    "raw_metrics":{
+      "Number of Fixations":195,
+      "Average Saccade Length (px)":169.3215138832,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":39.175257732,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":48.7179487179,
+      "Average Reading Speed (wpm)":172.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":17,
+    "stimulus_index":8,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":163.0,
+    "skip_rate":0.3263157895,
+    "regression_rate":0.3926701571,
+    "raw_metrics":{
+      "Number of Fixations":191,
+      "Average Saccade Length (px)":131.595237366,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":32.6315789474,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":39.2670157068,
+      "Average Reading Speed (wpm)":163.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":17,
+    "stimulus_index":2,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":156.6666666667,
+    "skip_rate":0.2807017544,
+    "regression_rate":0.5839160839,
+    "raw_metrics":{
+      "Number of Fixations":286,
+      "Average Saccade Length (px)":136.6656538829,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":28.0701754386,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":58.3916083916,
+      "Average Reading Speed (wpm)":156.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":17,
+    "stimulus_index":3,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":144.0,
+    "skip_rate":0.3406593407,
+    "regression_rate":0.5401459854,
+    "raw_metrics":{
+      "Number of Fixations":274,
+      "Average Saccade Length (px)":136.7072990529,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":34.0659340659,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":54.0145985401,
+      "Average Reading Speed (wpm)":144.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":17,
+    "stimulus_index":4,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":156.6666666667,
+    "skip_rate":0.3181818182,
+    "regression_rate":0.5017421603,
+    "raw_metrics":{
+      "Number of Fixations":287,
+      "Average Saccade Length (px)":135.9981034717,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":31.8181818182,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":50.1742160279,
+      "Average Reading Speed (wpm)":156.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":18,
+    "stimulus_index":0,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":156.0,
+    "skip_rate":0.2718446602,
+    "regression_rate":0.2788461538,
+    "raw_metrics":{
+      "Number of Fixations":104,
+      "Average Saccade Length (px)":110.6287856691,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":27.1844660194,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":27.8846153846,
+      "Average Reading Speed (wpm)":156.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":18,
+    "stimulus_index":7,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":176.0,
+    "skip_rate":0.4563106796,
+    "regression_rate":0.2115384615,
+    "raw_metrics":{
+      "Number of Fixations":104,
+      "Average Saccade Length (px)":128.8856472633,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":45.6310679612,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":21.1538461538,
+      "Average Reading Speed (wpm)":176.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":18,
+    "stimulus_index":8,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":170.0,
+    "skip_rate":0.358490566,
+    "regression_rate":0.1401869159,
+    "raw_metrics":{
+      "Number of Fixations":107,
+      "Average Saccade Length (px)":122.3710671012,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":35.8490566038,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":14.0186915888,
+      "Average Reading Speed (wpm)":170.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":18,
+    "stimulus_index":4,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":140.0,
+    "skip_rate":0.2713567839,
+    "regression_rate":0.275,
+    "raw_metrics":{
+      "Number of Fixations":200,
+      "Average Saccade Length (px)":104.5729356195,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":27.135678392,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":27.5,
+      "Average Reading Speed (wpm)":140.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":18,
+    "stimulus_index":5,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":144.0,
+    "skip_rate":0.2967032967,
+    "regression_rate":0.3224043716,
+    "raw_metrics":{
+      "Number of Fixations":183,
+      "Average Saccade Length (px)":125.4406956388,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":29.6703296703,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":32.2404371585,
+      "Average Reading Speed (wpm)":144.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":18,
+    "stimulus_index":6,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":146.0,
+    "skip_rate":0.2358974359,
+    "regression_rate":0.4234693878,
+    "raw_metrics":{
+      "Number of Fixations":196,
+      "Average Saccade Length (px)":108.0991292214,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":23.5897435897,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":42.3469387755,
+      "Average Reading Speed (wpm)":146.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":18,
+    "stimulus_index":1,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":155.3333333333,
+    "skip_rate":0.2263513514,
+    "regression_rate":0.5589225589,
+    "raw_metrics":{
+      "Number of Fixations":297,
+      "Average Saccade Length (px)":122.3321214545,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":22.6351351351,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":55.8922558923,
+      "Average Reading Speed (wpm)":155.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":18,
+    "stimulus_index":2,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":147.3333333333,
+    "skip_rate":0.1848184818,
+    "regression_rate":0.5855263158,
+    "raw_metrics":{
+      "Number of Fixations":304,
+      "Average Saccade Length (px)":109.47027979,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":18.4818481848,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":58.5526315789,
+      "Average Reading Speed (wpm)":147.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":18,
+    "stimulus_index":3,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":145.3333333333,
+    "skip_rate":0.2107023411,
+    "regression_rate":0.4933333333,
+    "raw_metrics":{
+      "Number of Fixations":300,
+      "Average Saccade Length (px)":107.7954401656,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":21.0702341137,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":49.3333333333,
+      "Average Reading Speed (wpm)":145.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":19,
+    "stimulus_index":0,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":202.0,
+    "skip_rate":0.3046875,
+    "regression_rate":0.8449612403,
+    "raw_metrics":{
+      "Number of Fixations":129,
+      "Average Saccade Length (px)":130.149816111,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":30.46875,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":84.496124031,
+      "Average Reading Speed (wpm)":202.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":19,
+    "stimulus_index":1,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":226.0,
+    "skip_rate":0.3333333333,
+    "regression_rate":0.2205882353,
+    "raw_metrics":{
+      "Number of Fixations":136,
+      "Average Saccade Length (px)":151.0744510266,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":33.3333333333,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":22.0588235294,
+      "Average Reading Speed (wpm)":226.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":19,
+    "stimulus_index":2,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":200.0,
+    "skip_rate":0.296,
+    "regression_rate":0.2063492063,
+    "raw_metrics":{
+      "Number of Fixations":126,
+      "Average Saccade Length (px)":121.5301948086,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":29.6,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":20.6349206349,
+      "Average Reading Speed (wpm)":200.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":19,
+    "stimulus_index":3,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":200.0,
+    "skip_rate":0.2645914397,
+    "regression_rate":0.6124031008,
+    "raw_metrics":{
+      "Number of Fixations":258,
+      "Average Saccade Length (px)":120.2229765102,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":26.4591439689,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":61.2403100775,
+      "Average Reading Speed (wpm)":200.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":19,
+    "stimulus_index":4,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":228.0,
+    "skip_rate":0.2943396226,
+    "regression_rate":0.8120300752,
+    "raw_metrics":{
+      "Number of Fixations":266,
+      "Average Saccade Length (px)":141.8984053168,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":29.4339622642,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":81.2030075188,
+      "Average Reading Speed (wpm)":228.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":19,
+    "stimulus_index":5,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":201.0,
+    "skip_rate":0.2918287938,
+    "regression_rate":0.6511627907,
+    "raw_metrics":{
+      "Number of Fixations":258,
+      "Average Saccade Length (px)":133.670971937,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":29.1828793774,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":65.1162790698,
+      "Average Reading Speed (wpm)":201.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":19,
+    "stimulus_index":6,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":180.0,
+    "skip_rate":0.2225433526,
+    "regression_rate":0.5936599424,
+    "raw_metrics":{
+      "Number of Fixations":347,
+      "Average Saccade Length (px)":118.3583445451,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":22.2543352601,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":59.3659942363,
+      "Average Reading Speed (wpm)":180.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":19,
+    "stimulus_index":7,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":214.6666666667,
+    "skip_rate":0.3005319149,
+    "regression_rate":0.700265252,
+    "raw_metrics":{
+      "Number of Fixations":377,
+      "Average Saccade Length (px)":118.7320869794,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":30.0531914894,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":70.0265251989,
+      "Average Reading Speed (wpm)":214.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":19,
+    "stimulus_index":8,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":193.3333333333,
+    "skip_rate":0.2975871314,
+    "regression_rate":0.5695187166,
+    "raw_metrics":{
+      "Number of Fixations":374,
+      "Average Saccade Length (px)":130.312972534,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":29.7587131367,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":56.9518716578,
+      "Average Reading Speed (wpm)":193.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":20,
+    "stimulus_index":0,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":164.0,
+    "skip_rate":0.3465346535,
+    "regression_rate":0.5196078431,
+    "raw_metrics":{
+      "Number of Fixations":102,
+      "Average Saccade Length (px)":124.5455874081,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":34.6534653465,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":51.9607843137,
+      "Average Reading Speed (wpm)":164.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":20,
+    "stimulus_index":1,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":174.0,
+    "skip_rate":0.3267326733,
+    "regression_rate":0.0294117647,
+    "raw_metrics":{
+      "Number of Fixations":102,
+      "Average Saccade Length (px)":145.9613538645,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":32.6732673267,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":2.9411764706,
+      "Average Reading Speed (wpm)":174.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":20,
+    "stimulus_index":8,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":158.0,
+    "skip_rate":0.3516483516,
+    "regression_rate":0.25,
+    "raw_metrics":{
+      "Number of Fixations":92,
+      "Average Saccade Length (px)":124.1726533896,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":35.1648351648,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":25.0,
+      "Average Reading Speed (wpm)":158.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":20,
+    "stimulus_index":5,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":145.0,
+    "skip_rate":0.298245614,
+    "regression_rate":0.3081395349,
+    "raw_metrics":{
+      "Number of Fixations":172,
+      "Average Saccade Length (px)":162.6300224052,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":29.8245614035,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":30.8139534884,
+      "Average Reading Speed (wpm)":145.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":20,
+    "stimulus_index":6,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":133.0,
+    "skip_rate":0.2840909091,
+    "regression_rate":0.2146892655,
+    "raw_metrics":{
+      "Number of Fixations":177,
+      "Average Saccade Length (px)":122.903685869,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":28.4090909091,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":21.4689265537,
+      "Average Reading Speed (wpm)":133.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":20,
+    "stimulus_index":7,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":141.0,
+    "skip_rate":0.3913043478,
+    "regression_rate":0.3456790123,
+    "raw_metrics":{
+      "Number of Fixations":162,
+      "Average Saccade Length (px)":130.0605734373,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":39.1304347826,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":34.5679012346,
+      "Average Reading Speed (wpm)":141.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":20,
+    "stimulus_index":2,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":140.0,
+    "skip_rate":0.244,
+    "regression_rate":0.5816733068,
+    "raw_metrics":{
+      "Number of Fixations":251,
+      "Average Saccade Length (px)":147.017310756,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":24.4,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":58.1673306773,
+      "Average Reading Speed (wpm)":140.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":20,
+    "stimulus_index":3,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":128.6666666667,
+    "skip_rate":0.3541666667,
+    "regression_rate":0.4979253112,
+    "raw_metrics":{
+      "Number of Fixations":241,
+      "Average Saccade Length (px)":147.1160328804,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":35.4166666667,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":49.7925311203,
+      "Average Reading Speed (wpm)":128.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":20,
+    "stimulus_index":4,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":145.3333333333,
+    "skip_rate":0.2941176471,
+    "regression_rate":0.5201465201,
+    "raw_metrics":{
+      "Number of Fixations":273,
+      "Average Saccade Length (px)":137.9249873072,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":29.4117647059,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":52.0146520147,
+      "Average Reading Speed (wpm)":145.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":21,
+    "stimulus_index":1,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":228.0,
+    "skip_rate":0.4661016949,
+    "regression_rate":0.4117647059,
+    "raw_metrics":{
+      "Number of Fixations":119,
+      "Average Saccade Length (px)":186.6491912215,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":46.6101694915,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":41.1764705882,
+      "Average Reading Speed (wpm)":228.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":21,
+    "stimulus_index":2,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":214.0,
+    "skip_rate":0.4224137931,
+    "regression_rate":0.3931623932,
+    "raw_metrics":{
+      "Number of Fixations":117,
+      "Average Saccade Length (px)":181.5097710688,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":42.2413793103,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":39.3162393162,
+      "Average Reading Speed (wpm)":214.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":21,
+    "stimulus_index":3,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":214.0,
+    "skip_rate":0.4876033058,
+    "regression_rate":0.4262295082,
+    "raw_metrics":{
+      "Number of Fixations":122,
+      "Average Saccade Length (px)":184.2320789574,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":48.7603305785,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":42.6229508197,
+      "Average Reading Speed (wpm)":214.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":21,
+    "stimulus_index":0,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":189.0,
+    "skip_rate":0.376744186,
+    "regression_rate":0.587962963,
+    "raw_metrics":{
+      "Number of Fixations":216,
+      "Average Saccade Length (px)":174.854698954,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":37.6744186047,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":58.7962962963,
+      "Average Reading Speed (wpm)":189.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":21,
+    "stimulus_index":7,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":207.0,
+    "skip_rate":0.4615384615,
+    "regression_rate":0.5900900901,
+    "raw_metrics":{
+      "Number of Fixations":222,
+      "Average Saccade Length (px)":148.1375743671,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":46.1538461538,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":59.009009009,
+      "Average Reading Speed (wpm)":207.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":21,
+    "stimulus_index":8,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":195.0,
+    "skip_rate":0.4084507042,
+    "regression_rate":0.5373831776,
+    "raw_metrics":{
+      "Number of Fixations":214,
+      "Average Saccade Length (px)":165.0464496405,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":40.8450704225,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":53.738317757,
+      "Average Reading Speed (wpm)":195.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":21,
+    "stimulus_index":4,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":190.6666666667,
+    "skip_rate":0.4451612903,
+    "regression_rate":0.6559485531,
+    "raw_metrics":{
+      "Number of Fixations":311,
+      "Average Saccade Length (px)":179.7494435638,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":44.5161290323,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":65.5948553055,
+      "Average Reading Speed (wpm)":190.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":21,
+    "stimulus_index":5,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":188.6666666667,
+    "skip_rate":0.3796296296,
+    "regression_rate":0.7446153846,
+    "raw_metrics":{
+      "Number of Fixations":325,
+      "Average Saccade Length (px)":161.5480958725,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":37.962962963,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":74.4615384615,
+      "Average Reading Speed (wpm)":188.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":21,
+    "stimulus_index":6,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":185.3333333333,
+    "skip_rate":0.4574132492,
+    "regression_rate":0.6855345912,
+    "raw_metrics":{
+      "Number of Fixations":318,
+      "Average Saccade Length (px)":181.5980951743,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":45.7413249211,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":68.5534591195,
+      "Average Reading Speed (wpm)":185.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":22,
+    "stimulus_index":3,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":188.0,
+    "skip_rate":0.5277777778,
+    "regression_rate":0.3394495413,
+    "raw_metrics":{
+      "Number of Fixations":109,
+      "Average Saccade Length (px)":216.0624900231,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":52.7777777778,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":33.9449541284,
+      "Average Reading Speed (wpm)":188.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":22,
+    "stimulus_index":4,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":174.0,
+    "skip_rate":0.4181818182,
+    "regression_rate":0.4144144144,
+    "raw_metrics":{
+      "Number of Fixations":111,
+      "Average Saccade Length (px)":159.8536808016,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":41.8181818182,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":41.4414414414,
+      "Average Reading Speed (wpm)":174.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":22,
+    "stimulus_index":5,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":228.0,
+    "skip_rate":0.4959349593,
+    "regression_rate":0.3548387097,
+    "raw_metrics":{
+      "Number of Fixations":124,
+      "Average Saccade Length (px)":198.5143229066,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":49.593495935,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":35.4838709677,
+      "Average Reading Speed (wpm)":228.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":22,
+    "stimulus_index":6,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":172.0,
+    "skip_rate":0.3534883721,
+    "regression_rate":0.6388888889,
+    "raw_metrics":{
+      "Number of Fixations":216,
+      "Average Saccade Length (px)":141.6491342277,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":35.3488372093,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":63.8888888889,
+      "Average Reading Speed (wpm)":172.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":22,
+    "stimulus_index":7,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":191.0,
+    "skip_rate":0.4481132075,
+    "regression_rate":0.5164319249,
+    "raw_metrics":{
+      "Number of Fixations":213,
+      "Average Saccade Length (px)":157.1423768447,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":44.8113207547,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":51.6431924883,
+      "Average Reading Speed (wpm)":191.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":22,
+    "stimulus_index":8,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":190.0,
+    "skip_rate":0.3849372385,
+    "regression_rate":0.4875,
+    "raw_metrics":{
+      "Number of Fixations":240,
+      "Average Saccade Length (px)":137.1324092644,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":38.4937238494,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":48.75,
+      "Average Reading Speed (wpm)":190.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":22,
+    "stimulus_index":0,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":140.6666666667,
+    "skip_rate":0.3345588235,
+    "regression_rate":0.6007326007,
+    "raw_metrics":{
+      "Number of Fixations":273,
+      "Average Saccade Length (px)":178.6029489189,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":33.4558823529,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":60.0732600733,
+      "Average Reading Speed (wpm)":140.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":22,
+    "stimulus_index":1,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":176.6666666667,
+    "skip_rate":0.3507692308,
+    "regression_rate":0.6441717791,
+    "raw_metrics":{
+      "Number of Fixations":326,
+      "Average Saccade Length (px)":167.147472221,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":35.0769230769,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":64.4171779141,
+      "Average Reading Speed (wpm)":176.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":22,
+    "stimulus_index":2,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":166.6666666667,
+    "skip_rate":0.3656957929,
+    "regression_rate":0.7032258065,
+    "raw_metrics":{
+      "Number of Fixations":310,
+      "Average Saccade Length (px)":164.0339928919,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":36.569579288,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":70.3225806452,
+      "Average Reading Speed (wpm)":166.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":23,
+    "stimulus_index":0,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":186.0,
+    "skip_rate":0.5188679245,
+    "regression_rate":0.3177570093,
+    "raw_metrics":{
+      "Number of Fixations":107,
+      "Average Saccade Length (px)":194.6609335578,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":51.8867924528,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":31.7757009346,
+      "Average Reading Speed (wpm)":186.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":23,
+    "stimulus_index":1,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":186.0,
+    "skip_rate":0.4351851852,
+    "regression_rate":0.2752293578,
+    "raw_metrics":{
+      "Number of Fixations":109,
+      "Average Saccade Length (px)":181.2004569272,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":43.5185185185,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":27.5229357798,
+      "Average Reading Speed (wpm)":186.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":23,
+    "stimulus_index":8,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":202.0,
+    "skip_rate":0.5140186916,
+    "regression_rate":0.6388888889,
+    "raw_metrics":{
+      "Number of Fixations":108,
+      "Average Saccade Length (px)":190.1360663686,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":51.4018691589,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":63.8888888889,
+      "Average Reading Speed (wpm)":202.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":23,
+    "stimulus_index":2,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":192.0,
+    "skip_rate":0.4174311927,
+    "regression_rate":0.6484018265,
+    "raw_metrics":{
+      "Number of Fixations":219,
+      "Average Saccade Length (px)":167.6107626023,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":41.7431192661,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":64.8401826484,
+      "Average Reading Speed (wpm)":192.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":23,
+    "stimulus_index":3,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":189.0,
+    "skip_rate":0.4541284404,
+    "regression_rate":0.7077625571,
+    "raw_metrics":{
+      "Number of Fixations":219,
+      "Average Saccade Length (px)":167.8226128359,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":45.4128440367,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":70.7762557078,
+      "Average Reading Speed (wpm)":189.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":23,
+    "stimulus_index":4,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":181.0,
+    "skip_rate":0.4356435644,
+    "regression_rate":0.4926108374,
+    "raw_metrics":{
+      "Number of Fixations":203,
+      "Average Saccade Length (px)":157.4090649282,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":43.5643564356,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":49.2610837438,
+      "Average Reading Speed (wpm)":181.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":23,
+    "stimulus_index":5,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":163.3333333333,
+    "skip_rate":0.3433333333,
+    "regression_rate":0.6112956811,
+    "raw_metrics":{
+      "Number of Fixations":301,
+      "Average Saccade Length (px)":136.8457913688,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":34.3333333333,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":61.1295681063,
+      "Average Reading Speed (wpm)":163.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":23,
+    "stimulus_index":6,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":168.6666666667,
+    "skip_rate":0.3531353135,
+    "regression_rate":0.6907894737,
+    "raw_metrics":{
+      "Number of Fixations":304,
+      "Average Saccade Length (px)":141.8355252773,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":35.3135313531,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":69.0789473684,
+      "Average Reading Speed (wpm)":168.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":23,
+    "stimulus_index":7,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":203.3333333333,
+    "skip_rate":0.4908536585,
+    "regression_rate":0.7629179331,
+    "raw_metrics":{
+      "Number of Fixations":329,
+      "Average Saccade Length (px)":171.4272607394,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":49.0853658537,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":76.2917933131,
+      "Average Reading Speed (wpm)":203.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":24,
+    "stimulus_index":1,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":198.0,
+    "skip_rate":0.4144144144,
+    "regression_rate":0.1607142857,
+    "raw_metrics":{
+      "Number of Fixations":112,
+      "Average Saccade Length (px)":169.0286283427,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":41.4414414414,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":16.0714285714,
+      "Average Reading Speed (wpm)":198.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":24,
+    "stimulus_index":2,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":192.0,
+    "skip_rate":0.3274336283,
+    "regression_rate":0.3947368421,
+    "raw_metrics":{
+      "Number of Fixations":114,
+      "Average Saccade Length (px)":147.8493437523,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":32.7433628319,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":39.4736842105,
+      "Average Reading Speed (wpm)":192.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":24,
+    "stimulus_index":3,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":200.0,
+    "skip_rate":0.3826086957,
+    "regression_rate":0.3103448276,
+    "raw_metrics":{
+      "Number of Fixations":116,
+      "Average Saccade Length (px)":147.2350966863,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":38.2608695652,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":31.0344827586,
+      "Average Reading Speed (wpm)":200.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":24,
+    "stimulus_index":0,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":171.0,
+    "skip_rate":0.3097345133,
+    "regression_rate":0.4581497797,
+    "raw_metrics":{
+      "Number of Fixations":227,
+      "Average Saccade Length (px)":133.4456209076,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":30.9734513274,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":45.8149779736,
+      "Average Reading Speed (wpm)":171.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":24,
+    "stimulus_index":7,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":191.0,
+    "skip_rate":0.401826484,
+    "regression_rate":0.5636363636,
+    "raw_metrics":{
+      "Number of Fixations":220,
+      "Average Saccade Length (px)":151.2645509181,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":40.1826484018,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":56.3636363636,
+      "Average Reading Speed (wpm)":191.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":24,
+    "stimulus_index":8,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":190.0,
+    "skip_rate":0.4090909091,
+    "regression_rate":0.520361991,
+    "raw_metrics":{
+      "Number of Fixations":221,
+      "Average Saccade Length (px)":143.3772281195,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":40.9090909091,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":52.036199095,
+      "Average Reading Speed (wpm)":190.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":24,
+    "stimulus_index":4,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":158.0,
+    "skip_rate":0.2739273927,
+    "regression_rate":0.5065789474,
+    "raw_metrics":{
+      "Number of Fixations":304,
+      "Average Saccade Length (px)":117.487586149,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":27.3927392739,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":50.6578947368,
+      "Average Reading Speed (wpm)":158.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":24,
+    "stimulus_index":5,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":179.3333333333,
+    "skip_rate":0.2839506173,
+    "regression_rate":0.5938461538,
+    "raw_metrics":{
+      "Number of Fixations":325,
+      "Average Saccade Length (px)":136.0086006991,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":28.3950617284,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":59.3846153846,
+      "Average Reading Speed (wpm)":179.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":24,
+    "stimulus_index":6,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":174.6666666667,
+    "skip_rate":0.308411215,
+    "regression_rate":0.6335403727,
+    "raw_metrics":{
+      "Number of Fixations":322,
+      "Average Saccade Length (px)":128.8063564112,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":30.8411214953,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":63.3540372671,
+      "Average Reading Speed (wpm)":174.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":25,
+    "stimulus_index":1,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":130.0,
+    "skip_rate":0.3466666667,
+    "regression_rate":0.3947368421,
+    "raw_metrics":{
+      "Number of Fixations":76,
+      "Average Saccade Length (px)":158.4078388901,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":34.6666666667,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":39.4736842105,
+      "Average Reading Speed (wpm)":130.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":25,
+    "stimulus_index":2,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":134.0,
+    "skip_rate":0.3048780488,
+    "regression_rate":0.578313253,
+    "raw_metrics":{
+      "Number of Fixations":83,
+      "Average Saccade Length (px)":132.7124930053,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":30.487804878,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":57.8313253012,
+      "Average Reading Speed (wpm)":134.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":25,
+    "stimulus_index":3,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":104.0,
+    "skip_rate":0.3529411765,
+    "regression_rate":0.0289855072,
+    "raw_metrics":{
+      "Number of Fixations":69,
+      "Average Saccade Length (px)":128.995583799,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":35.2941176471,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":2.8985507246,
+      "Average Reading Speed (wpm)":104.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":25,
+    "stimulus_index":0,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":89.0,
+    "skip_rate":0.1965811966,
+    "regression_rate":0.313559322,
+    "raw_metrics":{
+      "Number of Fixations":118,
+      "Average Saccade Length (px)":106.1833652354,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":19.6581196581,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":31.3559322034,
+      "Average Reading Speed (wpm)":89.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":25,
+    "stimulus_index":7,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":112.0,
+    "skip_rate":0.2868217054,
+    "regression_rate":0.2384615385,
+    "raw_metrics":{
+      "Number of Fixations":130,
+      "Average Saccade Length (px)":107.5784120754,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":28.6821705426,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":23.8461538462,
+      "Average Reading Speed (wpm)":112.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":25,
+    "stimulus_index":8,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":108.0,
+    "skip_rate":0.2794117647,
+    "regression_rate":0.4744525547,
+    "raw_metrics":{
+      "Number of Fixations":137,
+      "Average Saccade Length (px)":111.4972695377,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":27.9411764706,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":47.4452554745,
+      "Average Reading Speed (wpm)":108.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":25,
+    "stimulus_index":4,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":128.0,
+    "skip_rate":0.2751091703,
+    "regression_rate":0.5260869565,
+    "raw_metrics":{
+      "Number of Fixations":230,
+      "Average Saccade Length (px)":135.5570360645,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":27.5109170306,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":52.6086956522,
+      "Average Reading Speed (wpm)":128.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":25,
+    "stimulus_index":5,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":99.3333333333,
+    "skip_rate":0.1866028708,
+    "regression_rate":0.1904761905,
+    "raw_metrics":{
+      "Number of Fixations":210,
+      "Average Saccade Length (px)":98.4255622865,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":18.6602870813,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":19.0476190476,
+      "Average Reading Speed (wpm)":99.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":25,
+    "stimulus_index":6,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":94.6666666667,
+    "skip_rate":0.227027027,
+    "regression_rate":0.3387096774,
+    "raw_metrics":{
+      "Number of Fixations":186,
+      "Average Saccade Length (px)":112.8256359792,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":22.7027027027,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":33.8709677419,
+      "Average Reading Speed (wpm)":94.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":26,
+    "stimulus_index":2,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":216.0,
+    "skip_rate":0.2601626016,
+    "regression_rate":0.3306451613,
+    "raw_metrics":{
+      "Number of Fixations":124,
+      "Average Saccade Length (px)":140.498879743,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":26.0162601626,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":33.064516129,
+      "Average Reading Speed (wpm)":216.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":26,
+    "stimulus_index":3,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":206.0,
+    "skip_rate":0.3821138211,
+    "regression_rate":0.1774193548,
+    "raw_metrics":{
+      "Number of Fixations":124,
+      "Average Saccade Length (px)":134.5287248152,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":38.2113821138,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":17.7419354839,
+      "Average Reading Speed (wpm)":206.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":26,
+    "stimulus_index":4,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":190.0,
+    "skip_rate":0.2666666667,
+    "regression_rate":0.2479338843,
+    "raw_metrics":{
+      "Number of Fixations":121,
+      "Average Saccade Length (px)":128.2097090542,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":26.6666666667,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":24.7933884298,
+      "Average Reading Speed (wpm)":190.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":26,
+    "stimulus_index":0,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":175.0,
+    "skip_rate":0.2731092437,
+    "regression_rate":0.4184100418,
+    "raw_metrics":{
+      "Number of Fixations":239,
+      "Average Saccade Length (px)":136.9394695303,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":27.3109243697,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":41.8410041841,
+      "Average Reading Speed (wpm)":175.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":26,
+    "stimulus_index":1,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":184.0,
+    "skip_rate":0.197309417,
+    "regression_rate":0.3392857143,
+    "raw_metrics":{
+      "Number of Fixations":224,
+      "Average Saccade Length (px)":125.2781780506,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":19.730941704,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":33.9285714286,
+      "Average Reading Speed (wpm)":184.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":26,
+    "stimulus_index":8,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":198.0,
+    "skip_rate":0.2916666667,
+    "regression_rate":0.4937759336,
+    "raw_metrics":{
+      "Number of Fixations":241,
+      "Average Saccade Length (px)":142.3551671032,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":29.1666666667,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":49.377593361,
+      "Average Reading Speed (wpm)":198.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":26,
+    "stimulus_index":5,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":195.3333333333,
+    "skip_rate":0.2931506849,
+    "regression_rate":0.6693989071,
+    "raw_metrics":{
+      "Number of Fixations":366,
+      "Average Saccade Length (px)":136.5072958807,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":29.3150684932,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":66.9398907104,
+      "Average Reading Speed (wpm)":195.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":26,
+    "stimulus_index":6,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":169.3333333333,
+    "skip_rate":0.2433234421,
+    "regression_rate":0.5798816568,
+    "raw_metrics":{
+      "Number of Fixations":338,
+      "Average Saccade Length (px)":137.8762489838,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":24.3323442136,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":57.9881656805,
+      "Average Reading Speed (wpm)":169.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":26,
+    "stimulus_index":7,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":178.0,
+    "skip_rate":0.3203883495,
+    "regression_rate":0.6032258065,
+    "raw_metrics":{
+      "Number of Fixations":310,
+      "Average Saccade Length (px)":121.7048422159,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":32.0388349515,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":60.3225806452,
+      "Average Reading Speed (wpm)":178.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":27,
+    "stimulus_index":4,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":252.0,
+    "skip_rate":0.5579710145,
+    "regression_rate":0.6258992806,
+    "raw_metrics":{
+      "Number of Fixations":139,
+      "Average Saccade Length (px)":180.501192427,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":55.7971014493,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":62.5899280576,
+      "Average Reading Speed (wpm)":252.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":27,
+    "stimulus_index":5,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":228.0,
+    "skip_rate":0.575,
+    "regression_rate":0.3801652893,
+    "raw_metrics":{
+      "Number of Fixations":121,
+      "Average Saccade Length (px)":189.8395757912,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":57.5,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":38.0165289256,
+      "Average Reading Speed (wpm)":228.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":27,
+    "stimulus_index":6,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":220.0,
+    "skip_rate":0.4672131148,
+    "regression_rate":0.2520325203,
+    "raw_metrics":{
+      "Number of Fixations":123,
+      "Average Saccade Length (px)":172.5526752045,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":46.7213114754,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":25.2032520325,
+      "Average Reading Speed (wpm)":220.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":27,
+    "stimulus_index":8,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":634.0,
+    "skip_rate":0.5090909091,
+    "regression_rate":0.7311178248,
+    "raw_metrics":{
+      "Number of Fixations":331,
+      "Average Saccade Length (px)":170.8437531129,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":50.9090909091,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":73.1117824773,
+      "Average Reading Speed (wpm)":634.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":27,
+    "stimulus_index":1,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":235.0,
+    "skip_rate":0.5219123506,
+    "regression_rate":0.753968254,
+    "raw_metrics":{
+      "Number of Fixations":252,
+      "Average Saccade Length (px)":187.1896453541,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":52.1912350598,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":75.3968253968,
+      "Average Reading Speed (wpm)":235.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":27,
+    "stimulus_index":2,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":226.0,
+    "skip_rate":0.4899598394,
+    "regression_rate":0.692,
+    "raw_metrics":{
+      "Number of Fixations":250,
+      "Average Saccade Length (px)":171.1242904515,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":48.9959839357,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":69.2,
+      "Average Reading Speed (wpm)":226.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":27,
+    "stimulus_index":3,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":224.0,
+    "skip_rate":0.6059322034,
+    "regression_rate":0.6540084388,
+    "raw_metrics":{
+      "Number of Fixations":237,
+      "Average Saccade Length (px)":181.2783989924,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":60.593220339,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":65.4008438819,
+      "Average Reading Speed (wpm)":224.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":27,
+    "stimulus_index":0,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":195.3333333333,
+    "skip_rate":0.4646153846,
+    "regression_rate":0.726993865,
+    "raw_metrics":{
+      "Number of Fixations":326,
+      "Average Saccade Length (px)":176.5712671735,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":46.4615384615,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":72.6993865031,
+      "Average Reading Speed (wpm)":195.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":27,
+    "stimulus_index":7,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":232.0,
+    "skip_rate":0.6446280992,
+    "regression_rate":0.7857142857,
+    "raw_metrics":{
+      "Number of Fixations":364,
+      "Average Saccade Length (px)":181.8506472311,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":64.4628099174,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":78.5714285714,
+      "Average Reading Speed (wpm)":232.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":28,
+    "stimulus_index":6,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":186.0,
+    "skip_rate":0.4298245614,
+    "regression_rate":0.4086956522,
+    "raw_metrics":{
+      "Number of Fixations":115,
+      "Average Saccade Length (px)":233.0182812726,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":42.9824561404,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":40.8695652174,
+      "Average Reading Speed (wpm)":186.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":28,
+    "stimulus_index":7,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":198.0,
+    "skip_rate":0.4504504505,
+    "regression_rate":0.3571428571,
+    "raw_metrics":{
+      "Number of Fixations":112,
+      "Average Saccade Length (px)":170.4233793496,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":45.045045045,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":35.7142857143,
+      "Average Reading Speed (wpm)":198.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":28,
+    "stimulus_index":8,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":196.0,
+    "skip_rate":0.5178571429,
+    "regression_rate":0.3097345133,
+    "raw_metrics":{
+      "Number of Fixations":113,
+      "Average Saccade Length (px)":201.3619048952,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":51.7857142857,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":30.9734513274,
+      "Average Reading Speed (wpm)":196.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":28,
+    "stimulus_index":0,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":147.0,
+    "skip_rate":0.2330097087,
+    "regression_rate":0.2946859903,
+    "raw_metrics":{
+      "Number of Fixations":207,
+      "Average Saccade Length (px)":109.9207044781,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":23.3009708738,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":29.4685990338,
+      "Average Reading Speed (wpm)":147.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":28,
+    "stimulus_index":1,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":151.0,
+    "skip_rate":0.2560386473,
+    "regression_rate":0.5913461538,
+    "raw_metrics":{
+      "Number of Fixations":208,
+      "Average Saccade Length (px)":120.5272142008,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":25.6038647343,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":59.1346153846,
+      "Average Reading Speed (wpm)":151.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":28,
+    "stimulus_index":2,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":152.0,
+    "skip_rate":0.2067307692,
+    "regression_rate":0.2966507177,
+    "raw_metrics":{
+      "Number of Fixations":209,
+      "Average Saccade Length (px)":109.6712595804,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":20.6730769231,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":29.6650717703,
+      "Average Reading Speed (wpm)":152.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":28,
+    "stimulus_index":3,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":149.3333333333,
+    "skip_rate":0.2631578947,
+    "regression_rate":0.5679012346,
+    "raw_metrics":{
+      "Number of Fixations":324,
+      "Average Saccade Length (px)":116.2448260622,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":26.3157894737,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":56.7901234568,
+      "Average Reading Speed (wpm)":149.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":28,
+    "stimulus_index":4,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":146.6666666667,
+    "skip_rate":0.2549019608,
+    "regression_rate":0.4657980456,
+    "raw_metrics":{
+      "Number of Fixations":307,
+      "Average Saccade Length (px)":118.5085836705,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":25.4901960784,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":46.5798045603,
+      "Average Reading Speed (wpm)":146.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":28,
+    "stimulus_index":5,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":144.6666666667,
+    "skip_rate":0.2607260726,
+    "regression_rate":0.5361842105,
+    "raw_metrics":{
+      "Number of Fixations":304,
+      "Average Saccade Length (px)":120.2715113775,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":26.0726072607,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":53.6184210526,
+      "Average Reading Speed (wpm)":144.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":29,
+    "stimulus_index":2,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":204.0,
+    "skip_rate":0.2950819672,
+    "regression_rate":0.3008130081,
+    "raw_metrics":{
+      "Number of Fixations":123,
+      "Average Saccade Length (px)":148.4574998488,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":29.5081967213,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":30.081300813,
+      "Average Reading Speed (wpm)":204.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":29,
+    "stimulus_index":3,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":198.0,
+    "skip_rate":0.4017094017,
+    "regression_rate":0.3728813559,
+    "raw_metrics":{
+      "Number of Fixations":118,
+      "Average Saccade Length (px)":177.8111408079,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":40.1709401709,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":37.2881355932,
+      "Average Reading Speed (wpm)":198.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":29,
+    "stimulus_index":4,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":198.0,
+    "skip_rate":0.4336283186,
+    "regression_rate":0.201754386,
+    "raw_metrics":{
+      "Number of Fixations":114,
+      "Average Saccade Length (px)":184.563182903,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":43.3628318584,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":20.1754385965,
+      "Average Reading Speed (wpm)":198.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":29,
+    "stimulus_index":5,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":177.0,
+    "skip_rate":0.3495575221,
+    "regression_rate":0.5022026432,
+    "raw_metrics":{
+      "Number of Fixations":227,
+      "Average Saccade Length (px)":172.1324739117,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":34.9557522124,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":50.2202643172,
+      "Average Reading Speed (wpm)":177.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":29,
+    "stimulus_index":6,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":180.0,
+    "skip_rate":0.3392857143,
+    "regression_rate":0.5422222222,
+    "raw_metrics":{
+      "Number of Fixations":225,
+      "Average Saccade Length (px)":152.6815721038,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":33.9285714286,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":54.2222222222,
+      "Average Reading Speed (wpm)":180.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":29,
+    "stimulus_index":7,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":214.0,
+    "skip_rate":0.4549356223,
+    "regression_rate":0.5982905983,
+    "raw_metrics":{
+      "Number of Fixations":234,
+      "Average Saccade Length (px)":167.4745353532,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":45.4935622318,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":59.8290598291,
+      "Average Reading Speed (wpm)":214.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":29,
+    "stimulus_index":0,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":190.0,
+    "skip_rate":0.3457142857,
+    "regression_rate":0.7407407407,
+    "raw_metrics":{
+      "Number of Fixations":351,
+      "Average Saccade Length (px)":166.8869067176,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":34.5714285714,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":74.0740740741,
+      "Average Reading Speed (wpm)":190.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":29,
+    "stimulus_index":1,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":188.0,
+    "skip_rate":0.381097561,
+    "regression_rate":0.6565349544,
+    "raw_metrics":{
+      "Number of Fixations":329,
+      "Average Saccade Length (px)":176.5559918451,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":38.1097560976,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":65.6534954407,
+      "Average Reading Speed (wpm)":188.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":29,
+    "stimulus_index":8,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":194.6666666667,
+    "skip_rate":0.3505747126,
+    "regression_rate":0.6733524355,
+    "raw_metrics":{
+      "Number of Fixations":349,
+      "Average Saccade Length (px)":185.9215719074,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":35.0574712644,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":67.335243553,
+      "Average Reading Speed (wpm)":194.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":30,
+    "stimulus_index":4,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":170.0,
+    "skip_rate":0.4174757282,
+    "regression_rate":0.2307692308,
+    "raw_metrics":{
+      "Number of Fixations":104,
+      "Average Saccade Length (px)":144.0337093883,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":41.7475728155,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":23.0769230769,
+      "Average Reading Speed (wpm)":170.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":30,
+    "stimulus_index":5,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":154.0,
+    "skip_rate":0.3398058252,
+    "regression_rate":0.1923076923,
+    "raw_metrics":{
+      "Number of Fixations":104,
+      "Average Saccade Length (px)":122.912210433,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":33.9805825243,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":19.2307692308,
+      "Average Reading Speed (wpm)":154.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":30,
+    "stimulus_index":6,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":166.0,
+    "skip_rate":0.2830188679,
+    "regression_rate":0.1214953271,
+    "raw_metrics":{
+      "Number of Fixations":107,
+      "Average Saccade Length (px)":123.2551065027,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":28.3018867925,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":12.1495327103,
+      "Average Reading Speed (wpm)":166.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":30,
+    "stimulus_index":1,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":164.0,
+    "skip_rate":0.2248803828,
+    "regression_rate":0.3047619048,
+    "raw_metrics":{
+      "Number of Fixations":210,
+      "Average Saccade Length (px)":127.417136141,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":22.4880382775,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":30.4761904762,
+      "Average Reading Speed (wpm)":164.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":30,
+    "stimulus_index":2,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":159.0,
+    "skip_rate":0.2300469484,
+    "regression_rate":0.546728972,
+    "raw_metrics":{
+      "Number of Fixations":214,
+      "Average Saccade Length (px)":126.2472616542,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":23.0046948357,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":54.6728971963,
+      "Average Reading Speed (wpm)":159.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":30,
+    "stimulus_index":3,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":149.0,
+    "skip_rate":0.2392344498,
+    "regression_rate":0.3523809524,
+    "raw_metrics":{
+      "Number of Fixations":210,
+      "Average Saccade Length (px)":104.0556739542,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":23.9234449761,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":35.2380952381,
+      "Average Reading Speed (wpm)":149.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":30,
+    "stimulus_index":0,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":137.3333333333,
+    "skip_rate":0.2292358804,
+    "regression_rate":0.5430463576,
+    "raw_metrics":{
+      "Number of Fixations":302,
+      "Average Saccade Length (px)":117.0614097981,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":22.9235880399,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":54.3046357616,
+      "Average Reading Speed (wpm)":137.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":30,
+    "stimulus_index":7,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":168.6666666667,
+    "skip_rate":0.3498349835,
+    "regression_rate":0.6809210526,
+    "raw_metrics":{
+      "Number of Fixations":304,
+      "Average Saccade Length (px)":129.9479609086,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":34.9834983498,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":68.0921052632,
+      "Average Reading Speed (wpm)":168.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":30,
+    "stimulus_index":8,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":154.6666666667,
+    "skip_rate":0.2379421222,
+    "regression_rate":0.4551282051,
+    "raw_metrics":{
+      "Number of Fixations":312,
+      "Average Saccade Length (px)":110.9587409839,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":23.7942122186,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":45.5128205128,
+      "Average Reading Speed (wpm)":154.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":31,
+    "stimulus_index":6,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":148.0,
+    "skip_rate":0.3146067416,
+    "regression_rate":0.0555555556,
+    "raw_metrics":{
+      "Number of Fixations":90,
+      "Average Saccade Length (px)":126.5455127474,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":31.4606741573,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":5.5555555556,
+      "Average Reading Speed (wpm)":148.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":31,
+    "stimulus_index":7,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":192.0,
+    "skip_rate":0.5333333333,
+    "regression_rate":0.3113207547,
+    "raw_metrics":{
+      "Number of Fixations":106,
+      "Average Saccade Length (px)":171.4987563595,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":53.3333333333,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":31.1320754717,
+      "Average Reading Speed (wpm)":192.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":31,
+    "stimulus_index":8,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":170.0,
+    "skip_rate":0.3535353535,
+    "regression_rate":0.12,
+    "raw_metrics":{
+      "Number of Fixations":100,
+      "Average Saccade Length (px)":140.6312392021,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":35.3535353535,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":12.0,
+      "Average Reading Speed (wpm)":170.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":31,
+    "stimulus_index":0,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":160.0,
+    "skip_rate":0.303030303,
+    "regression_rate":0.4472361809,
+    "raw_metrics":{
+      "Number of Fixations":199,
+      "Average Saccade Length (px)":131.5992393066,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":30.303030303,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":44.7236180905,
+      "Average Reading Speed (wpm)":160.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":31,
+    "stimulus_index":1,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":172.0,
+    "skip_rate":0.3596059113,
+    "regression_rate":0.5245098039,
+    "raw_metrics":{
+      "Number of Fixations":204,
+      "Average Saccade Length (px)":150.7030724159,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":35.960591133,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":52.4509803922,
+      "Average Reading Speed (wpm)":172.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":31,
+    "stimulus_index":2,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":173.0,
+    "skip_rate":0.3205741627,
+    "regression_rate":0.5380952381,
+    "raw_metrics":{
+      "Number of Fixations":210,
+      "Average Saccade Length (px)":161.7464157344,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":32.0574162679,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":53.8095238095,
+      "Average Reading Speed (wpm)":173.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":31,
+    "stimulus_index":3,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":170.0,
+    "skip_rate":0.3811074919,
+    "regression_rate":0.6201298701,
+    "raw_metrics":{
+      "Number of Fixations":308,
+      "Average Saccade Length (px)":142.8050782557,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":38.1107491857,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":62.012987013,
+      "Average Reading Speed (wpm)":170.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":31,
+    "stimulus_index":4,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":168.6666666667,
+    "skip_rate":0.3377483444,
+    "regression_rate":0.5610561056,
+    "raw_metrics":{
+      "Number of Fixations":303,
+      "Average Saccade Length (px)":145.2339785896,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":33.7748344371,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":56.1056105611,
+      "Average Reading Speed (wpm)":168.6666666667
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":31,
+    "stimulus_index":5,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":141.3333333333,
+    "skip_rate":0.3094339623,
+    "regression_rate":0.5526315789,
+    "raw_metrics":{
+      "Number of Fixations":266,
+      "Average Saccade Length (px)":157.6024626952,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":30.9433962264,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":55.2631578947,
+      "Average Reading Speed (wpm)":141.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":32,
+    "stimulus_index":5,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":128.0,
+    "skip_rate":0.1868131868,
+    "regression_rate":0.2717391304,
+    "raw_metrics":{
+      "Number of Fixations":92,
+      "Average Saccade Length (px)":94.3563285852,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":18.6813186813,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":27.1739130435,
+      "Average Reading Speed (wpm)":128.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":32,
+    "stimulus_index":6,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":100.0,
+    "skip_rate":0.1369863014,
+    "regression_rate":0.0405405405,
+    "raw_metrics":{
+      "Number of Fixations":74,
+      "Average Saccade Length (px)":92.5277893516,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":13.698630137,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":4.0540540541,
+      "Average Reading Speed (wpm)":100.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":32,
+    "stimulus_index":7,
+    "time_condition":"30s",
+    "total_time":30,
+    "reading_speed":128.0,
+    "skip_rate":0.2857142857,
+    "regression_rate":0.0352941176,
+    "raw_metrics":{
+      "Number of Fixations":85,
+      "Average Saccade Length (px)":101.4907321729,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":28.5714285714,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":3.5294117647,
+      "Average Reading Speed (wpm)":128.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":32,
+    "stimulus_index":2,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":125.0,
+    "skip_rate":0.1318681319,
+    "regression_rate":0.2732240437,
+    "raw_metrics":{
+      "Number of Fixations":183,
+      "Average Saccade Length (px)":92.8183638363,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":13.1868131868,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":27.3224043716,
+      "Average Reading Speed (wpm)":125.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":32,
+    "stimulus_index":3,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":116.0,
+    "skip_rate":0.2409638554,
+    "regression_rate":0.0718562874,
+    "raw_metrics":{
+      "Number of Fixations":167,
+      "Average Saccade Length (px)":94.0383524647,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":24.0963855422,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":7.1856287425,
+      "Average Reading Speed (wpm)":116.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":32,
+    "stimulus_index":4,
+    "time_condition":"60s",
+    "total_time":60,
+    "reading_speed":102.0,
+    "skip_rate":0.2156862745,
+    "regression_rate":0.0779220779,
+    "raw_metrics":{
+      "Number of Fixations":154,
+      "Average Saccade Length (px)":88.9876654825,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":21.568627451,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":7.7922077922,
+      "Average Reading Speed (wpm)":102.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":32,
+    "stimulus_index":0,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":114.0,
+    "skip_rate":0.188034188,
+    "regression_rate":0.3106382979,
+    "raw_metrics":{
+      "Number of Fixations":235,
+      "Average Saccade Length (px)":98.2229974507,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":18.8034188034,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":31.0638297872,
+      "Average Reading Speed (wpm)":114.0
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":32,
+    "stimulus_index":1,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":129.3333333333,
+    "skip_rate":0.2462121212,
+    "regression_rate":0.441509434,
+    "raw_metrics":{
+      "Number of Fixations":265,
+      "Average Saccade Length (px)":116.3402950584,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":24.6212121212,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":44.1509433962,
+      "Average Reading Speed (wpm)":129.3333333333
+    }
+  },
+  {
+    "source":"human",
+    "participant_id":32,
+    "stimulus_index":8,
+    "time_condition":"90s",
+    "total_time":90,
+    "reading_speed":114.0,
+    "skip_rate":0.1867219917,
+    "regression_rate":0.3223140496,
+    "raw_metrics":{
+      "Number of Fixations":242,
+      "Average Saccade Length (px)":90.6092479182,
+      "Word Skip Percentage by Saccades V2 With Word Index Correction":18.6721991701,
+      "Revisit Percentage by Saccades V2 With Word Index Correction":32.2314049587,
+      "Average Reading Speed (wpm)":114.0
+    }
+  }
+]
