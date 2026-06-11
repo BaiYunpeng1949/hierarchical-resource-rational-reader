@@ -17,9 +17,9 @@ from scipy import stats
 HUMAN_COLOR = "#1f77b4"
 SIM_COLOR   = "#2ca02c"
 
-FONT_SIZE_BASE = 14
+FONT_SIZE_BASE = 12
 TICK_SIZE      = 12
-LEGEND_SIZE    = 14
+LEGEND_SIZE    = 12
 
 BAR_GROUP_WIDTH = 0.80
 BAR_CAPSIZE     = 3
@@ -363,7 +363,7 @@ def main():
     _set_fonts()
     centers = list(range(len(conditions)))
 
-    for metric_key, ylabel, out_name in metrics:
+    for i, (metric_key, ylabel, out_name) in enumerate(metrics):
         fig = plt.figure(figsize=(PANEL_AX_WIDTH_IN, PANEL_AX_HEIGHT_IN))
         ax = fig.add_subplot(1, 1, 1)
 
@@ -375,6 +375,14 @@ def main():
             ylabel=ylabel,
             xlabels=pretty_conditions,
         )
+
+        # Put legend only in the first figure
+        if i == 0:
+            ax.legend(
+                loc="upper right",      # change if needed
+                frameon=False,
+                fontsize=LEGEND_SIZE,
+            )
 
         fig.savefig(out_name, dpi=300, bbox_inches="tight", pad_inches=0.05)
         plt.close(fig)
