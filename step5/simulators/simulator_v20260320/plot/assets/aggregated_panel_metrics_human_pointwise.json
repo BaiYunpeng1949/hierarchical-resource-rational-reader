@@ -427,7 +427,7 @@
     "reading_speed": 178.6666666667,
     "skip_rate": 0.3103922267,
     "regression_rate": 0.5785330831,
-    "mcq_accuracy": 0.7999999999999999,
+    "mcq_accuracy": 0.8000000000000002,
     "free_recall_score": 0.8000000000000002,
     "n_comp_trials": 3
   },
@@ -584,7 +584,7 @@
     "skip_rate": 0.4431990176,
     "regression_rate": 0.1599890212,
     "mcq_accuracy": 0.5333333333333333,
-    "free_recall_score": 0.5666666666666667,
+    "free_recall_score": 0.5666666666666668,
     "n_comp_trials": 3
   },
   {
@@ -691,7 +691,7 @@
     "reading_speed": 165.3333333333,
     "skip_rate": 0.3416385595,
     "regression_rate": 0.2663398693,
-    "mcq_accuracy": 0.39999999999999997,
+    "mcq_accuracy": 0.4000000000000001,
     "free_recall_score": 0.6666666666666666,
     "n_comp_trials": 3
   },
@@ -872,7 +872,7 @@
     "skip_rate": 0.3348286306,
     "regression_rate": 0.3340118675,
     "mcq_accuracy": 0.5333333333333333,
-    "free_recall_score": 0.5666666666666667,
+    "free_recall_score": 0.5666666666666665,
     "n_comp_trials": 3
   },
   {
@@ -908,7 +908,7 @@
     "skip_rate": 0.3029810298,
     "regression_rate": 0.2519994668,
     "mcq_accuracy": 0.39999999999999997,
-    "free_recall_score": 0.5666666666666667,
+    "free_recall_score": 0.5666666666666668,
     "n_comp_trials": 3
   },
   {
@@ -1087,7 +1087,7 @@
     "reading_speed": 170.0,
     "skip_rate": 0.4004918095,
     "regression_rate": 0.1622921034,
-    "mcq_accuracy": 0.6,
+    "mcq_accuracy": 0.6000000000000001,
     "free_recall_score": 0.6,
     "n_comp_trials": 3
   },
@@ -1124,7 +1124,7 @@
     "skip_rate": 0.203171258,
     "regression_rate": 0.1158579295,
     "mcq_accuracy": 0.7333333333333334,
-    "free_recall_score": 0.7000000000000001,
+    "free_recall_score": 0.6999999999999998,
     "n_comp_trials": 3
   },
   {
@@ -1148,7 +1148,7 @@
     "skip_rate": 0.2069894336,
     "regression_rate": 0.3581539271,
     "mcq_accuracy": 0.5333333333333333,
-    "free_recall_score": 0.7999999999999999,
+    "free_recall_score": 0.8000000000000002,
     "n_comp_trials": 3
   }
 ]

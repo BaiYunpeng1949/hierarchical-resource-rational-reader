@@ -7,10 +7,9 @@
   "human": {
     "reading_speed": {
       "30s": {
-        "mean": 192.4047619047619,
-        "std": 56.21284361111856,
+        "mean": 190.77976190476073,
+        "std": 37.71618218079651,
         "n": 28,
-        "aggregate_n": 1,
         "values": [
           212.6666666667,
           181.3333333333,
@@ -44,10 +43,9 @@
         "value_unit": "participant"
       },
       "60s": {
-        "mean": 171.48809523809524,
-        "std": 30.629698491908396,
+        "mean": 171.4880952380893,
+        "std": 30.123679506652802,
         "n": 28,
-        "aggregate_n": 1,
         "values": [
           197.0,
           144.0,
@@ -81,10 +79,9 @@
         "value_unit": "participant"
       },
       "90s": {
-        "mean": 165.91164658634534,
-        "std": 29.506929022535743,
+        "mean": 166.48015873015717,
+        "std": 28.43523278007931,
         "n": 28,
-        "aggregate_n": 1,
         "values": [
           195.5555555556,
           123.3333333333,
@@ -120,10 +117,9 @@
     },
     "skip_rate": {
       "30s": {
-        "mean": 0.39215056137433735,
-        "std": 0.09260099901135295,
+        "mean": 0.3907747888607143,
+        "std": 0.0767849288062263,
         "n": 28,
-        "aggregate_n": 1,
         "values": [
           0.4316239316,
           0.3395521843,
@@ -157,10 +153,9 @@
         "value_unit": "participant"
       },
       "60s": {
-        "mean": 0.32265846624427996,
-        "std": 0.08742162714803695,
+        "mean": 0.3226584662464286,
+        "std": 0.08217560230103493,
         "n": 28,
-        "aggregate_n": 1,
         "values": [
           0.3148299273,
           0.2520662867,
@@ -194,10 +189,9 @@
         "value_unit": "participant"
       },
       "90s": {
-        "mean": 0.310129414696708,
-        "std": 0.08552293191297197,
+        "mean": 0.31304003764285715,
+        "std": 0.0831746708315273,
         "n": 28,
-        "aggregate_n": 1,
         "values": [
           0.3008713848,
           0.225370819,
@@ -233,10 +227,9 @@
     },
     "regression_rate": {
       "30s": {
-        "mean": 0.3198270479928921,
-        "std": 0.16884940563640158,
+        "mean": 0.3161848319035715,
+        "std": 0.12070618058859926,
         "n": 28,
-        "aggregate_n": 1,
         "values": [
           0.4584755723,
           0.2708303542,
@@ -270,10 +263,9 @@
         "value_unit": "participant"
       },
       "60s": {
-        "mean": 0.4772694567224823,
-        "std": 0.1520480084713743,
+        "mean": 0.4772694567178572,
+        "std": 0.13994888609912706,
         "n": 28,
-        "aggregate_n": 1,
         "values": [
           0.6092692912,
           0.3617365049,
@@ -307,10 +299,9 @@
         "value_unit": "participant"
       },
       "90s": {
-        "mean": 0.5910776774666214,
-        "std": 0.11497130595402444,
+        "mean": 0.5930452536428571,
+        "std": 0.10577398726570536,
         "n": 28,
-        "aggregate_n": 1,
         "values": [
           0.6229355892,
           0.4665327979,
@@ -346,10 +337,9 @@
     },
     "mcq_accuracy": {
       "30s": {
-        "mean": 0.5916666666666667,
-        "std": 0.2307897070687705,
+        "mean": 0.5916666666666666,
+        "std": 0.13520195964731105,
         "n": 32,
-        "aggregate_n": 288,
         "values": [
           0.6,
           0.5333333333333333,
@@ -370,7 +360,7 @@
           0.5333333333333333,
           0.6666666666666666,
           0.6,
-          0.39999999999999997,
+          0.4000000000000001,
           0.7333333333333334,
           0.6666666666666666,
           0.8000000000000002,
@@ -381,16 +371,15 @@
           0.6,
           0.6,
           0.4666666666666666,
-          0.6,
+          0.6000000000000001,
           0.7333333333333334
         ],
         "value_unit": "participant_mean_across_trials"
       },
       "60s": {
-        "mean": 0.7312500000000001,
-        "std": 0.18445443204217135,
+        "mean": 0.7312500000000002,
+        "std": 0.13807106891628165,
         "n": 32,
-        "aggregate_n": 288,
         "values": [
           0.8666666666666667,
           0.5333333333333333,
@@ -428,10 +417,9 @@
         "value_unit": "participant_mean_across_trials"
       },
       "90s": {
-        "mean": 0.8250000000000001,
-        "std": 0.15612494995995999,
+        "mean": 0.825,
+        "std": 0.11578004111740049,
         "n": 32,
-        "aggregate_n": 288,
         "values": [
           0.9333333333333332,
           0.8666666666666667,
@@ -444,7 +432,7 @@
           0.9333333333333332,
           1.0,
           0.7333333333333334,
-          0.7999999999999999,
+          0.8000000000000002,
           0.4666666666666666,
           0.8666666666666667,
           0.8000000000000002,
@@ -471,10 +459,9 @@
     },
     "free_recall_score": {
       "30s": {
-        "mean": 0.44184744264930487,
-        "std": 0.13071711601174693,
+        "mean": 0.6416666666666666,
+        "std": 0.07851671511195134,
         "n": 32,
-        "aggregate_n": 288,
         "values": [
           0.6666666666666666,
           0.5333333333333333,
@@ -492,7 +479,7 @@
           0.6,
           0.6,
           0.5333333333333333,
-          0.5666666666666667,
+          0.5666666666666668,
           0.6333333333333333,
           0.6999999999999998,
           0.6666666666666666,
@@ -500,22 +487,21 @@
           0.8000000000000002,
           0.7333333333333334,
           0.6666666666666666,
-          0.5666666666666667,
-          0.5666666666666667,
+          0.5666666666666665,
+          0.5666666666666668,
           0.6333333333333333,
           0.6666666666666666,
           0.7666666666666666,
           0.6333333333333333,
           0.6,
-          0.7000000000000001
+          0.6999999999999998
         ],
         "value_unit": "participant_mean_across_trials"
       },
       "60s": {
-        "mean": 0.5327457231469452,
-        "std": 0.12040994720701342,
+        "mean": 0.703125,
+        "std": 0.0694883373830319,
         "n": 32,
-        "aggregate_n": 288,
         "values": [
           0.7333333333333334,
           0.6999999999999998,
@@ -553,10 +539,9 @@
         "value_unit": "participant_mean_across_trials"
       },
       "90s": {
-        "mean": 0.5176015434165796,
-        "std": 0.1552075907079258,
+        "mean": 0.7302083333333333,
+        "std": 0.07251714665608258,
         "n": 32,
-        "aggregate_n": 288,
         "values": [
           0.8666666666666667,
           0.7666666666666666,
@@ -589,7 +574,7 @@
           0.9,
           0.8333333333333334,
           0.7666666666666666,
-          0.7999999999999999
+          0.8000000000000002
         ],
         "value_unit": "participant_mean_across_trials"
       }
@@ -1292,7 +1277,7 @@
         "reading_speed": 178.6666666667,
         "skip_rate": 0.3103922267,
         "regression_rate": 0.5785330831,
-        "mcq_accuracy": 0.7999999999999999,
+        "mcq_accuracy": 0.8000000000000002,
         "free_recall_score": 0.8000000000000002,
         "n_comp_trials": 3
       },
@@ -1449,7 +1434,7 @@
         "skip_rate": 0.4431990176,
         "regression_rate": 0.1599890212,
         "mcq_accuracy": 0.5333333333333333,
-        "free_recall_score": 0.5666666666666667,
+        "free_recall_score": 0.5666666666666668,
         "n_comp_trials": 3
       },
       {
@@ -1556,7 +1541,7 @@
         "reading_speed": 165.3333333333,
         "skip_rate": 0.3416385595,
         "regression_rate": 0.2663398693,
-        "mcq_accuracy": 0.39999999999999997,
+        "mcq_accuracy": 0.4000000000000001,
         "free_recall_score": 0.6666666666666666,
         "n_comp_trials": 3
       },
@@ -1737,7 +1722,7 @@
         "skip_rate": 0.3348286306,
         "regression_rate": 0.3340118675,
         "mcq_accuracy": 0.5333333333333333,
-        "free_recall_score": 0.5666666666666667,
+        "free_recall_score": 0.5666666666666665,
         "n_comp_trials": 3
       },
       {
@@ -1773,7 +1758,7 @@
         "skip_rate": 0.3029810298,
         "regression_rate": 0.2519994668,
         "mcq_accuracy": 0.39999999999999997,
-        "free_recall_score": 0.5666666666666667,
+        "free_recall_score": 0.5666666666666668,
         "n_comp_trials": 3
       },
       {
@@ -1952,7 +1937,7 @@
         "reading_speed": 170.0,
         "skip_rate": 0.4004918095,
         "regression_rate": 0.1622921034,
-        "mcq_accuracy": 0.6,
+        "mcq_accuracy": 0.6000000000000001,
         "free_recall_score": 0.6,
         "n_comp_trials": 3
       },
@@ -1989,7 +1974,7 @@
         "skip_rate": 0.203171258,
         "regression_rate": 0.1158579295,
         "mcq_accuracy": 0.7333333333333334,
-        "free_recall_score": 0.7000000000000001,
+        "free_recall_score": 0.6999999999999998,
         "n_comp_trials": 3
       },
       {
@@ -2013,7 +1998,7 @@
         "skip_rate": 0.2069894336,
         "regression_rate": 0.3581539271,
         "mcq_accuracy": 0.5333333333333333,
-        "free_recall_score": 0.7999999999999999,
+        "free_recall_score": 0.8000000000000002,
         "n_comp_trials": 3
       }
     ],
@@ -2372,167 +2357,12 @@
     ]
   },
   "meta": {
-    "human_eye_file": "human_eye_movement_metrics.json",
-    "human_mcq_file": "human_mcq_acc_metrics.json",
-    "human_fr_file": "human_free_recall_metrics.json",
     "human_eye_pointwise_file": "human_eye_movement_participant_metrics_pointwise.json",
     "human_comp_pointwise_file": "comprehension_scores_p1_to_p32.csv",
     "sim_eye_file": "simulation_eye_movement_metrics.json",
     "sim_comp_file": "comprehension_results_20251006-150327.json",
     "std_ddof": 1,
-    "human_aggregate_source": "aggregate JSON files",
-    "human_pointwise_source": "participant-level eye JSON and participant-aggregated comprehension CSV",
-    "human_pointwise_checks": [
-      {
-        "source": "human",
-        "metric": "reading_speed",
-        "time_condition": "30s",
-        "aggregate_mean": 192.4047619047619,
-        "pointwise_mean": 190.77976190476073,
-        "abs_difference": 1.6250000000011653,
-        "n_values": 28,
-        "value_unit": "participant"
-      },
-      {
-        "source": "human",
-        "metric": "reading_speed",
-        "time_condition": "60s",
-        "aggregate_mean": 171.48809523809524,
-        "pointwise_mean": 171.4880952380893,
-        "abs_difference": 5.9401372709544376e-12,
-        "n_values": 28,
-        "value_unit": "participant"
-      },
-      {
-        "source": "human",
-        "metric": "reading_speed",
-        "time_condition": "90s",
-        "aggregate_mean": 165.91164658634534,
-        "pointwise_mean": 166.48015873015717,
-        "abs_difference": 0.5685121438118301,
-        "n_values": 28,
-        "value_unit": "participant"
-      },
-      {
-        "source": "human",
-        "metric": "skip_rate",
-        "time_condition": "30s",
-        "aggregate_mean": 0.39215056137433735,
-        "pointwise_mean": 0.3907747888607143,
-        "abs_difference": 0.0013757725136230303,
-        "n_values": 28,
-        "value_unit": "participant"
-      },
-      {
-        "source": "human",
-        "metric": "skip_rate",
-        "time_condition": "60s",
-        "aggregate_mean": 0.32265846624427996,
-        "pointwise_mean": 0.3226584662464286,
-        "abs_difference": 2.1486146195570655e-12,
-        "n_values": 28,
-        "value_unit": "participant"
-      },
-      {
-        "source": "human",
-        "metric": "skip_rate",
-        "time_condition": "90s",
-        "aggregate_mean": 0.310129414696708,
-        "pointwise_mean": 0.31304003764285715,
-        "abs_difference": 0.002910622946149133,
-        "n_values": 28,
-        "value_unit": "participant"
-      },
-      {
-        "source": "human",
-        "metric": "regression_rate",
-        "time_condition": "30s",
-        "aggregate_mean": 0.3198270479928921,
-        "pointwise_mean": 0.3161848319035715,
-        "abs_difference": 0.0036422160893205824,
-        "n_values": 28,
-        "value_unit": "participant"
-      },
-      {
-        "source": "human",
-        "metric": "regression_rate",
-        "time_condition": "60s",
-        "aggregate_mean": 0.4772694567224823,
-        "pointwise_mean": 0.4772694567178572,
-        "abs_difference": 4.62507809828594e-12,
-        "n_values": 28,
-        "value_unit": "participant"
-      },
-      {
-        "source": "human",
-        "metric": "regression_rate",
-        "time_condition": "90s",
-        "aggregate_mean": 0.5910776774666214,
-        "pointwise_mean": 0.5930452536428571,
-        "abs_difference": 0.0019675761762356636,
-        "n_values": 28,
-        "value_unit": "participant"
-      },
-      {
-        "source": "human",
-        "metric": "mcq_accuracy",
-        "time_condition": "30s",
-        "aggregate_mean": 0.5916666666666667,
-        "pointwise_mean": 0.5916666666666666,
-        "abs_difference": 1.1102230246251565e-16,
-        "n_values": 32,
-        "value_unit": "participant_mean_across_trials"
-      },
-      {
-        "source": "human",
-        "metric": "mcq_accuracy",
-        "time_condition": "60s",
-        "aggregate_mean": 0.7312500000000001,
-        "pointwise_mean": 0.7312500000000002,
-        "abs_difference": 1.1102230246251565e-16,
-        "n_values": 32,
-        "value_unit": "participant_mean_across_trials"
-      },
-      {
-        "source": "human",
-        "metric": "mcq_accuracy",
-        "time_condition": "90s",
-        "aggregate_mean": 0.8250000000000001,
-        "pointwise_mean": 0.825,
-        "abs_difference": 1.1102230246251565e-16,
-        "n_values": 32,
-        "value_unit": "participant_mean_across_trials"
-      },
-      {
-        "source": "human",
-        "metric": "free_recall_score",
-        "time_condition": "30s",
-        "aggregate_mean": 0.44184744264930487,
-        "pointwise_mean": 0.6416666666666666,
-        "abs_difference": 0.19981922401736174,
-        "n_values": 32,
-        "value_unit": "participant_mean_across_trials"
-      },
-      {
-        "source": "human",
-        "metric": "free_recall_score",
-        "time_condition": "60s",
-        "aggregate_mean": 0.5327457231469452,
-        "pointwise_mean": 0.703125,
-        "abs_difference": 0.17037927685305476,
-        "n_values": 32,
-        "value_unit": "participant_mean_across_trials"
-      },
-      {
-        "source": "human",
-        "metric": "free_recall_score",
-        "time_condition": "90s",
-        "aggregate_mean": 0.5176015434165796,
-        "pointwise_mean": 0.7302083333333333,
-        "abs_difference": 0.21260678991675375,
-        "n_values": 32,
-        "value_unit": "participant_mean_across_trials"
-      }
-    ]
+    "human_aggregate_source": "pointwise files only",
+    "simulation_aggregate_source": "episode/stimulus pointwise files"
   }
 }
