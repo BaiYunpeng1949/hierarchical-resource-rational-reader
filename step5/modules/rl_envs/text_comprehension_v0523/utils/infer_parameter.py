@@ -567,6 +567,119 @@ AX_TEXT_SIZE    = 12        # for annotations like High-K / Low-K
 
 
 
+def plot_text_recall_bar_pdf(human: 'HumanTargets', sim_four, out_png: str):
+    """
+    Output the original text-level proportional-recall bar PDF, but with the
+    legend and High-K / Low-K annotations moved out into a separate legend-only
+    figure. All other bar-plot settings are kept unchanged.
+    """
+
+    # Unpack values as in the original plotting code
+    fch, fcl, mch, mcl = sim_four
+    Hh, Hl, Mh, Ml = (human.highcoh_high,
+                      human.highcoh_low,
+                      human.lowcoh_high,
+                      human.lowcoh_low)
+
+    # ========= BAR FIGURE (PDF) =========
+    fig_bar = plt.figure(figsize=(BAR_FIG_WIDTH, BAR_FIG_HEIGHT))
+    ax = fig_bar.add_subplot(1, 1, 1)
+
+    bar_width = 0.18
+    x_groups = np.arange(2)
+    r1 = x_groups
+    r2 = r1 + bar_width
+    r3 = r2 + bar_width
+    r4 = r3 + bar_width
+
+    # Bars (unchanged)
+    ax.bar(r1, [Hh, Mh], width=bar_width, color=HUMAN_COLOR, hatch='/')
+    ax.bar(r2, [fch, mch], width=bar_width, color=SIM_COLOR, hatch='/')
+    ax.bar(r3, [Hl, Ml], width=bar_width, color=HUMAN_COLOR, hatch='oo')
+    ax.bar(r4, [fcl, mcl], width=bar_width, color=SIM_COLOR, hatch='oo')
+
+    # Axes styling (unchanged)
+    style_axes(ax)
+    ax.set_xlabel('Text coherence level', fontsize=AX_LABEL_SIZE)
+    ax.set_ylabel('Proportional recall', fontsize=AX_LABEL_SIZE)
+    ax.tick_params(axis='both', labelsize=AX_TICK_SIZE)
+
+    group_centers = r1 + 1.5 * bar_width
+    ax.set_xticks(group_centers)
+    ax.set_xticklabels(['High', 'Low'])
+    ax.tick_params(axis='x', length=0)
+
+    # Keep the original y-limit logic so plot scaling stays unchanged.
+    x_highk_0 = 0.5 * (r1[0] + r2[0])
+    x_lowk_0  = 0.525 * (r3[0] + r4[0])
+    x_highk_1 = 0.5 * (r1[1] + r2[1])
+    x_lowk_1  = 0.51 * (r3[1] + r4[1])
+
+    y_high_0 = max(Hh, fch) + 0.01
+    y_low_0  = max(Hl, fcl) + 0.01
+    y_high_1 = max(Mh, mch) + 0.01
+    y_low_1  = max(Ml, mcl) + 0.01
+    y_top = max(y_high_0, y_low_0, y_high_1, y_low_1)
+    ax.set_ylim(0, y_top + 0.05)
+
+    base, _ = os.path.splitext(out_png)
+    bar_pdf = f"{base}_bar.pdf"
+    fig_bar.savefig(bar_pdf, dpi=300, bbox_inches='tight', pad_inches=0.05)
+    plt.close(fig_bar)
+
+    # ========= SEPARATE LEGEND FIGURE (PDF) =========
+    # Same visual encodings as before:
+    #   - colour: Human vs Simulation
+    #   - hatch : High-K vs Low-K
+    fig_leg = plt.figure(figsize=(2.6, 1.2))
+    ax_leg = fig_leg.add_subplot(1, 1, 1)
+    ax_leg.axis('off')
+
+    legend_handles = [
+        mpatches.Patch(
+            facecolor=HUMAN_COLOR,
+            edgecolor='black',
+            hatch='/',
+            label='Human, High-K'
+        ),
+        mpatches.Patch(
+            facecolor=SIM_COLOR,
+            edgecolor='black',
+            hatch='/',
+            label='Simulation, High-K'
+        ),
+        mpatches.Patch(
+            facecolor=HUMAN_COLOR,
+            edgecolor='black',
+            hatch='oo',
+            label='Human, Low-K'
+        ),
+        mpatches.Patch(
+            facecolor=SIM_COLOR,
+            edgecolor='black',
+            hatch='oo',
+            label='Simulation, Low-K'
+        ),
+    ]
+
+    ax_leg.legend(
+        handles=legend_handles,
+        loc='center',
+        frameon=True,
+        facecolor='white',
+        ncol=1,
+        fontsize=AX_TICK_SIZE,
+        handlelength=2.2,      # wider patch
+        handleheight=1.2,      # taller patch
+        handletextpad=0.8,
+        borderpad=0.5,
+        labelspacing=0.5
+    )
+
+    legend_pdf = f"{base}_bar_legend.pdf"
+    fig_leg.savefig(legend_pdf, dpi=300, bbox_inches='tight', pad_inches=0.05)
+    plt.close(fig_leg)
+
 def plot_panel(human_probs, sim_probs, out_png: str, out_stats_txt: str):
     """
     Unified aligned plot:
@@ -880,6 +993,7 @@ def main():
 
     out_png = os.path.join(args.out_dir, "panel_best_params_and_regression.png")
     out_stats = os.path.join(args.out_dir, "plot_stats.txt")
+    plot_text_recall_bar_pdf(human, best_sim_four, out_png)
     plot_panel(human_regression_probs, sim_probs, out_png, out_stats)
 
     
