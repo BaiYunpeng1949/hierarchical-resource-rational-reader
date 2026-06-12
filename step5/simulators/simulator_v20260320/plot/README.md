@@ -33,6 +33,12 @@ Generate usable data metrics in json.
 ```bash
 cd assets
 python build_aggregated_panel_metrics_baseline.py --folder simulation_data_baselines/ 
+
+-->
+
+python build_panel_metrics_baseline_with_pointwise.py \
+        --folder simulation_data_baselines/ \
+        --out aggregated_panel_metrics_baseline.json
 ```
 
 Plot
