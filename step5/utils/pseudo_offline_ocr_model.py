@@ -4,7 +4,7 @@ import json
 
 from PIL import Image, ImageDraw, ImageFont
 from step5.utils import auxiliaries
-from step3.gens import image_generator as gens
+#from step3.gens import image_generator as gens
 from step5.utils import constants as cons
 import math
 import time
