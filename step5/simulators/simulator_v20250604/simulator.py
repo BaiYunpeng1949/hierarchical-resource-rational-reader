@@ -12,7 +12,9 @@ from pathlib import Path
 # Add sub_models directory to Python path
 current_file_path = os.path.abspath(__file__)
 current_file_dir = os.path.dirname(current_file_path)
-sys.path.append(os.path.join(current_file_dir, 'sub_models'))
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_file_dir)))
+sys.path.insert(0, project_root)
+sys.path.insert(0, os.path.join(current_file_dir, 'sub_models'))
 
 from stable_baselines3 import PPO
 
