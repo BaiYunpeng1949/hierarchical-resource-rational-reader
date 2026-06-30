@@ -34,11 +34,11 @@ step5/training/saved_models/
 Run the simulation
 
 Ensure two configurations before execute any codes:
-1. `/home/baiy4/reader-agent-zuco/step5/config.yaml` should be exactly the same as `step5/modules/rl_envs/word_activation_v0218/config.yaml`
+1. `step5/config.yaml` should be exactly the same as `step5/modules/rl_envs/word_activation_v0218/config.yaml`
 2. in `step5/STB3RL.py`, uncomment `from modules.rl_envs.word_activation_v0218.WordActivationEnvV0218 import WordActivationRLEnv`, comment **all** other `WordActivationRLEnv`.
 
 ```bash
-conda activate reader_agent
+conda activate reader_model
 cd step5
 python main.py
 ```
