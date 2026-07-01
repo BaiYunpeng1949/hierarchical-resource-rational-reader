@@ -121,6 +121,18 @@ python main.py
 
 (or your project-specific entry script that triggers `_sentence_reading_grid_test()`).
 
+
+To then manually generate:
+```
+all_words_regression_and_skip_probabilities.csv
+ambiguity_effect_simulation_binned.csv
+```
+
+From `parameter_inference/` run:
+```bash
+python analyze_ambiguity_effect.py
+```
+
 ---
 
 # 3) Run the grid scorer + generate figures
