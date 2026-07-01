@@ -90,7 +90,7 @@ The simulations themselves do not require human data as input. Once the environm
 
 ### Activate the environment
 ```bash
-conda activate reader_agent
+conda activate reader_model
 ```
 
 ### Word-level recognition simulation
