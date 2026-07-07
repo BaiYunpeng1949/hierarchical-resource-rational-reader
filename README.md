@@ -88,7 +88,7 @@ The simulations themselves do not require human data as input. Once the environm
 
 ### Activate the environment
 ```bash
-conda activate reader_agent
+conda activate reader_model
 ```
 
 ### Word-level recognition simulation
@@ -138,7 +138,7 @@ python main.py
 Results refer to the Section Results "Speed-accuracy trade-off when reading under time pressure" and "Validating the necessity of hierarchical resource rationality". Figure 3(d). Figure 5, and Extended Data Figure 10.
 
 
-> ***NOTE:*** Detailed descriptions and instructions could be found in `steps/simulators/simulator_v20250604/README.md`.
+> ***NOTE:*** Detailed descriptions and instructions could be found in `step5/simulators/simulator_v20250604/README.md`.
 
 ```bash
 git checkout read_under_time_pressure

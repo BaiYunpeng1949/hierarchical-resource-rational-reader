@@ -23,7 +23,7 @@ The simulator builds upon the base reading models and adds time-pressure specifi
   - `convert_format.py`: Script to convert raw human metrics to analysis format
 - `simulated_results/`: Directory for storing simulation outputs
 - `config.yaml`: Configuration file for model parameters and simulation settings
-- `pretrained_rl_models`: Save all the models need to run the simulation. They are all pretrained RL policy weights. Please copy paste all of them under `/home/baiy4/reader-agent-zuco/step5/simulators/simulator_v20250604/sub_models/training/saved_models`.
+- `pretrained_rl_models`: Save all the models need to run the simulation. They are all pretrained RL policy weights. Please copy paste all of them under `step5/simulators/simulator_v20250604/sub_models/training/saved_models`.
 
 ## Data Preparation and Analysis Workflow
 
@@ -249,6 +249,7 @@ parameter_inference/
 ## Reproduction Commands
 
 ### 1. Run Parameter Inference
+in `step5/simulators/simulator_v20250604/parameter_inference`
 ```bash
 python infer_parameters.py --grid_dir simulation_data/ --human human_data/analyzed_human_metrics.json --loss sse --norm zscore --topk 10
 
@@ -260,6 +261,7 @@ python plot.py \
 ```
 
 ### 2. Run the Bayesian Inference
+in `step5/simulators/simulator_v20250604/`
 ```bash 
 python bayesian_inference.py \
   --human human_data/analyzed_human_metrics.json \
