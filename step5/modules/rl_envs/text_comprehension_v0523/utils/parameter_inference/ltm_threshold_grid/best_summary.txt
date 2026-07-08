@@ -1,0 +1,23 @@
+Best thresholds (objective = MAE)
+High threshold: 0.838
+Low  threshold: 0.844
+
+Simulated means:
+  Fully Coherent - High knowledge: 0.497
+  Fully Coherent - Low  knowledge: 0.395
+  Minimal Coherent - High knowledge: 0.438
+  Minimal Coherent - Low  knowledge: 0.232
+
+Human targets:
+  Fully Coherent - High knowledge: 0.484
+  Fully Coherent - Low  knowledge: 0.381
+  Minimal Coherent - High knowledge: 0.417
+  Minimal Coherent - Low  knowledge: 0.291
+
+Per-component errors:
+  err_fully_high: 0.013006
+  err_fully_low : 0.014210
+  err_min_high  : 0.020500
+  err_min_low   : 0.058857
+
+Total loss: 0.106573

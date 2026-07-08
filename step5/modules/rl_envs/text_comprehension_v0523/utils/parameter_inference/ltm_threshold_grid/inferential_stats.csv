@@ -1,0 +1,3 @@
+analysis,test,n_conditions,mae,rmse,correlation_r,p,p_formatted,n_ambiguous,n_regressed_ambiguous,mean_ambiguous,n_unambiguous,n_regressed_unambiguous,mean_unambiguous,chi2,df,odds_ratio,or_95ci_low,or_95ci_high
+text_comprehension_four_condition_fit,descriptive model fit; no inferential p value,4.0,0.026643177929854572,0.03261702460903719,0.9828159088315366,,not applicable,,,,,,,,,,,
+simulation_ambiguous_vs_unambiguous_regression,chi-square test of independence,,,,,3.4734378433867787e-07,p < 0.001,2903.0,373.0,0.12848777127109887,2601.0,223.0,0.0857362552864283,25.96677642241383,1.0,1.5707602153061508,1.3186534033353647,1.8710660797962055

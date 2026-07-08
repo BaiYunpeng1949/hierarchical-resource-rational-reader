@@ -42,10 +42,10 @@ add_labels(bars3)
 add_labels(bars4)
 
 # Add labels and title
-plt.xlabel('Coherence Level')
-plt.ylabel('Similarity Score')
+plt.xlabel('Coherence level')
+plt.ylabel('Similarity score')
 plt.title('Human vs Simulation Performance Comparison')
-plt.xticks([r + barWidth*1.5 for r in range(2)], ['High Coherence', 'Low Coherence'])
+plt.xticks([r + barWidth*1.5 for r in range(2)], ['High coherence', 'Low coherence'])
 
 # Add legend
 plt.legend()

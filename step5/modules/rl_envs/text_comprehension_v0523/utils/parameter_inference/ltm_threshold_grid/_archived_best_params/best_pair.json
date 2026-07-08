@@ -1,0 +1,22 @@
+{
+  "objective": "MAE",
+  "human": {
+    "highcoh_high": 0.484,
+    "highcoh_low": 0.381,
+    "lowcoh_high": 0.417,
+    "lowcoh_low": 0.291
+  },
+  "best": {
+    "high_threshold": 0.838,
+    "low_threshold": 0.844,
+    "sim_fully_high": 0.49700598802395207,
+    "sim_fully_low": 0.39520958083832336,
+    "sim_min_high": 0.4375,
+    "sim_min_low": 0.23214285714285715,
+    "err_fully_high": 0.013005988023952086,
+    "err_fully_low": 0.014209580838323355,
+    "err_min_high": 0.020500000000000018,
+    "err_min_low": 0.05885714285714283,
+    "loss_total": 0.10657271171941829
+  }
+}

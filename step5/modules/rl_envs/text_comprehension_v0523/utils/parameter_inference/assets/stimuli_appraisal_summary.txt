@@ -1,0 +1,28 @@
+Appraisal calibration summary
+mode: heuristic
+
+n_ambiguous: 12
+n_unambiguous: 12
+ambiguous_mean: 0.650669191919192
+unambiguous_mean: 0.7348387723387723
+ambiguous_std: 0.01949338081348168
+unambiguous_std: 0.021321117585964628
+ambiguous_median: 0.65
+unambiguous_median: 0.735
+ambiguous_min: 0.6200000000000001
+ambiguous_max: 0.68
+unambiguous_min: 0.7050000000000001
+unambiguous_max: 0.78
+recommended_threshold_mean_midpoint: 0.6927539821289821
+recommended_threshold_median_midpoint: 0.6925
+recommended_ambiguous_upper_bound_q75: 0.6627272727272728
+recommended_unambiguous_lower_bound_q25: 0.7259615384615384
+gap_exists_between_q75_and_q25: True
+
+Suggested usage
+- Default threshold: recommended_threshold_mean_midpoint
+- More robust alternative: recommended_threshold_median_midpoint
+- Conservative cluster approach:
+    ambiguous   if appraisal <= recommended_ambiguous_upper_bound_q75
+    unambiguous if appraisal >= recommended_unambiguous_lower_bound_q25
+    otherwise leave unclassified
