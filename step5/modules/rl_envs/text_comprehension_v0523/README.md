@@ -29,7 +29,7 @@ cd step5/modules/rl_envs/text_comprehension_v0523/utils/parameter_inference
 
 python calibrate_stimuli_appraisal.py --input_txt assets/human_stimuli.txt --out_dir assets/
 ```
-Then in the `step5/modules/rl_envs/text_comprehension_v0523/utils/parameter_inference/assets/stimuli_appraisal_summary.txt`, we could find the range approximately as 'ambiguious' for [0.6, 0.7], and 'unambiguous' for [0.7, 0.8]; then set these values in the 'step5/modules/rl_envs/text_comprehension_v0523/utils/infer_parameter.py' accordingly.
+Then in the `step5/modules/rl_envs/text_comprehension_v0523/utils/parameter_inference/assets/stimuli_appraisal_summary.txt`, we could find the range approximately as 'ambiguious' for [0.6, 0.7], and 'unambiguous' for [0.7, 0.8]; then set these values in the main function of 'step5/modules/rl_envs/text_comprehension_v0523/utils/infer_parameter.py' accordingly.
 
 Now, run experiments for parameter inference and plot the eye movement data figure. This one: `step5/modules/rl_envs/text_comprehension_v0523/utils/parameter_inference/ltm_threshold_grid/panel_best_params_and_regression_aligned_regression_probability.pdf`.
 

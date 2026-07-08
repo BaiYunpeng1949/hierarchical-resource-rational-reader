@@ -21,7 +21,6 @@ import pandas as pd
 
 from step5.utils import auxiliaries as aux
 from step5.utils import pseudo_offline_ocr_model as ocr
-from step3.gens import image_generator as gens
 from step5.utils import constants as cons
 
 
