@@ -1,0 +1,5 @@
+panel	series	intercept	slope	r2	n
+ambiguity_vs_regression	human	0.133570	0.008823	0.766959	10
+ambiguity_vs_regression	simulation	0.183264	0.028943	0.784320	10
+ambiguity_vs_skip	human	0.395261	-0.002512	0.026104	10
+ambiguity_vs_skip	simulation	0.437799	-0.004852	0.291450	10
