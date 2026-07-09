@@ -34,6 +34,13 @@ Copy the entire folder to:
 step5/training/saved_models/
 ```
 
+edit `STB3RL.py` such that:
+```bash
+env_class_choice = TextComprehensionEnv
+```
+
+copy `step5/modules/rl_envs/text_comprehension_v0516/config.yaml` to `step5/config.yaml` for the default configuration
+
 Run the simulation
 ```bash
 conda activate reader_agent

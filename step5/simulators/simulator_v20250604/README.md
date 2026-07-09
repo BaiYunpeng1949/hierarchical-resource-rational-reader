@@ -186,7 +186,7 @@ Procedure
       ```bash
       python simulator.py single --stimuli 0-8 --conds 30s,60s,90s --trials 1 --rho_inflation_percentage 0.29 --w_skip_degradation_factor 0.7 --coverage_factor 1.30
       ```
-2. Find the simulated results here: `/home/baiy4/reader-agent-zuco/step5/simulators/simulator_v20250604/simulated_results`, copy the folder name, e.g., `20250710_1023_trials1_stims9_conds3`.
+2. Find the simulated results here: `step5/simulators/simulator_v20250604/simulated_results`, copy the folder name, e.g., `20250710_1023_trials1_stims9_conds3`.
 3. `cd step5/simulators/simulator_v20250604/utils/`, paste the folder name in `analyze_data.py`, then `python analyze_data.py`, find the plotted figures in the same copied folder.
 
 Parameter Inference Procedure
@@ -263,8 +263,8 @@ python plot.py \
 ### 2. Run the Bayesian Inference
 in `step5/simulators/simulator_v20250604/`
 ```bash 
-python bayesian_inference.py \
-  --human human_data/analyzed_human_metrics.json \
+python parameter_inference/bayesian_inference.py \
+  --human parameter_inference/human_data/analyzed_human_metrics.json \
   --out_root parameter_inference/bayes_runs \
   --iters 40 --init 8 --cand 512 --xi 0.01 \
   --bounds_rho 0.10 0.30 --bounds_w 0.50 1.00 --bounds_cov 0.00 3.00 \
@@ -274,7 +274,11 @@ python bayesian_inference.py \
 ```
 So the best way would be use the grid search to roughly find some good start. Then use the Bayesian inference.
 
+in `step5/simulators/simulator_v20250604/parameter_inference`
 ```bash
+python infer_parameters.py --grid_dir bayes_runs --human human_data/analyzed_human_metrics.json --loss sse --norm zscore --topk 10
+
+
 python plot.py --grid_dir parameter_inference/bayes_runs --human human_data/analyzed_human_metrics.json --topk 3
 ```
 
@@ -307,7 +311,7 @@ cd assets
 python build_aggregated_panel_metrics_baseline.py --folder simulation_data_baselines/ 
 ```
 
-Plot
+and in `simulator_v20250604/plot`
 ```bash
 python plot_eye_comp_and_baselines_from_aggregated_metrics.py 
 ```
@@ -320,7 +324,7 @@ cd assets
 python build_french_corpus_effects_metrics.py   --root simulation_data_effects_replication/rho_0.290__w_0.700__cov_1.30   --lang en   --out analyzed_by_episode_fixation_metrics.json
 ```
 
-Plot
+and in `simulator_v20250604/plot`
 ```bash
 python plot_french_corpus_effects.py --input assets/analyzed_by_episode_fixation_metrics.json --out french_corpus_effects_panel.pdf
 ```
