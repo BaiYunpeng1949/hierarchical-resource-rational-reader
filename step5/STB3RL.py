@@ -64,6 +64,7 @@ from modules.rl_envs.text_comprehension_v0516.Utilities import DictActionUnwrapp
 
 # Change the environment class to match that of the test you are running
 
+
 env_class_choice = WordActivationRLEnv # TextComprehensionEnv # SentenceReadingEnv # WordActivationRLEnv # OculomotorControllerRLEnv # GeneralOculomotorControllerEnv           # GeneralOculomotorControllerEnv, SentenceLevelControllerEnv, SupervisoryControllerEnv
 
 _MODES = {
