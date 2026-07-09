@@ -106,6 +106,13 @@ step5/training/saved_models/
 
 > ***NOTE:*** The processed ZuCo-related datasets will be prepared soon.
 
+edit `STB3RL.py` such that:
+```bash
+env_class_choice = SentenceReadingEnv
+```
+
+copy `step5/modules/rl_envs/sentence_read_v0319/config.yaml` to `step5/config.yaml` for the default configuration
+
 Run the simulation
 ```bash
 conda activate reader_agent
