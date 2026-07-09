@@ -777,6 +777,121 @@ class RL:
 
         print(f"Time elapsed for SENTENCE GRID TEST: {time.time() - start_time:.2f} s")
 
+    def _word_activation_grid_test(self):
+        """
+        Sweep kappa over [start, end] with the given step.
+        For each kappa:
+        - run self._num_episodes episodes
+        - collect ALL episode logs into logs.json (list of episodes)
+        - run analyzers to produce prior-effect CSVs (raw + binned), word-length CSV, and accuracy
+        """
+
+        # ----- grid from config (inclusive end) -----
+        k_start, k_end, k_step = self._config_rl['test']['params']['kappa']
+        num_kappas = int((k_end - k_start) / k_step) + 1
+
+        # ----- output base dir (your new path) -----
+        root_path = os.path.dirname(os.path.abspath(__file__))    # /home/.../step5
+        # For the earlier only when version, use "word_activation_v0218", for the lateral both when and where version, use "word_activation_v0316"
+        base_dir = os.path.join(
+            root_path, "modules", "rl_envs", "word_activation_v0218",
+            "parameter_inference", "simulation_data"
+        )
+        os.makedirs(base_dir, exist_ok=True)
+
+        def _fmt_kappa_folder(k):
+            # e.g., kappa_2p00 (safe folder name)
+            return f"kappa_{str(float(k)).replace('.', 'p')}"
+
+        # json helper
+        def convert_ndarray(obj):
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif isinstance(obj, (np.int64, np.int32)):
+                return int(obj)
+            elif isinstance(obj, (np.float64, np.float32)):
+                return float(obj)
+            else:
+                raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
+        start_time = time.time()
+        for k_idx in range(num_kappas):
+            kappa = k_start + k_idx * k_step
+
+            # folder for THIS kappa
+            kappa_dir = os.path.join(base_dir, _fmt_kappa_folder(kappa))
+            os.makedirs(kappa_dir, exist_ok=True)
+
+            logs_across_episodes = []
+
+            # run N episodes for THIS kappa
+            for ep_idx in range(1, self._num_episodes + 1):
+
+                obs, info = self._env.reset(params={"kappa": float(kappa)}, ep_idx=ep_idx)
+                # Defensive: make sure the env created the log structure (some envs do it lazily)
+                try:
+                    if not hasattr(self._env, "log_cumulative_version") or \
+                    "fixations" not in getattr(self._env, "log_cumulative_version", {}):
+                        _ = self._env._get_logs(is_initialization=True, mode="test")
+                except Exception:
+                    # if your env doesn't expose _get_logs publicly, it's fine—logging should still proceed on steps
+                    pass
+
+                done = False
+                score = 0.0
+                while not done:
+                    action, _ = self._model.predict(obs, deterministic=True)
+                    obs, reward, done, truncated, step_info = self._env.step(action)
+                    score += reward
+
+                ep_log = self._env.log_cumulative_version
+                ep_log["episode_idnex"] = ep_idx  # keep your original spelling
+                ep_log["kappa"] = float(kappa)
+
+                logs_across_episodes.append(ep_log)
+
+                # console progress
+                if (ep_idx % max(1, self._num_episodes // 5)) == 0 or ep_idx == self._num_episodes:
+                    print(f"[grid_test] kappa={kappa:.3f}  episode {ep_idx}/{self._num_episodes}")
+
+            # save ALL episodes for this kappa
+            logs_path = os.path.join(kappa_dir, "logs.json")
+            with open(logs_path, "w", encoding="utf-8") as f:
+                json.dump(logs_across_episodes, f, default=convert_ndarray, indent=4)
+
+            # analyze once per kappa (aggregates all episodes)
+            with open(logs_path, "r", encoding="utf-8") as f:
+                json_data = f.read()
+
+            # prior effects (raw + binned)
+            csv_log_freq_file_path          = os.path.join(kappa_dir, "gaze_duration_vs_word_log_frequency.csv")
+            csv_logit_pred_file_path        = os.path.join(kappa_dir, "gaze_duration_vs_word_logit_predictability.csv")
+            csv_binned_log_freq_file_path   = os.path.join(kappa_dir, "gaze_duration_vs_word_log_frequency_binned.csv")
+            csv_binned_logit_pred_file_path = os.path.join(kappa_dir, "gaze_duration_vs_word_logit_predictability_binned.csv")
+
+            plot_word_activation_figures.analyze_priors_effect_on_gaze_duration(
+                json_data=json_data, save_file_dir=kappa_dir,
+                csv_log_freq_file_path=csv_log_freq_file_path,
+                csv_logit_pred_file_path=csv_logit_pred_file_path,
+                csv_binned_log_freq_file_path=csv_binned_log_freq_file_path,
+                csv_binned_logit_pred_file_path=csv_binned_logit_pred_file_path
+            )
+
+            # word-length effect
+            wl_csv = os.path.join(kappa_dir, "gaze_duration_vs_word_length.csv")
+            plot_word_activation_figures.analyze_word_length_gaze_duration(
+                json_data=json_data, save_file_dir=kappa_dir, csv_file_path=wl_csv
+            )
+
+            # accuracy
+            acc_dir = os.path.join(kappa_dir, "accuracy")
+            os.makedirs(acc_dir, exist_ok=True)
+            plot_word_activation_figures.analyze_accuracy(json_data=json_data, save_file_dir=acc_dir)
+
+            print(f"[grid_test] kappa={kappa:.3f}  -> analyses saved in {kappa_dir}")
+
+        print(f"Time elapsed for GRID TEST: {time.time() - start_time:.2f} s")
+
     def _grid_test(self):
         """
         Test with grid search parameters.
@@ -810,6 +925,8 @@ class RL:
         elif self._mode == _MODES['grid_test']:
             if isinstance(self._env, SentenceReadingEnv):
                 self._sentence_reading_grid_test()
+            elif isinstance(self._env, WordActivationRLEnv):
+                self._word_activation_grid_test()
             else:
                 self._grid_test()
         else:
