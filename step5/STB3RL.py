@@ -58,6 +58,7 @@ from modules.rl_envs.OMCRLEnvV0128 import OculomotorControllerRLEnv
 from modules.rl_envs.word_activation_v0218.WordActivationEnvV0218 import WordActivationRLEnv
 # from modules.rl_envs.sentence_read_v0306.SentenceReadingEnvV0306 import SentenceReadingEnv
 from modules.rl_envs.sentence_read_v0319.SentenceReadingEnv import SentenceReadingEnv
+from modules.rl_envs.sentence_read_v0319.parameter_inference.analyze_sim_results_word_regression_and_skip_probabilities import analyze_folder
 from modules.rl_envs.text_comprehension_v0516.TextComprehensionEnv import TextComprehensionEnv
 from modules.rl_envs.text_comprehension_v0516.Utilities import DictActionUnwrapper
 
@@ -668,6 +669,114 @@ class RL:
         print("Sentence reading test method not implemented yet.")
         pass
 
+    def _sentence_reading_grid_test(self):
+        """
+        Sentence-reading grid test: sweep *w_regression_cost* and dump raw logs.
+        For each value w in [start, end] with given step (from rl.test.params.w_regression_cost),
+        run N episodes and save **raw_simulated_results.json** under:
+            modules/rl_envs/sentence_read_v0319/parameter_inference/simulation_data/w_regression_cost_<val>/
+        """
+        # Read sweep triple from config; fall back to defaults if missing
+        sweep = None
+        try:
+            sweep = self._config_rl.get('test', {}).get('params', {}).get('w_regression_cost', None)
+        except Exception:
+            sweep = None
+        if not sweep:
+            # try legacy key
+            sweep = self._config_rl.get('test', {}).get('grid_params', {}).get('w_regression_cost', None)
+        if not sweep:
+            sweep = [0.10, 1.00, 0.10]  # default sensible range
+
+        if len(sweep) != 3:
+            raise ValueError(f"rl.test.params.w_regression_cost must be [start, end, step], got: {sweep}")
+        w_start, w_end, w_step = float(sweep[0]), float(sweep[1]), float(sweep[2])
+        if w_step == 0.0:
+            raise ValueError("w_regression_cost step cannot be 0")
+        num_vals = int((w_end - w_start) / w_step) + 1
+
+        # Output base directory aligned with the sentence env import path
+        root_path = os.path.dirname(os.path.abspath(__file__))
+        base_dir = os.path.join(
+            root_path, "modules", "rl_envs", "sentence_read_v0319", "parameter_inference", "simulation_data"
+        )
+        os.makedirs(base_dir, exist_ok=True)
+
+        def _fmt_w_folder(w):
+            # e.g., w_regression_cost_0p35
+            return f"w_regression_cost_{str(float(w)).replace('.', 'p')}"
+
+        # JSON helper
+        def convert_ndarray(obj):
+            import numpy as np
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif isinstance(obj, (np.int64, np.int32)):
+                return int(obj)
+            elif isinstance(obj, (np.float64, np.float32)):
+                return float(obj)
+            else:
+                raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
+        import time
+        start_time = time.time()
+
+        for i in range(num_vals):
+            w_val = w_start + i * w_step
+
+            # Folder for THIS w_regression_cost
+            w_dir = os.path.join(base_dir, _fmt_w_folder(w_val))
+            os.makedirs(w_dir, exist_ok=True)
+
+            logs_across_episodes = []
+
+            # Run N episodes
+            for ep_idx in range(1, self._num_episodes + 1):
+                # Ensure env picks up the parameter and episode id for reproducible logging
+                try:
+                    obs, info = self._env.reset(params={'w_regression_cost': float(w_val)}, episode_id=ep_idx)
+                except TypeError:
+                    # fallback older signature
+                    obs, info = self._env.reset(params={'w_regression_cost': float(w_val)}, ep_idx=ep_idx)
+
+                done = False
+                score = 0.0
+                while not done:
+                    action, _ = self._model.predict(obs, deterministic=True)
+                    obs, reward, done, truncated, step_info = self._env.step(action)
+                    score += reward
+
+                # Prefer env.get_episode_log() if available, else use log_cumulative_version
+                ep_log = None
+                if hasattr(self._env, 'get_episode_log') and callable(getattr(self._env, 'get_episode_log')):
+                    try:
+                        ep_log = self._env.get_episode_log()
+                    except Exception:
+                        ep_log = None
+                if ep_log is None and hasattr(self._env, 'log_cumulative_version'):
+                    ep_log = self._env.log_cumulative_version
+                if ep_log is None:
+                    ep_log = {'episode_index': ep_idx}
+
+                ep_log['episode_index'] = ep_idx
+                ep_log['w_regression_cost'] = float(w_val)
+                logs_across_episodes.append(ep_log)
+
+                if (ep_idx % max(1, self._num_episodes // 5)) == 0 or ep_idx == self._num_episodes:
+                    print(f"[sentence grid] w_regression_cost={w_val:.3f}  episode {ep_idx}/{self._num_episodes}")
+
+            # Save ALL episodes for this w_regression_cost
+            logs_path = os.path.join(w_dir, "raw_simulated_results.json")
+            with open(logs_path, "w", encoding="utf-8") as f:
+                json.dump(logs_across_episodes, f, default=convert_ndarray, indent=4)
+
+            print(f"[sentence grid] w_regression_cost={w_val:.3f} -> saved raw logs to {logs_path}")
+
+            # Analyze data on-the-fly
+            analyze_folder(input_folder_dir=w_dir)
+
+        print(f"Time elapsed for SENTENCE GRID TEST: {time.time() - start_time:.2f} s")
+
     def _grid_test(self):
         """
         Test with grid search parameters.
@@ -699,7 +808,10 @@ class RL:
             else:
                 raise ValueError(f'Invalid environment {self._env}.')
         elif self._mode == _MODES['grid_test']:
-            self._grid_test()
+            if isinstance(self._env, SentenceReadingEnv):
+                self._sentence_reading_grid_test()
+            else:
+                self._grid_test()
         else:
             raise ValueError(f'Invalid mode {self._mode}.')
 
