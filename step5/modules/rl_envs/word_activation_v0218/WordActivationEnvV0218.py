@@ -205,8 +205,13 @@ class WordActivationRLEnv(Env):
 
         # Define the training and testing data (temporary, in the formal training deploy separately)
         self.lex_manager = LexiconManager()
+
+        ############################################################################################
+        # Tunable Parameter
+        ############################################################################################
+        self.param_kappa = None     # Out-of-model tunable parameter kappa, does not need to be trained with
     
-    def reset(self, seed=None, inputs=None, ep_idx=None):
+    def reset(self, seed=None, inputs=None, ep_idx=None, params=None):
         """
         Reset the environment to the initial state
         """
@@ -276,6 +281,12 @@ class WordActivationRLEnv(Env):
         # Initialize the ground truth representation -- the word to be recognize is encoded as:
         self._normalized_ground_truth_word_representation = self.transition_function.get_normalized_ground_truth_word_representation(target_word=self._word)
         # This is only used for identifying words and numerical computations
+
+        # Check whether there are out-of-model tunable parameters
+        if params is not None:
+            self.param_kappa = params['kappa']
+        else:
+            self.param_kappa = 3.75     # An default value from the literature
 
         return self._get_obs(), self._get_logs(is_initialization=True, mode=self._mode)
 
@@ -395,7 +406,7 @@ class WordActivationRLEnv(Env):
         """
         Calculate the gaze duration
         """
-        self._gaze_duration = self.transition_function.calc_gaze_duration_ms(entropy_diffs=self._entropy_diffs_list)
+        self._gaze_duration = self.transition_function.calc_gaze_duration_ms(entropy_diffs=self._entropy_diffs_list, kappa=self.param_kappa)
 
     
     def _get_logs(self, is_initialization=False, mode="train"):
@@ -404,7 +415,7 @@ class WordActivationRLEnv(Env):
         """        
         if mode == "train":
             return {}
-        elif mode == "debug" or mode == "test":
+        elif mode == "debug" or mode == "test" or mode == "grid_test":
             if is_initialization:   # Return the initializations, mainly the 
 
                 self.log_cumulative_version = {

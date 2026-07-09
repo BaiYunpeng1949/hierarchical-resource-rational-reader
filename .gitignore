@@ -230,6 +230,8 @@ sysinfo.txt
 /baseline_models/DQ_scanpath/
 /_draft_files/
 /data/
+/data/human_data/bai_read_under_time_pressure
+/data/human_data/zuco1_task2
 /cc.en.300.bin
 /results/section1/simulated_results/archives
 /step5/data/sim_results/word_activation/
@@ -297,6 +299,9 @@ step5/simulators/simulator_v20260320/assets/experiment/10_27_15_58_100_images_W1
 step5/simulators/simulator_v20260320/parameter_inference/human_data/analyzed_human_metrics.json
 step5/simulators/simulator_v20260320/sub_models/text_read_v0604/assets/metadata_sentence_indeces.json
 step5/simulators/simulator_v20260320/sub_models/text_read_v0604/assets/processed_stimulus.json
+/step5/modules/rl_envs/word_activation_v0218/parameter_inference/simulation_data
+/step5/modules/rl_envs/sentence_read_v0319/parameter_inference/simulation_data
+/step5/modules/rl_envs/word_activation_v0316/parameter_inference/simulation_data
 /step5/modules/rl_envs/word_activation_v0218/parameter_inference/simulation_data
 /step5/modules/rl_envs/sentence_read_v0319/parameter_inference/simulation_data
 /step5/modules/rl_envs/word_activation_v0316/parameter_inference/simulation_data
