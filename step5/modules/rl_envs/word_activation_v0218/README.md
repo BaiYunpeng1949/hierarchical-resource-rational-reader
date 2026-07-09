@@ -33,9 +33,10 @@ step5/training/saved_models/
 
 Run the simulation
 
-Ensure two configurations before execute any codes:
+Ensure three configurations before execute any codes:
 1. `step5/config.yaml` should be exactly the same as `step5/modules/rl_envs/word_activation_v0218/config.yaml`
 2. in `step5/STB3RL.py`, uncomment `from modules.rl_envs.word_activation_v0218.WordActivationEnvV0218 import WordActivationRLEnv`, comment **all** other `WordActivationRLEnv`.
+3. in `step/STB3RL.py`, make `env_class_choice = WordActivationRLEnv`
 
 ```bash
 conda activate reader_model

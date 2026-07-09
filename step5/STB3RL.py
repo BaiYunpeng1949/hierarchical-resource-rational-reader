@@ -62,6 +62,9 @@ from modules.rl_envs.sentence_read_v0319.parameter_inference.analyze_sim_results
 from modules.rl_envs.text_comprehension_v0516.TextComprehensionEnv import TextComprehensionEnv
 from modules.rl_envs.text_comprehension_v0516.Utilities import DictActionUnwrapper
 
+# Change the environment class to match that of the test you are running
+
+env_class_choice = WordActivationRLEnv # TextComprehensionEnv # SentenceReadingEnv # WordActivationRLEnv # OculomotorControllerRLEnv # GeneralOculomotorControllerEnv           # GeneralOculomotorControllerEnv, SentenceLevelControllerEnv, SupervisoryControllerEnv
 
 _MODES = {
     'train': 'train',
@@ -374,7 +377,7 @@ class RL:
             )
 
         # Get the environment class
-        env_class = TextComprehensionEnv # SentenceReadingEnv # WordActivationRLEnv # OculomotorControllerRLEnv # GeneralOculomotorControllerEnv           # GeneralOculomotorControllerEnv, SentenceLevelControllerEnv, SupervisoryControllerEnv
+        env_class = env_class_choice
 
         # Load the dataset (if needed)
         shared_dataset_metadata_of_stimuli = None
