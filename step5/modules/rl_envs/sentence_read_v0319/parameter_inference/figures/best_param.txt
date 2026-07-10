@@ -1,9 +1,9 @@
 Best w_regression_cost: 0.8
 Best folder: w_regression_cost_0p8
-skip_vs_length: 0.04369991875581948
-skip_vs_logit_predictability: 0.016187164884286006
-skip_vs_log_frequency: 0.013826637021066448
-regression_vs_difficulty: 0.044450520228857676
+skip_vs_length: 0.04369991875581607
+skip_vs_logit_predictability: 0.016187164884289777
+skip_vs_log_frequency: 0.013826637021066528
+regression_vs_difficulty: 0.044450520228858134
 regression_vs_ambiguity: 0.002926358559281876
-skip_vs_ambiguity: 0.0018132389898567142
-F_total: 0.1229038384391682
+skip_vs_ambiguity: 0.0018132389898567046
+F_total: 0.12290383843916909
