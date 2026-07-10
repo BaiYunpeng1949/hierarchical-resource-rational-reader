@@ -1,5 +1,25 @@
 import os
 import pandas as pd
+
+import matplotlib as mpl
+
+# Make PDF text editable instead of Type 3 / outlines
+mpl.rcParams["pdf.fonttype"] = 42
+mpl.rcParams["ps.fonttype"] = 42
+mpl.rcParams["svg.fonttype"] = "none"
+mpl.rcParams["pdf.use14corefonts"] = False
+mpl.rcParams["text.usetex"] = False
+
+# Use editable production-friendly font
+mpl.rcParams["font.family"] = "Arial"
+mpl.rcParams["font.sans-serif"] = ["Arial"]
+
+# If the plot uses math text, keep it editable too
+mpl.rcParams["mathtext.fontset"] = "custom"
+mpl.rcParams["mathtext.rm"] = "Arial"
+mpl.rcParams["mathtext.it"] = "Arial:italic"
+mpl.rcParams["mathtext.bf"] = "Arial:bold"
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
