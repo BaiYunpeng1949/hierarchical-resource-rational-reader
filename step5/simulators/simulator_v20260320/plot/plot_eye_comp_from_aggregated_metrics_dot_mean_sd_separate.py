@@ -8,6 +8,19 @@ from pathlib import Path
 import math
 import csv
 import numpy as np
+import matplotlib as mpl
+
+mpl.rcParams["pdf.fonttype"] = 42
+mpl.rcParams["ps.fonttype"] = 42
+mpl.rcParams["svg.fonttype"] = "none"
+mpl.rcParams["pdf.use14corefonts"] = False
+mpl.rcParams["text.usetex"] = False
+mpl.rcParams["font.family"] = "Arial"
+mpl.rcParams["mathtext.fontset"] = "custom"
+mpl.rcParams["mathtext.rm"] = "Arial"
+mpl.rcParams["mathtext.it"] = "Arial:italic"
+mpl.rcParams["mathtext.bf"] = "Arial:bold"
+
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from matplotlib.lines import Line2D
@@ -35,7 +48,6 @@ POINT_ALPHA = 0.30
 MEAN_MARKER_SIZE = 8
 JITTER_WIDTH = 0.12
 RNG_SEED = 7
-
 
 def _set_fonts():
     plt.rcParams.update({'font.size': FONT_SIZE_BASE})
@@ -415,16 +427,28 @@ def _write_human_simulation_agreement(data, out_name="human_simulation_agreement
 
 
 def main():
+    # data = _load_aggregated_json()
+    # conditions = data["conditions"]
+    script_dir = Path(__file__).resolve().parent
+
     data = _load_aggregated_json()
     conditions = data["conditions"]
+
     pretty_conditions = [c.replace("s", " s") for c in conditions]
 
+    # metrics = [
+    #     ("reading_speed", "Reading speed (WPM)", "eye_comp_reading_speed.pdf"),
+    #     ("skip_rate", "Skip rate", "eye_comp_skip_rate.pdf"),
+    #     ("regression_rate", "Regression rate", "eye_comp_regression_rate.pdf"),
+    #     ("mcq_accuracy", "MCQ accuracy", "eye_comp_mcq_accuracy.pdf"),
+    #     ("free_recall_score", "Free recall", "eye_comp_free_recall_score.pdf"),
+    # ]
     metrics = [
-        ("reading_speed", "Reading speed (WPM)", "eye_comp_reading_speed.pdf"),
-        ("skip_rate", "Skip rate", "eye_comp_skip_rate.pdf"),
-        ("regression_rate", "Regression rate", "eye_comp_regression_rate.pdf"),
-        ("mcq_accuracy", "MCQ accuracy", "eye_comp_mcq_accuracy.pdf"),
-        ("free_recall_score", "Free recall", "eye_comp_free_recall_score.pdf"),
+        ("reading_speed", "Reading speed (WPM)", script_dir / "eye_comp_reading_speed.pdf"),
+        ("skip_rate", "Skip rate", script_dir / "eye_comp_skip_rate.pdf"),
+        ("regression_rate", "Regression rate", script_dir / "eye_comp_regression_rate.pdf"),
+        ("mcq_accuracy", "MCQ accuracy", script_dir / "eye_comp_mcq_accuracy.pdf"),
+        ("free_recall_score", "Free recall", script_dir / "eye_comp_free_recall_score.pdf"),
     ]
 
     _set_fonts()

@@ -1,13 +1,17 @@
 import os
 import sys
 
-# Make the repo root importable so `import step5.*` resolves regardless of
-# the directory you launch from (fixes ModuleNotFoundError: No module named 'step5').
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from STB3RL import RL
 import os
+import sys
 
+# Make the repo root importable
+# fixes bug on mac
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from STB3RL import RL
 
 def main():
     # Run the RL pipeline with the given configurations.

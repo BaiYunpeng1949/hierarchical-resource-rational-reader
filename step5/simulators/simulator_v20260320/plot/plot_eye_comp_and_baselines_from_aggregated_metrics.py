@@ -18,7 +18,11 @@ import json
 import math
 from pathlib import Path
 
+# import numpy as np
+# import matplotlib.pyplot as plt
+# from matplotlib.ticker import MaxNLocator
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from matplotlib.lines import Line2D
@@ -74,6 +78,18 @@ AGG_BASE_PATH = Path("assets/aggregated_panel_metrics_baseline.json")
 OUT_PDF       = Path("comparison_panel_baselines_clipped_dot.pdf")
 OUT_STATS     = Path("comparison_panel_baselines_dot_inferential_stats.csv")
 OUT_AGREE     = Path("comparison_panel_baselines_dot_agreement_stats.csv")
+
+# Keep text editable in PDF/EPS outputs for production artwork.
+mpl.rcParams["pdf.fonttype"] = 42
+mpl.rcParams["ps.fonttype"] = 42
+mpl.rcParams["svg.fonttype"] = "none"
+
+# Use a common production-friendly sans-serif font.
+mpl.rcParams["font.family"] = "Arial"
+mpl.rcParams["mathtext.fontset"] = "custom"
+mpl.rcParams["mathtext.rm"] = "Arial"
+mpl.rcParams["mathtext.it"] = "Arial:italic"
+mpl.rcParams["mathtext.bf"] = "Arial:bold"
 
 # ================== Helpers ==================
 def _set_fonts():

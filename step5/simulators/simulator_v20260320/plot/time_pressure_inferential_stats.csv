@@ -2,70 +2,70 @@ section,metric,metric_label,source,condition,comparison,n,mean,sd,sem,test,df1,d
 descriptive,reading_speed,Reading speed (WPM),human,30s,,28,190.77976190476073,37.71618218079651,7.127688460942379,,,,,,,
 descriptive,reading_speed,Reading speed (WPM),human,60s,,28,171.4880952380893,30.123679506652802,5.692840324915442,,,,,,,
 descriptive,reading_speed,Reading speed (WPM),human,90s,,28,166.48015873015717,28.43523278007931,5.373753886308689,,,,,,,
-inferential,reading_speed,Reading speed (WPM),human,,30s_vs_60s_vs_90s,84,,,,one_way_anova,2,81,4.4059328645381,0.015262570010557117,0.09811471632999817,eta_squared
+inferential,reading_speed,Reading speed (WPM),human,,30s_vs_60s_vs_90s,84,,,,one_way_anova,2,81,4.4059328645381,0.01526257001055713,0.09811471632999817,eta_squared
 inferential,reading_speed,Reading speed (WPM),human,,30s_vs_60s,56,,,,welch_t_test,,51.48394711486836,2.114831613173947,0.03930464900608952,0.5652125233725249,cohens_d
 inferential,reading_speed,Reading speed (WPM),human,,30s_vs_90s,56,,,,welch_t_test,,50.198733331023135,2.722208089910573,0.0088927778501782,0.7275407148535484,cohens_d
 inferential,reading_speed,Reading speed (WPM),human,,60s_vs_90s,56,,,,welch_t_test,,53.821317824444314,0.6397044532357171,0.5250785113263818,0.17096820662868614,cohens_d
 descriptive,reading_speed,Reading speed (WPM),simulation,30s,,9,198.22222222222223,21.50452148838575,7.168173829461916,,,,,,,
 descriptive,reading_speed,Reading speed (WPM),simulation,60s,,9,180.77777777777777,8.288211172770904,2.7627370575903014,,,,,,,
 descriptive,reading_speed,Reading speed (WPM),simulation,90s,,9,171.1851851851852,12.79226232175693,4.2640874405856435,,,,,,,
-inferential,reading_speed,Reading speed (WPM),simulation,,30s_vs_60s_vs_90s,27,,,,one_way_anova,2,24,7.301547250443124,0.00333479745058847,0.37828818362090083,eta_squared
+inferential,reading_speed,Reading speed (WPM),simulation,,30s_vs_60s_vs_90s,27,,,,one_way_anova,2,24,7.301547250443124,0.0033347974505884685,0.37828818362090083,eta_squared
 inferential,reading_speed,Reading speed (WPM),simulation,,30s_vs_60s,18,,,,welch_t_test,,10.325428977916754,2.27077627105272,0.0457226650985918,1.0704541998792534,cohens_d
 inferential,reading_speed,Reading speed (WPM),simulation,,30s_vs_90s,18,,,,welch_t_test,,13.031738533641013,3.2416282525670628,0.0064129252720069195,1.5281182129840454,cohens_d
 inferential,reading_speed,Reading speed (WPM),simulation,,60s_vs_90s,18,,,,welch_t_test,,13.710294854936258,1.8879852989840662,0.08037480325856641,0.8900048051280963,cohens_d
 descriptive,skip_rate,Skip rate,human,30s,,28,0.3907747888607143,0.0767849288062263,0.014510987575648176,,,,,,,
 descriptive,skip_rate,Skip rate,human,60s,,28,0.3226584662464286,0.08217560230103493,0.015529729108963254,,,,,,,
 descriptive,skip_rate,Skip rate,human,90s,,28,0.31304003764285715,0.0831746708315273,0.01571853531427708,,,,,,,
-inferential,skip_rate,Skip rate,human,,30s_vs_60s_vs_90s,84,,,,one_way_anova,2,81,7.709523066615607,0.0008610901478212338,0.1599170158966858,eta_squared
+inferential,skip_rate,Skip rate,human,,30s_vs_60s_vs_90s,84,,,,one_way_anova,2,81,7.709523066615607,0.0008610901478212344,0.1599170158966858,eta_squared
 inferential,skip_rate,Skip rate,human,,30s_vs_60s,56,,,,welch_t_test,,53.75329711978065,3.2048397658297336,0.0022748046162869603,0.8565294559459781,cohens_d
 inferential,skip_rate,Skip rate,human,,30s_vs_90s,56,,,,welch_t_test,,53.65860237613446,3.6337303518183193,0.0006259032604152595,0.9711552866018349,cohens_d
 inferential,skip_rate,Skip rate,human,,60s_vs_90s,56,,,,welch_t_test,,53.99211613177218,0.43529662020190346,0.6650823349061146,0.11633791531544163,cohens_d
 descriptive,skip_rate,Skip rate,simulation,30s,,9,0.39363747327833404,0.03494897850863027,0.011649659502876756,,,,,,,
 descriptive,skip_rate,Skip rate,simulation,60s,,9,0.32832209694486025,0.02962125523636585,0.009873751745455283,,,,,,,
 descriptive,skip_rate,Skip rate,simulation,90s,,9,0.3268998032356246,0.03561857816576995,0.011872859388589984,,,,,,,
-inferential,skip_rate,Skip rate,simulation,,30s_vs_60s_vs_90s,27,,,,one_way_anova,2,24,11.655170393644772,0.000290443715574363,0.49271132694001135,eta_squared
+inferential,skip_rate,Skip rate,simulation,,30s_vs_60s_vs_90s,27,,,,one_way_anova,2,24,11.655170393644772,0.000290443715574363,0.4927113269400113,eta_squared
 inferential,skip_rate,Skip rate,simulation,,30s_vs_60s,18,,,,welch_t_test,,15.581407000076803,4.277066490973244,0.0006106010886021055,2.0162284795686216,cohens_d
-inferential,skip_rate,Skip rate,simulation,,30s_vs_90s,18,,,,welch_t_test,,15.994240753029064,4.012200815725954,0.0010065437711284332,1.8913696028546798,cohens_d
+inferential,skip_rate,Skip rate,simulation,,30s_vs_90s,18,,,,welch_t_test,,15.994240753029064,4.012200815725954,0.0010065437711284327,1.8913696028546798,cohens_d
 inferential,skip_rate,Skip rate,simulation,,60s_vs_90s,18,,,,welch_t_test,,15.485293870740431,0.09210546027271053,0.9277952643051559,0.043418930362094516,cohens_d
 descriptive,regression_rate,Regression rate,human,30s,,28,0.3161848319035715,0.12070618058859926,0.022811323967563267,,,,,,,
 descriptive,regression_rate,Regression rate,human,60s,,28,0.4772694567178572,0.13994888609912706,0.02644785349134246,,,,,,,
 descriptive,regression_rate,Regression rate,human,90s,,28,0.5930452536428571,0.10577398726570536,0.01998940467748352,,,,,,,
-inferential,regression_rate,Regression rate,human,,30s_vs_60s_vs_90s,84,,,,one_way_anova,2,81,35.81648334847761,7.176046889399578e-12,0.46931516989497224,eta_squared
+inferential,regression_rate,Regression rate,human,,30s_vs_60s_vs_90s,84,,,,one_way_anova,2,81,35.81648334847761,7.176046889399579e-12,0.46931516989497224,eta_squared
 inferential,regression_rate,Regression rate,human,,30s_vs_60s,56,,,,welch_t_test,,52.86009961855602,-4.612131524723717,2.567879851049284e-05,-1.2326439991611038,cohens_d
 inferential,regression_rate,Regression rate,human,,30s_vs_90s,56,,,,welch_t_test,,53.08493781891188,-9.128151177047679,1.8223267269855038e-12,-2.4396010199421205,cohens_d
 inferential,regression_rate,Regression rate,human,,60s_vs_90s,56,,,,welch_t_test,,50.257646775867705,-3.4922557414326016,0.0010079892301324755,-0.9333446065310715,cohens_d
 descriptive,regression_rate,Regression rate,simulation,30s,,9,0.32025870449214516,0.136309223475844,0.045436407825281334,,,,,,,
 descriptive,regression_rate,Regression rate,simulation,60s,,9,0.41284812695311895,0.026914754036564917,0.008971584678854972,,,,,,,
 descriptive,regression_rate,Regression rate,simulation,90s,,9,0.5660919973067965,0.029184471975103092,0.009728157325034363,,,,,,,
-inferential,regression_rate,Regression rate,simulation,,30s_vs_60s_vs_90s,27,,,,one_way_anova,2,24,20.648946217273544,6.077779372410619e-06,0.6324536810425092,eta_squared
+inferential,regression_rate,Regression rate,simulation,,30s_vs_60s_vs_90s,27,,,,one_way_anova,2,24,20.648946217273544,6.077779372410616e-06,0.6324536810425092,eta_squared
 inferential,regression_rate,Regression rate,simulation,,30s_vs_60s,18,,,,welch_t_test,,8.622860332809639,-1.9991810745654557,0.07804034434177815,-0.9424229964300285,cohens_d
 inferential,regression_rate,Regression rate,simulation,,30s_vs_90s,18,,,,welch_t_test,,8.731916455824242,-5.290587446929507,0.0005526147141824338,-2.4940068401228523,cohens_d
 inferential,regression_rate,Regression rate,simulation,,60s_vs_90s,18,,,,welch_t_test,,15.896255706817787,-11.579967246687296,3.70115728210002e-09,-5.458848910700468,cohens_d
 descriptive,mcq_accuracy,MCQ accuracy,human,30s,,32,0.5916666666666666,0.13520195964731105,0.0239005556240809,,,,,,,
 descriptive,mcq_accuracy,MCQ accuracy,human,60s,,32,0.7312500000000002,0.13807106891628165,0.02440774727909447,,,,,,,
 descriptive,mcq_accuracy,MCQ accuracy,human,90s,,32,0.825,0.11578004111740049,0.020467213050042794,,,,,,,
-inferential,mcq_accuracy,MCQ accuracy,human,,30s_vs_60s_vs_90s,96,,,,one_way_anova,2,93,26.07919131279245,1.0204659084177638e-09,0.3593205000094273,eta_squared
+inferential,mcq_accuracy,MCQ accuracy,human,,30s_vs_60s_vs_90s,96,,,,one_way_anova,2,93,26.07919131279245,1.020465908417764e-09,0.3593205000094273,eta_squared
 inferential,mcq_accuracy,MCQ accuracy,human,,30s_vs_60s,64,,,,welch_t_test,,61.97268097639163,-4.086042198978088,0.00012826911658800482,-1.0215105497445223,cohens_d
 inferential,mcq_accuracy,MCQ accuracy,human,,30s_vs_90s,64,,,,welch_t_test,,60.5664739884393,-7.415283227184686,4.645476391845755e-10,-1.8538208067961714,cohens_d
-inferential,mcq_accuracy,MCQ accuracy,human,,60s_vs_90s,64,,,,welch_t_test,,60.1723740125924,-2.9431624233748344,0.004609670316666983,-0.7357906058437086,cohens_d
+inferential,mcq_accuracy,MCQ accuracy,human,,60s_vs_90s,64,,,,welch_t_test,,60.1723740125924,-2.9431624233748344,0.004609670316666984,-0.7357906058437086,cohens_d
 descriptive,mcq_accuracy,MCQ accuracy,simulation,30s,,9,0.4888888888888888,0.24720661623652207,0.08240220541217402,,,,,,,
 descriptive,mcq_accuracy,MCQ accuracy,simulation,60s,,9,0.7555555555555555,0.19436506316151,0.06478835438717,,,,,,,
 descriptive,mcq_accuracy,MCQ accuracy,simulation,90s,,9,0.8,0.22360679774997896,0.07453559924999299,,,,,,,
-inferential,mcq_accuracy,MCQ accuracy,simulation,,30s_vs_60s_vs_90s,27,,,,one_way_anova,2,24,5.134328358208956,0.01392418959919685,0.299651567944251,eta_squared
+inferential,mcq_accuracy,MCQ accuracy,simulation,,30s_vs_60s_vs_90s,27,,,,one_way_anova,2,24,5.134328358208956,0.013924189599196847,0.299651567944251,eta_squared
 inferential,mcq_accuracy,MCQ accuracy,simulation,,30s_vs_60s,18,,,,welch_t_test,,15.15618273140397,-2.5439949120152647,0.02233135820621047,-1.1992507023933785,cohens_d
 inferential,mcq_accuracy,MCQ accuracy,simulation,,30s_vs_90s,18,,,,welch_t_test,,15.841584158415841,-2.800000000000001,0.01293338598439447,-1.3199326582148891,cohens_d
 inferential,mcq_accuracy,MCQ accuracy,simulation,,60s_vs_90s,18,,,,welch_t_test,,15.695693178245838,-0.4500351603704102,0.6588384978756725,-0.2121486091135283,cohens_d
 descriptive,free_recall_score,Free recall,human,30s,,32,0.6416666666666666,0.07851671511195134,0.013879925423038265,,,,,,,
 descriptive,free_recall_score,Free recall,human,60s,,32,0.703125,0.0694883373830319,0.01228391864423013,,,,,,,
 descriptive,free_recall_score,Free recall,human,90s,,32,0.7302083333333333,0.07251714665608258,0.01281934153820384,,,,,,,
-inferential,free_recall_score,Free recall,human,,30s_vs_60s_vs_90s,96,,,,one_way_anova,2,93,12.15858028945554,2.0377239393162332e-05,0.20727709790209814,eta_squared
+inferential,free_recall_score,Free recall,human,,30s_vs_60s_vs_90s,96,,,,one_way_anova,2,93,12.15858028945554,2.0377239393162342e-05,0.20727709790209814,eta_squared
 inferential,free_recall_score,Free recall,human,,30s_vs_60s,64,,,,welch_t_test,,61.097343309013894,-3.315795261624998,0.0015412183095599382,-0.8289488154062495,cohens_d
 inferential,free_recall_score,Free recall,human,,30s_vs_90s,64,,,,welch_t_test,,61.61234126705787,-4.686201694569759,1.5829022225845164e-05,-1.1715504236424397,cohens_d
 inferential,free_recall_score,Free recall,human,,60s_vs_90s,64,,,,welch_t_test,,61.887487334394585,-1.5254157408139253,0.1322499769559178,-0.3813539352034813,cohens_d
 descriptive,free_recall_score,Free recall,simulation,30s,,9,0.535790921913253,0.19382562522944702,0.064608541743149,,,,,,,
 descriptive,free_recall_score,Free recall,simulation,60s,,9,0.6717904806137085,0.13607343184882817,0.045357810616276056,,,,,,,
 descriptive,free_recall_score,Free recall,simulation,90s,,9,0.6763229933049943,0.10529535739184515,0.03509845246394838,,,,,,,
-inferential,free_recall_score,Free recall,simulation,,30s_vs_60s_vs_90s,27,,,,one_way_anova,2,24,2.5635229554953725,0.09794395033357793,0.17602354617967325,eta_squared
-inferential,free_recall_score,Free recall,simulation,,30s_vs_60s,18,,,,welch_t_test,,14.344595914156194,-1.7228120520995713,0.10640251640259975,-0.8121413898330123,cohens_d
+inferential,free_recall_score,Free recall,simulation,,30s_vs_60s_vs_90s,27,,,,one_way_anova,2,24,2.5635229554953725,0.09794395033357785,0.17602354617967325,eta_squared
+inferential,free_recall_score,Free recall,simulation,,30s_vs_60s,18,,,,welch_t_test,,14.344595914156194,-1.7228120520995713,0.10640251640259973,-0.8121413898330123,cohens_d
 inferential,free_recall_score,Free recall,simulation,,30s_vs_90s,18,,,,welch_t_test,,12.3435880724691,-1.911308530392415,0.07946046629288687,-0.9009994818534474,cohens_d
 inferential,free_recall_score,Free recall,simulation,,60s_vs_90s,18,,,,welch_t_test,,15.052088577735407,-0.07902995822866589,0.9380498934773844,-0.037255079586919496,cohens_d

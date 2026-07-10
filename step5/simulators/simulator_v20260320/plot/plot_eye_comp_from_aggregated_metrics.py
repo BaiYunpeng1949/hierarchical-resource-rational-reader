@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # Plot 1x5 panel from aggregated_panel_metrics.json with absolute gaps + easy legend control
 import json
-from pathlib import Path
+import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
+from pathlib import Path
 import matplotlib.gridspec as gridspec
 
 # ==== House style (tweak here) ====
@@ -39,6 +41,17 @@ LEGEND_ALPHA     = 0.9       # 0=transparent, 1=opaque
 LEGEND_BORDERPAD = 0.4       # inner padding
 LEGEND_LABELSP   = 0.3       # spacing between entries
 
+# Keep text editable in PDF/EPS outputs for production artwork.
+mpl.rcParams["pdf.fonttype"] = 42
+mpl.rcParams["ps.fonttype"] = 42
+mpl.rcParams["svg.fonttype"] = "none"
+
+# Use a production-friendly sans-serif font.
+mpl.rcParams["font.family"] = "Arial"
+mpl.rcParams["mathtext.fontset"] = "custom"
+mpl.rcParams["mathtext.rm"] = "Arial"
+mpl.rcParams["mathtext.it"] = "Arial:italic"
+mpl.rcParams["mathtext.bf"] = "Arial:bold"
 
 def _set_fonts():
     plt.rcParams.update({'font.size': FONT_SIZE_BASE})

@@ -97,9 +97,6 @@ Results refer to the Section Results "Deciding when and where to fixate in a wor
 > ***NOTE:*** Detailed descriptions and instructions could be found in `step5/modules/rl_envs/word_activation_v0218/README.md`.
 
 ```bash
-# Change to the correct branch (must do this)
-git checkout word_recognition/gaze-duration-effects
-
 cd step5/
 
 python main.py
@@ -113,9 +110,6 @@ Results refer to the Section Results "Deciding where to fixate in a sentence". F
 > ***NOTE:*** Detailed descriptions and instructions could be found in `step5/modules/rl_envs/sentence_read_v0319/README.md`.
 
 ```bash
-# Change to the correct branch (must do this)
-git checkout sentence_reading/skip-regression-effects
-
 cd step5/
 
 python main.py
@@ -127,8 +121,6 @@ Results refer to the Section Results "Text comprehension and deciding where to r
 > ***NOTE:*** Detailed descriptions and instructions could be found in `step5/modules/rl_envs/text_comprehension_v0516/README.md` and `step5/modules/rl_envs/text_comprehension_v0523/README.md`.
 
 ```bash
-git checkout text_comprehension/effects
-
 cd step5/
 
 python main.py
@@ -141,8 +133,6 @@ Results refer to the Section Results "Speed-accuracy trade-off when reading unde
 > ***NOTE:*** Detailed descriptions and instructions could be found in `step5/simulators/simulator_v20250604/README.md`.
 
 ```bash
-git checkout read_under_time_pressure
-
 cd step5/simulators/simulator_v20250604
 
 python simulator.py
@@ -158,7 +148,7 @@ Please find the detailed instructions, description and explanation of the output
 
 ---
 ## 6. Reproduction 
-Details could be found in specific branches, as mentioned above (Demo: running experiments).
+Details could be found in specific README files, as mentioned above (Demo: running experiments).
 
 ---
 ## 7. Contributors
