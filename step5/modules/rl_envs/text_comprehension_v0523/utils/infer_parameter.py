@@ -108,9 +108,22 @@ LEGEND_ANCHOR_Y    = 1.0   # raise/lower legend: 0 (bottom) … 1 (top)
 LEGEND_LOC = "best"  # e.g., "best", "upper left", etc.
 
 # ---------------- config (defaults) ----------------
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+RL_ENVS_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", ".."))
+
 DEFAULT_INPUT = "./assets/organized_example_propositions_v0527.json"
 DEFAULT_OUT   = "./parameter_inference/ltm_threshold_grid"
-DEFAULT_SIM_JSON = None  # set via --sim_json to raw_sim_results.json if you want the right subplot
+# DEFAULT_SIM_JSON = None  # set via --sim_json to raw_sim_results.json if you want the right subplot
+# DEFAULT_SIM_JSON = os.path.join(
+#     RL_ENVS_DIR,
+#     "text_comprehension_v0516",
+#     "temp_sim_data",
+#     "0708_text_comprehension_v0516_no_time_decay_softmin_reward_function_hierarchical_discrete_actions_limited_episodes_03_rl_model_40000000_steps",
+#     "1000ep",
+#     "raw_sim_results.json",
+# )
+# D:\Users\91584\PycharmProjects\hierarchical-resource-rational-reader\step5\modules\rl_envs\text_comprehension_v0516\temp_sim_data\0708_text_comprehension_v0516_no_time_decay_softmin_reward_function_hierarchical_discrete_actions_limited_episodes_03_rl_model_40000000_steps\1000ep\raw_sim_results.json
+DEFAULT_SIM_JSON = "raw_sim_results.json"
 
 # Human targets (override via CLI if needed)
 DEFAULT_HUMAN = dict(
