@@ -94,8 +94,10 @@ SIM_DATA_SENTENCE_LEVEL_JS_FILE_NAME = f"{SIMULATE}_xep_sentence_level.json"
 SIM_DATA_WORD_LEVEL_JS_FILE_NAME = f"{SIMULATE}_xep_word_level.json"
 
 # Generator's configuration
-LINE_SPACING = 2.5 * 16
-LEFT_MARGIN = 400
+# LINE_SPACING = 2.5 * 16
+# LEFT_MARGIN = 400
+LINE_SPACING = 2.5 * 32
+LEFT_MARGIN = 800
 
 RIGHT_MARGIN = LEFT_MARGIN
 config = {
@@ -114,13 +116,17 @@ config = {
         "sentence_random": "random",
     },
     "concrete_configs": {
-        "img_size": (int(1920), int(1080)),   # W, H: (1920, 1080): meet the size of the Tobii Pro Spectrum monitor.
-        "word_size": 16,
+        # "img_size": (int(1920), int(1080)),   # W, H: (1920, 1080): meet the size of the Tobii Pro Spectrum monitor.
+        "img_size": (int(3840), int(2160)),
+        # "word_size": 16,
+        "word_size": 32,
         "foveal_size": (int(80), int(45)),    # This variable is only related to word_size NOTE (80, 45) corresponds to 7-8 letters processed by the model;
         "parafoveal_size": (int(160), int(45)),
-        "peripheral_size": (int(1920), int(1080)),
+        # "peripheral_size": (int(1920), int(1080)),
+        "peripheral_size": (int(3840), int(2160)),
         "training_foveal_and_peripheral_size": (int(80), int(45)),  # This is the size of the image that will be used for training the model
-        "num_images": 100,
+        # "num_images": 100,
+        "num_images": 2,
         "num_words": 100,
         "random num_words": True,
         "corpus": False,
