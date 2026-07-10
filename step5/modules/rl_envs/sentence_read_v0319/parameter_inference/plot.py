@@ -2,8 +2,29 @@ import os
 import numpy as np
 import pandas as pd
 from scipy import stats
+# import matplotlib.pyplot as plt
+# from matplotlib.ticker import MaxNLocator
+
+import matplotlib as mpl
+
+# Keep text editable in PDF/EPS outputs for production artwork.
+mpl.rcParams["pdf.fonttype"] = 42
+mpl.rcParams["ps.fonttype"] = 42
+mpl.rcParams["svg.fonttype"] = "none"
+mpl.rcParams["pdf.use14corefonts"] = False
+mpl.rcParams["text.usetex"] = False
+
+# Use a production-friendly sans-serif font.
+mpl.rcParams["font.family"] = "Arial"
+mpl.rcParams["font.sans-serif"] = ["Arial"]
+mpl.rcParams["mathtext.fontset"] = "custom"
+mpl.rcParams["mathtext.rm"] = "Arial"
+mpl.rcParams["mathtext.it"] = "Arial:italic"
+mpl.rcParams["mathtext.bf"] = "Arial:bold"
+
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
+
 
 # =========================
 # Universal configuration
