@@ -1,8 +1,8 @@
 source	condition	mean_probability	mean_percent	se_percent	sd_percent	n
 human	Ambiguous	0.190000	19.000	4.500	22.045	24
 human	Unambiguous	0.068000	6.800	2.800	13.717	24
-simulation	Ambiguous	0.128488	12.849	0.621	33.469	2903
-simulation	Unambiguous	0.085736	8.574	0.549	28.003	2601
+simulation	Ambiguous	nan	nan	nan	nan	0
+simulation	Unambiguous	nan	nan	nan	nan	0
 
 # Notes
 # Human SE values are reported directly in Staub & Clifton (2006), Table 1.
@@ -10,9 +10,9 @@ simulation	Unambiguous	0.085736	8.574	0.549	28.003	2601
 # Simulation SD/SE are computed across sentence instances within each ambiguity class.
 # Simulation probability = n_regressed / n_total.
 
-simulation_n_regressed_ambiguous	373
-simulation_n_regressed_unambiguous	223
-simulation_n_excluded	9542
+simulation_n_regressed_ambiguous	0
+simulation_n_regressed_unambiguous	0
+simulation_n_excluded	0
 ambiguous_range_min	0.620
 ambiguous_range_max	0.680
 unambiguous_range_min	0.705

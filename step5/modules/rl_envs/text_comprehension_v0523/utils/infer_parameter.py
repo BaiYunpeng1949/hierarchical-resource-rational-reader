@@ -29,11 +29,35 @@ from typing import Tuple, List
 
 import numpy as np
 import pandas as pd
+# import matplotlib
+# matplotlib.use("Agg")
+# import matplotlib.pyplot as plt
+# import matplotlib.patches as mpatches
+# from matplotlib.ticker import MaxNLocator
+
 import matplotlib
 matplotlib.use("Agg")
+
+# Keep text editable in PDF/EPS outputs for production artwork.
+matplotlib.rcParams["pdf.fonttype"] = 42
+matplotlib.rcParams["ps.fonttype"] = 42
+matplotlib.rcParams["svg.fonttype"] = "none"
+matplotlib.rcParams["pdf.use14corefonts"] = False
+matplotlib.rcParams["text.usetex"] = False
+
+# Use a production-friendly sans-serif font.
+matplotlib.rcParams["font.family"] = "Arial"
+matplotlib.rcParams["font.sans-serif"] = ["Arial"]
+matplotlib.rcParams["mathtext.fontset"] = "custom"
+matplotlib.rcParams["mathtext.rm"] = "Arial"
+matplotlib.rcParams["mathtext.it"] = "Arial:italic"
+matplotlib.rcParams["mathtext.bf"] = "Arial:bold"
+
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.ticker import MaxNLocator
+
+
 from scipy.stats import chi2_contingency
 from math import log, exp, sqrt
 import matplotlib.gridspec as gridspec
