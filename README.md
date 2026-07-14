@@ -145,12 +145,34 @@ Please find the detailed instructions, description and explanation of the output
 -  For comprehension inference: 2 hours.
 -  For model training: 24 hours.
 
+---
+## 6. Training the Models
+
+### Configuration
+First, select the environment of the model you want to train in `STB3RL.py`
+```bash
+env_class_choice = WordActivationRLEnv   # or SentenceReadingEnv, TextComprehensionEnv,
+                                         #    GeneralOculomotorControllerEnv, OculomotorControllerRLEnv
+```
+
+Then edit `config.yaml` such that `mode: train` and adjust the settings. The model's checkpoints will be saved to the name selected for `checkpoints_folder_name: `
+
+### Training
+Once the correct settings have been selected run
+```bash
+cd step5/
+
+python main.py
+```
+
+### Checkpoints
+The checkpoints of the model will be saved to `step5/training/saved_models/<checkpoints_folder_name>/rl_model_<N>_steps.zip`
 
 ---
-## 6. Reproduction 
+## 7. Reproduction 
 Details could be found in specific README files, as mentioned above (Demo: running experiments).
 
 ---
-## 7. Contributors
+## 8. Contributors
 - Yunpeng Bai (白云鹏)
 - Antti Oulasvirta
