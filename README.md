@@ -149,7 +149,7 @@ Please find the detailed instructions, description and explanation of the output
 ## 6. Training the Models
 
 ### Configuration
-First, select the environment of the model you want to train in `STB3RL.py`
+First, select the model you want to train in `STB3RL.py`
 ```bash
 env_class_choice = WordActivationRLEnv   # or SentenceReadingEnv, TextComprehensionEnv,
                                          #    GeneralOculomotorControllerEnv, OculomotorControllerRLEnv
@@ -158,7 +158,7 @@ env_class_choice = WordActivationRLEnv   # or SentenceReadingEnv, TextComprehens
 Then edit `config.yaml` such that `mode: train` and adjust the settings. The model's checkpoints will be saved to the name selected for `checkpoints_folder_name: `
 
 ### Training
-Once the correct settings have been selected run
+After selecting the model, run:
 ```bash
 cd step5/
 
