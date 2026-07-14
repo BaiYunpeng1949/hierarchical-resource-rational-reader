@@ -488,6 +488,16 @@ class ImageGenerator:
             cons.md["images"]: []
         }
 
+        publication_metadata = {
+            "image_size": list(self._image_size),
+            "font_size": self._word_size,
+            "font_path": os.path.basename(self._font_path),
+            "font_family": "Arial",
+            "word_color": self._word_color,
+            "background_color": self._background_color,
+            "stimuli": [],
+        }
+
         total_words_count = len(self._words)
 
         font = ImageFont.truetype(self._font_path, self._word_size)
@@ -577,6 +587,7 @@ class ImageGenerator:
             y_init = (self._image_size[1] - total_height) / 2  # Center vertically
 
             words_metadata = []  # This will store the metadata for each word
+            publication_words = []  # For generating metadata when creating nature-publishable images
 
             # Drawing lines with margins
             for line_idx, line in enumerate(lines):
@@ -588,11 +599,22 @@ class ImageGenerator:
                     # for word in words_in_line:
                     draw.text((x, y), word, fill=0, font=font)  # Drawing text in black (0)
                     word_width, word_height, left, top, right, bottom = getsize(font, word)
+                    draw_x = float(x)
+                    draw_y = float(y)
 
                     # Get each word's bounding box (positions)
                     word_bounding_box = self._get_bounding_boxes(
                         word_width, line_height, word_idx_in_line, len(words_in_line) - 1, x, y
                     )
+
+                    publication_words.append({
+                        "text": word,
+                        "x": draw_x,
+                        "y": draw_y,
+                        "bbox": [float(v) for v in word_bounding_box],
+                        "line_index": int(line_idx),
+                        "word_index_in_line": int(word_idx_in_line),
+                    })
 
                     if mode == cons.SIMULATE:
                         # Draw bounding boxes for the words
@@ -677,6 +699,14 @@ class ImageGenerator:
             save_filename = os.path.join(imgs_save_path, image_filename)
             img_rgb.save(save_filename)
 
+            publication_metadata["stimuli"].append({
+                "stimulus_index": int(i),
+                "filename": image_filename,
+                "width": int(self._image_size[0]),
+                "height": int(self._image_size[1]),
+                "words": publication_words,
+            })
+
             if mode == cons.SIMULATE:
                 # Save the image with bounding boxes
                 # img_bbox = ImageOps.colorize(img_bbox, black=self._word_color, white=self._background_color)
@@ -717,6 +747,21 @@ class ImageGenerator:
             json.dump(metadata, f, indent=4)
 
         print(f"Metadata saved to {json_file}")
+
+        publication_json_file = os.path.join(
+            os.path.dirname(json_file),
+            "publication_text_metadata.json",
+        )
+
+        with open(publication_json_file, "w", encoding="utf-8") as f:
+            json.dump(
+                publication_metadata,
+                f,
+                indent=2,
+                ensure_ascii=False,
+            )
+
+        print(f"Publication metadata saved to {publication_json_file}")
 
     @staticmethod
     def _compare_datasets(

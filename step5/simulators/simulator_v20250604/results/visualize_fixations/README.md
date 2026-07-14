@@ -134,6 +134,7 @@ python plot_scanpaths.py \
 ```bash
 python plot_scanpaths.py \
   --out_root scanpaths \
+  --metadata assets/publication_text_metadata.json \
   assets/11_18_17_40_integrated_corrected_human_scanpath.json \
   assets/simulation_scanpaths.json
 ```
@@ -212,7 +213,7 @@ python plot_heatmaps.py   --out_root heatmap_plots   --only human   --norm_mode 
 
 **Both (auto‑split to subfolders)**:
 ```bash
-python plot_heatmaps.py   --out_root heatmap_plots   --norm_mode per-image   assets/11_18_17_40_integrated_corrected_human_scanpath.json   assets/simulation_scanpaths.json
+python plot_heatmaps.py   --out_root heatmap_plots --metadata assets/publication_text_metadata.json --norm_mode per-image   assets/11_18_17_40_integrated_corrected_human_scanpath.json   assets/simulation_scanpaths.json
 ```
 
 ### Useful flags

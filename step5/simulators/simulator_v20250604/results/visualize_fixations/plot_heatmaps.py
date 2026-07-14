@@ -11,7 +11,14 @@ from PIL import Image
 # Headless matplotlib
 import matplotlib
 matplotlib.use("Agg")
+
+matplotlib.rcParams["pdf.fonttype"] = 42
+matplotlib.rcParams["ps.fonttype"] = 42
+matplotlib.rcParams["font.family"] = "Courier New"
+matplotlib.rcParams["svg.fonttype"] = "none"
+
 import matplotlib.pyplot as plt
+from matplotlib import font_manager
 
 IMG_EXTS = [".pdf", ".png", ".jpg", ".jpeg", ".webp"]
 
@@ -22,6 +29,23 @@ IMG_EXTS = [".pdf", ".png", ".jpg", ".jpeg", ".webp"]
 def load_json(path: Path):
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
+
+def get_stimulus_metadata(
+    metadata: Dict[str, Any],
+    stimulus_index: int,
+) -> Dict[str, Any]:
+    """
+    Find one stimulus record in publication_text_metadata.json.
+    """
+    idx = int(stimulus_index)
+
+    for stimulus in metadata.get("stimuli", []):
+        if int(stimulus.get("stimulus_index", -1)) == idx:
+            return stimulus
+
+    raise KeyError(
+        f"Stimulus index {idx} was not found in the publication metadata."
+    )
 
 def find_image(images_dir: Path, stimulus_index: int, verbose: bool=False) -> Optional[Path]:
     """Try multiple filename patterns; fallback to glob + recursive search."""
@@ -211,45 +235,148 @@ def compute_heatmap(width: int, height: int, fixations: List[Tuple[float,float,f
         add_gaussian(heat, x, y, sigma_px, w)
     return heat
 
-def overlay_heatmap_on_image(img: Image.Image,
-                             heat,
-                             alpha_max: float = 0.65,
-                             gamma: float = 0.6,
-                             cmap_name: str = "RdBu_r",
-                             vmax_ms: float = None):
+def draw_editable_stimulus_text(
+    ax,
+    stimulus_metadata: Dict[str, Any],
+    font_size: float,
+    font_family: str = "Courier New",
+    y_offset: float = 0.0,
+):
     """
-    Create an RGBA overlay from heat (HxW float) and alpha blend on the image.
-    - alpha per pixel = alpha_max * (normalized_heat ** gamma)
-    - colormap default 'RdBu_r' makes high dwell = blue (as in your draft).
+    Draw every stimulus word as an editable PDF text object.
+
+    x and y use the same 1920 x 1080 coordinate system as the
+    original stimulus and fixation data.
     """
-    W, H = img.size
-    # Normalize heat 0..1
+    for word in stimulus_metadata.get("words", []):
+        text = str(word["text"])
+        x = float(word["x"])
+        y = float(word["y"]) + y_offset
+
+        ax.text(
+            x,
+            y,
+            text,
+            fontsize=font_size,
+            fontfamily=font_family,
+            fontweight="normal",
+            color="black",
+            ha="left",
+            va="top",
+            zorder=3,
+            clip_on=False,
+        )
+
+# def overlay_heatmap_on_image(img: Image.Image,
+#                              heat,
+#                              alpha_max: float = 0.65,
+#                              gamma: float = 0.6,
+#                              cmap_name: str = "RdBu_r",
+#                              vmax_ms: float = None):
+#     """
+#     Create an RGBA overlay from heat (HxW float) and alpha blend on the image.
+#     - alpha per pixel = alpha_max * (normalized_heat ** gamma)
+#     - colormap default 'RdBu_r' makes high dwell = blue (as in your draft).
+#     """
+#     W, H = img.size
+#     # Normalize heat 0..1
+#     h = heat.copy()
+#     h[h < 0] = 0
+#     if vmax_ms is not None and vmax_ms > 0:
+#         vmax = float(vmax_ms)
+#     else:
+#         vmax = float(h.max()) if float(h.max()) > 0 else 1.0
+#     # clip then scale
+#     h = np.clip(h, 0, vmax) / vmax
+#
+#     # Colormap to RGBA (values 0..1)
+#     cmap = plt.get_cmap(cmap_name)
+#     rgba = cmap(h)  # HxWx4, floats 0..1
+#     # Alpha based on intensity
+#     rgba[..., 3] = alpha_max * (h ** gamma)
+#
+#     # Composite: draw background image, then overlay
+#     fig = plt.figure(figsize=(W / 100.0, H / 100.0), dpi=100)
+#     ax = plt.gca()
+#     ax.imshow(img, extent=[0, W, H, 0])
+#     ax.imshow(rgba, extent=[0, W, H, 0])
+#     ax.set_xlim(0, W)
+#     ax.set_ylim(H, 0)
+#     ax.set_xticks([])
+#     ax.set_yticks([])
+#     ax.set_axis_off()
+#     return fig, ax
+
+
+def overlay_heatmap_on_editable_text(
+    stimulus_metadata: Dict[str, Any],
+    heat,
+    font_size: float,
+    font_family: str = "Courier New",
+    alpha_max: float = 0.65,
+    gamma: float = 0.6,
+    cmap_name: str = "RdBu_r",
+    vmax_ms: Optional[float] = None,
+    text_y_offset: float = 0.0,
+):
+    """
+    Create a hybrid PDF:
+      - heatmap as a high-resolution raster layer;
+      - stimulus passage as editable PDF text.
+    """
+    W = int(stimulus_metadata["width"])
+    H = int(stimulus_metadata["height"])
+
     h = heat.copy()
     h[h < 0] = 0
+
     if vmax_ms is not None and vmax_ms > 0:
         vmax = float(vmax_ms)
     else:
         vmax = float(h.max()) if float(h.max()) > 0 else 1.0
-    # clip then scale
+
     h = np.clip(h, 0, vmax) / vmax
 
-    # Colormap to RGBA (values 0..1)
     cmap = plt.get_cmap(cmap_name)
-    rgba = cmap(h)  # HxWx4, floats 0..1
-    # Alpha based on intensity
+    rgba = cmap(h)
     rgba[..., 3] = alpha_max * (h ** gamma)
 
-    # Composite: draw background image, then overlay
-    fig = plt.figure(figsize=(W / 100.0, H / 100.0), dpi=100)
-    ax = plt.gca()
-    ax.imshow(img, extent=[0, W, H, 0])
-    ax.imshow(rgba, extent=[0, W, H, 0])
+    # At 72 dpi, the 1920 x 1080 coordinate space corresponds
+    # directly to PDF points. This helps preserve the original
+    # 16-pixel text size as approximately 16-point PDF text.
+    fig = plt.figure(
+        figsize=(W / 72.0, H / 72.0),
+        dpi=72,
+        facecolor="white",
+    )
+
+    ax = fig.add_axes([0, 0, 1, 1])
+
+    # Raster heatmap layer.
+    ax.imshow(
+        rgba,
+        extent=[0, W, H, 0],
+        interpolation="bilinear",
+        rasterized=True,
+        zorder=1,
+    )
+
+    # Editable passage text layer.
+    draw_editable_stimulus_text(
+        ax=ax,
+        stimulus_metadata=stimulus_metadata,
+        font_size=font_size,
+        font_family=font_family,
+        y_offset=text_y_offset,
+    )
+
     ax.set_xlim(0, W)
     ax.set_ylim(H, 0)
-    ax.set_xticks([])
-    ax.set_yticks([])
+    ax.set_aspect("equal")
     ax.set_axis_off()
+
     return fig, ax
+
 
 # ---------------- Main plotting ----------------
 
@@ -257,29 +384,46 @@ def overlay_heatmap_on_image(img: Image.Image,
 PLOT_SHOW_TOTALS = False
 PLOT_NORM_TO_TC = False
 
-def plot_heat_for_trial(trial: Dict[str, Any],
-                        images_dir: Path,
-                        out_path: Path,
-                        participant:str,
-                        label:str,
-                        sigma_px: float,
-                        alpha_max: float,
-                        gamma: float,
-                        cmap_name: str,
-                        vmax_ms: float = None,
-                        verbose: bool=False):
+def plot_heat_for_trial(
+    trial: Dict[str, Any],
+    metadata: Dict[str, Any],
+    out_path: Path,
+    participant: str,
+    label: str,
+    sigma_px: float,
+    alpha_max: float,
+    gamma: float,
+    cmap_name: str,
+    vmax_ms: Optional[float] = None,
+    verbose: bool = False,
+):
 
     # reflect CLI toggles
     plot_heat_for_trial._show_totals_flag = PLOT_SHOW_TOTALS
     plot_heat_for_trial._norm_to_tc_flag = PLOT_NORM_TO_TC
     
-    stim_idx = trial.get("stimulus_index")
-    img_path = find_image(images_dir, stim_idx, verbose=verbose) if stim_idx is not None else None
-    if img_path is None:
-        raise FileNotFoundError(f"No image for stimulus_index={stim_idx} in {images_dir}")
+    # stim_idx = trial.get("stimulus_index")
+    # img_path = find_image(images_dir, stim_idx, verbose=verbose) if stim_idx is not None else None
+    # if img_path is None:
+    #     raise FileNotFoundError(f"No image for stimulus_index={stim_idx} in {images_dir}")
+    #
+    # img = Image.open(img_path).convert("RGB")
+    # W, H = img.size
 
-    img = Image.open(img_path).convert("RGB")
-    W, H = img.size
+    stim_idx = trial.get("stimulus_index")
+
+    if stim_idx is None:
+        raise ValueError("Trial has no stimulus_index.")
+
+    stimulus_metadata = get_stimulus_metadata(
+        metadata=metadata,
+        stimulus_index=int(stim_idx),
+    )
+
+    W = int(stimulus_metadata["width"])
+    H = int(stimulus_metadata["height"])
+
+    font_size = float(metadata.get("font_size", 16))
 
     # fixes = extract_fixations_for_heat(trial)
     # heat = compute_heatmap(W, H, fixes, sigma_px=sigma_px)
@@ -323,18 +467,37 @@ def plot_heat_for_trial(trial: Dict[str, Any],
 
     heat = compute_heatmap(W, H, fixes, sigma_px=sigma_px)
 
-    fig, ax = overlay_heatmap_on_image(
-        img, heat,
-        alpha_max=alpha_max, gamma=gamma,
-        cmap_name=cmap_name,
-        vmax_ms=vmax_ms
-    )
+    # fig, ax = overlay_heatmap_on_image(
+    #     img, heat,
+    #     alpha_max=alpha_max, gamma=gamma,
+    #     cmap_name=cmap_name,
+    #     vmax_ms=vmax_ms
+    # )
 
+    fig, ax = overlay_heatmap_on_editable_text(
+        stimulus_metadata=stimulus_metadata,
+        heat=heat,
+        font_size=font_size,
+        font_family="Courier New",
+        alpha_max=alpha_max,
+        gamma=gamma,
+        cmap_name=cmap_name,
+        vmax_ms=vmax_ms,
+        text_y_offset=0.0,
+    )
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     if out_path.exists():
         out_path.unlink()
-    fig.savefig(out_path, bbox_inches="tight", pad_inches=0.0)
+    # fig.savefig(out_path, bbox_inches="tight", pad_inches=0.0)
+    fig.savefig(
+        out_path,
+        format="pdf",
+        dpi=600,
+        bbox_inches=None,
+        pad_inches=0,
+        facecolor="white",
+    )
     plt.close(fig)
 
 def main():
@@ -356,6 +519,12 @@ def main():
     ap.add_argument("--default_participant", type=str, default=None, help="Fallback participant label if missing in trials.")
     ap.add_argument("--show_totals", action="store_true", help="Show total fixation duration (and normalization info) in plot titles.")
     ap.add_argument("--norm_to_tc", action="store_true", help="Normalize fixation weights so their sum equals the trial's time constraint (e.g., 30s).")
+    ap.add_argument(
+        "--metadata",
+        type=Path,
+        required=True,
+        help="JSON file containing stimulus words and word bounding boxes."
+    )
 
     args = ap.parse_args()
 
@@ -363,8 +532,9 @@ def main():
     PLOT_SHOW_TOTALS = bool(args.show_totals)
     PLOT_NORM_TO_TC = bool(args.norm_to_tc)
 
+    metadata = load_json(args.metadata)
 
-    images_dir = Path(os.path.join("assets", "08_15_09_07_10_images_W1920H1080WS16_LS40_MARGIN400", "simulate"))
+    # images_dir = Path(os.path.join("assets", "08_15_09_07_10_images_W1920H1080WS16_LS40_MARGIN400", "simulate"))
 
     for jf in args.json_files:
         trials = load_json(jf)
@@ -396,9 +566,22 @@ def main():
             out_path = out_dir / out_name
 
             try:
+                # plot_heat_for_trial(
+                #     trial=trial,
+                #     images_dir=images_dir,
+                #     out_path=out_path,
+                #     participant=participant,
+                #     label=label,
+                #     sigma_px=args.sigma_px,
+                #     alpha_max=args.alpha_max,
+                #     gamma=args.gamma,
+                #     cmap_name=args.cmap,
+                #     vmax_ms=(args.vmax_ms if args.norm_mode == "fixed" else None),
+                #     verbose=args.verbose,
+                # )
                 plot_heat_for_trial(
                     trial=trial,
-                    images_dir=images_dir,
+                    metadata=metadata,
                     out_path=out_path,
                     participant=participant,
                     label=label,
@@ -406,7 +589,11 @@ def main():
                     alpha_max=args.alpha_max,
                     gamma=args.gamma,
                     cmap_name=args.cmap,
-                    vmax_ms=(args.vmax_ms if args.norm_mode == "fixed" else None),
+                    vmax_ms=(
+                        args.vmax_ms
+                        if args.norm_mode == "fixed"
+                        else None
+                    ),
                     verbose=args.verbose,
                 )
                 print(f"[ok] Wrote {out_path}")
