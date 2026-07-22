@@ -210,16 +210,18 @@ class TransitionFunction():
         inflated_t_visual_lex = t_visual_lex * (1 / (1 - rho_inflation_percentage))
         return t_visual_lex, inflated_t_visual_lex
     
-    def calc_gaze_related_duration_in_ms(self, entropy_diffs, rho_inflation_percentage) -> float:
+    def calc_gaze_related_duration_in_ms(self, entropy_diffs, rho_inflation_percentage, kappa: float = 2.50) -> float:
         """
         Sum of (a) gaze duration (visual+motor) and (b) inflated gaze duration across fixations.
         Returns (sum_gaze_ms, sum_inflated_ms).
+        kappa: processing time cost per bit of lexical information gain (default 2.50).
         """
         total = 0.0
         total_inflated = 0.0
         for d in entropy_diffs or ():
             fix_ms, infl_ms = self.calc_fixation_duration_ms(
                 entropy_diff=d,
+                kappa=kappa,
                 rho_inflation_percentage=rho_inflation_percentage
             )
             total += fix_ms

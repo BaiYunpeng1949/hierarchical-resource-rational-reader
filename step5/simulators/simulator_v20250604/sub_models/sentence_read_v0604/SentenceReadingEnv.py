@@ -243,7 +243,9 @@ class SentenceReadingUnderTimePressureEnv(Env):
 
         # Initialize a random regression cost
         # self._w_regression_cost = random.uniform(0, 1)   # NOTE: uncomment when training!!!!
-        self._w_regression_cost = 1.0    # NOTE: uncomment when testing!!!! --> For the reading under time constraint, no need to change, keep it as constant in both training and testing.
+        # w_reg: weighting the cost of regressions. Default 1.0 for reading under time pressure
+        # (kept constant in the paper's runs); overridable via `params` so the user can explore it.
+        self._w_regression_cost = (params or {}).get('w_regression_cost', 1.0)
         
         # NOTE: The two tunable parameters, try, if identified, get it into the Bayesian optimization later
         # NOTE: Armortized training solution.
@@ -252,10 +254,9 @@ class SentenceReadingUnderTimePressureEnv(Env):
             possible_values = np.arange(w_skip_degradation_factor_range[0], w_skip_degradation_factor_range[1] + 1e-8, 0.05)
             self._w_skip_degradation_factor = np.random.choice(possible_values)   # NOTE: for training
         else:
-            if params is None:
-                self._w_skip_degradation_factor = 0.7  # NOTE: for testing and simulating
-            else:
-                self._w_skip_degradation_factor = params['w_skip_degradation_factor']
+            # w_IL: penalty weight for information loss from skipped words.
+            # Default 0.7 for testing/simulating; tolerant so w_regression_cost can be passed alone.
+            self._w_skip_degradation_factor = (params or {}).get('w_skip_degradation_factor', 0.7)
 
         # NOTE: not tunable and usable parameters -- leave it be
         self._w_comprehension_vs_time_pressure = 0.5

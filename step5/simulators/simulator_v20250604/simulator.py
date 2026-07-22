@@ -743,6 +743,10 @@ def main():
     p_single.add_argument("--rho_inflation_percentage", type=float, default=None)
     p_single.add_argument("--w_skip_degradation_factor", type=float, default=None)
     p_single.add_argument("--coverage_factor", type=float, default=None)
+    p_single.add_argument("--kappa", type=float, default=None,
+                          help="processing time cost per bit of lexical info gain (paper: kappa, default 2.50)")
+    p_single.add_argument("--w_regression_cost", type=float, default=None,
+                          help="weighting the cost of regressions (paper: w_reg, default 1.0)")
     p_single.add_argument("--out", type=str, default=None, help="Output dir")
 
     args = parser.parse_args()
@@ -830,6 +834,10 @@ def main():
         sr_params["w_skip_degradation_factor"] = args.w_skip_degradation_factor
     if args.coverage_factor is not None:
         tr_params["coverage_factor"] = args.coverage_factor
+    if args.kappa is not None:
+        wr_params["kappa"] = args.kappa
+    if args.w_regression_cost is not None:
+        sr_params["w_regression_cost"] = args.w_regression_cost
 
     run_batch_simulations(
         simulator=simulator,

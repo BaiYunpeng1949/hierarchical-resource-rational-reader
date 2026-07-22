@@ -44,17 +44,27 @@ def parse_int_list(spec):
         return list(range(a,b+1))
     return [int(x) for x in spec.split(",") if x.strip()]
 
-def run_sim(stim_id, conds, rho, w, cov, trials):
+def run_sim(stim_id, conds, rho, w, cov, trials, kappa=None, w_reg=None):
     """run the model for every stimulus and condition. Returns results list."""
     os.chdir(SIM_DIR)
     sys.path.insert(0, str(SIM_DIR))
     agent = ReaderAgent()
+
+    # Optimized (tunable) parameters from the paper. kappa and w_reg fall back to
+    # the model defaults (2.50 and 1.0) when not supplied.
+    wr_params = {"rho_inflation_percentage": rho}
+    sr_params = {"w_skip_degradation_factor": w}
+    if kappa is not None:
+        wr_params["kappa"] = kappa
+    if w_reg is not None:
+        sr_params["w_regression_cost"] = w_reg
+
     output = run_batch_simulations(
         simulator=agent,
         stimulus_ids=stim_id,
         time_conditions=conds,
-        word_recognizer_params={"rho_inflation_percentage": rho},
-        sentence_reader_params={"w_skip_degradation_factor": w},
+        word_recognizer_params=wr_params,
+        sentence_reader_params=sr_params,
         text_reader_params={"coverage_factor": cov},
         num_trials=trials,
         output_dir=str(SIM_DIR / "simulated_results" / "_run_simulator_tmp"),
@@ -96,7 +106,11 @@ def main():
     #
     args.add_argument("--rho", type=float, default=0.29, help="word vigor (rho_inflation_percentage)")
     args.add_argument("--w", type=float, default=0.70, help="skip tendency (w_skip_degradation_factor)")
-    args.add_argument("--cov", type=float, default=1.30, help="coverage drive (coverage_factor)")
+    args.add_argument("--cov", type=float, default=1.30, help="coverage drive (coverage_factor / paper w_RP)")
+    args.add_argument("--kappa", type=float, default=None,
+                      help="processing time per bit of lexical info gain (paper k, default 2.50)")
+    args.add_argument("--w-regression-cost", type=float, default=None, dest="w_regression_cost",
+                      help="cost of regressions (paper w_reg, default 1.0)")
     #
     args.add_argument("--out", default="scanpaths_out", help="output directory")
     args.add_argument("--dot-size", type=float, default=90.0)
@@ -109,9 +123,12 @@ def main():
     stimulus_ids = parse_int_list(parsed_args.stimuli)
     conds = [c.strip() for c in parsed_args.conds.split(",") if c.strip()]
 
-    print(f"Simulating stimuli={stimulus_ids} cpnds={conds} "
-          f"rho={parsed_args.rho} w={parsed_args.w} cov={parsed_args.cov}")
-    results = run_sim(stimulus_ids, conds, parsed_args.rho, parsed_args.w, parsed_args.cov, parsed_args.trials)
+    print(f"Simulating stimuli={stimulus_ids} conds={conds} "
+          f"rho={parsed_args.rho} w={parsed_args.w} cov={parsed_args.cov} "
+          f"kappa={parsed_args.kappa if parsed_args.kappa is not None else '2.50 (default)'} "
+          f"w_reg={parsed_args.w_regression_cost if parsed_args.w_regression_cost is not None else '1.0 (default)'}")
+    results = run_sim(stimulus_ids, conds, parsed_args.rho, parsed_args.w, parsed_args.cov,
+                      parsed_args.trials, kappa=parsed_args.kappa, w_reg=parsed_args.w_regression_cost)
     written = render_scanpaths(results, out_dir, parsed_args.dot_size, parsed_args.line_width, parsed_args.alpha)
     print(f"\nDone. {len(written)} scanpaths in {out_dir}")
 

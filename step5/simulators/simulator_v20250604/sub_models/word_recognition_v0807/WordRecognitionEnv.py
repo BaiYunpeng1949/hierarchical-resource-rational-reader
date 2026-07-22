@@ -196,12 +196,13 @@ class WordRecognitionEnv(Env):
         self._normalized_ground_truth_word_representation = self.transition_function.get_normalized_ground_truth_word_representation(target_word=self._word)
         # This is only used for identifying words and numerical computations
 
-        # Reset the tunable parameter
-        self._kappa = 2.50  # Version September, optimized as 2.50. Stay fixed for reading under time pressure.
-        if params is None:
-            self._rho_inflation_percentage = 0.2
-        else:
-            self._rho_inflation_percentage = params['rho_inflation_percentage']
+        # Reset the tunable parameters (defaults are preserved when not supplied via `params`)
+        params = params or {}
+        # kappa: processing time cost per bit of lexical information gain (entropy change).
+        # Optimized as 2.50; overridable so the user can explore it.
+        self._kappa = params.get('kappa', 2.50)
+        # rho: non-fixation overhead fraction.
+        self._rho_inflation_percentage = params.get('rho_inflation_percentage', 0.2)
         
         # Reset the log
         self._log_valid_sampled_letters_indexes_list = []
@@ -343,6 +344,7 @@ class WordRecognitionEnv(Env):
     def get_gaze_and_elapsed_duration_in_ms(self):
         gaze_duration, inflated_gaze_duration = self.transition_function.calc_gaze_related_duration_in_ms(
             entropy_diffs=self._entropy_diffs_list, rho_inflation_percentage=self._rho_inflation_percentage,
+            kappa=self._kappa,
         )
 
         saccades_sum_duration = self.transition_function.calc_total_saccades_duration_ms(entropy_diffs=self._entropy_diffs_list)
