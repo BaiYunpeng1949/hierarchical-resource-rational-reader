@@ -148,25 +148,62 @@ Please find the detailed instructions, description and explanation of the output
 ---
 ## 6. Training the Models
 
-### Configuration
-First, select the model you want to train in `STB3RL.py`
+### Configuration (Word Recognition, Sentence Reading, Text Reading)
+
+These three follow a similar procedure.
+
+First, select the model you want to train in line 68 `STB3RL.py`
 ```bash
 env_class_choice = WordActivationRLEnv   # or SentenceReadingEnv, TextComprehensionEnv,
                                          #    GeneralOculomotorControllerEnv, OculomotorControllerRLEnv
 ```
 
-Then edit `config.yaml` such that `mode: train` and adjust the settings. The model's checkpoints will be saved to the name selected for `checkpoints_folder_name: `
+Then edit `config.yaml` such that `mode: train` and adjust the `total_timesteps` along with the `save_freq`. The model's checkpoints will be saved to the name selected for `checkpoints_folder_name: `
 
-### Training
-After selecting the model, run:
+The rl environments used in the paper are:
+```bash
+from modules.rl_envs.word_activation_v0218.WordActivationEnvV0218 import WordActivationRLEnv
+from modules.rl_envs.sentence_read_v0319.SentenceReadingEnv import SentenceReadingEnv
+from modules.rl_envs.text_comprehension_v0516.TextComprehensionEnv import TextComprehensionEnv
+```
+
+### Training 
+After selecting the model and settings, run:
 ```bash
 cd step5/
 
 python main.py
 ```
 
+### Configuration (Reading Under Time Pressure - Word Rec, Sentence Reading, Text Reading)
+
+These three follow a similar procedure
+
+edit `simulators/simulator_v20260320/sub_models/config.yaml` such that `mode: train` and adjust the `total_timesteps` along with the `save_freq`. The model's checkpoints will be saved to the name selected for `checkpoints_folder_name: `
+
+In the `rl.py` file change the `class_env` on line 144
+
+When training the Text Reading model, edit `TextReadEnv` found in `simulators/simulator_v20260320/sub_models/text_read_v0604` such that:
+`DATA_SOURCE = "generated_stimuli"`
+
+### Training (Reading Under Time Pressure)
+After selecting the model and settings, run:
+```bash
+cd step5/simulators/simulator_v20260320/sub_models
+
+python main.py
+```
+
 ### Checkpoints
-The checkpoints of the model will be saved to `step5/training/saved_models/<checkpoints_folder_name>/rl_model_<N>_steps.zip`
+The checkpoints of the model will be saved to `step5/simulators/simulator_v20260320/sub_models/training/saved_models/<checkpoints_folder_name>/rl_model_<N>_steps.zip` for the Reading Under Time Pressure environments.
+They will be saved to `step5/training/saved_models/<checkpoints_folder_name>/rl_model_<N>_steps.zip` for the other environments.
+
+### NOTE
+When running the simulators, remember to select the correct checkpoint and file names in line 35 of `step5/simulators/simulator_v20260320/sub_models/config.yaml`
+
+When running the models change the mode to simulate
+
+See the README's referenced above for instructions on running the test for models/simulators
 
 ---
 ## 7. Reproduction 
