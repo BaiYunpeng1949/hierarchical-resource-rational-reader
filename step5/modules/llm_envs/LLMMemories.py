@@ -57,7 +57,11 @@ class LLMLongTermMemory:
         self.use_aalto_openai_api = self._config['llm']['use_aalto_openai_api']
         
         if self.use_aalto_openai_api:
-            os.environ['AALTO_OPENAI_API_KEY'] = self._config['llm']['AALTO_OPENAI_API_KEY']
+            os.environ['AALTO_OPENAI_API_KEY'] = (
+                os.environ.get('AALTO_OPENAI_API_KEY')
+                or self._config['llm'].get('AALTO_OPENAI_API_KEY')
+                or ''
+            )
 
             assert (
                 "AALTO_OPENAI_API_KEY" in os.environ and os.environ.get("AALTO_OPENAI_API_KEY") != ""
@@ -73,7 +77,12 @@ class LLMLongTermMemory:
                 ),
             )
         else:
-            openai_api_key = self._config['llm']['API_key']
+            openai_api_key = (
+                os.environ.get('OPENAI_API_KEY')
+                or self._config['llm'].get('API_key')
+                or ''
+            )
+            assert openai_api_key, "you must set the `OPENAI_API_KEY` environment variable."
             # LLM related variables
             self._client = OpenAI(api_key=openai_api_key)
         
@@ -588,7 +597,11 @@ class LLMShortTermMemory:
         self.use_aalto_openai_api = self._config['llm']['use_aalto_openai_api']
         
         if self.use_aalto_openai_api:
-            os.environ['AALTO_OPENAI_API_KEY'] = self._config['llm']['AALTO_OPENAI_API_KEY']
+            os.environ['AALTO_OPENAI_API_KEY'] = (
+                os.environ.get('AALTO_OPENAI_API_KEY')
+                or self._config['llm'].get('AALTO_OPENAI_API_KEY')
+                or ''
+            )
 
             assert (
                 "AALTO_OPENAI_API_KEY" in os.environ and os.environ.get("AALTO_OPENAI_API_KEY") != ""
@@ -604,7 +617,12 @@ class LLMShortTermMemory:
                 ),
             )
         else:
-            openai_api_key = self._config['llm']['API_key']
+            openai_api_key = (
+                os.environ.get('OPENAI_API_KEY')
+                or self._config['llm'].get('API_key')
+                or ''
+            )
+            assert openai_api_key, "you must set the `OPENAI_API_KEY` environment variable."
             # LLM related variables
             self._client = OpenAI(api_key=openai_api_key)
         
@@ -933,7 +951,11 @@ class LLMWorkingMemory:
         self.use_aalto_openai_api = self._config['llm']['use_aalto_openai_api']
         
         if self.use_aalto_openai_api:
-            os.environ['AALTO_OPENAI_API_KEY'] = self._config['llm']['AALTO_OPENAI_API_KEY']
+            os.environ['AALTO_OPENAI_API_KEY'] = (
+                os.environ.get('AALTO_OPENAI_API_KEY')
+                or self._config['llm'].get('AALTO_OPENAI_API_KEY')
+                or ''
+            )
 
             assert (
                 "AALTO_OPENAI_API_KEY" in os.environ and os.environ.get("AALTO_OPENAI_API_KEY") != ""
@@ -949,7 +971,12 @@ class LLMWorkingMemory:
                 ),
             )
         else:
-            openai_api_key = self._config['llm']['API_key']
+            openai_api_key = (
+                os.environ.get('OPENAI_API_KEY')
+                or self._config['llm'].get('API_key')
+                or ''
+            )
+            assert openai_api_key, "you must set the `OPENAI_API_KEY` environment variable."
             # LLM related variables
             self._client = OpenAI(api_key=openai_api_key)
         

@@ -73,8 +73,8 @@ simulate:
 
 llm:
   use_aalto_openai_api: True
-  API_key: "sk-proj-H1oYBOCwNe22E5Mgc0V4T3BlbkFJUcRwMP0goXMjO04NWk47"   # My personal key
-  AALTO_OPENAI_API_KEY: b5de1b1587e04ee187293168b540136a                             # The Aalto University's key
+  API_key: ""   # Your own OpenAI key. Prefer the OPENAI_API_KEY env var.
+  AALTO_OPENAI_API_KEY: ""   # Your own Aalto key. Prefer the AALTO_OPENAI_API_KEY env var.
   model: "gpt-4o"
   refresh_interval: 20
   max_num_requests: 10       # Maximum number of retries for each API call

@@ -11,7 +11,7 @@ class LLMAgent:
         self.use_aalto_openai_api = True
 
         if self.use_aalto_openai_api:
-            os.environ['AALTO_OPENAI_API_KEY'] = "b5de1b1587e04ee187293168b540136a"
+            # Set the AALTO_OPENAI_API_KEY environment variable with your own key.
 
             assert (
                 "AALTO_OPENAI_API_KEY" in os.environ and os.environ.get("AALTO_OPENAI_API_KEY") != ""
