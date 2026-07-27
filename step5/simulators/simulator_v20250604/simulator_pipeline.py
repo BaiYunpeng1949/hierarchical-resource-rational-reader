@@ -35,6 +35,7 @@ warnings.filterwarnings("ignore")
 from simulator import ReaderAgent, run_batch_simulations
 from process_sim_results import build_trials, load_json
 from plot_scanpaths import find_image, plot_trial_on_image
+from plot_heatmaps import plot_heat_for_trial
 
 # Used for 
 def parse_int_list(spec):
@@ -98,6 +99,30 @@ def render_scanpaths(results, output_dir, dot_size, line_width, alpha):
         written.append(out_path)
     return written
 
+def render_heatmaps(results, output_dir, sigma_px=60.0, alpha_max=0.65, gamma=0.6, cmap="RdBu_r"):
+    """Duration-weighted gaze heatmaps, built from the SAME trials as the scanpaths."""
+    meta = load_json(METADATA_PATH)
+    trials = build_trials(results, meta)
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    written = []
+    for trial in trials:
+        stim_idx = trial.get("stimulus_index")
+        time_constraints = trial.get("time_constraint")
+        img_path = find_image(STIM_ASSET_DIR, stim_idx)
+        if img_path is None:
+            print(f"No image found for stimulus {stim_idx}")
+            continue
+
+        out_path = output_dir / f"heatmap_stim{stim_idx}_{time_constraints}_{trial.get('participant_index',0)}.png"
+        plot_heat_for_trial(trial, STIM_ASSET_DIR, out_path,
+                            participant="simulation", label="simulation",
+                            sigma_px=sigma_px, alpha_max=alpha_max, gamma=gamma, cmap_name=cmap)
+        print(f"{out_path} -> heatmap")
+        written.append(out_path)
+    return written
+
 def main():
     args = argparse.ArgumentParser(description="Run the reading simulator and render a scanpath for each trial.")
     args.add_argument("--stimuli", default="0", help="ids, e.g. '0', '0,3', '0-8'")
@@ -116,6 +141,11 @@ def main():
     args.add_argument("--dot-size", type=float, default=90.0)
     args.add_argument("--line-width", type=float, default=2.0)
     args.add_argument("--alpha", type=float, default=0.4, help="dot/line transparency")
+    #
+    args.add_argument("--heatmap", action="store_true",
+                      help="also render a duration-weighted gaze heatmap for each trial")
+    args.add_argument("--sigma-px", type=float, default=60.0, dest="sigma_px",
+                      help="heatmap gaussian spread in pixels (larger = smoother)")
     parsed_args = args.parse_args()
 
     out_dir = Path(parsed_args.out).resolve()
@@ -131,6 +161,10 @@ def main():
                       parsed_args.trials, kappa=parsed_args.kappa, w_reg=parsed_args.w_regression_cost)
     written = render_scanpaths(results, out_dir, parsed_args.dot_size, parsed_args.line_width, parsed_args.alpha)
     print(f"\nDone. {len(written)} scanpaths in {out_dir}")
+
+    if parsed_args.heatmap:
+        heatmaps = render_heatmaps(results, out_dir, sigma_px=parsed_args.sigma_px)
+        print(f"Done. {len(heatmaps)} heatmaps in {out_dir}")
 
 if __name__ == "__main__":
     main()

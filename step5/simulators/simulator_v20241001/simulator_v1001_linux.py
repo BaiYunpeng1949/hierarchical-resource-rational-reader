@@ -456,7 +456,12 @@ class ReaderAgent:
 
         # Initialize the NLP model -- OPENAI models     
         # --------------------------------------------------------------------------------------------------------------
-        openai_api_key = self._config['llm']['API_key']
+        openai_api_key = (
+            os.environ.get('OPENAI_API_KEY')
+            or self._config['llm'].get('API_key')
+            or ''
+        )
+        assert openai_api_key, "you must set the `OPENAI_API_KEY` environment variable."
         # Specific configurations
         self._gpt_model = self._config['llm']['model']
         self._refresh_interval = self._config['llm']['refresh_interval']

@@ -16,7 +16,11 @@ class TestLLM:
         with open(config, 'r') as stream:
             self._config = yaml.load(stream, Loader=yaml.FullLoader)
 
-        os.environ['AALTO_OPENAI_API_KEY'] = self._config['llm']['AALTO_OPENAI_API_KEY']
+        os.environ['AALTO_OPENAI_API_KEY'] = (
+            os.environ.get('AALTO_OPENAI_API_KEY')
+            or self._config['llm'].get('AALTO_OPENAI_API_KEY')
+            or ''
+        )
 
         assert (
             "AALTO_OPENAI_API_KEY" in os.environ and os.environ.get("AALTO_OPENAI_API_KEY") != ""
