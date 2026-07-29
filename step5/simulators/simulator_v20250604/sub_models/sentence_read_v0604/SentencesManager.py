@@ -24,10 +24,14 @@ class SentencesManager():
         self._max_text_len = 150
 
         if dataset == "Ours":
-            # Read all stimulus
-            with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'processed_my_stimulus_with_observations.json'), 'r') as f:
+            # Read all stimulus. The filename comes from Constants so the app can
+            # swap in an asset built at a different n_parafov; see
+            # Constants.OBSERVATION_ASSET.
+            asset_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets')
+            self._observation_asset_path = os.path.join(asset_dir, Constants.OBSERVATION_ASSET)
+            with open(self._observation_asset_path, 'r') as f:
                 self._stimulus_dataset = json.load(f)
-            
+
             # Parse to sentences across different stimulus
             self._sentences_dataset = self._parse_stimulus_to_sentences(self._stimulus_dataset)
 

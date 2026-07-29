@@ -38,10 +38,33 @@ TIME_CONDITIONS = {
 SIM_RESULTS_DIR = "simulated_results"
 PARAMETER_INFERENCE_DIR = "parameter_inference/simulation_data"
 
+SAVED_MODELS_DIR = os.path.join("sub_models", "training", "saved_models")
+
+
+def resolve_model_path(model_info: dict, model_spec: dict = None):
+    """
+    Work out which checkpoint a reader should load.
+
+    model_spec, when given, overrides the entry from config.yaml. It may carry an
+    explicit "model_path" -- used for checkpoints that live outside the repo layout,
+    such as ones trained or uploaded during an app session -- or a
+    checkpoints_folder_name / loaded_model_name pair to look up in saved_models.
+    """
+    if model_spec:
+        if model_spec.get("model_path"):
+            return str(model_spec["model_path"])
+        folder = model_spec.get("checkpoints_folder_name", model_info["checkpoints_folder_name"])
+        name = model_spec.get("loaded_model_name", model_info["loaded_model_name"])
+    else:
+        folder = model_info["checkpoints_folder_name"]
+        name = model_info["loaded_model_name"]
+    return os.path.join(SAVED_MODELS_DIR, folder, name)
+
+
 class TextReader:
-    def __init__(self):
+    def __init__(self, model_spec: dict = None):
         """
-        This is the text reader that reads a sentence, controls which sentence to read. 
+        This is the text reader that reads a sentence, controls which sentence to read.
         And it returns the states of reading progress and reading time.
         """
         # Read the configuration file
@@ -50,9 +73,9 @@ class TextReader:
 
         # Pre-trained model infomation
         self._model_info = self.config["simulate"]["rl_models"]["text_reader"]
-        
+
         # Get the pre-trained model path
-        self._model_path = os.path.join("sub_models", "training", "saved_models", self._model_info["checkpoints_folder_name"], self._model_info["loaded_model_name"])
+        self._model_path = resolve_model_path(self._model_info, model_spec)
 
         # Initialize the environment
         def make_env():
@@ -113,9 +136,9 @@ class TextReader:
 
 class SentenceReader:
 
-    def __init__(self):
+    def __init__(self, model_spec: dict = None):
         """
-        This is the sentence reader that reads a sentence, controls which word to read in a sentence. 
+        This is the sentence reader that reads a sentence, controls which word to read in a sentence.
         And it returns the reading progress and the reading time.
         """
         # Read the configuration file
@@ -126,7 +149,7 @@ class SentenceReader:
         self._model_info = self.config["simulate"]["rl_models"]["sentence_reader"]
 
         # Get the pre-trained model path
-        self._model_path = os.path.join("sub_models", "training", "saved_models", self._model_info["checkpoints_folder_name"], self._model_info["loaded_model_name"])
+        self._model_path = resolve_model_path(self._model_info, model_spec)
 
         # Initialize the environment
         self.env = SentenceReadingUnderTimePressureEnv()
@@ -180,9 +203,9 @@ class SentenceReader:
 
 class WordRecognizer:
 
-    def __init__(self):
+    def __init__(self, model_spec: dict = None):
         """
-        This is the word recognizer that recognizes a word, controls which letter to fixate on in a word. 
+        This is the word recognizer that recognizes a word, controls which letter to fixate on in a word.
         And it returns the reading progress and the reading time. Accumulated by saccades duration and gaze durations.
         """
         # Read the configuration file
@@ -193,7 +216,7 @@ class WordRecognizer:
         self._model_info = self.config["simulate"]["rl_models"]["word_recognizer"]
 
         # Get the pre-trained model path
-        self._model_path = os.path.join("sub_models", "training", "saved_models", self._model_info["checkpoints_folder_name"], self._model_info["loaded_model_name"])
+        self._model_path = resolve_model_path(self._model_info, model_spec)
 
         # Initialize the environment
         self.env = WordRecognitionEnv()
@@ -247,9 +270,9 @@ class WordRecognizer:
 
 class ReaderAgent:
 
-    def __init__(self):
+    def __init__(self, model_specs: dict = None):
         """
-        ReaderAgent joint place. 
+        ReaderAgent joint place.
         Created on 12 June 2025.
         Author: Bai Yunpeng
 
@@ -279,10 +302,12 @@ class ReaderAgent:
         mode = self.config["rl"]["mode"]
         assert mode == "simulate", f"Invalid mode: {mode}, should be 'simulate' when running the simulator!"
 
-        # Initialize the readers
-        self.text_reader = TextReader()
-        self.sentence_reader = SentenceReader()
-        self.word_recognizer = WordRecognizer()
+        # Initialize the readers. model_specs optionally overrides which checkpoint
+        # each level loads, keyed by "text_reader" / "sentence_reader" / "word_recognizer".
+        model_specs = model_specs or {}
+        self.text_reader = TextReader(model_specs.get("text_reader"))
+        self.sentence_reader = SentenceReader(model_specs.get("sentence_reader"))
+        self.word_recognizer = WordRecognizer(model_specs.get("word_recognizer"))
 
         # Time-related variables (states)
         self._total_time = None     # in seconds

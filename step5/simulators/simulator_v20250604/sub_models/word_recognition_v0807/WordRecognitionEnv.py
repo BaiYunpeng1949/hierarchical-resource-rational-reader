@@ -140,16 +140,16 @@ class WordRecognitionEnv(Env):
         # Initialize the action
         self._action = -1
 
-        # Reset the belief distribution
-        non_word = Constants.NON_WORD
-        self._normalized_belief_distribution_dict_parallel_activation_with_k_words = {non_word: 0.20, non_word + '-1': 0.20, non_word + '-2': 0.20, non_word + '-3': 0.20, non_word + '-4': 0.20}
+        # Reset the belief distribution -- k placeholders sharing the mass uniformly.
+        uniform_belief_dict = self._uniform_non_word_distribution()
+        self._normalized_belief_distribution_dict_parallel_activation_with_k_words = dict(uniform_belief_dict)
         self._normalized_belief_distribution_parallel_activation_with_k_words = self.transition_function.reset_state_normalized_belief_distribution()
 
         # Reset the likelihodd distribution dictionary
-        self._likelihood_dict_parallel_activation_with_k_words = {non_word: 0.20, non_word + '-1': 0.20, non_word + '-2': 0.20, non_word + '-3': 0.20, non_word + '-4': 0.20}
+        self._likelihood_dict_parallel_activation_with_k_words = dict(uniform_belief_dict)
 
         # Reset the prior distribution dictionary
-        self._prior_distribution_dict_parallel_activation_with_k_words = {non_word: 0.20, non_word + '-1': 0.20, non_word + '-2': 0.20, non_word + '-3': 0.20, non_word + '-4': 0.20}
+        self._prior_distribution_dict_parallel_activation_with_k_words = dict(uniform_belief_dict)
 
         # Reset the entropy
         self._previous_step_entropy = self._calculate_entropy(probability_distribution=self._normalized_belief_distribution_parallel_activation_with_k_words)
@@ -291,7 +291,20 @@ class WordRecognitionEnv(Env):
         self.sum_saccade_duration_for_this_word = self._get_sum_saccade_duration_for_this_word()
 
         return reward, done
-    
+
+    def _uniform_non_word_distribution(self):
+        """
+        The initial belief/prior/likelihood dictionary: self._top_k placeholder
+        entries sharing the probability mass uniformly.
+
+        The keys are NON_WORD, NON_WORD-1, ... NON_WORD-(k-1); the first one is
+        bare so that TransitionFunction's "have we activated anything yet?" check
+        against Constants.NON_WORD still fires on a fresh episode.
+        """
+        non_word = Constants.NON_WORD
+        keys = [non_word] + [f"{non_word}-{i}" for i in range(1, self._top_k)]
+        return {key: 1.0 / self._top_k for key in keys}
+
     @staticmethod
     def _calculate_entropy(probability_distribution):
         """

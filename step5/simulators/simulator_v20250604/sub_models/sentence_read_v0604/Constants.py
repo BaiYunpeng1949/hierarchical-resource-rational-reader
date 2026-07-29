@@ -38,3 +38,8 @@ DATASETS = {
     "Ours": "Bai",
     "ZuCo1.0": "ZuCo",
 }
+
+#########################
+# Observation asset (n_parafov)
+#########################
+OBSERVATION_ASSET = "processed_my_stimulus_with_observations.json"

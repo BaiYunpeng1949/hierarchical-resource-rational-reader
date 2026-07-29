@@ -1,0 +1,7 @@
+{
+  "preview_letters": 3,
+  "seed": 0,
+  "seed_scheme": "per-word",
+  "language_model": "bert-base-uncased",
+  "input": "processed_my_stimulus_with_word_features.json"
+}

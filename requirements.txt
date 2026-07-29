@@ -170,3 +170,5 @@ yarg==0.1.9
 zipp==3.11.0
 zope.event==5.0
 zope.interface==7.0.1
+gradio>=6.0
+
