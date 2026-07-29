@@ -8,6 +8,7 @@ are kept warm and reused whenever the same combination of checkpoints comes back
 """
 import os
 import sys
+import tempfile
 import warnings
 from pathlib import Path
 
@@ -39,6 +40,12 @@ from plot_heatmaps import plot_heat_for_trial
 # Number of stimuli in the bundled set. Arbitrary text is not supported yet: each
 # stimulus carries precomputed per-sentence appraisal scores and a rendered image.
 NUM_STIMULI = 9
+
+# Rendered figures go to the system temp directory, not into the repository.
+# Gradio will only serve a file from the working directory or from temp, and
+# refuses anything else with InvalidPathError -- the figures used to be written
+# next to the simulation results, which is neither.
+FIGURE_DIR = Path(tempfile.gettempdir()) / "reader_app_figures"
 
 _agent_cache = {}
 
@@ -176,7 +183,7 @@ def run_simulation(
         if progress:
             progress(0.7, "Rendering figures")
 
-        out_dir = Path(output_dir) if output_dir else (SIM_DIR / "simulated_results" / "_app_figures")
+        out_dir = Path(output_dir) if output_dir else FIGURE_DIR
         out_dir.mkdir(parents=True, exist_ok=True)
 
         meta = load_json(METADATA_PATH)
@@ -220,7 +227,9 @@ def run_simulation(
         f"{n_fix} fixations total.\n\n"
         f"**Models used**\n{describe_selection(model_ids)}\n\n"
         f"**Parameters** rho={rho}, w_skip={w_skip}, coverage={coverage}, trials={trials}\n\n"
-        f"**Parafoveal preview** {asset.label} - {asset.note}\n\n"
+        f"**Parafoveal preview** {asset.label}"
+        + (f" - {asset.note}" if asset.note else "")
+        + "\n\n"
         f"{model_params.summarise(trained)}"
     )
     return images, summary

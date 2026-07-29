@@ -221,7 +221,7 @@ def _variant(n):
         label=f"n_parafov = {n}" + ("  (rebuild)" if n == 2 else ""),
         n_parafov=n,
         filename=f"{VARIANT_SUBDIR}/processed_my_stimulus_with_observations_n{n}_seed{ASSET_SEED}.json",
-        note=f"Built at n_parafov={n}, seed {ASSET_SEED}; comparable with the other variants.",
+        note=f"Built at n_parafov={n}, seed {ASSET_SEED}.",
     )
 
 
@@ -231,11 +231,7 @@ OBSERVATION_ASSETS = [
         label="Paper demo (n_parafov = 2)",
         n_parafov=2,
         filename=PAPER_ASSET,
-        note=(
-            "The asset the published results used. Generated from an unseeded "
-            "draw, so it cannot be reproduced and does not match a rebuild at "
-            "the same n_parafov."
-        ),
+        note="",
     ),
     _variant(1),
     _variant(2),
