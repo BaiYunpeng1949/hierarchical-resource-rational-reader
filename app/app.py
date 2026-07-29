@@ -174,8 +174,8 @@ def _build_param_panel():
             if not level_params:
                 gr.Markdown(
                     f"No Table 1 parameter reaches the {registry.LEVEL_LABELS[level].lower()} "
-                    "environment during training. Its free parameter (w_RP / coverage) "
-                    "is sampled per episode by design and set on the Simulate tab."
+                    "environment during training. Its free parameter (w_RP) is "
+                    "sampled per episode by design and set on the Simulate tab."
                 )
             for param in level_params:
                 if param.apply == "offline":
@@ -243,13 +243,20 @@ def build():
                 )
 
             gr.Markdown("### Cognitive free parameters")
+            # Labelled with the paper's symbols (Extended Data Table 1) rather
+            # than the code's argument names: rho_inflation_percentage,
+            # w_skip_degradation_factor and coverage_factor are rho, w_IL and
+            # w_RP respectively.
             with gr.Row():
                 rho_sl = gr.Slider(0.0, 1.0, value=0.29, step=0.01,
-                                   label="rho - word vigor")
+                                   label="rho - non-fixation overhead",
+                                   info="Fraction of time spent outside fixations. Paper 0.29.")
                 wskip_sl = gr.Slider(0.0, 2.0, value=0.70, step=0.01,
-                                     label="w_skip - skip tendency")
+                                     label="w_IL - information loss weighting",
+                                     info="Penalty weight for information lost to skipped words.")
                 cov_sl = gr.Slider(0.0, 3.0, value=1.30, step=0.01,
-                                   label="coverage - coverage drive")
+                                   label="w_RP - reading progress weighting",
+                                   info="Weight on how much of the text gets covered.")
             with gr.Row():
                 trials_sl = gr.Slider(1, 10, value=1, step=1, label="Trials per stimulus x condition")
                 heat_cb = gr.Checkbox(label="Also render gaze heatmaps", value=False)

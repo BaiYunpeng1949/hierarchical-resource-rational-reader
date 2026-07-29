@@ -226,7 +226,7 @@ def run_simulation(
         f"{len(stimulus_ids)} stimulus/stimuli x {len(time_conditions)} condition(s), "
         f"{n_fix} fixations total.\n\n"
         f"**Models used**\n{describe_selection(model_ids)}\n\n"
-        f"**Parameters** rho={rho}, w_skip={w_skip}, coverage={coverage}, trials={trials}\n\n"
+        f"**Parameters** rho={rho}, w_IL={w_skip}, w_RP={coverage}, trials={trials}\n\n"
         f"**Parafoveal preview** {asset.label}"
         + (f" - {asset.note}" if asset.note else "")
         + "\n\n"
