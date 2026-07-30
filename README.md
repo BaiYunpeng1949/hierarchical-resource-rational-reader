@@ -166,3 +166,4 @@ Details could be found in specific branches, as mentioned above (Demo: running e
 ## 7. Contributors
 - Yunpeng Bai (白云鹏)
 - Antti Oulasvirta
+- Jenna Mullin
