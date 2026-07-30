@@ -213,3 +213,4 @@ Details could be found in specific README files, as mentioned above (Demo: runni
 ## 8. Contributors
 - Yunpeng Bai (白云鹏)
 - Antti Oulasvirta
+- Jenna Mullin
