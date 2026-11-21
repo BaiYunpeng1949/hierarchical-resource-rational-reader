@@ -6,7 +6,6 @@ This repository contains the code and example data associated with the paper:
 
 The code implements a hierarchical, resource-rational computational model of human reading that integrates perceptual, memory, and decision-making constraints to simulate eye-movement behavior and comprehension under varying task demands. WThe repository also includes scripts for running experiments and reproducing key results reported in the paper.
 
-The repository is work in progress. We expect to have everything completed by Feb 15, 2026.
 ---
 
 ## 1. Overview
